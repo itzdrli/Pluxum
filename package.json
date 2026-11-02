@@ -2,7 +2,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "pluxel dev",
+		"dev": "pluxel dev && pitchfork start web",
 		"dev:local": "pluxel dev --profile local",
 		"build": "vp run workspace:build",
 		"test": "vp run workspace:test",
@@ -13,7 +13,8 @@
 		"hooks:install": "hk install --mise",
 		"dev:status": "pluxel dev status",
 		"dev:logs": "pitchfork logs app --follow",
-		"dev:stop": "pitchfork stop app"
+		"dev:stop": "pitchfork stop web app",
+		"dev:logs:web": "pitchfork logs web --follow"
 	},
 	"devDependencies": {
 		"@pluxel/cli": "catalog:pluxel",
@@ -36,7 +37,7 @@
 			},
 			"local": {
 				"root": "host/web",
-				"command": "vp run @example/host#dev:server"
+				"command": "vp run @forum/host#dev:server"
 			}
 		}
 	}

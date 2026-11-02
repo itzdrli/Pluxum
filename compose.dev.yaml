@@ -1,0 +1,22 @@
+# Local development infrastructure. Start with: docker compose -f compose.dev.yaml up -d
+name: pluxel-forum
+
+services:
+  valkey:
+    image: valkey/valkey:9.1.2
+    container_name: forum-valkey
+    restart: unless-stopped
+    command: ['valkey-server', '--appendonly', 'yes', '--save', '60', '1000']
+    ports:
+      # Loopback only: the default RedisPlugin connects without credentials.
+      - '127.0.0.1:6380:6379'
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ['CMD', 'valkey-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  valkey-data:

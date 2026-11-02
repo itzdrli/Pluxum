@@ -20,3 +20,7 @@ hk.local.pkl
 /.pnpmfile.cjs
 /docs/pluxel
 /.agents/skills/pluxel-development
+
+# Nuxt
+.nuxt/
+.output/

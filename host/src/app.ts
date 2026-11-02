@@ -2,13 +2,15 @@ import * as nativeFs from 'node:fs'
 import { defineHostApplication } from '@pluxel/host'
 import { resolveHostEnv } from '@pluxel/host/environment'
 import { servicesPreset } from '@pluxel/services/preset'
+import { database } from '@pluxel/services/database'
+import { pglite } from '@pluxel/services/database/pglite'
 import { Passthrough } from '@pluxel/core/fs'
 import { logtape, zenfs } from '@pluxel/core/config'
 
 import { pluginSource } from '@pluxel/host/sources'
 import { resolve } from 'node:path'
 import { product } from './product'
-import { exampleConfigRecords, examplePlugins, exampleHostState } from './runtime-state'
+import { appConfigRecords, appHostState, appPlugins } from './runtime-state'
 
 export { product }
 
@@ -19,7 +21,7 @@ export default defineHostApplication(async (startup) => {
 	const prefix = resolve(dataRoot, 'fs')
 	await nativeFs.promises.mkdir(prefix, { recursive: true })
 	return {
-		name: 'pluxel-example',
+		name: 'forum',
 		config: {
 			logger: logtape(),
 			storage: zenfs({
@@ -27,7 +29,7 @@ export default defineHostApplication(async (startup) => {
 				durableMounts: ['/'],
 			}),
 		},
-		plugins: examplePlugins,
+		plugins: appPlugins,
 		sources: [
 			pluginSource({
 				kind: 'directory',
@@ -35,15 +37,19 @@ export default defineHostApplication(async (startup) => {
 				include: ['*.mjs'],
 			}),
 		],
-		services: await servicesPreset(startup, {
-			product,
-			workbench: environment.workbench ?? true,
-		}),
+		services: [
+			...(await servicesPreset(startup, {
+				product,
+				workbench: environment.workbench ?? true,
+			})),
+			// Development backend; production switches to native PostgreSQL (M5).
+			database({ backend: pglite({ dataDir: resolve(dataRoot, 'database') }) }),
+		],
 		configRecords: {
-			...exampleConfigRecords(env.EXAMPLE_TODO_MAX_ITEMS),
+			...appConfigRecords(env),
 		},
 		state: {
-			...exampleHostState(),
+			...appHostState(),
 		},
 	}
 })

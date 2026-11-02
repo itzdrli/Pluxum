@@ -1,0 +1,69 @@
+/*
+ * Graphite tokens, shared with the Workbench theme and FantasticFrame:
+ * neutral greys so content carries the colour, one blue accent, calm status colours.
+ */
+:root {
+	--fm-bg: #1b1b1b;
+	--fm-surface: #262626;
+	--fm-surface-raised: #303030;
+	--fm-border: #444444;
+	--fm-text-muted: #a1a1a1;
+	--fm-text: #c4c4c4;
+	--fm-text-strong: #ececec;
+	--fm-accent: #5aa2ee;
+	--fm-accent-strong: #4a88d0;
+	--fm-danger: #e0645c;
+	--fm-warning: #d9bb62;
+	--fm-success: #7cc08a;
+
+	--fm-radius-sm: 4px;
+	--fm-radius-md: 6px;
+	--fm-radius-lg: 8px;
+
+	--fm-space-1: 4px;
+	--fm-space-2: 8px;
+	--fm-space-3: 12px;
+	--fm-space-4: 16px;
+	--fm-space-5: 20px;
+	--fm-space-6: 24px;
+
+	--fm-font-sans: 'IBM Plex Sans', 'Noto Sans SC', system-ui, sans-serif;
+	--fm-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+	--fm-text-sm: 13px;
+	--fm-text-md: 14px;
+	--fm-text-lg: 16px;
+	--fm-text-xl: 20px;
+
+	color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	background: var(--fm-bg);
+	color: var(--fm-text);
+	font-family: var(--fm-font-sans);
+	font-size: var(--fm-text-md);
+	line-height: 1.6;
+	-webkit-font-smoothing: antialiased;
+}
+
+a {
+	color: var(--fm-accent);
+	text-decoration: none;
+}
+
+a:hover {
+	color: var(--fm-accent-strong);
+}
+
+code {
+	font-family: var(--fm-font-mono);
+	font-size: var(--fm-text-sm);
+}

@@ -13,14 +13,17 @@ export default defineConfig({
 				cache: false,
 			},
 			'verify:checks': { command: 'vp check', cache: false },
-			'workspace:build': { command: [], dependsOn: ['@example/host#compile'] },
+			'workspace:build': { command: [], dependsOn: ['@forum/host#compile', '@forum/web#build'] },
 			'workspace:test': {
 				command: [],
 				dependsOn: [
-					'@example/domain#check-tests',
-					'@example/audit-plugin#check-tests',
-					'@example/http-plugin#check-tests',
-					'@example/todo-plugin#check-tests',
+					'@forum/domain#check-tests',
+					'@forum/forum-api#check-tests',
+					'@forum/forum-redis#check-tests',
+					'@forum/audit-plugin#check-tests',
+					'@forum/http-plugin#check-tests',
+					'@forum/todo-plugin#check-tests',
+					'@forum/web#typecheck',
 				],
 			},
 			'workspace:verify': {

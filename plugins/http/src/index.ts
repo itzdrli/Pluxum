@@ -1,5 +1,5 @@
-import { TODO_TITLE_MAX_LENGTH } from '@example/domain'
-import { TodoPlugin } from '@example/todo-plugin'
+import { TODO_TITLE_MAX_LENGTH } from '@forum/domain'
+import { TodoPlugin } from '@forum/todo-plugin'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { t } from 'elysia'
 import { ElysiaApp } from '@pluxel/services/elysia'

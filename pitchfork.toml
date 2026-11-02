@@ -12,7 +12,15 @@ sync_hosts = false
 
 # Directory-derived namespaces keep projects and Git worktrees distinct.
 [daemons.app]
-run = "vp run @example/host#dev:server"
+run = "vp run @forum/host#dev:server"
 mise = true
 port = { expect = [5173], bump = 100 }
 ready_output = { pattern = "(Local:|Application:|Workbench:)", timeout = "5m" }
+
+# Forum frontend (Nuxt SSR). Proxies /api/forum/** to the app daemon above.
+[daemons.web]
+run = "pnpm --dir apps/web exec nuxt dev"
+mise = true
+depends = ["app"]
+port = { expect = [3000], bump = 100 }
+ready_output = { pattern = "Local:", timeout = "5m" }

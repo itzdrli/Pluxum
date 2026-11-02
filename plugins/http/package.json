@@ -1,5 +1,5 @@
 {
-	"name": "@example/http-plugin",
+	"name": "@forum/http-plugin",
 	"private": true,
 	"type": "module",
 	"exports": {
@@ -15,11 +15,11 @@
 		"typecheck": "vp run check-types"
 	},
 	"dependencies": {
-		"@example/domain": "workspace:*",
+		"@forum/domain": "workspace:*",
 		"elysia": "catalog:backend"
 	},
 	"devDependencies": {
-		"@example/todo-plugin": "workspace:*",
+		"@forum/todo-plugin": "workspace:*",
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",
@@ -30,7 +30,7 @@
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
-		"@example/todo-plugin": "*",
+		"@forum/todo-plugin": "*",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel"
 	},
@@ -39,7 +39,7 @@
 		"nodeArtifacts": true,
 		"workbenchArtifacts": true,
 		"pluginPackages": {
-			"@example/todo-plugin": "required"
+			"@forum/todo-plugin": "required"
 		}
 	},
 	"publishConfig": {

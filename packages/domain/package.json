@@ -1,5 +1,5 @@
 {
-	"name": "@example/domain",
+	"name": "@forum/domain",
 	"private": true,
 	"type": "module",
 	"exports": {

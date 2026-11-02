@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeTodoTitle, withTodoCompletion } from '@example/domain'
+import { normalizeTodoTitle, withTodoCompletion } from '@forum/domain'
 
 describe('todo domain', () => {
 	it('normalizes titles without involving a Plugin host', () => {

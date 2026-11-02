@@ -35,6 +35,11 @@ export default defineConfig({
 
 	root: webRoot,
 	appType: 'spa',
+	resolve: {
+		// tsconfig `paths` only redirect type-checking to built declarations (see tsconfig.json);
+		// runtime resolution must keep using package exports.
+		tsconfigPaths: false,
+	},
 	server: {
 		host: hostEnv.hostBind ?? '127.0.0.1',
 		port: hostEnv.hostPort,

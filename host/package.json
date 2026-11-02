@@ -1,5 +1,5 @@
 {
-	"name": "@example/host",
+	"name": "@forum/host",
 	"private": true,
 	"type": "module",
 	"scripts": {
@@ -10,12 +10,18 @@
 		"start:vite": "NODE_ENV=production node start-vite.mjs"
 	},
 	"dependencies": {
-		"@example/audit-plugin": "workspace:*",
-		"@example/http-plugin": "workspace:*",
-		"@example/todo-plugin": "workspace:*",
+		"@electric-sql/pglite": "catalog:prod",
+		"@forum/audit-plugin": "workspace:*",
+		"@forum/forum-api": "workspace:*",
+		"@forum/forum-redis": "workspace:*",
+		"@forum/http-plugin": "workspace:*",
+		"@forum/todo-plugin": "workspace:*",
 		"@pluxel/commands": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",
+		"@pluxel/plugin-cache": "catalog:pluxel",
+		"@pluxel/plugin-rates": "catalog:pluxel",
+		"@pluxel/plugin-redis": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/workbench": "catalog:pluxel",
 		"@sinclair/typebox": "catalog:backend",
@@ -23,10 +29,11 @@
 		"exact-mirror": "catalog:backend",
 		"react": "catalog:frontend",
 		"react-dom": "catalog:frontend",
-		"typebox": "catalog:backend"
+		"typebox": "catalog:backend",
+		"valibot": "catalog:validation"
 	},
 	"devDependencies": {
-		"@example/web": "workspace:*",
+		"@forum/host-web": "workspace:*",
 		"@mantine/core": "catalog:frontend",
 		"@mantine/hooks": "catalog:frontend",
 		"@pluxel/cli": "catalog:pluxel",

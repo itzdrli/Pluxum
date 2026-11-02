@@ -1,5 +1,5 @@
 {
-	"name": "@example/audit-plugin",
+	"name": "@forum/audit-plugin",
 	"private": true,
 	"type": "module",
 	"exports": {

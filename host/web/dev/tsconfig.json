@@ -1,0 +1,11 @@
+{
+	// Dev-console operations run inside the host Vite (see docs/pluxel/development/dev-console.md).
+	"extends": "../../../tsconfig.base.json",
+	"compilerOptions": {
+		"types": ["node"],
+		"paths": {
+			"@pluxel/plugin-redis": ["../node_modules/@pluxel/plugin-redis/dist/index.d.mts"]
+		}
+	},
+	"include": ["./**/*.ts"]
+}

@@ -2,8 +2,8 @@ import { createHost } from '@pluxel/host'
 import { pluginNodeAddressOf } from '@pluxel/core'
 import { elysia, createElysiaHandler } from '@pluxel/services/elysia'
 import { describe, expect, it } from 'vitest'
-import { HttpPlugin } from '@example/http-plugin'
-import { TodoPlugin } from '@example/todo-plugin'
+import { HttpPlugin } from '@forum/http-plugin'
+import { TodoPlugin } from '@forum/todo-plugin'
 
 describe('HttpPlugin', () => {
 	it('exposes a validated Todo API backed by a required Plugin dependency', async () => {

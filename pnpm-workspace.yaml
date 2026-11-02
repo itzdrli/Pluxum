@@ -1,6 +1,7 @@
 packages:
   - host
   - host/web
+  - apps/*
   - packages/*
   - plugins/*
 
@@ -12,6 +13,7 @@ catalogs:
     '@sinclair/typebox': ^0.34.52
     exact-mirror: ^1.2.6
     elysia: 2.0.0-rc.0
+    redis: ^6.3.0
     typebox: ^1.4.3
     tinybase: 10.0.1
   frontend:
@@ -34,6 +36,9 @@ catalogs:
     '@pluxel/rolldown': ^1.1.0
     '@pluxel/host-vite': ^1.1.0
     '@pluxel/test': ^1.1.0
+    '@pluxel/plugin-redis': 0.0.0
+    '@pluxel/plugin-cache': 0.0.0
+    '@pluxel/plugin-rates': 0.0.0
   validation:
     valibot: ^1.5.0
   test:
@@ -43,7 +48,17 @@ catalogs:
     '@types/node': ^26.6.5
     typescript: ^7.0.2
     vite: npm:@voidzero-dev/vite-plus-core@1.4.0
+  prod:
+    '@electric-sql/pglite': ^0.5.10
+  nuxt:
+    nuxt: ^4.6.3
+    vue: ^3.5.44
+    vue-router: ^5.4.0
+    vue-tsc: ^3.3.14
 overrides:
+  # vue-tsc/Volar need the JS TypeScript API (<7); scoped so the workspace stays on TS 7.
+  # vue-tsc/Volar need the JS TypeScript API (<7); only the Nuxt app gets TS 6, the workspace stays on TS 7.
+  '@forum/web>typescript': 6.0.3
   'vite@*': npm:@voidzero-dev/vite-plus-core@1.4.0
   typebox: catalog:backend
 
@@ -55,3 +70,6 @@ trustPolicyExclude:
 peerDependencyRules:
   allowedVersions:
     vite: 1.4.0
+    # vite-plus-core's optional vue-tsc peer is unused outside apps/web (which runs TS 6).
+    '@volar/typescript>typescript': '7'
+    '@volar/language-service>typescript': '7'

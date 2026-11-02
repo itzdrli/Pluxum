@@ -1,5 +1,5 @@
-import { AuditPlugin } from '@example/audit-plugin'
-import { TodoPlugin } from '@example/todo-plugin'
+import { AuditPlugin } from '@forum/audit-plugin'
+import { TodoPlugin } from '@forum/todo-plugin'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
 

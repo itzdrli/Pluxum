@@ -1,5 +1,5 @@
-import { normalizeTodoTitle, type TodoItem } from '@example/domain'
-import { type AuditPlugin } from '@example/audit-plugin'
+import { normalizeTodoTitle, type TodoItem } from '@forum/domain'
+import { type AuditPlugin } from '@forum/audit-plugin'
 import { BasePlugin, definePluginRef, Plugin } from '@pluxel/core'
 import { createStore, type Store } from 'tinybase'
 import * as v from 'valibot'

@@ -1,6 +1,6 @@
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
-import { AuditPlugin } from '@example/audit-plugin'
+import { AuditPlugin } from '@forum/audit-plugin'
 
 describe('AuditPlugin', () => {
 	it('runs without optional services', async () => {

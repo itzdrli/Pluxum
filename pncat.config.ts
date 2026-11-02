@@ -27,6 +27,11 @@ export default defineConfig({
 			priority: 20,
 		},
 		{
+			name: 'nuxt',
+			match: [/^@nuxt\//, /^@vue\//, 'nuxt', 'vue', 'vue-router', 'vue-tsc'],
+			priority: 25,
+		},
+		{
 			name: 'test',
 			match: [/^@testing-library\//, 'playwright', 'vitest'],
 			priority: 30,
@@ -47,6 +52,7 @@ export default defineConfig({
 				'graphql-yoga',
 				'nanoid',
 				'qrcode',
+				'redis',
 				'tinybase',
 				'valibot',
 				'wretch',

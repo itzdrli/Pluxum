@@ -1,5 +1,5 @@
 {
-	"name": "@example/todo-plugin",
+	"name": "@forum/todo-plugin",
 	"private": true,
 	"type": "module",
 	"exports": {
@@ -15,11 +15,11 @@
 		"typecheck": "vp run check-types"
 	},
 	"dependencies": {
-		"@example/domain": "workspace:*",
+		"@forum/domain": "workspace:*",
 		"valibot": "catalog:validation"
 	},
 	"devDependencies": {
-		"@example/audit-plugin": "workspace:*",
+		"@forum/audit-plugin": "workspace:*",
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/test": "catalog:pluxel",
@@ -29,12 +29,12 @@
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
-		"@example/audit-plugin": "*",
+		"@forum/audit-plugin": "*",
 		"@pluxel/core": "catalog:pluxel",
 		"tinybase": "catalog:backend"
 	},
 	"peerDependenciesMeta": {
-		"@example/audit-plugin": {
+		"@forum/audit-plugin": {
 			"optional": true
 		}
 	},
@@ -43,7 +43,7 @@
 		"nodeArtifacts": true,
 		"workbenchArtifacts": true,
 		"pluginPackages": {
-			"@example/audit-plugin": "optional"
+			"@forum/audit-plugin": "optional"
 		},
 		"tinybase": "10.0.1"
 	},

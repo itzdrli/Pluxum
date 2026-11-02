@@ -1,8 +1,43 @@
-# Pluxel example workspace
+# Pluxel Forum
 
-This is a fixed, neutral example workspace for learning Pluxel plugin development. The project name,
-package names and class names are intentionally not generated: rename them only when the example has
-become your own application.
+A plugin-first forum on [Pluxel](https://github.com/PluxelJS/pluxel): a small, stable core with every feature
+delivered as a plugin that can be started, stopped and configured from Workbench. The roadmap and decisions
+live in `../FORUM_PLAN.md`.
+
+## Layout
+
+| Path                                           | Role                                                                                             |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `host/`                                        | Pluxel application: plugin catalog, services (PGlite database, Workbench, Vault), runtime policy |
+| `host/web/`                                    | Placeholder page served by the host; `host/web/dev/` holds dev-console operations                |
+| `apps/web/`                                    | Forum frontend: Nuxt 4 SSR on its own Nitro process; proxies `/api/forum/**` to the host         |
+| `plugins/forum-api/`                           | Fixed HTTP ingress under `/api/forum`                                                            |
+| `plugins/forum-redis/`                         | Provider of the official `Redis` capability (connection catalog, Lua scripts)                    |
+| `plugins/{audit,http,todo}`, `packages/domain` | Template examples kept as a reference until the forum core lands                                 |
+| `compose.dev.yaml`                             | Local infrastructure: `forum-valkey` on `127.0.0.1:6380`                                         |
+
+## Develop
+
+```sh
+mise trust && mise install
+docker compose -f compose.dev.yaml up -d
+node <pluxel-checkout>/packages/cli/bin/pluxel.mjs source install   # source-linked framework
+vp run hooks:install
+vp run dev        # Pitchfork: `app` (Pluxel host, :5173) and `web` (Nuxt, :3000)
+vp run verify     # governance, lint/format/types, tests, production builds
+```
+
+`REDIS_CONNECTIONS` (in `mise.toml`) seeds the Redis connection catalog; `FORUM_TEST_REDIS_URL` enables the
+live Redis test. Machine-local public origins go in the ignored `mise.local.toml`
+(`PLUXEL_PUBLIC_ORIGIN` for the host/Workbench, `FORUM_WEB_PUBLIC_ORIGIN` for Nuxt).
+
+When saved runtime state predates a plugin (new or renamed packages), `state.initial` no longer applies;
+persist auto start with `vp exec pluxel dev run host/web/dev/plugins.ts --export autostart` and clear stale
+nodes with `--export prune`.
+
+## Template reference
+
+The rest of this file is the upstream template's guide; package names now use `@forum/*`.
 
 Coding agents: read [AGENTS.md](./AGENTS.md), then use the
 [pluxel-development skill](.agents/skills/pluxel-development/SKILL.md), available after workspace setup.
@@ -68,7 +103,7 @@ Pitchfork owns process lifetime. Set `PLUXEL_WORKBENCH=false` in `pitchfork.loca
 under `[daemons.app.env]` and restart `app` to disable Workbench locally.
 The `app` and `local` profiles are alternative ways to run the same application and share its default data directory. Profiles separate console routing, not data. Run `pitchfork stop app` before `vp run dev:local` when using the same data; for concurrent processes, explicitly set a distinct `PLUXEL_DATA_ROOT` for each.
 
-For foreground debugging with console access, use `vp run dev:local`. The supplied `local` profile runs `vp run @example/host#dev:server` and the CLI binds the foreground process automatically. Use `pluxel dev status --profile local` and `pluxel dev run <script> --profile local` for that instance; Ctrl+C stops it.
+For foreground debugging with console access, use `vp run dev:local`. The supplied `local` profile runs `vp run @forum/host#dev:server` and the CLI binds the foreground process automatically. Use `pluxel dev status --profile local` and `pluxel dev run <script> --profile local` for that instance; Ctrl+C stops it.
 
 `mise.toml` pins Node, pnpm, Vite+, hk and Pitchfork. `hk.pkl` owns changed-file linting and
 formatting (`hk check` / `hk fix`); install its Git hooks explicitly after
@@ -82,13 +117,13 @@ The declaration validates and freezes data. Native startup accepts one snapshot;
 
 `vp run build` emits modules delivery: `host/dist/app.mjs` exports the factory and product, package dependencies
 remain installed, and each example Plugin builds its public `dist/index.mjs` before the host. Local
-Plugin/Node/Workbench artifacts are compiled. `vp run @example/host#start`
+Plugin/Node/Workbench artifacts are compiled. `vp run @forum/host#start`
 runs `host/start.mjs` in native Node and serves the compiled SPA and Workbench Shell. Publish sources before
 starting a fresh process to accept their new versions. The launcher binds before evaluating business imports;
 do not preload the application or its dependency graph. The host declares every package in the official
 shared list directly so binding does not depend on workspace hoisting.
 
-For continuous production updates, run `vp run @example/host#start:vite` after building. The independent
+For continuous production updates, run `vp run @forum/host#start:vite` after building. The independent
 `host/vite.runtime.config.ts` loads the same compiled factory; `host/start-vite.mjs` owns the production session
 and closes it on shutdown. It serves compiled assets and business HTTP/WebSocket without a development
 console or browser Vite middleware. For a deployment that omits development dependencies, first declare
@@ -107,9 +142,9 @@ Native deployment keeps these tools in development dependencies. Development con
 - `plugins/http` declares `TodoPlugin` as a required constructor dependency and validates HTTP input.
 - `plugins/todo` observes `AuditPlugin` through `definePluginRef()` as an optional integration.
 - Plugin tests use the Pluxel Vitest preset and the smallest matching core/runtime test host.
-- `host/web` is the `@example/web` workspace package and declares its frontend-only dependencies.
+- `host/web` is the `@forum/host-web` workspace package and declares its frontend-only dependencies.
 - `host/vite.config.ts` serves that source and lets generation-scoped Elysia routes claim `/api` before SPA fallback.
-- `host` records `@example/web` as a build input, installs the workspace Plugins and owns one application declaration for development and production.
+- `host` records `@forum/host-web` as a build input, installs the workspace Plugins and owns one application declaration for development and production.
 
 Open the application URL printed by `vp run dev`. The Todo UI calls the same-origin Plugin-owned
 `/api/example/todos` routes to list, create, complete and remove items.
