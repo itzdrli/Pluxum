@@ -1,0 +1,56 @@
+{
+	"name": "@example/todo-plugin",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"@pluxel/hmr": "./src/index.ts",
+			"default": "./dist/index.mjs"
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"build": "vp run compile",
+		"test": "vp run check-tests",
+		"typecheck": "vp run check-types"
+	},
+	"dependencies": {
+		"@example/domain": "workspace:*",
+		"valibot": "catalog:validation"
+	},
+	"devDependencies": {
+		"@example/audit-plugin": "workspace:*",
+		"@pluxel/cli": "catalog:pluxel",
+		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/test": "catalog:pluxel",
+		"tinybase": "catalog:backend",
+		"typescript": "catalog:tooling",
+		"vite-plus": "catalog:tooling",
+		"vitest": "catalog:test"
+	},
+	"peerDependencies": {
+		"@example/audit-plugin": "*",
+		"@pluxel/core": "catalog:pluxel",
+		"tinybase": "catalog:backend"
+	},
+	"peerDependenciesMeta": {
+		"@example/audit-plugin": {
+			"optional": true
+		}
+	},
+	"pluxel": {
+		"artifactRoot": "dist",
+		"nodeArtifacts": true,
+		"workbenchArtifacts": true,
+		"pluginPackages": {
+			"@example/audit-plugin": "optional"
+		},
+		"tinybase": "10.0.1"
+	},
+	"publishConfig": {
+		"exports": {
+			".": "./dist/index.mjs",
+			"./package.json": "./package.json"
+		}
+	}
+}

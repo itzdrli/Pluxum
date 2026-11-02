@@ -1,0 +1,43 @@
+{
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "pluxel dev",
+		"dev:local": "pluxel dev --profile local",
+		"build": "vp run workspace:build",
+		"test": "vp run workspace:test",
+		"check": "vp check",
+		"fix": "vp check --fix",
+		"verify": "vp run workspace:verify",
+		"setup": "pluxel workspace setup",
+		"hooks:install": "hk install --mise",
+		"dev:status": "pluxel dev status",
+		"dev:logs": "pitchfork logs app --follow",
+		"dev:stop": "pitchfork stop app"
+	},
+	"devDependencies": {
+		"@pluxel/cli": "catalog:pluxel",
+		"@pluxel/rolldown": "catalog:pluxel",
+		"typescript": "catalog:tooling",
+		"vite-plus": "catalog:tooling",
+		"vitest": "catalog:test"
+	},
+	"engines": {
+		"node": ">=24",
+		"pnpm": ">=11 <12"
+	},
+	"packageManager": "pnpm@11.28.6",
+	"pluxel": {
+		"dev": {
+			"default": "app",
+			"app": {
+				"root": "host/web",
+				"pitchfork": "app"
+			},
+			"local": {
+				"root": "host/web",
+				"command": "vp run @example/host#dev:server"
+			}
+		}
+	}
+}

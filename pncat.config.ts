@@ -1,0 +1,71 @@
+import { defineConfig } from '@pluxel/cli/pncat'
+
+export default defineConfig({
+	catalogRules: [
+		{
+			name: 'pluxel',
+			match: [/^@pluxel\//],
+			priority: 10,
+		},
+		{
+			name: 'frontend',
+			match: [
+				/^@dnd-kit\//,
+				/^@heroui\//,
+				/^@mantine\//,
+				/^@tabler\//,
+				/^@tailwindcss\//,
+				/^@tanstack\//,
+				/^@types\/react(?:-dom)?$/,
+				/^@vibrant\//,
+				'@vitejs/plugin-react',
+				'lucide-react',
+				'react',
+				'react-dom',
+				'tailwindcss',
+			],
+			priority: 20,
+		},
+		{
+			name: 'test',
+			match: [/^@testing-library\//, 'playwright', 'vitest'],
+			priority: 30,
+		},
+		{
+			name: 'backend',
+			match: [
+				/^@discordjs\//,
+				/^@gqloom\//,
+				'@libsql/client',
+				'capnweb',
+				'cbor-x',
+				'discord.js',
+				'drizzle-orm',
+				'elysia',
+				'fractional-indexing',
+				'graphql',
+				'graphql-yoga',
+				'nanoid',
+				'qrcode',
+				'tinybase',
+				'valibot',
+				'wretch',
+			],
+			priority: 40,
+		},
+		{
+			name: 'tooling',
+			match: [
+				/^@types\//,
+				'@napi-rs/cli',
+				'electron',
+				'electron-builder',
+				'sass-embedded',
+				'typescript',
+				'vite-plus',
+				'vite',
+			],
+			priority: 50,
+		},
+	],
+})

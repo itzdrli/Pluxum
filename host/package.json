@@ -1,0 +1,44 @@
+{
+	"name": "@example/host",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "vp run compile",
+		"typecheck": "vp run check-types",
+		"dev:server": "vp dev --config vite.config.ts",
+		"start": "node start.mjs",
+		"start:vite": "NODE_ENV=production node start-vite.mjs"
+	},
+	"dependencies": {
+		"@example/audit-plugin": "workspace:*",
+		"@example/http-plugin": "workspace:*",
+		"@example/todo-plugin": "workspace:*",
+		"@pluxel/commands": "catalog:pluxel",
+		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/host": "catalog:pluxel",
+		"@pluxel/services": "catalog:pluxel",
+		"@pluxel/workbench": "catalog:pluxel",
+		"@sinclair/typebox": "catalog:backend",
+		"elysia": "catalog:backend",
+		"exact-mirror": "catalog:backend",
+		"react": "catalog:frontend",
+		"react-dom": "catalog:frontend",
+		"typebox": "catalog:backend"
+	},
+	"devDependencies": {
+		"@example/web": "workspace:*",
+		"@mantine/core": "catalog:frontend",
+		"@mantine/hooks": "catalog:frontend",
+		"@pluxel/cli": "catalog:pluxel",
+		"@pluxel/host-vite": "catalog:pluxel",
+		"@pluxel/rolldown": "catalog:pluxel",
+		"@tabler/icons-react": "catalog:frontend",
+		"@types/node": "catalog:tooling",
+		"@types/react": "catalog:frontend",
+		"@types/react-dom": "catalog:frontend",
+		"@vitejs/plugin-react": "catalog:frontend",
+		"typescript": "catalog:tooling",
+		"vite": "catalog:tooling",
+		"vite-plus": "catalog:tooling"
+	}
+}

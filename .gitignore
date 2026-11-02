@@ -1,0 +1,22 @@
+node_modules/
+.vite/
+dist/
+.pluxel/
+.pnpmfile.cjs
+data/
+logs/
+*.log
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Machine-local tool and hook overrides
+mise.local.toml
+pitchfork.local.toml
+hk.local.pkl
+/.pluxel/
+/.pnpmfile.cjs
+/docs/pluxel
+/.agents/skills/pluxel-development

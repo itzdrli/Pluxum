@@ -1,0 +1,19 @@
+{
+	"name": "@example/web",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"typecheck": "vp run check-types"
+	},
+	"dependencies": {
+		"react": "catalog:frontend",
+		"react-dom": "catalog:frontend"
+	},
+	"devDependencies": {
+		"@types/react": "catalog:frontend",
+		"@types/react-dom": "catalog:frontend",
+		"typescript": "catalog:tooling",
+		"vite": "catalog:tooling",
+		"vite-plus": "catalog:tooling"
+	}
+}

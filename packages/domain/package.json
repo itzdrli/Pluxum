@@ -1,0 +1,22 @@
+{
+	"name": "@example/domain",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"development": "./src/index.ts",
+			"types": "./src/index.ts",
+			"default": "./dist/index.mjs"
+		}
+	},
+	"scripts": {
+		"build": "vp run compile",
+		"typecheck": "vp run check-types",
+		"test": "vp run check-tests"
+	},
+	"devDependencies": {
+		"typescript": "catalog:tooling",
+		"vite-plus": "catalog:tooling",
+		"vitest": "catalog:test"
+	}
+}
