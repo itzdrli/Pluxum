@@ -3,19 +3,36 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "nuxt dev",
-		"build": "nuxt build",
-		"preview": "nuxt preview",
-		"postinstall": "nuxt prepare",
-		"typecheck": "nuxt typecheck"
+		"dev": "react-router dev",
+		"build": "react-router build",
+		"start": "react-router-serve ./build/server/index.js",
+		"postinstall": "react-router typegen",
+		"typecheck": "react-router typegen && tsc --noEmit --pretty false"
 	},
 	"dependencies": {
-		"nuxt": "catalog:nuxt",
-		"vue": "catalog:nuxt",
-		"vue-router": "catalog:nuxt"
+		"react": "catalog:frontend",
+		"react-dom": "catalog:frontend",
+		"react-router": "catalog:frontend",
+		"@react-router/node": "catalog:frontend",
+		"@react-router/serve": "catalog:frontend",
+		"isbot": "catalog:frontend",
+		"@heroui/react": "catalog:frontend",
+		"@heroui/styles": "catalog:frontend",
+		"react-aria": "catalog:frontend",
+		"react-aria-components": "catalog:frontend",
+		"@react-aria/ssr": "catalog:frontend",
+		"@react-aria/utils": "catalog:frontend",
+		"@internationalized/date": "catalog:frontend"
 	},
 	"devDependencies": {
-		"vue-tsc": "catalog:nuxt",
-		"typescript": "catalog:tooling"
+		"@react-router/dev": "catalog:frontend",
+		"@tailwindcss/vite": "catalog:frontend",
+		"tailwindcss": "catalog:frontend",
+		"typescript": "catalog:tooling",
+		"@types/react": "catalog:frontend",
+		"@types/react-dom": "catalog:frontend",
+		"@types/node": "catalog:tooling",
+		"vite": "catalog:tooling",
+		"vite-plus": "catalog:tooling"
 	}
 }

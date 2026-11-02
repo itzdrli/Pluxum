@@ -21,6 +21,6 @@ hk.local.pkl
 /docs/pluxel
 /.agents/skills/pluxel-development
 
-# Nuxt
-.nuxt/
-.output/
+# React Router
+.react-router/
+apps/web/build/

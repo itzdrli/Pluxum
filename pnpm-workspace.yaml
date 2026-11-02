@@ -17,15 +17,29 @@ catalogs:
     typebox: ^1.4.3
     tinybase: 10.0.1
   frontend:
+    '@heroui/react': 3.2.6
+    '@heroui/styles': 3.2.6
+    '@internationalized/date': ^3.12.4
     '@mantine/core': 9.7.3
     '@mantine/hooks': 9.7.3
+    '@react-aria/ssr': ^3.10.1
+    '@react-aria/utils': ^3.34.1
+    '@react-router/dev': ^8.5.1
+    '@react-router/node': ^8.5.1
+    '@react-router/serve': ^8.5.1
     '@tabler/icons-react': ^3.49.0
+    '@tailwindcss/vite': ^4.3.3
     '@types/react': ^19.3.0
     '@types/react-dom': ^19.3.0
     '@vitejs/plugin-react': ^6.1.2
+    isbot: ^5.2.2
     # Published Workbench producers require this exact shared React version.
     react: 19.3.1
+    react-aria: ^3.53.1
+    react-aria-components: ^1.22.1
     react-dom: 19.3.1
+    react-router: ^8.5.1
+    tailwindcss: ^4.3.3
   pluxel:
     '@pluxel/cli': ^1.1.0
     '@pluxel/core': ^1.1.0
@@ -50,15 +64,7 @@ catalogs:
     vite: npm:@voidzero-dev/vite-plus-core@1.4.0
   prod:
     '@electric-sql/pglite': ^0.5.10
-  nuxt:
-    nuxt: ^4.6.3
-    vue: ^3.5.44
-    vue-router: ^5.4.0
-    vue-tsc: ^3.3.14
 overrides:
-  # vue-tsc/Volar need the JS TypeScript API (<7); scoped so the workspace stays on TS 7.
-  # vue-tsc/Volar need the JS TypeScript API (<7); only the Nuxt app gets TS 6, the workspace stays on TS 7.
-  '@forum/web>typescript': 6.0.3
   'vite@*': npm:@voidzero-dev/vite-plus-core@1.4.0
   typebox: catalog:backend
 
@@ -70,6 +76,7 @@ trustPolicyExclude:
 peerDependencyRules:
   allowedVersions:
     vite: 1.4.0
-    # vite-plus-core's optional vue-tsc peer is unused outside apps/web (which runs TS 6).
+    # vite-plus-core lists vue-tsc as an optional peer; nothing here type-checks Vue, so its
+    # Volar dependency's TypeScript <7 range does not apply to this TS 7 workspace.
     '@volar/typescript>typescript': '7'
     '@volar/language-service>typescript': '7'

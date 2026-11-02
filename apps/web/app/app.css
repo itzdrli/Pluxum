@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+@import '@heroui/styles';
+
+/*
+ * Graphite on top of HeroUI's dark theme: neutral greys so content carries the colour,
+ * one blue accent shared with the Workbench theme and FantasticFrame.
+ */
+.dark,
+[data-theme='dark'] {
+	--accent: #5aa2ee;
+	--background: #1b1b1b;
+	--foreground: #ececec;
+	--muted: #a1a1a1;
+	--surface: #262626;
+	--surface-secondary: #2b2b2b;
+	--surface-tertiary: #303030;
+	--overlay: #262626;
+	--default: #303030;
+	--field-background: #262626;
+	--border: #444444;
+	--success: #7cc08a;
+	--warning: #d9bb62;
+	--danger: #e0645c;
+}
+
+@theme {
+	--font-sans: 'IBM Plex Sans', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}

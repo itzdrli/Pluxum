@@ -10,7 +10,7 @@ live in `../FORUM_PLAN.md`.
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `host/`                                        | Pluxel application: plugin catalog, services (PGlite database, Workbench, Vault), runtime policy |
 | `host/web/`                                    | Placeholder page served by the host; `host/web/dev/` holds dev-console operations                |
-| `apps/web/`                                    | Forum frontend: Nuxt 4 SSR on its own Nitro process; proxies `/api/forum/**` to the host         |
+| `apps/web/`                                    | Forum frontend: React Router 8 SSR + HeroUI v3; proxies `/api/forum/**` to the host              |
 | `plugins/forum-api/`                           | Fixed HTTP ingress under `/api/forum`                                                            |
 | `plugins/forum-redis/`                         | Provider of the official `Redis` capability (connection catalog, Lua scripts)                    |
 | `plugins/{audit,http,todo}`, `packages/domain` | Template examples kept as a reference until the forum core lands                                 |
@@ -23,13 +23,13 @@ mise trust && mise install
 docker compose -f compose.dev.yaml up -d
 node <pluxel-checkout>/packages/cli/bin/pluxel.mjs source install   # source-linked framework
 vp run hooks:install
-vp run dev        # Pitchfork: `app` (Pluxel host, :5173) and `web` (Nuxt, :3000)
+vp run dev        # Pitchfork: `app` (Pluxel host, :5173) and `web` (React Router, :3000)
 vp run verify     # governance, lint/format/types, tests, production builds
 ```
 
 `REDIS_CONNECTIONS` (in `mise.toml`) seeds the Redis connection catalog; `FORUM_TEST_REDIS_URL` enables the
 live Redis test. Machine-local public origins go in the ignored `mise.local.toml`
-(`PLUXEL_PUBLIC_ORIGIN` for the host/Workbench, `FORUM_WEB_PUBLIC_ORIGIN` for Nuxt).
+(`PLUXEL_PUBLIC_ORIGIN` for the host/Workbench, `FORUM_WEB_PUBLIC_ORIGIN` for the frontend).
 
 When saved runtime state predates a plugin (new or renamed packages), `state.initial` no longer applies;
 persist auto start with `vp exec pluxel dev run host/web/dev/plugins.ts --export autostart` and clear stale
