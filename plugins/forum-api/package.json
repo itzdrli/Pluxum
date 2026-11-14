@@ -15,9 +15,13 @@
 		"typecheck": "vp run check-types"
 	},
 	"dependencies": {
-		"elysia": "catalog:backend"
+		"@forum/domain": "workspace:*",
+		"elysia": "catalog:backend",
+		"valibot": "catalog:validation"
 	},
 	"devDependencies": {
+		"@electric-sql/pglite": "catalog:prod",
+		"@forum/forum-core": "workspace:*",
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",
@@ -28,13 +32,17 @@
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
+		"@forum/forum-core": "*",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel"
 	},
 	"pluxel": {
 		"artifactRoot": "dist",
 		"nodeArtifacts": true,
-		"workbenchArtifacts": true
+		"workbenchArtifacts": true,
+		"pluginPackages": {
+			"@forum/forum-core": "required"
+		}
 	},
 	"publishConfig": {
 		"exports": {

@@ -33,6 +33,7 @@
 		"@types/react-dom": "catalog:frontend",
 		"@types/node": "catalog:tooling",
 		"vite": "catalog:tooling",
-		"vite-plus": "catalog:tooling"
+		"vite-plus": "catalog:tooling",
+		"@forum/domain": "workspace:*"
 	}
 }

@@ -11,6 +11,7 @@
 	},
 	"devDependencies": {
 		"@forum/forum-api": "workspace:*",
+		"@forum/forum-core": "workspace:*",
 		"@forum/forum-redis": "workspace:*",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host-vite": "catalog:pluxel",

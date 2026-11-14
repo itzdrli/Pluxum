@@ -3,9 +3,10 @@ import { defineDevConsole } from '@pluxel/host-vite/console'
 import { Commands } from '@pluxel/services/commands'
 import { ForumRedisPlugin } from '@forum/forum-redis'
 import { ForumApiPlugin } from '@forum/forum-api'
+import { ForumCorePlugin } from '@forum/forum-core'
 
 // Forum infrastructure plugins that must run in every dev session.
-const forumPlugins = [ForumRedisPlugin, ForumApiPlugin] as const
+const forumPlugins = [ForumRedisPlugin, ForumCorePlugin, ForumApiPlugin] as const
 
 // vp exec pluxel dev run host/web/dev/plugins.ts                    → list plugin states
 // vp exec pluxel dev run host/web/dev/plugins.ts --export start     → start forum plugins now

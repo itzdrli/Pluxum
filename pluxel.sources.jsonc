@@ -1,0 +1,6 @@
+{
+	"version": 1,
+	"sources": [],
+	// drizzle-orm types carry private members; forum plugins must share the copy @pluxel/services uses.
+	"singletons": ["drizzle-orm"],
+}

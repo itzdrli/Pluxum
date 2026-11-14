@@ -18,9 +18,6 @@ catalogs:
     redis:
       specifier: ^6.3.0
       version: 6.3.1
-    tinybase:
-      specifier: 10.0.1
-      version: 10.0.1
   frontend:
     '@heroui/react':
       specifier: 3.2.6
@@ -130,6 +127,7 @@ overrides:
   '@pluxel/services': link:.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
   '@pluxel/test': link:.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
   '@pluxel/workbench': link:.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
+  drizzle-orm: link:.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
   valibot-form: link:.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
 
 pnpmfileChecksum: sha256-FUe/pathMkbykmc5s09ZiIL5Je4p3PJpPkUT5kbMoio=
@@ -196,6 +194,9 @@ importers:
         specifier: catalog:frontend
         version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
     devDependencies:
+      '@forum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@react-router/dev':
         specifier: catalog:frontend
         version: 8.5.1(@react-router/serve@8.5.1(react-router@8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2))(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(react-router@8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2)
@@ -229,21 +230,15 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@forum/audit-plugin':
-        specifier: workspace:*
-        version: link:../plugins/audit
       '@forum/forum-api':
         specifier: workspace:*
         version: link:../plugins/forum-api
+      '@forum/forum-core':
+        specifier: workspace:*
+        version: link:../plugins/forum-core
       '@forum/forum-redis':
         specifier: workspace:*
         version: link:../plugins/forum-redis
-      '@forum/http-plugin':
-        specifier: workspace:*
-        version: link:../plugins/http
-      '@forum/todo-plugin':
-        specifier: workspace:*
-        version: link:../plugins/todo
       '@pluxel/commands':
         specifier: link:../.pluxel/sources/6b76349dc399/pluxel+commands-cab504b891c5
         version: link:../.pluxel/sources/6b76349dc399/pluxel+commands-cab504b891c5
@@ -345,6 +340,9 @@ importers:
       '@forum/forum-api':
         specifier: workspace:*
         version: link:../../plugins/forum-api
+      '@forum/forum-core':
+        specifier: workspace:*
+        version: link:../../plugins/forum-core
       '@forum/forum-redis':
         specifier: workspace:*
         version: link:../../plugins/forum-redis
@@ -391,15 +389,36 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5(vitest@5.0.5))(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/audit:
+  plugins/forum-api:
     dependencies:
+      '@forum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/services':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      elysia:
+        specifier: catalog:backend
+        version: 2.0.0-rc.0(exact-mirror@1.2.6(typebox@1.4.3))(openapi-types@12.1.3)(typebox@1.4.3)(typescript@7.0.2)
+      valibot:
+        specifier: catalog:validation
+        version: 1.5.0(typescript@7.0.2)
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: catalog:prod
+        version: 0.5.14
+      '@forum/forum-core':
+        specifier: workspace:*
+        version: link:../forum-core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -413,18 +432,24 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5(vitest@5.0.5))(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/forum-api:
+  plugins/forum-core:
     dependencies:
+      '@forum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-      elysia:
-        specifier: catalog:backend
-        version: 2.0.0-rc.0(exact-mirror@1.2.6(typebox@1.4.3))(openapi-types@12.1.3)(typebox@1.4.3)(typescript@7.0.2)
+      drizzle-orm:
+        specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
+        version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: catalog:prod
+        version: 0.5.14
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -468,77 +493,6 @@ importers:
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
-      typescript:
-        specifier: catalog:tooling
-        version: 7.0.2
-      vite-plus:
-        specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
-      vitest:
-        specifier: catalog:test
-        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5(vitest@5.0.5))(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
-
-  plugins/http:
-    dependencies:
-      '@forum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
-      '@pluxel/core':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-      '@pluxel/services':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-      elysia:
-        specifier: catalog:backend
-        version: 2.0.0-rc.0(exact-mirror@1.2.6(typebox@1.4.3))(openapi-types@12.1.3)(typebox@1.4.3)(typescript@7.0.2)
-    devDependencies:
-      '@forum/todo-plugin':
-        specifier: workspace:*
-        version: link:../todo
-      '@pluxel/cli':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-      '@pluxel/test':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
-      typescript:
-        specifier: catalog:tooling
-        version: 7.0.2
-      vite-plus:
-        specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
-      vitest:
-        specifier: catalog:test
-        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5(vitest@5.0.5))(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
-
-  plugins/todo:
-    dependencies:
-      '@forum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
-      '@pluxel/core':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-      valibot:
-        specifier: catalog:validation
-        version: 1.5.0(typescript@7.0.2)
-    devDependencies:
-      '@forum/audit-plugin':
-        specifier: workspace:*
-        version: link:../audit
-      '@pluxel/cli':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/test':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
-      tinybase:
-        specifier: catalog:backend
-        version: 10.0.1(@electric-sql/pglite@0.5.14)(@sinclair/typebox@0.34.52)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(valibot@1.5.0(typescript@7.0.2))(ws@8.22.1)
       typescript:
         specifier: catalog:tooling
         version: 7.0.2
@@ -2896,104 +2850,6 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  tinybase@10.0.1:
-    resolution: {integrity: sha512-i3HnJcq1NhUmtPuao0wag362F7uaEZLNCVLD89nyrA23jMQRwHkRKcfnE1StsnQE+sxN0hIr7oJbuVYP9D1CkA==}
-    peerDependencies:
-      '@automerge/automerge-repo': ^2.5.6
-      '@capacitor-community/sqlite': ^8.1.1
-      '@cloudflare/workers-types': ^5.20260923.1
-      '@electric-sql/pglite': ^0.5.8
-      '@libsql/client': ^0.18.0
-      '@powersync/common': ^2.3.0
-      '@sinclair/typebox': ^0.34.52
-      '@sqlite.org/sqlite-wasm': ^3.53.4-build1
-      '@supabase/supabase-js': ^2.117.1
-      arktype: ^2.2.3
-      better-sqlite3: ^13.0.3
-      bun: ^1.4.2
-      effect: ^3.22.2
-      expo: ^57.0.24
-      expo-sqlite: ^57.0.3
-      mssql: ^12.7.2
-      partykit: ^0.0.115
-      partysocket: ^1.3.0
-      pg: ^8.23.0
-      postgres: ^3.4.9
-      react: ^19.3.0
-      react-dom: ^19.3.0
-      react-native-mmkv: ^4.3.2
-      react-native-sqlite-storage: ^6.0.1
-      solid-js: ^1.9.15
-      svelte: ^5.57.1
-      tinyjoin: ^0.3.0
-      valibot: ^1.5.0
-      ws: ^8.21.3
-      yjs: ^13.6.33
-      zod: ^4.6.5
-    peerDependenciesMeta:
-      '@automerge/automerge-repo':
-        optional: true
-      '@capacitor-community/sqlite':
-        optional: true
-      '@cloudflare/workers-types':
-        optional: true
-      '@electric-sql/pglite':
-        optional: true
-      '@libsql/client':
-        optional: true
-      '@powersync/common':
-        optional: true
-      '@sinclair/typebox':
-        optional: true
-      '@sqlite.org/sqlite-wasm':
-        optional: true
-      '@supabase/supabase-js':
-        optional: true
-      arktype:
-        optional: true
-      better-sqlite3:
-        optional: true
-      bun:
-        optional: true
-      effect:
-        optional: true
-      expo:
-        optional: true
-      expo-sqlite:
-        optional: true
-      mssql:
-        optional: true
-      partykit:
-        optional: true
-      partysocket:
-        optional: true
-      pg:
-        optional: true
-      postgres:
-        optional: true
-      react:
-        optional: true
-      react-dom:
-        optional: true
-      react-native-mmkv:
-        optional: true
-      react-native-sqlite-storage:
-        optional: true
-      solid-js:
-        optional: true
-      svelte:
-        optional: true
-      tinyjoin:
-        optional: true
-      valibot:
-        optional: true
-      ws:
-        optional: true
-      yjs:
-        optional: true
-      zod:
-        optional: true
-
   tinybench@6.2.2:
     resolution: {integrity: sha512-nIZ2N2dFpjBsg2hgitKu7mA+FvsIJuGJOwysRngmVRRmWgR/UyPjwJj8c/fT/dhm8EkHnF5EOogRf+0Z2qrimA==}
     engines: {node: '>=20.0.0'}
@@ -5263,15 +5119,6 @@ snapshots:
       commander: 2.20.3
       source-map-support: 0.5.21
     optional: true
-
-  tinybase@10.0.1(@electric-sql/pglite@0.5.14)(@sinclair/typebox@0.34.52)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(valibot@1.5.0(typescript@7.0.2))(ws@8.22.1):
-    optionalDependencies:
-      '@electric-sql/pglite': 0.5.14
-      '@sinclair/typebox': 0.34.52
-      react: 19.3.1
-      react-dom: 19.3.1(react@19.3.1)
-      valibot: 1.5.0(typescript@7.0.2)
-      ws: 8.22.1
 
   tinybench@6.2.2: {}
 

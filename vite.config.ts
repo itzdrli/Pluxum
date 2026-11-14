@@ -18,11 +18,9 @@ export default defineConfig({
 				command: [],
 				dependsOn: [
 					'@forum/domain#check-tests',
+					'@forum/forum-core#check-tests',
 					'@forum/forum-api#check-tests',
 					'@forum/forum-redis#check-tests',
-					'@forum/audit-plugin#check-tests',
-					'@forum/http-plugin#check-tests',
-					'@forum/todo-plugin#check-tests',
 					'@forum/web#typecheck',
 				],
 			},

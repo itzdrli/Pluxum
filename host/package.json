@@ -11,11 +11,9 @@
 	},
 	"dependencies": {
 		"@electric-sql/pglite": "catalog:prod",
-		"@forum/audit-plugin": "workspace:*",
 		"@forum/forum-api": "workspace:*",
+		"@forum/forum-core": "workspace:*",
 		"@forum/forum-redis": "workspace:*",
-		"@forum/http-plugin": "workspace:*",
-		"@forum/todo-plugin": "workspace:*",
 		"@pluxel/commands": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",

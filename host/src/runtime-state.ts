@@ -1,47 +1,40 @@
 import { VaultAdminPlugin } from '@pluxel/services/plugins'
 import { pluginNodeAddressOf } from '@pluxel/core'
 import * as v from 'valibot'
-import { ForumApiPlugin } from '@forum/forum-api'
+import { ForumApiConfig, ForumApiPlugin } from '@forum/forum-api'
+import { ForumCorePlugin } from '@forum/forum-core'
 import { ForumRedisConfig, ForumRedisPlugin } from '@forum/forum-redis'
-import { AuditPlugin } from '@forum/audit-plugin'
-import { HttpPlugin } from '@forum/http-plugin'
-import { TodoPlugin } from '@forum/todo-plugin'
 
-// Template example plugins (Audit/Todo/Http) stay as a reference until the forum core runs (M1).
 export const appPlugins = [
 	ForumRedisPlugin,
+	ForumCorePlugin,
 	ForumApiPlugin,
-	AuditPlugin,
-	TodoPlugin,
-	HttpPlugin,
 	VaultAdminPlugin,
 ] as const
-const autoStartPlugins = [ForumRedisPlugin, ForumApiPlugin, VaultAdminPlugin] as const
 
 export function appHostState() {
 	return {
-		initial: { autoStart: autoStartPlugins.map(pluginNodeAddressOf) },
+		initial: { autoStart: appPlugins.map(pluginNodeAddressOf) },
 	}
 }
 
 export type AppConfigEnv = Readonly<{
-	EXAMPLE_TODO_MAX_ITEMS?: string
+	NODE_ENV?: string
+	FORUM_DEV_IDENTITY?: string
 	REDIS_CONNECTIONS?: string
 }>
 
 export function appConfigRecords(env: AppConfigEnv) {
 	return {
-		initial: [
-			{
-				owner: pluginNodeAddressOf(TodoPlugin),
-				config: {
-					maxItems:
-						env.EXAMPLE_TODO_MAX_ITEMS === undefined ? 12 : Number(env.EXAMPLE_TODO_MAX_ITEMS),
-					seedTitle: 'Trace a Todo from React to a Plugin',
-				},
-			},
-			...redisConfigRecord(env.REDIS_CONNECTIONS),
-		],
+		initial: [...redisConfigRecord(env.REDIS_CONNECTIONS), ...devIdentityConfigRecord(env)],
+	}
+}
+
+function parseJsonEnv(name: string, raw: string): unknown {
+	try {
+		return JSON.parse(raw)
+	} catch (cause) {
+		throw new TypeError(`${name} must be valid JSON`, { cause })
 	}
 }
 
@@ -52,16 +45,35 @@ export function appConfigRecords(env: AppConfigEnv) {
  */
 function redisConfigRecord(raw: string | undefined) {
 	if (raw === undefined) return []
-	let connections: unknown
-	try {
-		connections = JSON.parse(raw)
-	} catch (cause) {
-		throw new TypeError('REDIS_CONNECTIONS must be a JSON array', { cause })
-	}
 	return [
 		{
 			owner: pluginNodeAddressOf(ForumRedisPlugin),
-			config: v.parse(ForumRedisConfig, { connections }),
+			config: v.parse(ForumRedisConfig, {
+				connections: parseJsonEnv('REDIS_CONNECTIONS', raw),
+			}),
+		},
+	]
+}
+
+/**
+ * FORUM_DEV_IDENTITY (JSON object: subject?, displayName?, roles?) makes every forum request act
+ * as one account until real login lands (M2). Development only: a production host refuses it here,
+ * and ForumApiPlugin refuses it again at start.
+ */
+function devIdentityConfigRecord(env: AppConfigEnv) {
+	const raw = env.FORUM_DEV_IDENTITY
+	if (raw === undefined || raw === '') return []
+	if (env.NODE_ENV === 'production') {
+		throw new Error('FORUM_DEV_IDENTITY must not be set when NODE_ENV is "production"')
+	}
+	const identity = parseJsonEnv('FORUM_DEV_IDENTITY', raw)
+	if (typeof identity !== 'object' || identity === null || Array.isArray(identity)) {
+		throw new TypeError('FORUM_DEV_IDENTITY must be a JSON object')
+	}
+	return [
+		{
+			owner: pluginNodeAddressOf(ForumApiPlugin),
+			config: v.parse(ForumApiConfig, { devIdentity: { ...identity, enabled: true } }),
 		},
 	]
 }

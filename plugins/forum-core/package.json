@@ -1,5 +1,5 @@
 {
-	"name": "@forum/audit-plugin",
+	"name": "@forum/forum-core",
 	"private": true,
 	"type": "module",
 	"exports": {
@@ -14,17 +14,24 @@
 		"test": "vp run check-tests",
 		"typecheck": "vp run check-types"
 	},
-	"dependencies": {},
+	"dependencies": {
+		"@forum/domain": "workspace:*",
+		"drizzle-orm": "catalog:backend"
+	},
 	"devDependencies": {
+		"@electric-sql/pglite": "catalog:prod",
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/host": "catalog:pluxel",
+		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/test": "catalog:pluxel",
 		"typescript": "catalog:tooling",
 		"vite-plus": "catalog:tooling",
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
-		"@pluxel/core": "catalog:pluxel"
+		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/services": "catalog:pluxel"
 	},
 	"pluxel": {
 		"artifactRoot": "dist",
