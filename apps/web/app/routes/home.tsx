@@ -1,4 +1,4 @@
-import type { CategoryDto, RecentThreadDto } from '@forum/domain'
+import type { CategoryDto, RecentThreadDto } from '@pluxum/domain'
 import { FolderPlus, Hash, LayoutList, MessageSquare, MessagesSquare, Plus } from 'lucide-react'
 import { useState } from 'react'
 import {
@@ -28,7 +28,7 @@ import { keepOnThemeChange } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
 
 export function meta(): Route.MetaDescriptors {
-	return [{ title: 'Pluxel Forum' }, { name: 'description', content: '万物皆插件的论坛' }]
+	return [{ title: 'Pluxum' }, { name: 'description', content: '万物皆插件的论坛' }]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

@@ -1,4 +1,4 @@
-import type { Role } from '@forum/domain'
+import type { Role } from '@pluxum/domain'
 import { CalendarDays, MessagesSquare, Pencil } from 'lucide-react'
 import { useState } from 'react'
 import { data, Form, useNavigation, useRouteLoaderData } from 'react-router'
@@ -30,7 +30,7 @@ const ROLE_LABELS: Readonly<Record<Role, string>> = {
 }
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
-	return [{ title: `${loaderData ? `${loaderData.user.displayName} · ` : ''}Pluxel Forum` }]
+	return [{ title: `${loaderData ? `${loaderData.user.displayName} · ` : ''}Pluxum` }]
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {

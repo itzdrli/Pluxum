@@ -1,4 +1,4 @@
-import type { CategoryDto, ThreadDto } from '@forum/domain'
+import type { CategoryDto, ThreadDto } from '@pluxum/domain'
 import { Hash, Lock, MessageSquare, Pin } from 'lucide-react'
 import { Link } from 'react-router'
 

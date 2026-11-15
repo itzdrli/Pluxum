@@ -1,4 +1,4 @@
-import type { UserProfileDto } from '@forum/domain'
+import type { UserProfileDto } from '@pluxum/domain'
 import { ImageUp, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useRevalidator } from 'react-router'

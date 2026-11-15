@@ -1,4 +1,4 @@
-import { LIMITS, type CategoryDto, type SearchHitDto } from '@forum/domain'
+import { LIMITS, type CategoryDto, type SearchHitDto } from '@pluxum/domain'
 import { Search, SearchX } from 'lucide-react'
 import { Form, Link, useNavigation } from 'react-router'
 
@@ -50,7 +50,7 @@ export function buildSearchHitHref(
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
 	const query = loaderData?.query
-	return [{ title: `${query ? `搜索“${query}” · ` : '搜索 · '}Pluxel Forum` }]
+	return [{ title: `${query ? `搜索“${query}” · ` : '搜索 · '}Pluxum` }]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

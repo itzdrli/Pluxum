@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { composerExtensions, markdownOf } from '../app/components/composer/markdown'
 // The renderer itself, straight from the plugin's source: a pure function of marked. Importing
 // the plugin package would start the Pluxel plugin class, which a frontend test has no host for.
-import { renderMarkdown } from '../../../plugins/forum-markdown/src/render'
+import { renderMarkdown } from '../../../plugins/markdown/src/render'
 
 function roundTrip(source: string): string {
 	const editor = new Editor({

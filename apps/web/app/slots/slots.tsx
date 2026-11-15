@@ -1,4 +1,4 @@
-import type { MetaDto, PostDto, ThreadDto, UiSlot, UserProfileDto } from '@forum/domain'
+import type { MetaDto, PostDto, ThreadDto, UiSlot, UserProfileDto } from '@pluxum/domain'
 import type { ComponentType } from 'react'
 import { useRouteLoaderData } from 'react-router'
 

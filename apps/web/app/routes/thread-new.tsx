@@ -11,7 +11,7 @@ import { keepOnThemeChange } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
-	return [{ title: `发布主题${loaderData ? ` · ${loaderData.category.name}` : ''} · Pluxel Forum` }]
+	return [{ title: `发布主题${loaderData ? ` · ${loaderData.category.name}` : ''} · Pluxum` }]
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {

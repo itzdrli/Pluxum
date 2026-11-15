@@ -1,4 +1,4 @@
-import type { MetaDto } from '@forum/domain'
+import type { MetaDto } from '@pluxum/domain'
 import { Bell } from 'lucide-react'
 import { Link, useLocation, useRouteLoaderData } from 'react-router'
 

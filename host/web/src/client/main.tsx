@@ -6,7 +6,7 @@ import './styles.css'
 function HostPlaceholder() {
 	return (
 		<main className="placeholder">
-			<h1>Pluxel Forum host</h1>
+			<h1>Pluxum host</h1>
 			<p>
 				论坛前台是独立的 Nuxt 应用（<code>apps/web</code>），开发时在 <code>:8082</code>。
 			</p>

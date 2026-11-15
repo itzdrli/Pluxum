@@ -1,9 +1,0 @@
-{
-	"extends": "../../tsconfig.base.json",
-	"compilerOptions": {
-		"paths": {
-			"@pluxel/plugin-redis": ["../forum-auth/node_modules/@pluxel/plugin-redis/dist/index.d.mts"]
-		}
-	},
-	"include": ["src/**/*.ts", "tests/**/*.ts", "vitest.config.ts"]
-}

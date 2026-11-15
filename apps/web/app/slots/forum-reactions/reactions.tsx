@@ -1,4 +1,4 @@
-import type { PostDto } from '@forum/domain'
+import type { PostDto } from '@pluxum/domain'
 import { ThumbsUp } from 'lucide-react'
 import { useFetcher, useRouteLoaderData } from 'react-router'
 

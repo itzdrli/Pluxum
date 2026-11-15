@@ -1,4 +1,4 @@
-import { ForumCorePlugin } from '@forum/forum-core'
+import { ForumCorePlugin } from '@pluxum/core'
 import { defineDevConsole } from '@pluxel/host-vite/console'
 
 const categories = [
@@ -9,7 +9,7 @@ const categories = [
 ] as const
 
 const welcome = {
-	title: '欢迎来到 Pluxel Forum',
+	title: '欢迎来到 Pluxum',
 	body: '这是开发种子脚本写入的第一个主题。\n\n可以在这里试试回复、编辑和删除。',
 	replies: ['第一条回复，用来看列表和分页的样子。', '锁定主题以后，普通成员就不能再回复了。'],
 }

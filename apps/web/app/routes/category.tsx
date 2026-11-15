@@ -13,10 +13,10 @@ import { categoryStageShouldRevalidate } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
-	if (!loaderData) return [{ title: 'Pluxel Forum' }]
+	if (!loaderData) return [{ title: 'Pluxum' }]
 	const { category } = loaderData
 	return [
-		{ title: `${category.name} · Pluxel Forum` },
+		{ title: `${category.name} · Pluxum` },
 		...(category.description === ''
 			? []
 			: [{ name: 'description', content: category.description }]),

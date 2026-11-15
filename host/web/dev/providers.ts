@@ -3,8 +3,8 @@ import { hostStatePatch, requirePluginHostCoordinator } from '@pluxel/host/inter
 import { defineDevConsole } from '@pluxel/host-vite/console'
 import { Redis } from '@pluxel/plugin-redis'
 import { S3 } from '@pluxel/plugin-storage'
-import { ForumStoragePlugin } from '@forum/forum-attachments'
-import { ForumRedisPlugin } from '@forum/forum-redis'
+import { ForumStoragePlugin } from '@pluxum/attachments'
+import { ForumRedisPlugin } from '@pluxum/redis'
 
 // vp exec pluxel dev run host/web/dev/providers.ts → route `Redis` and `S3` to forum providers
 export default defineDevConsole(async (dev) => {

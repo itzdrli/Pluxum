@@ -1,4 +1,4 @@
-import type { UserDto } from '@forum/domain'
+import type { UserDto } from '@pluxum/domain'
 
 import { avatarUrlOf } from '../../slots/forum-attachments/shared'
 import { Avatar } from '../ui/display'

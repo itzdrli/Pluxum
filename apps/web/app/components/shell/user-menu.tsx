@@ -1,4 +1,4 @@
-import type { MetaDto, UserDto } from '@forum/domain'
+import type { MetaDto, UserDto } from '@pluxum/domain'
 import { Dropdown } from '@heroui/react'
 import { ChevronDown, LogIn, LogOut, MonitorSmartphone, ShieldAlert, UserRound } from 'lucide-react'
 import { useRef } from 'react'

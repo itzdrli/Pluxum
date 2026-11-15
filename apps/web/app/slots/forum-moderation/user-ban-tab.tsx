@@ -1,4 +1,4 @@
-import type { UserBanStatusDto, UserProfileDto } from '@forum/domain'
+import type { UserBanStatusDto, UserProfileDto } from '@pluxum/domain'
 import { Ban, ShieldCheck, Unlock } from 'lucide-react'
 import { useState } from 'react'
 import { useFetcher, useRouteLoaderData } from 'react-router'

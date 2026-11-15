@@ -17,7 +17,7 @@ import { Crumbs, Notice, PageHeader, Panel, SectionLabel } from '../components/u
 import { FORUM_SAMPLE, forumLibrary, forumSystemPrompt, isForumPath } from '../openui/library'
 
 export function meta(): Route.MetaDescriptors {
-	return [{ title: 'OpenUI 演示 · Pluxel Forum' }, { name: 'robots', content: 'noindex' }]
+	return [{ title: 'OpenUI 演示 · Pluxum' }, { name: 'robots', content: 'noindex' }]
 }
 
 // Development only: production builds answer 404.

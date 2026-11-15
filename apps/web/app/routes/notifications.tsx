@@ -1,4 +1,4 @@
-import type { NotificationDto } from '@forum/domain'
+import type { NotificationDto } from '@pluxum/domain'
 import { Bell, BellOff, Check, CheckCheck, ExternalLink, LogIn } from 'lucide-react'
 import { data, Form, Link, useFetcher, useNavigation } from 'react-router'
 
@@ -47,7 +47,7 @@ export function resolveNotificationHref(
 }
 
 export function meta(): Route.MetaDescriptors {
-	return [{ title: '通知 · Pluxel Forum' }]
+	return [{ title: '通知 · Pluxum' }]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

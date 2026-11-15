@@ -1,5 +1,5 @@
 {
-	"name": "@forum/web",
+	"name": "@pluxum/web",
 	"private": true,
 	"type": "module",
 	"scripts": {
@@ -47,7 +47,7 @@
 		"@types/node": "catalog:tooling",
 		"vite": "catalog:tooling",
 		"vite-plus": "catalog:tooling",
-		"@forum/domain": "workspace:*",
+		"@pluxum/domain": "workspace:*",
 		"happy-dom": "catalog:test",
 		"vitest": "catalog:test"
 	}

@@ -1,4 +1,4 @@
-import type { UserDto } from '@forum/domain'
+import type { UserDto } from '@pluxum/domain'
 
 export const EXT_ID = 'forum-attachments'
 

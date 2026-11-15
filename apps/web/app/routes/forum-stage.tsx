@@ -1,4 +1,4 @@
-import type { CategoryDto } from '@forum/domain'
+import type { CategoryDto } from '@pluxum/domain'
 import { Hash, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation, useParams, useRouteLoaderData } from 'react-router'

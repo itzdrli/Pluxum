@@ -1,4 +1,4 @@
-import type { PreviewDto } from '@forum/domain'
+import type { PreviewDto } from '@pluxum/domain'
 import { Label, TextArea, TextField } from '@heroui/react'
 import { Code, Type } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'

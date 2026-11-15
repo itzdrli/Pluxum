@@ -1,4 +1,4 @@
-import type { PostDto } from '@forum/domain'
+import type { PostDto } from '@pluxum/domain'
 import { Download, FileText } from 'lucide-react'
 
 import { attachmentsOf, EXT_ID, formatSize } from './shared'

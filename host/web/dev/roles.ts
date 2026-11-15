@@ -1,4 +1,4 @@
-import { ForumCorePlugin } from '@forum/forum-core'
+import { ForumCorePlugin } from '@pluxum/core'
 import { defineDevConsole } from '@pluxel/host-vite/console'
 
 // vp exec pluxel dev run host/web/dev/roles.ts --input '{"userId":"<id>"}'

@@ -291,7 +291,7 @@ export function forumSystemPrompt(): string {
 export const FORUM_SAMPLE = `root = Answer([intro, summary, refs, quote, more, next])
 intro = Paragraph("关于在论坛里接入登录，目前的讨论集中在两个主题里。")
 summary = Summary("讨论要点", ["登录走 Zitadel 的 OIDC，授权码加 PKCE。", "会话存在 Redis，可以退出所有设备。", "Workbench 的登录另外配置。"])
-refs = ThreadCard("/c/general", "欢迎来到 Pluxel Forum", "综合讨论", 3, "介绍论坛目前能做什么。")
+refs = ThreadCard("/c/general", "欢迎来到 Pluxum", "综合讨论", 3, "介绍论坛目前能做什么。")
 quote = PostQuote("/c/general", "管理员", "写操作会检查 Origin 头，跨站请求一律拒绝。")
 more = LinkList([LinkItem("全部版块", "/"), LinkItem("综合讨论", "/c/general")])
 next = Actions([ActionButton("Workbench 怎么登录？", @ToAssistant("Workbench 怎么登录？"), true), ActionButton("打开版块列表", @OpenUrl("/"))])`

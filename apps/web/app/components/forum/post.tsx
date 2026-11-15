@@ -1,4 +1,4 @@
-import type { PostDto } from '@forum/domain'
+import type { PostDto } from '@pluxum/domain'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Form, Link, useActionData, useNavigation } from 'react-router'

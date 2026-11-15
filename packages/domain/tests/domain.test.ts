@@ -15,7 +15,7 @@ import {
 	type ForumResource,
 	type PermissionPolicy,
 	type Principal,
-} from '@forum/domain'
+} from '@pluxum/domain'
 
 const member: Principal = { userId: 'u-member', roles: ['member'] }
 const moderator: Principal = { userId: 'u-mod', roles: ['member', 'moderator'] }

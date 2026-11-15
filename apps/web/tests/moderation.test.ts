@@ -1,4 +1,4 @@
-import { isUiSlot } from '@forum/domain'
+import { isUiSlot } from '@pluxum/domain'
 import { describe, expect, it } from 'vitest'
 
 import { buildPageHref } from '../app/components/ui/pager'

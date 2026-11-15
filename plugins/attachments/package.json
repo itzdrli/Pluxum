@@ -1,0 +1,62 @@
+{
+	"name": "@pluxum/attachments",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"@pluxel/hmr": "./src/index.ts",
+			"default": "./dist/index.mjs"
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"build": "vp run compile",
+		"test": "vp run check-tests",
+		"typecheck": "vp run check-types"
+	},
+	"dependencies": {
+		"@pluxum/domain": "workspace:*",
+		"drizzle-orm": "catalog:backend",
+		"s3mini": "catalog:backend",
+		"typebox": "catalog:backend",
+		"valibot": "catalog:validation"
+	},
+	"devDependencies": {
+		"@electric-sql/pglite": "catalog:prod",
+		"@pluxum/api": "workspace:*",
+		"@pluxum/auth": "workspace:*",
+		"@pluxum/core": "workspace:*",
+		"@pluxel/cli": "catalog:pluxel",
+		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/host": "catalog:pluxel",
+		"@pluxel/plugin-storage": "catalog:pluxel",
+		"@pluxel/services": "catalog:pluxel",
+		"@pluxel/test": "catalog:pluxel",
+		"typescript": "catalog:tooling",
+		"vite-plus": "catalog:tooling",
+		"vitest": "catalog:test"
+	},
+	"peerDependencies": {
+		"@pluxum/api": "*",
+		"@pluxum/core": "*",
+		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/plugin-storage": "catalog:pluxel",
+		"@pluxel/services": "catalog:pluxel"
+	},
+	"pluxel": {
+		"artifactRoot": "dist",
+		"nodeArtifacts": true,
+		"workbenchArtifacts": true,
+		"pluginPackages": {
+			"@pluxum/api": "required",
+			"@pluxum/core": "required",
+			"@pluxel/plugin-storage": "required"
+		}
+	},
+	"publishConfig": {
+		"exports": {
+			".": "./dist/index.mjs",
+			"./package.json": "./package.json"
+		}
+	}
+}

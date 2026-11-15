@@ -1,4 +1,4 @@
-import { LIMITS, type MetaDto } from '@forum/domain'
+import { LIMITS, type MetaDto } from '@pluxum/domain'
 import { Search } from 'lucide-react'
 import { Form, Link, NavLink, useLocation } from 'react-router'
 
@@ -57,7 +57,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 						>
 							P
 						</span>
-						<span className="hidden text-[14px] min-[400px]:inline">Pluxel Forum</span>
+						<span className="hidden text-[14px] min-[400px]:inline">Pluxum</span>
 					</Link>
 					<nav aria-label="主导航" className="ml-2 flex items-center gap-1">
 						<NavLink to="/" className={() => navClass({ isActive: inForum })} end>
@@ -111,7 +111,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 			{!isSplitStage && (
 				<footer className="border-line text-ink-weak border-t text-[12px]">
 					<div className="mx-auto flex h-12 w-full max-w-[1760px] items-center justify-between px-4 lg:px-6">
-						<span>Pluxel Forum</span>
+						<span>Pluxum</span>
 						<span>万物皆插件</span>
 					</div>
 				</footer>

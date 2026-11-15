@@ -1,4 +1,4 @@
-import type { CategoryDto } from '@forum/domain'
+import type { CategoryDto } from '@pluxum/domain'
 import { buttonVariants } from '@heroui/react'
 import {
 	ArrowDown,

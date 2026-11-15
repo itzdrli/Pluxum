@@ -1,5 +1,5 @@
 {
-	"name": "@forum/domain",
+	"name": "@pluxum/domain",
 	"private": true,
 	"type": "module",
 	"exports": {

@@ -18,7 +18,7 @@ import type {
 	ThreadDto,
 	UserDto,
 	UserProfileDto,
-} from '@forum/domain'
+} from '@pluxum/domain'
 import { data } from 'react-router'
 
 const DEFAULT_API_INTERNAL = 'http://127.0.0.1:5173'

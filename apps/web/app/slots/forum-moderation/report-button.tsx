@@ -1,4 +1,4 @@
-import type { PostDto } from '@forum/domain'
+import type { PostDto } from '@pluxum/domain'
 import { Modal } from '@heroui/react'
 import { Check, Flag } from 'lucide-react'
 import { useState } from 'react'

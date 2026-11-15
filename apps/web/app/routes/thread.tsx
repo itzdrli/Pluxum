@@ -38,7 +38,7 @@ import type { loader as rootLoader } from '../root'
 import { ThreadSidebarSlots, useHasFilledSlot } from '../slots/slots'
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
-	return [{ title: `${loaderData ? `${loaderData.thread.title} · ` : ''}Pluxel Forum` }]
+	return [{ title: `${loaderData ? `${loaderData.thread.title} · ` : ''}Pluxum` }]
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {

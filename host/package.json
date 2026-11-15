@@ -1,5 +1,5 @@
 {
-	"name": "@forum/host",
+	"name": "@pluxum/host",
 	"private": true,
 	"type": "module",
 	"scripts": {
@@ -11,16 +11,16 @@
 	},
 	"dependencies": {
 		"@electric-sql/pglite": "catalog:prod",
-		"@forum/forum-api": "workspace:*",
-		"@forum/forum-attachments": "workspace:*",
-		"@forum/forum-auth": "workspace:*",
-		"@forum/forum-core": "workspace:*",
-		"@forum/forum-markdown": "workspace:*",
-		"@forum/forum-moderation": "workspace:*",
-		"@forum/forum-notifications": "workspace:*",
-		"@forum/forum-reactions": "workspace:*",
-		"@forum/forum-redis": "workspace:*",
-		"@forum/forum-search": "workspace:*",
+		"@pluxum/api": "workspace:*",
+		"@pluxum/attachments": "workspace:*",
+		"@pluxum/auth": "workspace:*",
+		"@pluxum/core": "workspace:*",
+		"@pluxum/markdown": "workspace:*",
+		"@pluxum/moderation": "workspace:*",
+		"@pluxum/notifications": "workspace:*",
+		"@pluxum/reactions": "workspace:*",
+		"@pluxum/redis": "workspace:*",
+		"@pluxum/search": "workspace:*",
 		"@pluxel/commands": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",
@@ -39,7 +39,7 @@
 		"valibot": "catalog:validation"
 	},
 	"devDependencies": {
-		"@forum/host-web": "workspace:*",
+		"@pluxum/host-web": "workspace:*",
 		"@mantine/core": "catalog:frontend",
 		"@mantine/hooks": "catalog:frontend",
 		"@pluxel/cli": "catalog:pluxel",

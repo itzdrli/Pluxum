@@ -2,7 +2,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { defineDevConsole } from '@pluxel/host-vite/console'
 import { Vault } from '@pluxel/services/vault'
-import { ForumStoragePlugin } from '@forum/forum-attachments'
+import { ForumStoragePlugin } from '@pluxum/attachments'
 
 // Vault namespaces belong to their owner, so the credential record must be written through the
 // storage plugin's own Context; a record written by this console lands in the console's namespace

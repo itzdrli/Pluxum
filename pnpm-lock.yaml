@@ -288,7 +288,7 @@ importers:
         specifier: catalog:frontend
         version: 4.6.7
     devDependencies:
-      '@forum/domain':
+      '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
       '@react-router/dev':
@@ -330,36 +330,36 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@forum/forum-api':
+      '@pluxum/api':
         specifier: workspace:*
-        version: link:../plugins/forum-api
-      '@forum/forum-attachments':
+        version: link:../plugins/api
+      '@pluxum/attachments':
         specifier: workspace:*
-        version: link:../plugins/forum-attachments
-      '@forum/forum-auth':
+        version: link:../plugins/attachments
+      '@pluxum/auth':
         specifier: workspace:*
-        version: link:../plugins/forum-auth
-      '@forum/forum-core':
+        version: link:../plugins/auth
+      '@pluxum/core':
         specifier: workspace:*
-        version: link:../plugins/forum-core
-      '@forum/forum-markdown':
+        version: link:../plugins/core
+      '@pluxum/markdown':
         specifier: workspace:*
-        version: link:../plugins/forum-markdown
-      '@forum/forum-moderation':
+        version: link:../plugins/markdown
+      '@pluxum/moderation':
         specifier: workspace:*
-        version: link:../plugins/forum-moderation
-      '@forum/forum-notifications':
+        version: link:../plugins/moderation
+      '@pluxum/notifications':
         specifier: workspace:*
-        version: link:../plugins/forum-notifications
-      '@forum/forum-reactions':
+        version: link:../plugins/notifications
+      '@pluxum/reactions':
         specifier: workspace:*
-        version: link:../plugins/forum-reactions
-      '@forum/forum-redis':
+        version: link:../plugins/reactions
+      '@pluxum/redis':
         specifier: workspace:*
-        version: link:../plugins/forum-redis
-      '@forum/forum-search':
+        version: link:../plugins/redis
+      '@pluxum/search':
         specifier: workspace:*
-        version: link:../plugins/forum-search
+        version: link:../plugins/search
       '@pluxel/commands':
         specifier: link:../.pluxel/sources/6b76349dc399/pluxel+commands-cab504b891c5
         version: link:../.pluxel/sources/6b76349dc399/pluxel+commands-cab504b891c5
@@ -409,7 +409,7 @@ importers:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
     devDependencies:
-      '@forum/host-web':
+      '@pluxum/host-web':
         specifier: workspace:*
         version: link:web
       '@mantine/core':
@@ -461,21 +461,21 @@ importers:
         specifier: catalog:frontend
         version: 19.3.1(react@19.3.1)
     devDependencies:
-      '@forum/forum-api':
+      '@pluxum/api':
         specifier: workspace:*
-        version: link:../../plugins/forum-api
-      '@forum/forum-core':
+        version: link:../../plugins/api
+      '@pluxum/core':
         specifier: workspace:*
-        version: link:../../plugins/forum-core
-      '@forum/forum-markdown':
+        version: link:../../plugins/core
+      '@pluxum/markdown':
         specifier: workspace:*
-        version: link:../../plugins/forum-markdown
-      '@forum/forum-reactions':
+        version: link:../../plugins/markdown
+      '@pluxum/reactions':
         specifier: workspace:*
-        version: link:../../plugins/forum-reactions
-      '@forum/forum-redis':
+        version: link:../../plugins/reactions
+      '@pluxum/redis':
         specifier: workspace:*
-        version: link:../../plugins/forum-redis
+        version: link:../../plugins/redis
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
@@ -519,9 +519,9 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/forum-api:
+  plugins/api:
     dependencies:
-      '@forum/domain':
+      '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
       '@pluxel/core':
@@ -540,12 +540,12 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@forum/forum-auth':
+      '@pluxum/auth':
         specifier: workspace:*
-        version: link:../forum-auth
-      '@forum/forum-core':
+        version: link:../auth
+      '@pluxum/core':
         specifier: workspace:*
-        version: link:../forum-core
+        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -565,9 +565,9 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/forum-attachments:
+  plugins/attachments:
     dependencies:
-      '@forum/domain':
+      '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
       '@pluxel/core':
@@ -595,15 +595,15 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@forum/forum-api':
+      '@pluxum/api':
         specifier: workspace:*
-        version: link:../forum-api
-      '@forum/forum-auth':
+        version: link:../api
+      '@pluxum/auth':
         specifier: workspace:*
-        version: link:../forum-auth
-      '@forum/forum-core':
+        version: link:../auth
+      '@pluxum/core':
         specifier: workspace:*
-        version: link:../forum-core
+        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -623,9 +623,9 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/forum-auth:
+  plugins/auth:
     dependencies:
-      '@forum/domain':
+      '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
       '@pluxel/core':
@@ -647,12 +647,12 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@forum/forum-core':
+      '@pluxum/core':
         specifier: workspace:*
-        version: link:../forum-core
-      '@forum/forum-redis':
+        version: link:../core
+      '@pluxum/redis':
         specifier: workspace:*
-        version: link:../forum-redis
+        version: link:../redis
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -675,9 +675,9 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/forum-core:
+  plugins/core:
     dependencies:
-      '@forum/domain':
+      '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
       '@pluxel/core':
@@ -718,7 +718,7 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/forum-markdown:
+  plugins/markdown:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
@@ -730,12 +730,12 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@forum/domain':
+      '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
-      '@forum/forum-core':
+      '@pluxum/core':
         specifier: workspace:*
-        version: link:../forum-core
+        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -758,9 +758,9 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/forum-moderation:
+  plugins/moderation:
     dependencies:
-      '@forum/domain':
+      '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
       '@pluxel/core':
@@ -782,15 +782,15 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@forum/forum-api':
+      '@pluxum/api':
         specifier: workspace:*
-        version: link:../forum-api
-      '@forum/forum-auth':
+        version: link:../api
+      '@pluxum/auth':
         specifier: workspace:*
-        version: link:../forum-auth
-      '@forum/forum-core':
+        version: link:../auth
+      '@pluxum/core':
         specifier: workspace:*
-        version: link:../forum-core
+        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -810,9 +810,9 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/forum-notifications:
+  plugins/notifications:
     dependencies:
-      '@forum/domain':
+      '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
       '@pluxel/core':
@@ -831,15 +831,15 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@forum/forum-api':
+      '@pluxum/api':
         specifier: workspace:*
-        version: link:../forum-api
-      '@forum/forum-auth':
+        version: link:../api
+      '@pluxum/auth':
         specifier: workspace:*
-        version: link:../forum-auth
-      '@forum/forum-core':
+        version: link:../auth
+      '@pluxum/core':
         specifier: workspace:*
-        version: link:../forum-core
+        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -859,9 +859,9 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/forum-reactions:
+  plugins/reactions:
     dependencies:
-      '@forum/domain':
+      '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
       '@pluxel/core':
@@ -880,15 +880,15 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@forum/forum-api':
+      '@pluxum/api':
         specifier: workspace:*
-        version: link:../forum-api
-      '@forum/forum-auth':
+        version: link:../api
+      '@pluxum/auth':
         specifier: workspace:*
-        version: link:../forum-auth
-      '@forum/forum-core':
+        version: link:../auth
+      '@pluxum/core':
         specifier: workspace:*
-        version: link:../forum-core
+        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -908,7 +908,7 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/forum-redis:
+  plugins/redis:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
@@ -942,7 +942,7 @@ importers:
         specifier: catalog:test
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
 
-  plugins/forum-search:
+  plugins/search:
     dependencies:
       '@node-rs/jieba':
         specifier: catalog:backend
@@ -963,18 +963,18 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@forum/domain':
+      '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
-      '@forum/forum-api':
+      '@pluxum/api':
         specifier: workspace:*
-        version: link:../forum-api
-      '@forum/forum-auth':
+        version: link:../api
+      '@pluxum/auth':
         specifier: workspace:*
-        version: link:../forum-auth
-      '@forum/forum-core':
+        version: link:../auth
+      '@pluxum/core':
         specifier: workspace:*
-        version: link:../forum-core
+        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c

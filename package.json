@@ -37,7 +37,7 @@
 			},
 			"local": {
 				"root": "host/web",
-				"command": "vp run @forum/host#dev:server"
+				"command": "vp run @pluxum/host#dev:server"
 			}
 		}
 	}

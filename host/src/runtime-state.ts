@@ -1,20 +1,16 @@
 import { VaultAdminPlugin } from '@pluxel/services/plugins'
 import { pluginNodeAddressOf } from '@pluxel/core'
 import * as v from 'valibot'
-import { ForumApiPlugin } from '@forum/forum-api'
-import {
-	ForumAttachmentsPlugin,
-	ForumStorageConfig,
-	ForumStoragePlugin,
-} from '@forum/forum-attachments'
-import { ForumAuthConfig, ForumAuthPlugin } from '@forum/forum-auth'
-import { ForumCorePlugin } from '@forum/forum-core'
-import { ForumMarkdownPlugin } from '@forum/forum-markdown'
-import { ForumModerationPlugin } from '@forum/forum-moderation'
-import { ForumNotificationsPlugin } from '@forum/forum-notifications'
-import { ForumReactionsPlugin } from '@forum/forum-reactions'
-import { ForumRedisConfig, ForumRedisPlugin } from '@forum/forum-redis'
-import { ForumSearchPlugin } from '@forum/forum-search'
+import { ForumApiPlugin } from '@pluxum/api'
+import { ForumAttachmentsPlugin, ForumStorageConfig, ForumStoragePlugin } from '@pluxum/attachments'
+import { ForumAuthConfig, ForumAuthPlugin } from '@pluxum/auth'
+import { ForumCorePlugin } from '@pluxum/core'
+import { ForumMarkdownPlugin } from '@pluxum/markdown'
+import { ForumModerationPlugin } from '@pluxum/moderation'
+import { ForumNotificationsPlugin } from '@pluxum/notifications'
+import { ForumReactionsPlugin } from '@pluxum/reactions'
+import { ForumRedisConfig, ForumRedisPlugin } from '@pluxum/redis'
+import { ForumSearchPlugin } from '@pluxum/search'
 
 export const appPlugins = [
 	ForumRedisPlugin,

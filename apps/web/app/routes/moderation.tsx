@@ -3,7 +3,7 @@ import type {
 	ModerationQueueStatus,
 	ModerationReportDto,
 	ModerationReportStatus,
-} from '@forum/domain'
+} from '@pluxum/domain'
 import {
 	Check,
 	ClipboardList,
@@ -115,7 +115,7 @@ export function formatModerationLogAction(
 }
 
 export function meta(): Route.MetaDescriptors {
-	return [{ title: '审核队列 · Pluxel Forum' }]
+	return [{ title: '审核队列 · Pluxum' }]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
