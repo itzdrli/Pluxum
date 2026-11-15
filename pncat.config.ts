@@ -21,6 +21,7 @@ export default defineConfig({
 				/^@tabler\//,
 				/^@tailwindcss\//,
 				/^@tanstack\//,
+				/^@tiptap\//,
 				/^@types\/react(?:-dom)?$/,
 				/^@vibrant\//,
 				'@vitejs/plugin-react',
@@ -39,7 +40,7 @@ export default defineConfig({
 		},
 		{
 			name: 'test',
-			match: [/^@testing-library\//, 'playwright', 'vitest'],
+			match: [/^@testing-library\//, 'happy-dom', 'playwright', 'vitest'],
 			priority: 30,
 		},
 		{
@@ -56,9 +57,11 @@ export default defineConfig({
 				'fractional-indexing',
 				'graphql',
 				'graphql-yoga',
+				'marked',
 				'nanoid',
 				'qrcode',
 				'redis',
+				'sanitize-html',
 				'tinybase',
 				'valibot',
 				'wretch',

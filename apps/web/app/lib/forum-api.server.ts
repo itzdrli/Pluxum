@@ -84,6 +84,43 @@ export function orThrow<T>(result: ApiResult<T>): T {
 	return result.value
 }
 
+/** How long one visitor's `/meta` answer is reused. Plugin and role changes show within this time. */
+const META_TTL_MS = 5000
+const META_CACHE_MAX = 500
+
+const metaCache = new Map<string, Readonly<{ expires: number; meta: MetaDto }>>()
+
+/**
+ * What `/meta` depends on in a request: the forum session. Guests share one entry, which is what
+ * keeps crawlers and anonymous readers from costing an API call per page.
+ */
+function metaCacheKey(request: Request): string {
+	return (request.headers.get('cookie') ?? '')
+		.split(';')
+		.map((part) => part.trim())
+		.filter((part) => /^(?:__Host-)?forum_session=/.test(part))
+		.join(';')
+}
+
+/** `/meta`, answered from a short-lived per-session cache. Failures are never cached. */
+async function cachedMeta(request: Request): Promise<ApiResult<MetaDto>> {
+	const key = metaCacheKey(request)
+	const now = Date.now()
+	const hit = metaCache.get(key)
+	if (hit !== undefined && hit.expires > now) return { ok: true, value: hit.meta }
+	const result = await call<MetaDto>(request, '/meta')
+	if (result.ok) {
+		// Re-inserting moves the key to the end, so the oldest entry is always first.
+		metaCache.delete(key)
+		metaCache.set(key, { expires: now + META_TTL_MS, meta: result.value })
+		if (metaCache.size > META_CACHE_MAX) {
+			const oldest = metaCache.keys().next()
+			if (!oldest.done) metaCache.delete(oldest.value)
+		}
+	}
+	return result
+}
+
 function pageQuery(page: number): string {
 	return page > 1 ? `?page=${page}` : ''
 }
@@ -95,7 +132,7 @@ export function pageParam(request: Request): number {
 }
 
 export const forumApi = {
-	meta: (request: Request) => call<MetaDto>(request, '/meta'),
+	meta: cachedMeta,
 	categories: (request: Request) => call<{ items: CategoryDto[] }>(request, '/categories'),
 	createCategory: (
 		request: Request,
@@ -131,6 +168,12 @@ export const forumApi = {
 		}),
 	deletePost: (request: Request, id: string) =>
 		call<null>(request, `/posts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+	/** A write action of an extension plugin; the answer's shape is the extension's own. */
+	extAction: (request: Request, extId: string, action: string, body: unknown) =>
+		call<unknown>(request, `/ext/${encodeURIComponent(extId)}/${encodeURIComponent(action)}`, {
+			method: 'POST',
+			body,
+		}),
 }
 
 /** A text form field; a missing or file value reads as empty. */

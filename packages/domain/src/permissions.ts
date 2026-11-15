@@ -32,6 +32,8 @@ export const FORUM_ACTIONS = [
 	'post.create',
 	'post.edit',
 	'post.delete',
+	// Reacting to a post (a like). The feature itself lives in an extension plugin.
+	'post.react',
 ] as const
 export type ForumAction = (typeof FORUM_ACTIONS)[number]
 
@@ -96,6 +98,7 @@ export const defaultRolePolicy: PermissionPolicy = ({ principal, action, resourc
 		case 'thread.moderate':
 			return staff ? 'allow' : 'abstain'
 		case 'thread.create':
+		case 'post.react':
 			return member ? 'allow' : 'abstain'
 		case 'post.create':
 			if (staff) return 'allow'

@@ -7,7 +7,8 @@
 		"build": "react-router build",
 		"start": "react-router-serve ./build/server/index.js",
 		"postinstall": "react-router typegen",
-		"typecheck": "react-router typegen && tsc --noEmit --pretty false"
+		"typecheck": "react-router typegen && tsc --noEmit --pretty false",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"react": "catalog:frontend",
@@ -28,7 +29,12 @@
 		"@fontsource/jetbrains-mono": "catalog:frontend",
 		"lucide-react": "catalog:frontend",
 		"@openuidev/react-lang": "catalog:frontend",
-		"zod": "catalog:frontend"
+		"zod": "catalog:frontend",
+		"@tiptap/react": "catalog:frontend",
+		"@tiptap/pm": "catalog:frontend",
+		"@tiptap/core": "catalog:frontend",
+		"@tiptap/starter-kit": "catalog:frontend",
+		"@tiptap/markdown": "catalog:frontend"
 	},
 	"devDependencies": {
 		"@react-router/dev": "catalog:frontend",
@@ -40,6 +46,8 @@
 		"@types/node": "catalog:tooling",
 		"vite": "catalog:tooling",
 		"vite-plus": "catalog:tooling",
-		"@forum/domain": "workspace:*"
+		"@forum/domain": "workspace:*",
+		"happy-dom": "catalog:test",
+		"vitest": "catalog:test"
 	}
 }

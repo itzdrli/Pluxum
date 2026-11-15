@@ -7,7 +7,8 @@ export type PermissionPolicyContribution = Readonly<{
 	evaluate: PermissionPolicy
 }>
 
-const CONTRIBUTION_ID = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*$/
+/** Contribution IDs of every forum registry: dot-separated lowercase segments. */
+export const CONTRIBUTION_ID = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*$/
 
 /**
  * Open registry of permission policies. Registration is scoped to the contributor's generation:

@@ -13,11 +13,12 @@ import { useState } from 'react'
 import { data, Form, redirect, useNavigation, useRouteLoaderData, useSubmit } from 'react-router'
 
 import type { Route } from './+types/thread'
+import { Composer } from '../components/composer/composer'
 import { PostCard } from '../components/forum/post'
 import { ThreadFlags } from '../components/forum/rows'
 import { Button, ButtonAnchor } from '../components/ui/button'
 import { Crumbs, EmptyState, FormError, Notice, PageHeader, Panel } from '../components/ui/display'
-import { TextAreaField, TextInputField } from '../components/ui/field'
+import { TextInputField } from '../components/ui/field'
 import { ActionMenu, ConfirmDialog, type MenuItem } from '../components/ui/overlay'
 import { Pager } from '../components/ui/pager'
 import { pageCount } from '../lib/format'
@@ -315,15 +316,13 @@ function ReplyArea({
 					<Notice icon={Lock}>主题已锁定，只有版主和管理员还能回复。</Notice>
 				)}
 				<FormError message={error} />
-				<TextAreaField
-					name="body"
+				<Composer
 					label="回复内容"
 					hideLabel
 					required
 					maxLength={bodyMax}
 					rows={5}
 					placeholder="写下你的回复"
-					hint="目前按纯文本显示，换行会保留。"
 				/>
 				<div className="flex justify-end">
 					<Button type="submit" tone="primary" isPending={submitting}>

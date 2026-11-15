@@ -2,9 +2,10 @@ import { Send } from 'lucide-react'
 import { data, Form, redirect, useNavigation, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/thread-new'
+import { Composer } from '../components/composer/composer'
 import { Button, ButtonLink } from '../components/ui/button'
 import { Crumbs, FormError, PageHeader, Panel } from '../components/ui/display'
-import { TextAreaField, TextInputField } from '../components/ui/field'
+import { TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, textField } from '../lib/forum-api.server'
 import { keepOnThemeChange } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
@@ -57,14 +58,7 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 						placeholder="一句话说清楚要讨论什么"
 						autoFocus
 					/>
-					<TextAreaField
-						name="body"
-						label="内容"
-						required
-						maxLength={limits?.postBodyMax}
-						rows={14}
-						hint="目前按纯文本显示，换行会保留。"
-					/>
+					<Composer label="内容" required maxLength={limits?.postBodyMax} rows={12} />
 					<div className="flex justify-end gap-2">
 						<ButtonLink to={`/c/${category.slug}`} tone="ghost">
 							取消

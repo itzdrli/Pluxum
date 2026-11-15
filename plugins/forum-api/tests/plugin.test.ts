@@ -3,18 +3,20 @@ import type {
 	CategoryThreadsDto,
 	MetaDto,
 	PostDto,
+	PreviewDto,
 	ThreadDetailDto,
 	ThreadDto,
 } from '@forum/domain'
 import { ForumApiPlugin } from '@forum/forum-api'
 import { ForumAuth, type Authentication, type Logout } from '@forum/forum-auth'
 import { ForumCorePlugin } from '@forum/forum-core'
-import { Plugin } from '@pluxel/core'
+import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
 import { database } from '@pluxel/services/database'
 import { pglite } from '@pluxel/services/database/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
+import { Type } from 'typebox'
 import { describe, expect, it } from 'vitest'
 
 const MISSING_ID = '00000000-0000-4000-8000-000000000000'
@@ -85,6 +87,85 @@ class FakeAuth extends ForumAuth {
 			logoutToken === 'valid'
 				? Result.ok(1)
 				: Result.err({ code: 'rejected' as const, message: 'Invalid logout token' }),
+		)
+	}
+}
+
+/** An extension with three actions behind the ext ingress, to observe its contract. */
+@Plugin()
+class EchoExtPlugin extends BasePlugin {
+	constructor(private readonly api: ForumApiPlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.api.registerExtAction({
+				extId: 'test-echo',
+				action: 'shout',
+				method: 'POST',
+				login: true,
+				input: Type.Object({ text: Type.String({ maxLength: 10 }) }),
+				output: Type.Object({ text: Type.String(), by: Type.String() }),
+				handle: ({ principal, input }) => {
+					if (input.text === 'taken') {
+						return Promise.resolve(Result.err({ code: 'conflict' as const, message: '已存在' }))
+					}
+					// `internal` is not part of the output schema and must not reach the caller.
+					const answer = {
+						text: input.text.toUpperCase(),
+						by: principal.userId ?? '',
+						internal: 'server only',
+					}
+					return Promise.resolve(Result.ok(answer))
+				},
+			}),
+		)
+		this.ctx.effects.defer(
+			this.api.registerExtAction({
+				extId: 'test-echo',
+				action: 'whoami',
+				method: 'GET',
+				login: false,
+				input: Type.Object({ tag: Type.Optional(Type.String()) }),
+				output: Type.Object({ roles: Type.Array(Type.String()), tag: Type.String() }),
+				handle: ({ principal, input }) =>
+					Promise.resolve(Result.ok({ roles: [...principal.roles], tag: input.tag ?? '' })),
+			}),
+		)
+		this.ctx.effects.defer(
+			this.api.registerExtAction({
+				extId: 'test-echo',
+				action: 'broken',
+				method: 'GET',
+				login: false,
+				input: Type.Object({}),
+				output: Type.Object({ count: Type.Number() }),
+				// @ts-expect-error -- deliberately answers outside its own output schema
+				handle: () => Promise.resolve(Result.ok({ count: 'many' })),
+			}),
+		)
+	}
+}
+
+/** Takes a path that the echo extension already serves, which must fail its own start only. */
+@Plugin()
+class DuplicateExtPlugin extends BasePlugin {
+	constructor(private readonly api: ForumApiPlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.api.registerExtAction({
+				extId: 'test-echo',
+				action: 'whoami',
+				method: 'GET',
+				login: false,
+				input: Type.Object({}),
+				output: Type.Object({}),
+				handle: () => Promise.resolve(Result.ok({})),
+			}),
 		)
 	}
 }
@@ -337,5 +418,115 @@ describe('ForumApiPlugin', () => {
 			)
 		expect((await backchannel('valid')).status).toBe(200)
 		expect((await backchannel('forged')).status).toBe(400)
+	})
+
+	it('reports how posts are rendered and previews a body for members', async () => {
+		await using host = await createHost()
+		const api = await startAs(host, [])
+
+		const meta = await api.ok<MetaDto>('GET', '/meta')
+		expect(meta.content).toEqual({ format: 'plain' })
+		expect(meta.uiSlots).toEqual([])
+
+		expect(await api.ok<PreviewDto>('POST', '/preview', { body: 'a < b' })).toEqual({
+			bodyHtml: 'a &lt; b',
+			bodyFormat: 'plain',
+		})
+		expect(await api.call('POST', '/preview', { body: '  ' })).toEqual({
+			status: 422,
+			body: error('invalid'),
+		})
+		expect((await client(host).call('POST', '/preview', { body: 'x' })).status).toBe(401)
+	})
+})
+
+describe('ext ingress', () => {
+	it('serves contributed actions under their contract', async () => {
+		await using host = await createHost()
+		const api = await startAs(host, [])
+		const guest = client(host)
+		expect((await api.call('GET', '/ext/test-echo/whoami')).status).toBe(404)
+
+		await host.start(EchoExtPlugin)
+		expect(host.require(ForumApiPlugin).extActionKeys()).toEqual([
+			'test-echo/shout',
+			'test-echo/whoami',
+			'test-echo/broken',
+		])
+
+		// A read works for guests; the query is the input.
+		expect(await guest.call('GET', '/ext/test-echo/whoami?tag=a&other=dropped')).toEqual({
+			status: 200,
+			body: { roles: ['guest'], tag: 'a' },
+		})
+		// A write needs a login, valid input and the right method, and comes from this site.
+		expect(await guest.call('POST', '/ext/test-echo/shout', { text: 'hi' })).toEqual({
+			status: 401,
+			body: error('unauthenticated'),
+		})
+		const shouted = await api.call('POST', '/ext/test-echo/shout', { text: 'hi' })
+		expect(shouted).toEqual({ status: 200, body: { text: 'HI', by: expect.any(String) } })
+		for (const bad of [{ text: 'much too long' }, { text: 1 }, {}, undefined]) {
+			// oxlint-disable-next-line no-await-in-loop -- four small sequential requests keep the failure readable
+			expect(await api.call('POST', '/ext/test-echo/shout', bad)).toEqual({
+				status: 422,
+				body: error('invalid'),
+			})
+		}
+		expect((await api.call('GET', '/ext/test-echo/shout')).status).toBe(405)
+		expect(
+			(
+				await api.call(
+					'POST',
+					'/ext/test-echo/shout',
+					{ text: 'hi' },
+					{ origin: 'https://evil.test' },
+				)
+			).status,
+		).toBe(403)
+		// The handler's own failures use the forum's error shape; a broken output is a server fault.
+		expect(await api.call('POST', '/ext/test-echo/shout', { text: 'taken' })).toEqual({
+			status: 409,
+			body: error('conflict'),
+		})
+		expect(await api.call('GET', '/ext/test-echo/broken')).toEqual({
+			status: 500,
+			body: error('internal'),
+		})
+		expect((await api.call('GET', '/ext/test-echo/nope')).status).toBe(404)
+		expect((await api.call('GET', '/ext/other/whoami')).status).toBe(404)
+	})
+
+	it('withdraws actions with their contributor and takes them back after a restart', async () => {
+		await using host = await createHost()
+		await start(host)
+		const guest = client(host)
+		await host.start(EchoExtPlugin)
+
+		await host.stop(EchoExtPlugin)
+		expect(host.require(ForumApiPlugin).extActionKeys()).toEqual([])
+		expect(await guest.call('GET', '/ext/test-echo/whoami')).toEqual({
+			status: 404,
+			body: error('not_found'),
+		})
+
+		await host.start(EchoExtPlugin)
+		const before = host.require(ForumApiPlugin)
+		const restarted = await host.restart(ForumApiPlugin)
+		expect(restarted).not.toBe(before)
+		expect(host.isRunning(EchoExtPlugin)).toBe(true)
+		expect(restarted.extActionKeys()).toHaveLength(3)
+		expect((await guest.call('GET', '/ext/test-echo/whoami')).status).toBe(200)
+
+		// A second contributor cannot take a path that is in use; the first keeps serving it. (The
+		// host would start the refused plugin once the path is free, so this comes last.)
+		const failure = await host.commitExpectFail((change) => change.start(DuplicateExtPlugin))
+		expect(failure.lifecycleReport.issues).toContainEqual(
+			expect.objectContaining({ kind: 'start-failed' }),
+		)
+		expect(await guest.call('GET', '/ext/test-echo/whoami')).toEqual({
+			status: 200,
+			body: { roles: ['guest'], tag: '' },
+		})
 	})
 })

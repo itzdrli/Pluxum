@@ -16,7 +16,8 @@
 	},
 	"dependencies": {
 		"@forum/domain": "workspace:*",
-		"drizzle-orm": "catalog:backend"
+		"drizzle-orm": "catalog:backend",
+		"sanitize-html": "catalog:backend"
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "catalog:prod",
@@ -27,7 +28,8 @@
 		"@pluxel/test": "catalog:pluxel",
 		"typescript": "catalog:tooling",
 		"vite-plus": "catalog:tooling",
-		"vitest": "catalog:test"
+		"vitest": "catalog:test",
+		"@types/sanitize-html": "catalog:tooling"
 	},
 	"peerDependencies": {
 		"@pluxel/core": "catalog:pluxel",

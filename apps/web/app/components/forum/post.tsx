@@ -3,9 +3,10 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Form, useActionData, useNavigation } from 'react-router'
 
+import { PostSlots } from '../../slots/slots'
+import { Composer } from '../composer/composer'
 import { Button } from '../ui/button'
 import { Avatar, FormError, Tag, Timestamp } from '../ui/display'
-import { TextAreaField } from '../ui/field'
 import { ActionMenu, ConfirmDialog, type MenuItem } from '../ui/overlay'
 
 /**
@@ -70,6 +71,7 @@ export function PostCard({
 					>
 						#{number}
 					</a>
+					{!post.deleted && <PostSlots slot="post.actions" post={post} />}
 					<ActionMenu label={`第 ${number} 楼的操作`} items={items} />
 				</div>
 			</div>
@@ -78,9 +80,13 @@ export function PostCard({
 			) : editing ? (
 				<EditPost post={post} bodyMax={bodyMax} onDone={() => setEditing(false)} />
 			) : (
-				// Posts are plain text until the Markdown renderer plugin exists (M3).
-				<div className="post-body px-4 pt-2 pb-4 whitespace-pre-wrap">{post.body}</div>
+				// The forum core has already filtered this HTML against its allowlist.
+				<div
+					className={`post-body px-4 pt-2 pb-4${post.bodyFormat === 'plain' ? ' post-body--plain' : ''}`}
+					dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
+				/>
 			)}
+			{!post.deleted && !editing && <PostSlots slot="post.footer" post={post} />}
 			<ConfirmDialog
 				isOpen={confirming}
 				onOpenChange={setConfirming}
@@ -112,13 +118,14 @@ function EditPost({
 			<FormError message={error} />
 			<input type="hidden" name="intent" value="edit-post" />
 			<input type="hidden" name="postId" value={post.id} />
-			<TextAreaField
-				name="body"
+			<Composer
 				label="编辑内容"
 				hideLabel
 				required
 				maxLength={bodyMax}
 				defaultValue={post.body}
+				// Only a Markdown rendering can tell whether the rich editor would change the post.
+				renderedHtml={post.bodyFormat === 'markdown' ? post.bodyHtml : undefined}
 				rows={Math.min(16, Math.max(4, post.body.split('\n').length + 1))}
 				autoFocus
 			/>

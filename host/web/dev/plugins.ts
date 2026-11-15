@@ -5,9 +5,18 @@ import { ForumRedisPlugin } from '@forum/forum-redis'
 import { ForumApiPlugin } from '@forum/forum-api'
 import { ForumAuthPlugin } from '@forum/forum-auth'
 import { ForumCorePlugin } from '@forum/forum-core'
+import { ForumMarkdownPlugin } from '@forum/forum-markdown'
+import { ForumReactionsPlugin } from '@forum/forum-reactions'
 
-// Forum infrastructure plugins that must run in every dev session.
-const forumPlugins = [ForumRedisPlugin, ForumCorePlugin, ForumAuthPlugin, ForumApiPlugin] as const
+// Forum plugins that run in every dev session by default.
+const forumPlugins = [
+	ForumRedisPlugin,
+	ForumCorePlugin,
+	ForumAuthPlugin,
+	ForumApiPlugin,
+	ForumMarkdownPlugin,
+	ForumReactionsPlugin,
+] as const
 
 // vp exec pluxel dev run host/web/dev/plugins.ts                    → list plugin states
 // vp exec pluxel dev run host/web/dev/plugins.ts --export start     → start forum plugins now

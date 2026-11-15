@@ -13,6 +13,7 @@ import {
 	validateSlug,
 	validateThreadTitle,
 	type AssignableRole,
+	type BodyFormat,
 	type CategoryDto,
 	type CategoryThreadsDto,
 	type ForumAction,
@@ -21,10 +22,12 @@ import {
 	type ForumResource,
 	type PageRequest,
 	type PostDto,
+	type PreviewDto,
 	type Principal,
 	type Role,
 	type ThreadDetailDto,
 	type ThreadDto,
+	type UiSlotDto,
 	type UserDto,
 } from '@forum/domain'
 import { BasePlugin, Plugin } from '@pluxel/core'
@@ -44,8 +47,22 @@ import {
 	userRoles,
 	users,
 } from './database'
+import { ContentRendererRegistry, type ContentRendererContribution } from './content'
+import {
+	EntityExtensionRegistry,
+	UiSlotRegistry,
+	type EntityExtensionContribution,
+	type ExtendableEntity,
+	type UiSlotContribution,
+} from './extensions'
 import { PolicyRegistry, type PermissionPolicyContribution } from './policies'
 
+export type { ContentRendererContribution } from './content'
+export type {
+	EntityExtensionContribution,
+	ExtendableEntity,
+	UiSlotContribution,
+} from './extensions'
 export type { PermissionPolicyContribution } from './policies'
 
 /** Every forum operation resolves to its value or an expected, user-presentable failure. */
@@ -69,6 +86,16 @@ export type UpdateThreadInput = Readonly<{ title?: string; pinned?: boolean; loc
 export type CreatePostInput = Readonly<{ threadId: string; body: string }>
 export type UpdatePostInput = Readonly<{ body: string }>
 export type EnsureUserInput = Readonly<{ subject: string; displayName: string }>
+
+/**
+ * A post that exists and that the asking principal may see, as extension plugins need it: the
+ * stable IDs to key their own rows by, and the facts permission checks take.
+ */
+export type PostLocation = Readonly<{
+	postId: string
+	threadId: string
+	resource: ForumResource
+}>
 
 // The query surface shared by read callbacks and transactions.
 type Db = Pick<PluginDatabaseClient<typeof ForumDatabase>, 'select'>
@@ -113,6 +140,7 @@ function toThreadDto(row: ThreadRow, by: UserDto): ThreadDto {
 		replyCount: row.replyCount,
 		pinned: row.pinned,
 		locked: row.locked,
+		ext: {},
 	}
 }
 
@@ -126,6 +154,9 @@ function toThreadDto(row: ThreadRow, by: UserDto): ThreadDto {
 export class ForumCorePlugin extends BasePlugin {
 	private database!: PluginDatabaseHandle<typeof ForumDatabase>
 	private readonly permissionPolicies = new PolicyRegistry()
+	private readonly contentRenderers = new ContentRendererRegistry()
+	private readonly entityExtensions = new EntityExtensionRegistry()
+	private readonly uiSlotContributions = new UiSlotRegistry()
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(ForumDatabase)
@@ -150,6 +181,87 @@ export class ForumCorePlugin extends BasePlugin {
 
 	can(principal: Principal, action: ForumAction, resource: ForumResource = {}): boolean {
 		return evaluatePolicies(this.permissionPolicies.policies(), { principal, action, resource })
+	}
+
+	// ── Content ─────────────────────────────────────────────────────────────────────────────
+
+	/**
+	 * Installs the renderer that turns post source into HTML; the core filters its output against
+	 * the forum's allowlist. Without one, posts are shown as plain text. The returned disposer must
+	 * be handed to the contributor's `ctx.effects`. Throws on an invalid ID or when a renderer is
+	 * already installed: one renderer serves the whole forum.
+	 */
+	registerContentRenderer(contribution: ContentRendererContribution): () => void {
+		return this.contentRenderers.register(contribution)
+	}
+
+	/** ID of the installed content renderer, or null while posts are shown as plain text. */
+	contentRendererId(): string | null {
+		return this.contentRenderers.id()
+	}
+
+	/** How posts are rendered right now: `plain` while no renderer is installed. */
+	contentFormat(): BodyFormat {
+		return this.contentRenderers.format()
+	}
+
+	/** Renders a post body exactly as a saved post would be shown, without saving anything. */
+	previewBody(source: string): ForumResult<PreviewDto> {
+		const body = validatePostBody(source)
+		if (!body.ok) return invalid(body.reason)
+		const rendered = this.contentRenderers.render(body.value, (error, rendererId) =>
+			this.ctx.logger.error('content renderer failed; previewing as plain text', {
+				error,
+				rendererId,
+			}),
+		)
+		return Result.ok({ bodyHtml: rendered.html, bodyFormat: rendered.format })
+	}
+
+	// ── Extensions ──────────────────────────────────────────────────────────────────────────
+
+	/**
+	 * Lets an extension plugin attach its own data to every thread or post DTO under `ext[id]`.
+	 * The extension keeps that data in its own tables and returns it for a whole page at once.
+	 * The returned disposer must be handed to the contributor's `ctx.effects`. Throws on an invalid
+	 * ID or when the ID is already registered for the same entity.
+	 */
+	registerEntityExtension(contribution: EntityExtensionContribution): () => void {
+		return this.entityExtensions.register(contribution)
+	}
+
+	/** IDs of the extensions that attach data to the given entity. */
+	entityExtensionIds(entity: ExtendableEntity): string[] {
+		return this.entityExtensions.ids(entity)
+	}
+
+	/**
+	 * Declares which frontend slots an extension fills while it runs. The returned disposer must be
+	 * handed to the contributor's `ctx.effects`. Throws on an invalid or duplicate ID and on an
+	 * unknown slot name.
+	 */
+	registerUiSlots(contribution: UiSlotContribution): () => void {
+		return this.uiSlotContributions.register(contribution)
+	}
+
+	/** The slots filled by running extensions, in display order. */
+	uiSlots(): UiSlotDto[] {
+		return this.uiSlotContributions.list()
+	}
+
+	/**
+	 * For extension plugins: confirms that a post exists, is not deleted and is visible to the
+	 * principal, and returns what a permission check on it needs.
+	 */
+	async locatePost(principal: Principal, postId: string): Promise<ForumResult<PostLocation>> {
+		if (!isEntityId(postId)) return notFound('帖子')
+		const found = await this.database.read((db) => this.findPost(db, principal, postId))
+		if (!found) return notFound('帖子')
+		return Result.ok({
+			postId: found.post.id,
+			threadId: found.thread.id,
+			resource: this.postResource(found.post, found.thread),
+		})
 	}
 
 	// ── Users ───────────────────────────────────────────────────────────────────────────────
@@ -359,33 +471,44 @@ export class ForumCorePlugin extends BasePlugin {
 		paging: PageRequest = {},
 	): Promise<ForumResult<CategoryThreadsDto>> {
 		const { page, pageSize } = normalizePage(paging)
-		return this.database.read(async (db) => {
-			const [category] = await db.select().from(categories).where(eq(categories.slug, categorySlug))
-			if (!category || !this.can(principal, 'category.view', { categoryId: category.id })) {
-				return notFound('版块')
-			}
-			const visible = and(eq(threads.categoryId, category.id), isNull(threads.deletedAt))
-			const [total] = await db.select({ value: count() }).from(threads).where(visible)
-			const rows = await db
-				.select({ thread: threads, author })
-				.from(threads)
-				.innerJoin(users, eq(users.id, threads.authorId))
-				.where(visible)
-				.orderBy(desc(threads.pinned), desc(threads.lastPostAt), desc(threads.id))
-				.limit(pageSize)
-				.offset((page - 1) * pageSize)
-			return Result.ok({
-				category: toCategoryDto(category),
-				threads: {
-					items: rows.map((row) => toThreadDto(row.thread, row.author)),
-					page,
-					pageSize,
-					total: total?.value ?? 0,
-				},
-				can: {
-					createThread: this.can(principal, 'thread.create', { categoryId: category.id }),
-				},
-			})
+		const listing = await this.database.read(
+			async (db): Promise<ForumResult<CategoryThreadsDto>> => {
+				const [category] = await db
+					.select()
+					.from(categories)
+					.where(eq(categories.slug, categorySlug))
+				if (!category || !this.can(principal, 'category.view', { categoryId: category.id })) {
+					return notFound('版块')
+				}
+				const visible = and(eq(threads.categoryId, category.id), isNull(threads.deletedAt))
+				const [total] = await db.select({ value: count() }).from(threads).where(visible)
+				const rows = await db
+					.select({ thread: threads, author })
+					.from(threads)
+					.innerJoin(users, eq(users.id, threads.authorId))
+					.where(visible)
+					.orderBy(desc(threads.pinned), desc(threads.lastPostAt), desc(threads.id))
+					.limit(pageSize)
+					.offset((page - 1) * pageSize)
+				return Result.ok({
+					category: toCategoryDto(category),
+					threads: {
+						items: rows.map((row) => toThreadDto(row.thread, row.author)),
+						page,
+						pageSize,
+						total: total?.value ?? 0,
+					},
+					can: {
+						createThread: this.can(principal, 'thread.create', { categoryId: category.id }),
+					},
+				})
+			},
+		)
+		if (listing.isErr()) return listing
+		const { threads: threadPage } = listing.value
+		return Result.ok({
+			...listing.value,
+			threads: { ...threadPage, items: await this.extended('thread', principal, threadPage.items) },
 		})
 	}
 
@@ -397,7 +520,7 @@ export class ForumCorePlugin extends BasePlugin {
 	): Promise<ForumResult<ThreadDetailDto>> {
 		if (!isEntityId(threadId)) return notFound('主题')
 		const { page, pageSize } = normalizePage(paging)
-		return this.database.read(async (db) => {
+		const detail = await this.database.read(async (db): Promise<ForumResult<ThreadDetailDto>> => {
 			const found = await this.findThread(db, threadId)
 			if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
 				return notFound('主题')
@@ -431,6 +554,17 @@ export class ForumCorePlugin extends BasePlugin {
 				},
 			})
 		})
+		if (detail.isErr()) return detail
+		// Extensions answer after the core's own read has finished, each with one batch per entity.
+		const [[thread], items] = await Promise.all([
+			this.extended('thread', principal, [detail.value.thread]),
+			this.extended('post', principal, detail.value.posts.items),
+		])
+		return Result.ok({
+			...detail.value,
+			thread: thread ?? detail.value.thread,
+			posts: { ...detail.value.posts, items },
+		})
 	}
 
 	/** Creates a thread together with its opening post. */
@@ -448,7 +582,7 @@ export class ForumCorePlugin extends BasePlugin {
 		const authorId = principal.userId
 		if (authorId === null) return denied(principal)
 
-		return this.database.transaction(async (tx) => {
+		const written = await this.database.transaction(async (tx): Promise<ForumResult<ThreadDto>> => {
 			const [by] = await tx.select(author).from(users).where(eq(users.id, authorId))
 			if (!by) return denied(GUEST)
 			const [category] = await tx
@@ -473,6 +607,7 @@ export class ForumCorePlugin extends BasePlugin {
 				.where(eq(categories.id, categoryId))
 			return Result.ok(toThreadDto(thread, by))
 		})
+		return this.extendedResult('thread', principal, written)
 	}
 
 	/** Renames a thread (`thread.edit`) and/or pins or locks it (`thread.moderate`). */
@@ -491,7 +626,7 @@ export class ForumCorePlugin extends BasePlugin {
 		if (input.pinned !== undefined) patch.pinned = input.pinned
 		if (input.locked !== undefined) patch.locked = input.locked
 
-		return this.database.transaction(async (tx) => {
+		const written = await this.database.transaction(async (tx): Promise<ForumResult<ThreadDto>> => {
 			const found = await this.findThread(tx, threadId)
 			if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
 				return notFound('主题')
@@ -512,6 +647,7 @@ export class ForumCorePlugin extends BasePlugin {
 			const [row] = await tx.update(threads).set(patch).where(eq(threads.id, threadId)).returning()
 			return row ? Result.ok(toThreadDto(row, found.author)) : notFound('主题')
 		})
+		return this.extendedResult('thread', principal, written)
 	}
 
 	/** Hides a thread and all of its posts. The rows stay for moderation history. */
@@ -549,7 +685,7 @@ export class ForumCorePlugin extends BasePlugin {
 		if (!isEntityId(input.threadId)) return notFound('主题')
 		const authorId = principal.userId
 
-		return this.database.transaction(async (tx) => {
+		const written = await this.database.transaction(async (tx): Promise<ForumResult<PostDto>> => {
 			const found = await this.findThread(tx, input.threadId)
 			if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
 				return notFound('主题')
@@ -577,6 +713,7 @@ export class ForumCorePlugin extends BasePlugin {
 				.where(eq(categories.id, thread.categoryId))
 			return Result.ok(this.toPostDto(principal, post, by, thread))
 		})
+		return this.extendedResult('post', principal, written)
 	}
 
 	/** Replaces a post's body and keeps the previous one as a revision. */
@@ -590,7 +727,7 @@ export class ForumCorePlugin extends BasePlugin {
 		if (!isEntityId(postId)) return notFound('帖子')
 		const editorId = principal.userId
 
-		return this.database.transaction(async (tx) => {
+		const written = await this.database.transaction(async (tx): Promise<ForumResult<PostDto>> => {
 			const found = await this.findPost(tx, principal, postId)
 			if (!found) return notFound('帖子')
 			const { post, thread } = found
@@ -610,6 +747,7 @@ export class ForumCorePlugin extends BasePlugin {
 			if (!row) throw new Error('Post update returned no row')
 			return Result.ok(this.toPostDto(principal, row, found.author, thread))
 		})
+		return this.extendedResult('post', principal, written)
 	}
 
 	/** Hides a reply. The opening post goes away only with its thread. */
@@ -660,14 +798,57 @@ export class ForumCorePlugin extends BasePlugin {
 		}
 	}
 
+	/**
+	 * Copies of the DTOs with the data of every registered extension under `ext`. An extension that
+	 * fails or is too slow is logged and left out; the core's own data is never held back by it.
+	 */
+	private async extended<T extends Readonly<{ id: string }>>(
+		entity: ExtendableEntity,
+		principal: Principal,
+		items: readonly T[],
+	): Promise<T[]> {
+		const data = await this.entityExtensions.load(
+			entity,
+			items.map((item) => item.id),
+			principal,
+			(error, extensionId) =>
+				this.ctx.logger.error('entity extension failed; serving the page without it', {
+					error,
+					extensionId,
+					entity,
+				}),
+		)
+		return items.map((item) => ({ ...item, ext: data.get(item.id) ?? {} }))
+	}
+
+	/** The DTO a write returned, with extension data attached. */
+	private async extendedResult<T extends Readonly<{ id: string }>>(
+		entity: ExtendableEntity,
+		principal: Principal,
+		result: ForumResult<T>,
+	): Promise<ForumResult<T>> {
+		if (result.isErr()) return result
+		const [item] = await this.extended(entity, principal, [result.value])
+		return Result.ok(item ?? result.value)
+	}
+
 	private toPostDto(principal: Principal, post: PostRow, by: UserDto, thread: ThreadRow): PostDto {
 		const deleted = post.deletedAt !== null
 		const resource = this.postResource(post, thread)
+		const rendered = this.contentRenderers.render(deleted ? '' : post.body, (error, rendererId) =>
+			this.ctx.logger.error('content renderer failed; showing the post as plain text', {
+				error,
+				rendererId,
+				postId: post.id,
+			}),
+		)
 		return {
 			id: post.id,
 			threadId: post.threadId,
 			author: { id: by.id, displayName: by.displayName },
 			body: deleted ? '' : post.body,
+			bodyHtml: rendered.html,
+			bodyFormat: rendered.format,
 			createdAt: post.createdAt.toISOString(),
 			editedAt: post.editedAt?.toISOString() ?? null,
 			deleted,
@@ -675,6 +856,7 @@ export class ForumCorePlugin extends BasePlugin {
 				edit: !deleted && this.can(principal, 'post.edit', resource),
 				delete: !deleted && !post.opening && this.can(principal, 'post.delete', resource),
 			},
+			ext: {},
 		}
 	}
 

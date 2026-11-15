@@ -7,6 +7,11 @@ const paged = { page: t.Number(), pageSize: t.Number(), total: t.Number() }
 
 export const user = t.Object({ id: t.String(), displayName: t.String() })
 
+const bodyFormat = t.Union([t.Literal('markdown'), t.Literal('plain')])
+
+// Extension data is opaque to the API: each extension owns the shape under its own ID.
+const ext = t.Record(t.String(), t.Unknown())
+
 export const category = t.Object({
 	id: t.String(),
 	slug: t.String(),
@@ -27,6 +32,7 @@ export const thread = t.Object({
 	replyCount: t.Number(),
 	pinned: t.Boolean(),
 	locked: t.Boolean(),
+	ext,
 })
 
 export const post = t.Object({
@@ -34,11 +40,16 @@ export const post = t.Object({
 	threadId: t.String(),
 	author: user,
 	body: t.String(),
+	bodyHtml: t.String(),
+	bodyFormat,
 	createdAt: t.String(),
 	editedAt: t.Union([t.String(), t.Null()]),
 	deleted: t.Boolean(),
 	can: t.Object({ edit: t.Boolean(), delete: t.Boolean() }),
+	ext,
 })
+
+export const preview = t.Object({ bodyHtml: t.String(), bodyFormat })
 
 export const categoryList = t.Object({ items: t.Array(category) })
 
@@ -79,6 +90,20 @@ export const meta = t.Object({
 		threadTitleMax: t.Number(),
 		postBodyMax: t.Number(),
 	}),
+	content: t.Object({ format: bodyFormat }),
+	uiSlots: t.Array(
+		t.Object({
+			// Mirrors UI_SLOTS in @forum/domain; a missing name fails type-checking of `/meta`.
+			slot: t.Union([
+				t.Literal('post.footer'),
+				t.Literal('post.actions'),
+				t.Literal('thread.sidebar'),
+				t.Literal('user.profile.tabs'),
+				t.Literal('composer.toolbar'),
+			]),
+			extId: t.String(),
+		}),
+	),
 })
 
 export const ping = t.Object({

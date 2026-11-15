@@ -4,6 +4,8 @@ import * as v from 'valibot'
 import { ForumApiPlugin } from '@forum/forum-api'
 import { ForumAuthConfig, ForumAuthPlugin } from '@forum/forum-auth'
 import { ForumCorePlugin } from '@forum/forum-core'
+import { ForumMarkdownPlugin } from '@forum/forum-markdown'
+import { ForumReactionsPlugin } from '@forum/forum-reactions'
 import { ForumRedisConfig, ForumRedisPlugin } from '@forum/forum-redis'
 
 export const appPlugins = [
@@ -11,6 +13,8 @@ export const appPlugins = [
 	ForumCorePlugin,
 	ForumAuthPlugin,
 	ForumApiPlugin,
+	ForumMarkdownPlugin,
+	ForumReactionsPlugin,
 	VaultAdminPlugin,
 ] as const
 

@@ -19,10 +19,13 @@ export default defineConfig({
 				dependsOn: [
 					'@forum/domain#check-tests',
 					'@forum/forum-core#check-tests',
+					'@forum/forum-markdown#check-tests',
 					'@forum/forum-auth#check-tests',
 					'@forum/forum-api#check-tests',
 					'@forum/forum-redis#check-tests',
+					'@forum/forum-reactions#check-tests',
 					'@forum/web#typecheck',
+					'@forum/web#test',
 				],
 			},
 			'workspace:verify': {

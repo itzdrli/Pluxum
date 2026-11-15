@@ -343,6 +343,156 @@
 		color: var(--c-text);
 		overflow-wrap: anywhere;
 	}
+	/* A post that no renderer formatted is its source text: keep the line breaks as typed. */
+	.post-body--plain {
+		white-space: pre-wrap;
+	}
+
+	/*
+	 * Rendered post content. The markup comes from the content renderer and is limited by the
+	 * forum core's allowlist, so only these elements can appear.
+	 */
+	.post-body > * + * {
+		margin-top: 0.75em;
+	}
+	.post-body :is(h2, h3, h4) {
+		color: var(--c-text-strong);
+		font-weight: 700;
+		line-height: 1.4;
+	}
+	.post-body > :is(h2, h3, h4):not(:first-child) {
+		margin-top: 1.4em;
+	}
+	.post-body h2 {
+		font-size: 19px;
+	}
+	.post-body h3 {
+		font-size: 17px;
+	}
+	.post-body h4 {
+		font-size: 15px;
+	}
+	.post-body strong {
+		color: var(--c-text-strong);
+		font-weight: 700;
+	}
+	.post-body :is(del, s) {
+		color: var(--c-text-weak);
+	}
+	.post-body a {
+		color: var(--c-accent);
+		text-decoration: underline;
+		text-decoration-color: color-mix(in srgb, var(--c-accent) 45%, transparent);
+		text-underline-offset: 3px;
+	}
+	.post-body a:hover {
+		text-decoration-color: currentColor;
+	}
+	.post-body :is(ul, ol) {
+		padding-left: 1.6em;
+	}
+	.post-body ul {
+		list-style: disc;
+	}
+	.post-body ol {
+		list-style: decimal;
+	}
+	.post-body li + li,
+	.post-body li > :is(ul, ol) {
+		margin-top: 0.25em;
+	}
+	.post-body li > p + p {
+		margin-top: 0.5em;
+	}
+	.post-body li::marker {
+		color: var(--c-text-weak);
+	}
+	.post-body blockquote {
+		border-left: 2px solid var(--c-line);
+		padding-left: 12px;
+		color: var(--c-text-weak);
+	}
+	.post-body blockquote > * + * {
+		margin-top: 0.75em;
+	}
+	.post-body code {
+		border-radius: 2px;
+		background: var(--c-control);
+		padding: 0.1em 0.35em;
+		font-family: var(--font-mono);
+		font-size: 0.87em;
+	}
+	.post-body pre {
+		overflow-x: auto;
+		border: 1px solid var(--c-line);
+		border-radius: 2px;
+		background: var(--c-page);
+		padding: 10px 12px;
+		line-height: 1.6;
+		overflow-wrap: normal;
+	}
+	.post-body pre code {
+		background: none;
+		padding: 0;
+		font-size: 13px;
+	}
+	.post-body hr {
+		border: 0;
+		border-top: 1px solid var(--c-line);
+		margin-block: 1.4em;
+	}
+
+	/*
+	 * The rich-text composer: a field-like box with a toolbar on top. The editing area carries
+	 * `.post-body` as well, so what is typed looks like the post it becomes.
+	 */
+	.composer {
+		border: 1px solid var(--c-line);
+		border-radius: 2px;
+		background: var(--c-page);
+	}
+	.composer:hover {
+		border-color: var(--c-text-weak);
+	}
+	.composer:focus-within {
+		border-color: var(--c-accent);
+	}
+	.composer-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 2px 8px;
+		border-bottom: 1px solid var(--c-line);
+		padding: 4px;
+	}
+	.composer-tool-group {
+		display: flex;
+		gap: 2px;
+	}
+	.composer-tool--active {
+		background: var(--c-selected);
+		color: var(--c-accent);
+	}
+	.composer-link {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+		border-bottom: 1px solid var(--c-line);
+		padding: 6px;
+	}
+	.composer-editor {
+		min-height: calc(var(--composer-rows, 6) * 1.75em + 16px);
+		padding: 8px 10px;
+		outline: none;
+	}
+	.composer-placeholder {
+		position: absolute;
+		inset: 8px 10px auto;
+		font-size: 15px;
+		line-height: 1.75;
+		color: color-mix(in srgb, var(--c-text-weak) 60%, transparent);
+		pointer-events: none;
+	}
 }
 
 /*
@@ -354,7 +504,9 @@
 	select,
 	textarea,
 	.input,
-	.textarea {
+	.textarea,
+	.composer-editor,
+	.composer-placeholder {
 		font-size: 16px;
 	}
 }

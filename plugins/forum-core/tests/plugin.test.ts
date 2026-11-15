@@ -68,6 +68,167 @@ class DuplicatePolicyPlugin extends BasePlugin {
 	}
 }
 
+/** Renders every post in capitals, to observe the content renderer slot. */
+@Plugin()
+class ShoutPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerContentRenderer({
+				id: 'test.shout',
+				format: 'markdown',
+				render: (source) => `<p>${source.toUpperCase()}</p>`,
+			}),
+		)
+	}
+}
+
+/** A second renderer, which the core must refuse while another is installed. */
+@Plugin()
+class SecondRendererPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerContentRenderer({
+				id: 'test.second',
+				format: 'markdown',
+				render: (source) => `<p>${source}</p>`,
+			}),
+		)
+	}
+}
+
+/** A renderer with a bug: it throws for every post. */
+@Plugin()
+class BrokenRendererPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerContentRenderer({
+				id: 'test.broken',
+				format: 'markdown',
+				render: () => {
+					throw new Error('renderer bug')
+				},
+			}),
+		)
+	}
+}
+
+/** Passes the source through as HTML, so tests can feed the core's filter directly. */
+@Plugin()
+class RawHtmlPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerContentRenderer({
+				id: 'test.raw',
+				format: 'markdown',
+				render: (source) => source,
+			}),
+		)
+	}
+}
+
+/** Post IDs of every batch the badge extension was asked for, to prove one call per page. */
+const badgeBatches: string[][] = []
+
+/** Tags every post with who is looking and fills a slot, to observe the extension registries. */
+@Plugin()
+class BadgePlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerEntityExtension({
+				id: 'test.badge',
+				entity: 'post',
+				load: (ids, viewer) => {
+					badgeBatches.push([...ids])
+					return Promise.resolve(new Map(ids.map((id) => [id, { seenBy: viewer.userId }])))
+				},
+			}),
+		)
+		this.ctx.effects.defer(
+			this.core.registerUiSlots({ id: 'test.badge', slots: ['post.footer', 'post.actions'] }),
+		)
+	}
+}
+
+/** Reuses the badge's extension ID for posts, which must fail its own start only. */
+@Plugin()
+class DuplicateBadgePlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerEntityExtension({
+				id: 'test.badge',
+				entity: 'post',
+				load: () => Promise.resolve(new Map()),
+			}),
+		)
+	}
+}
+
+/** Two faulty extensions: one throws for posts, one never answers for threads. */
+@Plugin()
+class FaultyExtensionsPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerEntityExtension({
+				id: 'test.throws',
+				entity: 'post',
+				load: () => {
+					throw new Error('extension bug')
+				},
+			}),
+		)
+		this.ctx.effects.defer(
+			this.core.registerEntityExtension({
+				id: 'test.hangs',
+				entity: 'thread',
+				load: () => new Promise(() => {}),
+			}),
+		)
+	}
+}
+
+/** Names a slot the frontend does not have. */
+@Plugin()
+class UnknownSlotPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			// @ts-expect-error -- the slot name is deliberately not one of UI_SLOTS
+			this.core.registerUiSlots({ id: 'test.unknown-slot', slots: ['post.nowhere'] }),
+		)
+	}
+}
+
 describe('ForumCorePlugin', () => {
 	it('creates accounts once per subject and resolves their roles', async () => {
 		await using host = await createHost()
@@ -345,5 +506,256 @@ describe('permission policy registry', () => {
 		expect(host.isRunning(ForumCorePlugin)).toBe(true)
 		expect(core.permissionPolicyIds()).toEqual(['forum-core.roles'])
 		expect(core.can(GUEST, 'thread.view')).toBe(true)
+	})
+})
+
+/** A thread whose opening post has the given source; returns a reader of that post. */
+async function openingPost(core: ForumCorePlugin, body: string) {
+	const { alice, category } = await seed(core)
+	const thread = (
+		await core.createThread(alice, { categoryId: category.id, title: 'Content', body })
+	).unwrap()
+	return async (from: ForumCorePlugin = core) =>
+		(await from.getThread(alice, thread.id)).unwrap().posts.items[0]
+}
+
+describe('content renderer', () => {
+	it('shows posts as escaped plain text without a renderer', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const read = await openingPost(core, `<b>1 & 2</b>\n"it's"`)
+
+		expect(core.contentRendererId()).toBeNull()
+		expect(await read()).toMatchObject({
+			body: `<b>1 & 2</b>\n"it's"`,
+			bodyFormat: 'plain',
+			bodyHtml: '&lt;b&gt;1 &amp; 2&lt;/b&gt;\n&quot;it&#39;s&quot;',
+		})
+	})
+
+	it('uses a contributed renderer only while its contributor runs', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const read = await openingPost(core, 'hello')
+
+		await host.start(ShoutPlugin)
+		expect(core.contentRendererId()).toBe('test.shout')
+		expect(await read()).toMatchObject({
+			body: 'hello',
+			bodyFormat: 'markdown',
+			bodyHtml: '<p>HELLO</p>',
+		})
+
+		await host.stop(ShoutPlugin)
+		expect(core.contentRendererId()).toBeNull()
+		expect(await read()).toMatchObject({ bodyFormat: 'plain', bodyHtml: 'hello' })
+	})
+
+	it('re-installs the renderer after the core restarts', async () => {
+		await using host = await createHost()
+		const before = (await host.start([ForumCorePlugin, ShoutPlugin]))[0]
+		const read = await openingPost(before, 'hello')
+
+		const core = await host.restart(ForumCorePlugin)
+		expect(core).not.toBe(before)
+		expect(host.isRunning(ShoutPlugin)).toBe(true)
+		expect((await read(core)).bodyHtml).toBe('<p>HELLO</p>')
+	})
+
+	it('refuses a second renderer and accepts it once the first has stopped', async () => {
+		await using host = await createHost()
+		const core = (await host.start([ForumCorePlugin, ShoutPlugin]))[0]
+
+		const failure = await host.commitExpectFail((change) => change.start(SecondRendererPlugin))
+		expect(failure.lifecycleReport.issues).toContainEqual(
+			expect.objectContaining({ kind: 'start-failed' }),
+		)
+		expect(core.contentRendererId()).toBe('test.shout')
+
+		await host.stop(ShoutPlugin)
+		await host.start(SecondRendererPlugin)
+		expect(core.contentRendererId()).toBe('test.second')
+	})
+
+	it('falls back to plain text when the renderer throws', async () => {
+		await using host = await createHost()
+		const core = (await host.start([ForumCorePlugin, BrokenRendererPlugin]))[0]
+		const read = await openingPost(core, 'a < b')
+
+		expect(await read()).toMatchObject({ bodyFormat: 'plain', bodyHtml: 'a &lt; b' })
+	})
+
+	it('filters renderer output down to the allowlist', async () => {
+		await using host = await createHost()
+		const core = (await host.start([ForumCorePlugin, RawHtmlPlugin]))[0]
+		const source = [
+			'<h1>t</h1><h2 id="x" onclick="evil()">ok</h2>',
+			'<script>alert(1)</script><style>p{}</style><img src=x onerror=alert(1)>',
+			'<p style="color:red">text <span class="a">span</span></p>',
+			'<a href="javascript:alert(1)">js</a>',
+			'<a href="//evil.example/x">relative protocol</a>',
+			'<a href="/\\evil.example/x">backslash</a><a href=" JaVaScRiPt:alert(1)">case</a>',
+			'<a href="https://example.com/a" target="_blank" rel="opener">out</a>',
+			'<a href="/c/general" rel="x">in</a><a href="mailto:a@example.com">mail</a>',
+			'<pre><code class="language-ts evil">code</code></pre><ol start="3"><li>x</li></ol>',
+			'<iframe src="https://example.com"></iframe><form><input name="q"></form>',
+		].join('\n')
+		const read = await openingPost(core, source)
+
+		expect((await read()).bodyHtml).toBe(
+			[
+				't<h2>ok</h2>',
+				'',
+				'<p>text span</p>',
+				'<a>js</a>',
+				'<a>relative protocol</a>',
+				'<a>backslash</a><a>case</a>',
+				'<a href="https://example.com/a" rel="nofollow ugc noopener">out</a>',
+				'<a href="/c/general">in</a><a href="mailto:a@example.com">mail</a>',
+				'<pre><code class="language-ts">code</code></pre><ol start="3"><li>x</li></ol>',
+				'',
+			].join('\n'),
+		)
+	})
+
+	it('renders nothing for a deleted post', async () => {
+		await using host = await createHost()
+		const core = (await host.start([ForumCorePlugin, ShoutPlugin]))[0]
+		const { alice, admin, category } = await seed(core)
+		const thread = (
+			await core.createThread(alice, { categoryId: category.id, title: 'T', body: 'x' })
+		).unwrap()
+		const reply = (await core.createPost(alice, { threadId: thread.id, body: 'gone' })).unwrap()
+		expect(reply.bodyHtml).toBe('<p>GONE</p>')
+		;(await core.deletePost(admin, reply.id)).unwrap()
+
+		const detail = (await core.getThread(alice, thread.id)).unwrap()
+		expect(detail.posts.items[1]).toMatchObject({ deleted: true, body: '', bodyHtml: '' })
+	})
+})
+
+describe('entity extensions and UI slots', () => {
+	it('attaches extension data in one batch per page, only while the contributor runs', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { alice, bob, category } = await seed(core)
+		const thread = (
+			await core.createThread(alice, { categoryId: category.id, title: 'Ext', body: 'one' })
+		).unwrap()
+		;(await core.createPost(bob, { threadId: thread.id, body: 'two' })).unwrap()
+		const read = async () => (await core.getThread(bob, thread.id)).unwrap()
+
+		expect((await read()).posts.items.map((post) => post.ext)).toEqual([{}, {}])
+		expect(core.uiSlots()).toEqual([])
+
+		badgeBatches.length = 0
+		await host.start(BadgePlugin)
+		expect(core.entityExtensionIds('post')).toEqual(['test.badge'])
+		expect(core.entityExtensionIds('thread')).toEqual([])
+		expect(core.uiSlots()).toEqual([
+			{ slot: 'post.footer', extId: 'test.badge' },
+			{ slot: 'post.actions', extId: 'test.badge' },
+		])
+		const page = await read()
+		expect(page.posts.items.map((post) => post.ext)).toEqual([
+			{ 'test.badge': { seenBy: bob.userId } },
+			{ 'test.badge': { seenBy: bob.userId } },
+		])
+		expect(page.thread.ext).toEqual({})
+		expect(badgeBatches).toEqual([page.posts.items.map((post) => post.id)])
+		// A post that a write returns carries the data as well.
+		const third = (await core.createPost(alice, { threadId: thread.id, body: 'three' })).unwrap()
+		expect(third.ext).toEqual({ 'test.badge': { seenBy: alice.userId } })
+
+		await host.stop(BadgePlugin)
+		expect(core.entityExtensionIds('post')).toEqual([])
+		expect(core.uiSlots()).toEqual([])
+		expect((await read()).posts.items.map((post) => post.ext)).toEqual([{}, {}, {}])
+	})
+
+	it('re-registers extensions and slots after the core restarts', async () => {
+		await using host = await createHost()
+		const before = (await host.start([ForumCorePlugin, BadgePlugin]))[0]
+
+		const core = await host.restart(ForumCorePlugin)
+		expect(core).not.toBe(before)
+		expect(host.isRunning(BadgePlugin)).toBe(true)
+		expect(core.entityExtensionIds('post')).toEqual(['test.badge'])
+		expect(core.uiSlots()).toHaveLength(2)
+	})
+
+	it('fails a contributor with a taken ID or an unknown slot without disturbing the rest', async () => {
+		await using host = await createHost()
+		const core = (await host.start([ForumCorePlugin, BadgePlugin]))[0]
+
+		const duplicate = await host.commitExpectFail((change) => change.start(DuplicateBadgePlugin))
+		const unknownSlot = await host.commitExpectFail((change) => change.start(UnknownSlotPlugin))
+		for (const failure of [duplicate, unknownSlot]) {
+			expect(failure.lifecycleReport.issues).toContainEqual(
+				expect.objectContaining({ kind: 'start-failed' }),
+			)
+		}
+		expect(core.entityExtensionIds('post')).toEqual(['test.badge'])
+		expect(core.uiSlots()).toHaveLength(2)
+	})
+
+	it('serves pages without an extension that throws or does not answer', async () => {
+		await using host = await createHost()
+		const core = (await host.start([ForumCorePlugin, BadgePlugin, FaultyExtensionsPlugin]))[0]
+		const { alice, category } = await seed(core)
+		// Creating the thread already waits out the extension that never answers.
+		const thread = (
+			await core.createThread(alice, { categoryId: category.id, title: 'Faulty', body: 'x' })
+		).unwrap()
+		expect(thread.ext).toEqual({})
+
+		const page = (await core.getThread(alice, thread.id)).unwrap()
+		expect(page.thread.ext).toEqual({})
+		expect(page.posts.items[0]?.ext).toEqual({ 'test.badge': { seenBy: alice.userId } })
+	})
+
+	it('locates only posts the principal can see', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { alice, bob, category } = await seed(core)
+		const thread = (
+			await core.createThread(alice, { categoryId: category.id, title: 'Where', body: 'x' })
+		).unwrap()
+		const reply = (await core.createPost(bob, { threadId: thread.id, body: 'y' })).unwrap()
+
+		expect((await core.locatePost(GUEST, reply.id)).unwrap()).toEqual({
+			postId: reply.id,
+			threadId: thread.id,
+			resource: {
+				categoryId: category.id,
+				threadId: thread.id,
+				postId: reply.id,
+				authorId: bob.userId,
+				locked: false,
+			},
+		})
+		expect(await codeOf(core.locatePost(alice, MISSING_ID))).toBe('not_found')
+		expect(await codeOf(core.locatePost(alice, 'nope'))).toBe('not_found')
+		;(await core.deletePost(bob, reply.id)).unwrap()
+		expect(await codeOf(core.locatePost(alice, reply.id))).toBe('not_found')
+	})
+
+	it('previews a body with the installed renderer', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+
+		expect(core.contentFormat()).toBe('plain')
+		expect(core.previewBody('a < b').unwrap()).toEqual({
+			bodyHtml: 'a &lt; b',
+			bodyFormat: 'plain',
+		})
+		expect(core.previewBody('   ').isErr()).toBe(true)
+
+		await host.start(ShoutPlugin)
+		expect(core.contentFormat()).toBe('markdown')
+		expect(core.previewBody('hi').unwrap()).toEqual({
+			bodyHtml: '<p>HI</p>',
+			bodyFormat: 'markdown',
+		})
 	})
 })

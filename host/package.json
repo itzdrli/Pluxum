@@ -14,6 +14,8 @@
 		"@forum/forum-api": "workspace:*",
 		"@forum/forum-auth": "workspace:*",
 		"@forum/forum-core": "workspace:*",
+		"@forum/forum-markdown": "workspace:*",
+		"@forum/forum-reactions": "workspace:*",
 		"@forum/forum-redis": "workspace:*",
 		"@pluxel/commands": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",

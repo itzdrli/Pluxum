@@ -13,7 +13,12 @@ import { ForumCorePlugin, type ForumResult } from '@forum/forum-core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { ElysiaApp } from '@pluxel/services/elysia'
 import type { Elysia } from 'elysia'
+import type { TSchema } from 'typebox'
+import { Value } from 'typebox/value'
+import { ExtActionRegistry, type ExtActionContribution, type ExtActionMethod } from './ext'
 import * as schema from './schemas'
+
+export type { ExtActionContribution, ExtActionMethod } from './ext'
 
 /** Public prefix for every forum HTTP route; the frontend proxies this path on its own origin. */
 export const FORUM_API_PREFIX = '/api/forum'
@@ -104,15 +109,35 @@ function pageOf(query: { page?: string; pageSize?: string }): PageRequest {
 /**
  * Fixed HTTP ingress for the forum. The core owns the domain and its rules; this plugin owns the
  * URLs, resolves who is calling and projects results onto the wire contract. Dynamic extensions
- * never mount routes: they will contribute handlers through a registry owned here (M3).
+ * never mount routes: they contribute handlers to `registerExtAction`, served under `/ext`.
  */
 @Plugin({ displayName: 'Forum API' })
 export class ForumApiPlugin extends BasePlugin {
+	private readonly extActions = new ExtActionRegistry()
+
 	constructor(
 		private readonly core: ForumCorePlugin,
 		private readonly auth: ForumAuth,
 	) {
 		super()
+	}
+
+	/**
+	 * Serves an extension's action at `GET|POST /api/forum/ext/:extId/:action`. The ingress resolves
+	 * the caller, refuses cross-site writes and guests where login is required, and checks input
+	 * and output against the contributed schemas. The returned disposer must be handed to the
+	 * contributor's `ctx.effects`; once it ran, the path answers 404. Throws on an invalid name or
+	 * when the path is already taken.
+	 */
+	registerExtAction<Input extends TSchema, Output extends TSchema>(
+		contribution: ExtActionContribution<Input, Output>,
+	): () => void {
+		return this.extActions.register(contribution)
+	}
+
+	/** The registered ext actions as `extId/action`. */
+	extActionKeys(): string[] {
+		return this.extActions.keys()
 	}
 
 	protected override init(): void {
@@ -145,8 +170,52 @@ export class ForumApiPlugin extends BasePlugin {
 					.use(this.authRoutes())
 					.use(this.categoryRoutes())
 					.use(this.threadRoutes())
-					.use(this.postRoutes()),
+					.use(this.postRoutes())
+					.use(this.extRoutes()),
 			)
+	}
+
+	// The two fixed routes behind which every extension action lives.
+	private extRoutes() {
+		return (app: Elysia) =>
+			app
+				.get('/ext/:extId/:action', ({ request, params, query }) =>
+					this.runExtAction('GET', request, params, query),
+				)
+				.post('/ext/:extId/:action', ({ request, params, body }) =>
+					this.runExtAction('POST', request, params, body),
+				)
+	}
+
+	private async runExtAction(
+		method: ExtActionMethod,
+		request: Request,
+		params: { extId: string; action: string },
+		raw: unknown,
+	): Promise<Response> {
+		const found = this.extActions.find(params.extId, params.action)
+		if (!found) throw new ApiFailure(404, { code: 'not_found', message: '接口不存在' })
+		if (found.method !== method) {
+			throw new ApiFailure(405, { code: 'invalid', message: '请求方法不支持' })
+		}
+		const principal = await (method === 'POST' ? this.actor(request) : this.viewer(request))
+		if (found.login && principal.userId === null) {
+			throw new ApiFailure(401, { code: 'unauthenticated', message: '请先登录' })
+		}
+		const input = Value.Clean(found.input, raw ?? {})
+		if (!Value.Check(found.input, input)) {
+			throw new ApiFailure(422, { code: 'invalid', message: '请求参数无效' })
+		}
+		const result = await found.handle({ principal, input })
+		// Stopped or replaced while it ran: its answer is no longer this endpoint's.
+		if (!this.extActions.holds(found)) {
+			throw new ApiFailure(404, { code: 'not_found', message: '接口不存在' })
+		}
+		const output = Value.Clean(found.output, structuredClone(valueOf(result)))
+		if (!Value.Check(found.output, output)) {
+			throw new Error(`Ext action "${params.extId}/${params.action}" broke its output schema`)
+		}
+		return Response.json(output, { headers: { 'cache-control': 'no-store' } })
 	}
 
 	private categoryRoutes() {
@@ -241,6 +310,18 @@ export class ForumApiPlugin extends BasePlugin {
 				.delete('/posts/:id', async ({ request, params }) =>
 					noContent(await this.core.deletePost(await this.actor(request), params.id)),
 				)
+				// Renders a body as a saved post would look. Members only: it runs the renderer.
+				.post(
+					'/preview',
+					{ body: schema.postBody, response: schema.preview },
+					async ({ request, body }) => {
+						const principal = await this.actor(request)
+						if (principal.userId === null) {
+							throw new ApiFailure(401, { code: 'unauthenticated', message: '请先登录' })
+						}
+						return valueOf(this.core.previewBody(body.body))
+					},
+				)
 	}
 
 	private authRoutes() {
@@ -296,6 +377,8 @@ export class ForumApiPlugin extends BasePlugin {
 				threadTitleMax: LIMITS.threadTitleMax,
 				postBodyMax: LIMITS.postBodyMax,
 			},
+			content: { format: this.core.contentFormat() },
+			uiSlots: this.core.uiSlots(),
 		}
 	}
 

@@ -16,7 +16,8 @@
 	},
 	"dependencies": {
 		"@forum/domain": "workspace:*",
-		"elysia": "catalog:backend"
+		"elysia": "catalog:backend",
+		"typebox": "catalog:backend"
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "catalog:prod",
