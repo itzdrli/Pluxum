@@ -1,9 +1,14 @@
-import { Button, Input, Label, TextField } from '@heroui/react'
-import { data, Form, Link, redirect, useNavigation, useRouteLoaderData } from 'react-router'
+import { FolderPlus, LayoutList, Plus } from 'lucide-react'
+import { useState } from 'react'
+import { data, Form, redirect, useNavigation, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/home'
-import { FormError } from '../components/ui'
+import { CategoryRow } from '../components/forum/rows'
+import { Button } from '../components/ui/button'
+import { EmptyState, FormError, PageHeader, Panel, SectionLabel } from '../components/ui/display'
+import { TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, textField } from '../lib/forum-api.server'
+import { keepOnThemeChange } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
 
 export function meta(): Route.MetaDescriptors {
@@ -13,6 +18,8 @@ export function meta(): Route.MetaDescriptors {
 export async function loader({ request }: Route.LoaderArgs) {
 	return { categories: orThrow(await forumApi.categories(request)).items }
 }
+
+export const shouldRevalidate = keepOnThemeChange
 
 // Creates a category; the API decides whether the visitor may.
 export async function action({ request }: Route.ActionArgs) {
@@ -32,44 +39,46 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 	const { categories } = loaderData
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const canManage = root?.meta?.viewer.can.manageCategories === true
+	// Open while creating, and again when the API rejected the last attempt.
+	const [creating, setCreating] = useState(false)
+	const showForm = canManage && (creating || actionData?.error !== undefined)
 	return (
 		<>
-			<h1 className="mb-4 text-xl font-bold">版块</h1>
-			{categories.length === 0 ? (
-				<p className="border-border text-muted rounded-xl border px-5 py-10 text-center text-sm">
-					还没有版块。{canManage ? '在下面创建第一个。' : ''}
-				</p>
-			) : (
-				<ul className="border-border bg-surface divide-border divide-y rounded-xl border">
-					{categories.map((category) => (
-						<li key={category.id} className="flex items-center gap-4 px-5 py-4">
-							<div className="min-w-0 flex-1">
-								<Link
-									to={`/c/${category.slug}`}
-									className="hover:text-accent font-semibold break-words"
-								>
-									{category.name}
-								</Link>
-								{category.description !== '' && (
-									<p className="text-muted mt-1 text-sm break-words">{category.description}</p>
-								)}
-							</div>
-							<dl className="text-muted flex shrink-0 gap-5 text-right text-xs">
-								<div>
-									<dd className="text-foreground text-sm tabular-nums">{category.threadCount}</dd>
-									<dt>主题</dt>
-								</div>
-								<div>
-									<dd className="text-foreground text-sm tabular-nums">{category.postCount}</dd>
-									<dt>帖子</dt>
-								</div>
-							</dl>
-						</li>
-					))}
-				</ul>
+			<PageHeader title="版块" description="按话题分区浏览，或进入一个版块发起讨论。" />
+			<SectionLabel
+				actions={
+					canManage &&
+					!showForm && (
+						<Button tone="ghost" size="sm" onPress={() => setCreating(true)}>
+							<Plus aria-hidden />
+							新建版块
+						</Button>
+					)
+				}
+			>
+				全部版块 · {categories.length}
+			</SectionLabel>
+			{showForm && (
+				<NewCategory
+					error={actionData?.error}
+					nameMax={root?.meta?.limits.categoryNameMax}
+					onCancel={() => setCreating(false)}
+				/>
 			)}
-			{canManage && (
-				<NewCategory error={actionData?.error} nameMax={root?.meta?.limits.categoryNameMax} />
+			{categories.length === 0 ? (
+				<EmptyState
+					icon={LayoutList}
+					title="还没有版块"
+					hint={
+						canManage ? '新建第一个版块后，成员就可以在里面发布主题。' : '管理员还没有创建版块。'
+					}
+				/>
+			) : (
+				<Panel as="ul" className="divide-line divide-y">
+					{categories.map((category) => (
+						<CategoryRow key={category.id} category={category} />
+					))}
+				</Panel>
 			)}
 		</>
 	)
@@ -78,36 +87,48 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 function NewCategory({
 	error,
 	nameMax,
+	onCancel,
 }: {
 	error: string | undefined
 	nameMax: number | undefined
+	onCancel: () => void
 }) {
 	const submitting = useNavigation().state === 'submitting'
 	return (
-		<details className="border-border mt-6 rounded-xl border" open={error !== undefined}>
-			<summary className="cursor-pointer px-5 py-3 text-sm font-semibold">新建版块</summary>
-			<Form method="post" className="flex flex-col gap-4 px-5 pb-5">
+		<Panel as="section" className="mb-4 p-4">
+			<h3 className="text-ink-strong mb-3 flex items-center gap-2 font-bold">
+				<FolderPlus aria-hidden size={16} className="text-ink-weak" />
+				新建版块
+			</h3>
+			<Form method="post" className="flex flex-col gap-3">
 				<FormError message={error} />
-				<div className="grid gap-4 sm:grid-cols-2">
-					<TextField name="name" isRequired maxLength={nameMax}>
-						<Label>名称</Label>
-						<Input placeholder="综合讨论" />
-					</TextField>
-					<TextField name="slug">
-						<Label>标识（用在网址里）</Label>
-						<Input placeholder="general" pattern="[a-z0-9]+(-[a-z0-9]+)*" />
-					</TextField>
+				<div className="grid gap-3 sm:grid-cols-2">
+					<TextInputField
+						name="name"
+						label="名称"
+						required
+						maxLength={nameMax}
+						placeholder="综合讨论"
+						autoFocus
+					/>
+					<TextInputField
+						name="slug"
+						label="标识"
+						hint="用在网址里，小写字母、数字和连字符；留空则按名称生成。"
+						placeholder="general"
+						pattern="[a-z0-9]+(-[a-z0-9]+)*"
+					/>
 				</div>
-				<TextField name="description">
-					<Label>简介</Label>
-					<Input />
-				</TextField>
-				<div>
-					<Button type="submit" size="sm" isPending={submitting}>
+				<TextInputField name="description" label="简介" />
+				<div className="flex justify-end gap-2">
+					<Button tone="ghost" onPress={onCancel}>
+						取消
+					</Button>
+					<Button tone="primary" type="submit" isPending={submitting}>
 						创建版块
 					</Button>
 				</div>
 			</Form>
-		</details>
+		</Panel>
 	)
 }

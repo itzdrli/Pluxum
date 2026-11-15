@@ -44,7 +44,7 @@ function apiErrorOf(body: unknown): ApiError {
 	return { code, message: error.message }
 }
 
-type CallInit = Readonly<{ method?: 'GET' | 'POST'; body?: unknown }>
+type CallInit = Readonly<{ method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'; body?: unknown }>
 
 /**
  * One API call on behalf of the incoming page request. Expected failures come back as values so
@@ -71,6 +71,7 @@ async function call<T>(request: Request, path: string, init: CallInit = {}): Pro
 		if (request.signal.aborted) throw error
 		return { ok: false, status: 502, error: UNAVAILABLE }
 	}
+	// 204 (a delete) has no body; it reads as null.
 	const body: unknown = await response.json().catch(() => null)
 	if (!response.ok) return { ok: false, status: response.status, error: apiErrorOf(body) }
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- forum-api validates every success response against the schema these DTO types mirror; this is the one place that trust is stated.
@@ -116,6 +117,20 @@ export const forumApi = {
 			method: 'POST',
 			body: { body },
 		}),
+	updateThread: (
+		request: Request,
+		id: string,
+		body: Readonly<{ title?: string; pinned?: boolean; locked?: boolean }>,
+	) => call<ThreadDto>(request, `/threads/${encodeURIComponent(id)}`, { method: 'PATCH', body }),
+	deleteThread: (request: Request, id: string) =>
+		call<null>(request, `/threads/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+	updatePost: (request: Request, id: string, body: string) =>
+		call<PostDto>(request, `/posts/${encodeURIComponent(id)}`, {
+			method: 'PATCH',
+			body: { body },
+		}),
+	deletePost: (request: Request, id: string) =>
+		call<null>(request, `/posts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 }
 
 /** A text form field; a missing or file value reads as empty. */

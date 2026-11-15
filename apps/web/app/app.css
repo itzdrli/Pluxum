@@ -2,28 +2,364 @@
 @import '@heroui/styles';
 
 /*
- * Graphite on top of HeroUI's dark theme: neutral greys so content carries the colour,
- * one blue accent shared with the Workbench theme and FantasticFrame.
+ * Forum design tokens. The design language follows FantasticFrame (colour roles, type, density,
+ * state feedback); the layout is the forum's own.
+ *
+ * Colours are LUMINANCE ROLES, not hues. Every theme fills the same roles, so components never
+ * change between themes:
+ *
+ *   --c-page        page background            --c-text-weak    secondary text, icons
+ *   --c-panel       raised panel (cards, bars) --c-text         body text
+ *   --c-control     control background         --c-text-strong  headings, emphasis
+ *   --c-line        borders and dividers       --c-accent       the one accent colour
+ *   --c-danger / --c-warning / --c-success     low-saturation status colours
+ *
+ * Nothing outside user content shows a second hue. Themes are chosen with <html data-theme>, and
+ * the blocks match any element, so a swatch can preview a theme with `data-theme` on itself.
+ * Pages and components use the Tailwind names in `@theme inline` below, never raw colour values.
  */
-.dark,
-[data-theme='dark'] {
-	--accent: #5aa2ee;
-	--background: #1b1b1b;
-	--foreground: #ececec;
-	--muted: #a1a1a1;
-	--surface: #262626;
-	--surface-secondary: #2b2b2b;
-	--surface-tertiary: #303030;
-	--overlay: #262626;
-	--default: #303030;
-	--field-background: #262626;
-	--border: #444444;
-	--success: #7cc08a;
-	--warning: #d9bb62;
-	--danger: #e0645c;
+
+/* Graphite (default): neutral grey, so content carries the colour. */
+:root,
+[data-theme='graphite'] {
+	--c-page: #1b1b1b;
+	--c-panel: #262626;
+	--c-control: #303030;
+	--c-line: #444444;
+	--c-text-weak: #a1a1a1;
+	--c-text: #c4c4c4;
+	--c-text-strong: #ececec;
+	--c-accent: #5aa2ee;
+	--c-danger: #e0645c;
+	--c-warning: #d9bb62;
+	--c-success: #7cc08a;
+	--c-shadow: rgb(0 0 0 / 0.35);
 }
 
-@theme {
+/* Nord: the original blue-grey palette. */
+[data-theme='nord'] {
+	--c-page: #2e3440;
+	--c-panel: #3b4252;
+	--c-control: #434c5e;
+	--c-line: #4c566a;
+	--c-text-weak: #d8dee9;
+	--c-text: #e5e9f0;
+	--c-text-strong: #eceff4;
+	--c-accent: #88c0d0;
+	--c-danger: #bf616a;
+	--c-warning: #ebcb8b;
+	--c-success: #a3be8c;
+	--c-shadow: rgb(0 0 0 / 0.35);
+}
+
+/* Dusk: near-black neutral grey with a pale cyan accent. */
+[data-theme='dusk'] {
+	--c-page: #0d0f13;
+	--c-panel: #191c22;
+	--c-control: #20242c;
+	--c-line: #2e343e;
+	--c-text-weak: #b8c0cc;
+	--c-text: #cad1dc;
+	--c-text-strong: #edf1f7;
+	--c-accent: #6fc3de;
+	--c-danger: #ef8b96;
+	--c-warning: #d9c07b;
+	--c-success: #9bd0a5;
+	--c-shadow: rgb(0 0 0 / 0.5);
+}
+
+/* Frost: light and cool, cyan accent. */
+[data-theme='frost'] {
+	--c-page: #e7ecf2;
+	--c-panel: #f8fafc;
+	--c-control: #edf1f6;
+	--c-line: #cbd5e1;
+	--c-text-weak: #4a5870;
+	--c-text: #33415a;
+	--c-text-strong: #1f2a3a;
+	--c-accent: #0e7490;
+	--c-danger: #b8342f;
+	--c-warning: #8f6f1f;
+	--c-success: #3e8e4e;
+	--c-shadow: rgb(15 23 42 / 0.14);
+}
+
+/* Sand: warm paper tones, umber accent. */
+[data-theme='sand'] {
+	--c-page: #efe7d9;
+	--c-panel: #faf6ec;
+	--c-control: #f1e9da;
+	--c-line: #ddd0b9;
+	--c-text-weak: #5b4e3c;
+	--c-text: #4a3f2f;
+	--c-text-strong: #2e2518;
+	--c-accent: #8a5a23;
+	--c-danger: #a63d32;
+	--c-warning: #84661f;
+	--c-success: #5c7a43;
+	--c-shadow: rgb(46 37 24 / 0.16);
+}
+
+/* Native controls (scrollbars, pickers) follow the theme. */
+:root {
+	color-scheme: dark;
+}
+:root[data-theme='frost'],
+:root[data-theme='sand'] {
+	color-scheme: light;
+}
+
+/*
+ * State and shape, the same for every theme. Hover overlays the strong text colour at 7%, a press
+ * at 12%; selection is the accent at 14%. On a dark theme that reads lighter, on a light one darker.
+ */
+:root {
+	--c-hover: color-mix(in srgb, var(--c-text-strong) 7%, transparent);
+	--c-pressed: color-mix(in srgb, var(--c-text-strong) 12%, transparent);
+	--c-selected: color-mix(in srgb, var(--c-accent) 14%, transparent);
+	--c-overlay-shadow: 0 0 0 1px var(--c-line), 0 8px 24px var(--c-shadow);
+}
+
+/*
+ * HeroUI reads its own variables; map them onto the roles. `.dark` / `.light` on <html> only tells
+ * HeroUI which of its defaults to start from; these declarations replace the colours either way.
+ */
+:root,
+:root.dark,
+:root.light {
+	--background: var(--c-page);
+	--foreground: var(--c-text-strong);
+	--surface: var(--c-panel);
+	--surface-foreground: var(--c-text-strong);
+	--surface-secondary: var(--c-control);
+	--surface-secondary-foreground: var(--c-text-strong);
+	--surface-tertiary: var(--c-control);
+	--surface-tertiary-foreground: var(--c-text-strong);
+	--surface-hover: color-mix(in srgb, var(--c-panel) 93%, var(--c-text-strong) 7%);
+	--overlay: var(--c-panel);
+	--overlay-foreground: var(--c-text-strong);
+	--muted: var(--c-text-weak);
+	--default: var(--c-control);
+	--default-foreground: var(--c-text-strong);
+	--default-hover: color-mix(in srgb, var(--c-control) 93%, var(--c-text-strong) 7%);
+	--accent: var(--c-accent);
+	--accent-foreground: var(--c-page);
+	--accent-hover: color-mix(in srgb, var(--c-accent) 86%, var(--c-text-strong) 14%);
+	--accent-soft: var(--c-selected);
+	--accent-soft-foreground: var(--c-accent);
+	--accent-soft-hover: color-mix(in srgb, var(--c-accent) 20%, transparent);
+	--danger: var(--c-danger);
+	--danger-foreground: var(--c-page);
+	--danger-hover: color-mix(in srgb, var(--c-danger) 86%, var(--c-text-strong) 14%);
+	--danger-soft: color-mix(in srgb, var(--c-danger) 14%, transparent);
+	--danger-soft-foreground: var(--c-danger);
+	--danger-soft-hover: color-mix(in srgb, var(--c-danger) 20%, transparent);
+	--warning: var(--c-warning);
+	--warning-foreground: var(--c-page);
+	--warning-soft: color-mix(in srgb, var(--c-warning) 14%, transparent);
+	--warning-soft-foreground: var(--c-warning);
+	--success: var(--c-success);
+	--success-foreground: var(--c-page);
+	--success-soft: color-mix(in srgb, var(--c-success) 14%, transparent);
+	--success-soft-foreground: var(--c-success);
+	--segment: var(--c-control);
+	--segment-foreground: var(--c-text-strong);
+	--field-background: var(--c-page);
+	--field-foreground: var(--c-text-strong);
+	--field-placeholder: color-mix(in srgb, var(--c-text-weak) 60%, transparent);
+	--field-border: var(--c-line);
+	--field-border-width: 1px;
+	--field-hover: var(--c-page);
+	--field-focus: var(--c-page);
+	--field-border-hover: var(--c-text-weak);
+	--field-border-focus: var(--c-accent);
+	--border: var(--c-line);
+	--separator: var(--c-line);
+	--focus: var(--c-accent);
+	--link: var(--c-accent);
+	--backdrop: color-mix(in srgb, var(--c-page) 70%, transparent);
+	--scrollbar-thumb: color-mix(in srgb, var(--c-text-weak) 35%, transparent);
+	/* Flat: only menus, popovers and dialogs float. */
+	--surface-shadow: none;
+	--field-shadow: none;
+	--overlay-shadow: var(--c-overlay-shadow);
+	--radius: 2px;
+	--field-radius: 2px;
+}
+
+@theme inline {
+	/* Surfaces and lines */
+	--color-page: var(--c-page);
+	--color-panel: var(--c-panel);
+	--color-control: var(--c-control);
+	--color-line: var(--c-line);
+	/* Text, weak to strong */
+	--color-ink-weak: var(--c-text-weak);
+	--color-ink: var(--c-text);
+	--color-ink-strong: var(--c-text-strong);
+	/* Interaction overlays */
+	--color-hover: var(--c-hover);
+	--color-pressed: var(--c-pressed);
+	--color-selected: var(--c-selected);
+	--shadow-overlay: var(--c-overlay-shadow);
+
+	/*
+	 * Latin from IBM Plex Sans, CJK from Noto Sans SC, code in JetBrains Mono; all self-hosted
+	 * (root.tsx imports the Fontsource files). Only weights 400 and 700 ship, so the UI uses
+	 * normal and bold only.
+	 */
 	--font-sans: 'IBM Plex Sans', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+@layer base {
+	body {
+		background-color: var(--c-page);
+		color: var(--c-text);
+		font-family: var(--font-sans);
+		font-size: 13px;
+		line-height: 1.5;
+		font-variant-numeric: tabular-nums;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	/* Focus shows on keyboard use only, as an outline that never shifts layout. */
+	:focus-visible {
+		outline: 2px solid var(--c-accent);
+		outline-offset: 2px;
+	}
+
+	::selection {
+		background-color: color-mix(in srgb, var(--c-accent) 30%, transparent);
+	}
+}
+
+/*
+ * HeroUI at editor density: controls 28 / 32 / 36 px, 13px type, 2px corners, regular weight,
+ * no press-scale. Same layer as HeroUI's component styles and later, so these win at equal
+ * specificity while Tailwind utilities on an element still override them.
+ */
+@layer components {
+	.button {
+		height: 32px;
+		padding-inline: 12px;
+		gap: 6px;
+		border-radius: 2px;
+		font-size: 13px;
+		font-weight: 400;
+	}
+	.button--sm {
+		height: 28px;
+		padding-inline: 10px;
+	}
+	.button--lg {
+		height: 36px;
+		padding-inline: 14px;
+		font-size: 14px;
+	}
+	.button--icon-only {
+		width: 32px;
+		padding: 0;
+	}
+	.button--icon-only.button--sm {
+		width: 28px;
+	}
+	.button--icon-only.button--lg {
+		width: 36px;
+	}
+	.button:active,
+	.button[data-pressed='true'] {
+		transform: none;
+	}
+	.button svg:not([data-slot='spinner'] svg, [data-slot='link-icon'] svg) {
+		width: 16px;
+		height: 16px;
+		margin: 0;
+	}
+	.button--secondary {
+		--button-fg: var(--c-text-strong);
+	}
+	.button--ghost {
+		--button-fg: var(--c-text);
+		--button-bg-hover: var(--c-hover);
+		--button-bg-pressed: var(--c-pressed);
+	}
+	.button--outline {
+		--button-fg: var(--c-text-strong);
+		--button-bg-hover: var(--c-hover);
+		--button-bg-pressed: var(--c-pressed);
+	}
+
+	/* Fields: 32px, 1px border; focus changes only the border colour, no glow. */
+	.input,
+	.textarea {
+		border-radius: 2px;
+		font-size: 13px;
+		padding-inline: 10px;
+	}
+	.input {
+		height: 32px;
+		padding-block: 0;
+	}
+	.textarea {
+		padding-block: 8px;
+		line-height: 1.6;
+	}
+	.input:focus,
+	.input[data-focused='true'],
+	.textarea:focus,
+	.textarea[data-focused='true'] {
+		--tw-ring-shadow: 0 0 #0000;
+		box-shadow: none;
+	}
+	.label {
+		font-size: 12px;
+		font-weight: 400;
+		color: var(--c-text-weak);
+	}
+	.field-error,
+	.description {
+		font-size: 12px;
+	}
+}
+
+@layer utilities {
+	/* Section heading: small, bold, uppercase, tracked. */
+	.section-label {
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--c-text-weak);
+	}
+
+	/*
+	 * Long-form reading is the forum's own addition (FantasticFrame has none): post bodies use
+	 * 15px with relaxed leading instead of the 13px interface size.
+	 */
+	.post-body {
+		font-size: 15px;
+		line-height: 1.75;
+		color: var(--c-text);
+		overflow-wrap: anywhere;
+	}
+}
+
+/*
+ * Phones and touch screens: fields need 16px or iOS Safari zooms the page on focus, and actions
+ * that only appear on hover must always show.
+ */
+@media (max-width: 767px), (pointer: coarse) {
+	input:not([type='range'], [type='checkbox'], [type='radio']),
+	select,
+	textarea,
+	.input,
+	.textarea {
+		font-size: 16px;
+	}
+}
+@media (hover: none) {
+	.hover-reveal {
+		opacity: 1 !important;
+	}
 }

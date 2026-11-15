@@ -11,7 +11,9 @@ export default defineConfig({
 			name: 'frontend',
 			match: [
 				/^@dnd-kit\//,
+				/^@fontsource\//,
 				/^@heroui\//,
+				/^@openuidev\//,
 				/^@internationalized\//,
 				/^@react-aria\//,
 				/^@react-router\//,
@@ -30,6 +32,8 @@ export default defineConfig({
 				'react-dom',
 				'react-router',
 				'tailwindcss',
+				// Only the frontend's OpenUI component library uses zod; backend schemas stay TypeBox / valibot.
+				'zod',
 			],
 			priority: 20,
 		},

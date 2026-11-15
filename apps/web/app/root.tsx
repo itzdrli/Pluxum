@@ -1,45 +1,53 @@
-import { Chip } from '@heroui/react'
+// Self-hosted fonts (Fontsource), weights 400 and 700 only. Noto Sans SC is split by unicode
+// range, so a page downloads only the slices for the characters it shows.
+import '@fontsource/ibm-plex-sans/400.css'
+import '@fontsource/ibm-plex-sans/700.css'
+import '@fontsource/noto-sans-sc/400.css'
+import '@fontsource/noto-sans-sc/700.css'
+import '@fontsource/jetbrains-mono/400.css'
+import '@fontsource/jetbrains-mono/700.css'
+import { Home, TriangleAlert } from 'lucide-react'
 import {
 	isRouteErrorResponse,
-	Link,
 	Links,
 	Meta,
 	Outlet,
 	Scripts,
 	ScrollRestoration,
-	useLocation,
+	useRouteLoaderData,
 } from 'react-router'
 
 import type { Route } from './+types/root'
 import './app.css'
+import { Shell } from './components/shell/shell'
+import { useTheme } from './components/shell/theme-picker'
+import { ButtonLink } from './components/ui/button'
 import { forumApi } from './lib/forum-api.server'
+import { keepOnThemeChange } from './lib/revalidate'
+import { isDarkTheme, themeFromRequest } from './lib/theme'
 
-// Reasons forum-api appends to `/?login=` when a login could not be completed.
-const LOGIN_ERRORS: Readonly<Record<string, string>> = {
-	rejected: '登录没有完成，请重试。',
-	unavailable: '登录服务暂时不可用，请稍后再试。',
-}
-
-const ROLE_LABELS = { guest: '游客', member: '成员', moderator: '版主', admin: '管理员' } as const
-
-// Who is browsing and what the forum allows; child routes read it through useRouteLoaderData.
+// Who is browsing, what the forum allows, and the visitor's theme. Child routes read it through
+// useRouteLoaderData('root').
 export async function loader({ request }: Route.LoaderArgs) {
 	const meta = await forumApi.meta(request)
 	// The shell still renders when the API is down; the page below reports the failure itself.
-	return { meta: meta.ok ? meta.value : null }
+	return { meta: meta.ok ? meta.value : null, theme: themeFromRequest(request) }
 }
 
+export const shouldRevalidate = keepOnThemeChange
+
 export function Layout({ children }: { children: React.ReactNode }) {
+	const theme = useTheme()
 	return (
-		// Dark Graphite theme only for now; HeroUI reads both the class and data-theme.
-		<html lang="zh-CN" className="dark" data-theme="dark">
+		// HeroUI picks its light or dark base from the class; app.css maps every colour from data-theme.
+		<html lang="zh-CN" data-theme={theme} className={isDarkTheme(theme) ? 'dark' : 'light'}>
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<Meta />
 				<Links />
 			</head>
-			<body className="bg-background text-foreground min-h-screen font-sans antialiased">
+			<body>
 				{children}
 				<ScrollRestoration />
 				<Scripts />
@@ -49,79 +57,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
-	const viewer = loaderData.meta?.viewer
-	// Roles are listed weakest first; the header shows the strongest one.
-	const role = viewer?.roles.at(-1)
-	const location = useLocation()
-	const here = location.pathname + location.search
-	const loginError = LOGIN_ERRORS[new URLSearchParams(location.search).get('login') ?? '']
 	return (
-		<div className="flex min-h-screen flex-col">
-			<header className="border-border bg-surface border-b">
-				<div className="mx-auto flex h-12 w-full max-w-4xl items-center justify-between px-5">
-					<Link to="/" className="text-foreground text-base font-bold">
-						Pluxel Forum
-					</Link>
-					{viewer?.user ? (
-						<div className="flex items-center gap-3 text-sm">
-							<span data-testid="viewer" className="flex items-center gap-2">
-								{viewer.user.displayName}
-								{role !== undefined && role !== 'member' && (
-									<Chip size="sm" color="accent">
-										{ROLE_LABELS[role]}
-									</Chip>
-								)}
-							</span>
-							{/* Plain form posts to the API on this origin; it answers with a redirect. */}
-							<form method="post" action="/api/forum/auth/logout">
-								<button type="submit" className="text-muted hover:text-foreground">
-									退出
-								</button>
-							</form>
-							<form method="post" action="/api/forum/auth/logout-all">
-								<button
-									type="submit"
-									className="text-muted hover:text-foreground"
-									title="结束这个账号在所有设备上的登录"
-								>
-									退出所有设备
-								</button>
-							</form>
-						</div>
-					) : loaderData.meta?.auth.loginAvailable ? (
-						// A document navigation, not a client-side one: the API redirects to the provider.
-						<a
-							data-testid="viewer"
-							href={`/api/forum/auth/login?returnTo=${encodeURIComponent(here)}`}
-							className="text-accent text-sm"
-						>
-							登录
-						</a>
-					) : (
-						<span data-testid="viewer" className="text-muted text-sm">
-							未登录
-						</span>
-					)}
-				</div>
-			</header>
-			<main className="mx-auto w-full max-w-4xl px-5 py-6">
-				{loginError !== undefined && (
-					<p role="alert" className="border-border text-danger mb-4 border px-3 py-2 text-sm">
-						{loginError}
-					</p>
-				)}
-				<Outlet />
-			</main>
-		</div>
+		<Shell meta={loaderData.meta}>
+			<Outlet />
+		</Shell>
 	)
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-	let message = '出错了'
+	// Present when only a page below failed; the shell then still knows who is browsing.
+	const root = useRouteLoaderData<typeof loader>('root')
+	let status: number | undefined
 	let details = '发生了意外错误。'
 	let stack: string | undefined
 	if (isRouteErrorResponse(error)) {
-		message = String(error.status)
+		status = error.status
 		// Loaders pass the forum API's own message along as the response body.
 		details =
 			typeof error.data === 'string' && error.data !== ''
@@ -134,17 +84,23 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 		stack = error.stack
 	}
 	return (
-		<main className="mx-auto max-w-4xl px-5 py-12">
-			<h1 className="text-xl font-bold">{message}</h1>
-			<p className="text-muted mt-2">{details}</p>
-			<a href="/" className="text-accent mt-4 inline-block text-sm">
-				返回首页
-			</a>
-			{stack && (
-				<pre className="mt-4 overflow-x-auto p-4 text-sm">
+		<Shell meta={root?.meta ?? null}>
+			<div className="flex flex-col items-center gap-3 py-16 text-center">
+				<TriangleAlert aria-hidden size={24} className="text-ink-weak" strokeWidth={1.75} />
+				<h1 className="text-ink-strong text-[32px] leading-none font-bold tabular-nums">
+					{status ?? '出错了'}
+				</h1>
+				<p className="text-ink max-w-md">{details}</p>
+				<ButtonLink to="/" tone="secondary" className="mt-2">
+					<Home aria-hidden />
+					返回首页
+				</ButtonLink>
+			</div>
+			{stack !== undefined && (
+				<pre className="border-line bg-panel text-ink-weak mt-4 overflow-x-auto rounded-[2px] border p-4 font-mono text-[12px]">
 					<code>{stack}</code>
 				</pre>
 			)}
-		</main>
+		</Shell>
 	)
 }

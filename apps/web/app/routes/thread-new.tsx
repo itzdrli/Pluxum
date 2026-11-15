@@ -1,9 +1,12 @@
-import { Button, Input, Label, TextArea, TextField } from '@heroui/react'
+import { Send } from 'lucide-react'
 import { data, Form, redirect, useNavigation, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/thread-new'
-import { ButtonLink, Crumbs, FormError } from '../components/ui'
+import { Button, ButtonLink } from '../components/ui/button'
+import { Crumbs, FormError, PageHeader, Panel } from '../components/ui/display'
+import { TextAreaField, TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, textField } from '../lib/forum-api.server'
+import { keepOnThemeChange } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
@@ -15,6 +18,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	if (!can.createThread) throw data('你没有在这个版块发布主题的权限。', { status: 403 })
 	return { category }
 }
+
+export const shouldRevalidate = keepOnThemeChange
 
 export async function action({ request, params }: Route.ActionArgs) {
 	const form = await request.formData()
@@ -40,26 +45,37 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 					{ label: '发布主题' },
 				]}
 			/>
-			<h1 className="mb-4 text-xl font-bold">发布主题</h1>
-			<Form method="post" className="flex flex-col gap-4">
-				<FormError message={actionData?.error} />
-				<TextField name="title" isRequired maxLength={limits?.threadTitleMax} fullWidth>
-					<Label>标题</Label>
-					<Input autoFocus />
-				</TextField>
-				<TextField name="body" isRequired maxLength={limits?.postBodyMax} fullWidth>
-					<Label>内容</Label>
-					<TextArea rows={12} />
-				</TextField>
-				<div className="flex gap-3">
-					<Button type="submit" isPending={submitting}>
-						发布
-					</Button>
-					<ButtonLink to={`/c/${category.slug}`} variant="tertiary" size="md">
-						取消
-					</ButtonLink>
-				</div>
-			</Form>
+			<PageHeader title="发布主题" description={`发布到「${category.name}」`} />
+			<Panel as="section" className="p-4">
+				<Form method="post" className="flex flex-col gap-4">
+					<FormError message={actionData?.error} />
+					<TextInputField
+						name="title"
+						label="标题"
+						required
+						maxLength={limits?.threadTitleMax}
+						placeholder="一句话说清楚要讨论什么"
+						autoFocus
+					/>
+					<TextAreaField
+						name="body"
+						label="内容"
+						required
+						maxLength={limits?.postBodyMax}
+						rows={14}
+						hint="目前按纯文本显示，换行会保留。"
+					/>
+					<div className="flex justify-end gap-2">
+						<ButtonLink to={`/c/${category.slug}`} tone="ghost">
+							取消
+						</ButtonLink>
+						<Button type="submit" tone="primary" isPending={submitting}>
+							<Send aria-hidden />
+							发布
+						</Button>
+					</div>
+				</Form>
+			</Panel>
 		</>
 	)
 }

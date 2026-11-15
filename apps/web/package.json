@@ -22,7 +22,13 @@
 		"react-aria-components": "catalog:frontend",
 		"@react-aria/ssr": "catalog:frontend",
 		"@react-aria/utils": "catalog:frontend",
-		"@internationalized/date": "catalog:frontend"
+		"@internationalized/date": "catalog:frontend",
+		"@fontsource/ibm-plex-sans": "catalog:frontend",
+		"@fontsource/noto-sans-sc": "catalog:frontend",
+		"@fontsource/jetbrains-mono": "catalog:frontend",
+		"lucide-react": "catalog:frontend",
+		"@openuidev/react-lang": "catalog:frontend",
+		"zod": "catalog:frontend"
 	},
 	"devDependencies": {
 		"@react-router/dev": "catalog:frontend",
