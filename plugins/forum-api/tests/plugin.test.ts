@@ -7,7 +7,10 @@ import type {
 	ThreadDto,
 } from '@forum/domain'
 import { ForumApiPlugin } from '@forum/forum-api'
+import { ForumAuth, type Authentication, type Logout } from '@forum/forum-auth'
 import { ForumCorePlugin } from '@forum/forum-core'
+import { Plugin } from '@pluxel/core'
+import { Result } from '@pluxel/core/better-result'
 import { database } from '@pluxel/services/database'
 import { pglite } from '@pluxel/services/database/pglite'
 import { elysia } from '@pluxel/services/elysia'
@@ -25,31 +28,117 @@ type Host = Awaited<ReturnType<typeof createHost>>
 
 const error = (code: string) => ({ error: { code, message: expect.any(String) } })
 
-/** Starts the API acting as one development account with the given elevated roles. */
-async function startAs(host: Host, roles: ('moderator' | 'admin')[]) {
-	await host.start(ForumApiPlugin, {
-		catalog: [ForumCorePlugin],
-		initialConfig: {
-			devIdentity: { enabled: true, subject: 'dev:test', displayName: 'Dev', roles },
-		},
+const ORIGIN = 'https://forum.test'
+const CLEARED: Logout = { setCookie: 'session=; Max-Age=0', providerUrl: null }
+
+/**
+ * Stand-in identity provider: the `x-test-user` header names the account a request acts as
+ * (`down` plays a session store that cannot be reached). The real flows are tested in forum-auth.
+ */
+@Plugin(ForumAuth)
+class FakeAuth extends ForumAuth {
+	override loginAvailable(): boolean {
+		return true
+	}
+
+	override authenticate(request: Request): Promise<Authentication> {
+		const user = request.headers.get('x-test-user')
+		if (user === null) return Promise.resolve({ status: 'guest' })
+		if (user === 'down') return Promise.resolve({ status: 'unavailable' })
+		return Promise.resolve({ status: 'authenticated', userId: user })
+	}
+
+	override allowsOrigin(request: Request): boolean {
+		const origin = request.headers.get('origin')
+		return origin === null || origin === ORIGIN
+	}
+
+	override beginLogin(returnTo: string | null) {
+		return Promise.resolve(Result.ok(`https://idp.test/authorize?returnTo=${returnTo}`))
+	}
+
+	override completeLogin(request: Request) {
+		return Promise.resolve(
+			new URL(request.url).searchParams.has('code')
+				? Result.ok({ returnTo: '/t/42', setCookie: 'session=abc; HttpOnly' })
+				: Result.err({ code: 'rejected' as const, message: '登录已取消' }),
+		)
+	}
+
+	override logout(): Promise<Logout> {
+		return Promise.resolve(CLEARED)
+	}
+
+	override async logoutEverywhere(request: Request) {
+		const authentication = await this.authenticate(request)
+		return authentication.status === 'authenticated'
+			? Result.ok(CLEARED)
+			: Result.err({ code: 'unauthenticated' as const, message: '请先登录' })
+	}
+
+	override revokeUserSessions(): Promise<number> {
+		return Promise.resolve(0)
+	}
+
+	override backchannelLogout(logoutToken: string) {
+		return Promise.resolve(
+			logoutToken === 'valid'
+				? Result.ok(1)
+				: Result.err({ code: 'rejected' as const, message: 'Invalid logout token' }),
+		)
+	}
+}
+
+async function start(host: Host) {
+	await host.commit((change) => {
+		change.start(ForumCorePlugin)
+		change.start(FakeAuth)
+		change.start(ForumApiPlugin)
 	})
 }
 
-function client(host: Host) {
-	const call = async (method: string, path: string, payload?: unknown) => {
-		const response = await host.http.fetch(
+/** Starts the API and returns a client acting as a new account with the given elevated roles. */
+async function startAs(host: Host, roles: ('moderator' | 'admin')[]) {
+	await start(host)
+	const core = host.require(ForumCorePlugin)
+	const user = (await core.ensureUser({ subject: 'test:user', displayName: 'Dev' })).unwrap()
+	await Promise.all(roles.map((role) => core.grantRole(user.id, role)))
+	return client(host, { 'x-test-user': user.id })
+}
+
+function client(host: Host, identity: Record<string, string> = {}) {
+	const send = (
+		method: string,
+		path: string,
+		payload?: unknown,
+		headers: Record<string, string> = {},
+	) =>
+		host.http.fetch(
 			new Request(new URL(`/api/forum${path}`, host.http.origin), {
 				method,
-				headers: payload === undefined ? undefined : { 'content-type': 'application/json' },
+				headers: {
+					...identity,
+					...(payload === undefined ? {} : { 'content-type': 'application/json' }),
+					...headers,
+				},
 				body: payload === undefined ? undefined : JSON.stringify(payload),
+				redirect: 'manual',
 			}),
 		)
+	const call = async (
+		method: string,
+		path: string,
+		payload?: unknown,
+		headers?: Record<string, string>,
+	) => {
+		const response = await send(method, path, payload, headers)
 		const text = await response.text()
 		// Parsed JSON stays untyped here; each test states the DTO it expects.
 		const body = text ? JSON.parse(text) : undefined
 		return { status: response.status, body }
 	}
 	return {
+		send,
 		call,
 		/** Calls an endpoint that must succeed and returns its body. */
 		async ok<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -61,10 +150,16 @@ function client(host: Host) {
 	}
 }
 
+/** Where a response redirects to and which cookie it sets. */
+async function redirected(response: Promise<Response>) {
+	const { status, headers } = await response
+	return { status, location: headers.get('location'), cookie: headers.get('set-cookie') }
+}
+
 describe('ForumApiPlugin', () => {
 	it('serves the read API to guests and refuses their writes', async () => {
 		await using host = await createHost()
-		await host.start(ForumApiPlugin, { catalog: [ForumCorePlugin] })
+		await start(host)
 		const api = client(host)
 
 		expect(await api.ok('GET', '/ping')).toMatchObject({ status: 'ok', service: 'forum-api' })
@@ -74,6 +169,7 @@ describe('ForumApiPlugin', () => {
 			roles: ['guest'],
 			can: { manageCategories: false },
 		})
+		expect(meta.auth).toEqual({ loginAvailable: true })
 		expect(meta.limits.threadTitleMax).toBeGreaterThan(0)
 		expect(await api.ok('GET', '/categories')).toEqual({ items: [] })
 
@@ -86,10 +182,9 @@ describe('ForumApiPlugin', () => {
 		).toMatchObject({ status: 401 })
 	})
 
-	it('runs the forum end to end as the development identity', async () => {
+	it('runs the forum end to end as a logged-in admin', async () => {
 		await using host = await createHost()
-		await startAs(host, ['admin'])
-		const api = client(host)
+		const api = await startAs(host, ['admin'])
 
 		const meta = await api.ok<MetaDto>('GET', '/meta')
 		expect(meta.viewer).toMatchObject({
@@ -143,8 +238,7 @@ describe('ForumApiPlugin', () => {
 
 	it('reports every failure in one error shape', async () => {
 		await using host = await createHost()
-		await startAs(host, [])
-		const api = client(host)
+		const api = await startAs(host, [])
 
 		// A member without elevated roles cannot manage categories.
 		expect(await api.call('POST', '/categories', { name: 'General' })).toEqual({
@@ -170,7 +264,7 @@ describe('ForumApiPlugin', () => {
 
 	it('withdraws its routes when stopped', async () => {
 		await using host = await createHost()
-		await host.start(ForumApiPlugin, { catalog: [ForumCorePlugin] })
+		await start(host)
 		const api = client(host)
 		expect((await api.call('GET', '/ping')).status).toBe(200)
 
@@ -179,22 +273,69 @@ describe('ForumApiPlugin', () => {
 		expect(response.status).toBe(404)
 	})
 
-	it('refuses to start with a development identity in production', async () => {
-		const previous = process.env.NODE_ENV
-		process.env.NODE_ENV = 'production'
-		try {
-			await using host = await createHost()
-			const failure = await host.commitExpectFail((change) =>
-				change.start(ForumApiPlugin, {
-					catalog: [ForumCorePlugin],
-					initialConfig: { devIdentity: { enabled: true } },
+	it('refuses cross-site writes and writes it cannot attribute', async () => {
+		await using host = await createHost()
+		const api = await startAs(host, ['admin'])
+		const create = (headers: Record<string, string>) =>
+			api.call('POST', '/categories', { name: `C${crypto.randomUUID()}`, slug: 'c' }, headers)
+
+		// A browser on another site rides on the cookie; its Origin header gives it away.
+		expect(await create({ origin: 'https://evil.test' })).toEqual({
+			status: 403,
+			body: error('forbidden'),
+		})
+		expect((await create({ origin: ORIGIN })).status).toBe(201)
+
+		// With the session store down, reads continue as a guest and writes ask to retry later.
+		const down = client(host, { 'x-test-user': 'down' })
+		expect((await down.ok<MetaDto>('GET', '/meta')).viewer.roles).toEqual(['guest'])
+		expect(await down.call('POST', '/categories', { name: 'Later' })).toEqual({
+			status: 503,
+			body: error('unavailable'),
+		})
+	})
+
+	it('drives login and logout through redirects', async () => {
+		await using host = await createHost()
+		const api = await startAs(host, [])
+		const guest = client(host)
+		expect(await redirected(guest.send('GET', '/auth/login?returnTo=/t/42'))).toEqual({
+			status: 303,
+			location: 'https://idp.test/authorize?returnTo=/t/42',
+			cookie: null,
+		})
+		expect(await redirected(guest.send('GET', '/auth/callback?code=c&state=s'))).toEqual({
+			status: 303,
+			location: '/t/42',
+			cookie: 'session=abc; HttpOnly',
+		})
+		// A failed login lands on a page that can explain it.
+		expect(await redirected(guest.send('GET', '/auth/callback?error=access_denied'))).toEqual({
+			status: 303,
+			location: '/?login=rejected',
+			cookie: null,
+		})
+
+		const loggedOut = { status: 303, location: '/', cookie: CLEARED.setCookie }
+		expect(await redirected(api.send('POST', '/auth/logout'))).toEqual(loggedOut)
+		expect(await redirected(api.send('POST', '/auth/logout-all'))).toEqual(loggedOut)
+		expect(await guest.call('POST', '/auth/logout-all')).toEqual({
+			status: 401,
+			body: error('unauthenticated'),
+		})
+		expect(
+			(await api.call('POST', '/auth/logout', undefined, { origin: 'https://evil.test' })).status,
+		).toBe(403)
+
+		// The provider posts the logout token as a form.
+		const backchannel = (token: string) =>
+			host.http.fetch(
+				new Request(new URL('/api/forum/auth/backchannel-logout', host.http.origin), {
+					method: 'POST',
+					body: new URLSearchParams({ logout_token: token }),
 				}),
 			)
-			expect(failure.lifecycleReport.issues).toContainEqual(
-				expect.objectContaining({ kind: 'start-failed' }),
-			)
-		} finally {
-			process.env.NODE_ENV = previous
-		}
+		expect((await backchannel('valid')).status).toBe(200)
+		expect((await backchannel('forged')).status).toBe(400)
 	})
 })

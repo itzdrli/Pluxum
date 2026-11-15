@@ -73,6 +73,7 @@ export const meta = t.Object({
 		),
 		can: t.Object({ manageCategories: t.Boolean() }),
 	}),
+	auth: t.Object({ loginAvailable: t.Boolean() }),
 	limits: t.Object({
 		categoryNameMax: t.Number(),
 		threadTitleMax: t.Number(),

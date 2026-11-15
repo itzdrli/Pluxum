@@ -11,5 +11,3 @@ PNPM_CONFIG_PM_ON_FAIL = "ignore"
 # Dev Redis from compose.dev.yaml (forum-valkey). Deployments provide their own value.
 REDIS_CONNECTIONS = '[{"id":"session","url":"redis://127.0.0.1:6380"}]'
 FORUM_TEST_REDIS_URL = "redis://127.0.0.1:6380"
-# Until login exists (M2), every forum request in development acts as this account.
-FORUM_DEV_IDENTITY = '{"displayName":"开发者","roles":["admin"]}'

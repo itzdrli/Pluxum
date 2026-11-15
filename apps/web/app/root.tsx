@@ -7,11 +7,18 @@ import {
 	Outlet,
 	Scripts,
 	ScrollRestoration,
+	useLocation,
 } from 'react-router'
 
 import type { Route } from './+types/root'
 import './app.css'
 import { forumApi } from './lib/forum-api.server'
+
+// Reasons forum-api appends to `/?login=` when a login could not be completed.
+const LOGIN_ERRORS: Readonly<Record<string, string>> = {
+	rejected: '登录没有完成，请重试。',
+	unavailable: '登录服务暂时不可用，请稍后再试。',
+}
 
 const ROLE_LABELS = { guest: '游客', member: '成员', moderator: '版主', admin: '管理员' } as const
 
@@ -45,6 +52,9 @@ export default function App({ loaderData }: Route.ComponentProps) {
 	const viewer = loaderData.meta?.viewer
 	// Roles are listed weakest first; the header shows the strongest one.
 	const role = viewer?.roles.at(-1)
+	const location = useLocation()
+	const here = location.pathname + location.search
+	const loginError = LOGIN_ERRORS[new URLSearchParams(location.search).get('login') ?? '']
 	return (
 		<div className="flex min-h-screen flex-col">
 			<header className="border-border bg-surface border-b">
@@ -53,14 +63,40 @@ export default function App({ loaderData }: Route.ComponentProps) {
 						Pluxel Forum
 					</Link>
 					{viewer?.user ? (
-						<span data-testid="viewer" className="flex items-center gap-2 text-sm">
-							{viewer.user.displayName}
-							{role !== undefined && role !== 'member' && (
-								<Chip size="sm" color="accent">
-									{ROLE_LABELS[role]}
-								</Chip>
-							)}
-						</span>
+						<div className="flex items-center gap-3 text-sm">
+							<span data-testid="viewer" className="flex items-center gap-2">
+								{viewer.user.displayName}
+								{role !== undefined && role !== 'member' && (
+									<Chip size="sm" color="accent">
+										{ROLE_LABELS[role]}
+									</Chip>
+								)}
+							</span>
+							{/* Plain form posts to the API on this origin; it answers with a redirect. */}
+							<form method="post" action="/api/forum/auth/logout">
+								<button type="submit" className="text-muted hover:text-foreground">
+									退出
+								</button>
+							</form>
+							<form method="post" action="/api/forum/auth/logout-all">
+								<button
+									type="submit"
+									className="text-muted hover:text-foreground"
+									title="结束这个账号在所有设备上的登录"
+								>
+									退出所有设备
+								</button>
+							</form>
+						</div>
+					) : loaderData.meta?.auth.loginAvailable ? (
+						// A document navigation, not a client-side one: the API redirects to the provider.
+						<a
+							data-testid="viewer"
+							href={`/api/forum/auth/login?returnTo=${encodeURIComponent(here)}`}
+							className="text-accent text-sm"
+						>
+							登录
+						</a>
 					) : (
 						<span data-testid="viewer" className="text-muted text-sm">
 							未登录
@@ -69,6 +105,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
 				</div>
 			</header>
 			<main className="mx-auto w-full max-w-4xl px-5 py-6">
+				{loginError !== undefined && (
+					<p role="alert" className="border-border text-danger mb-4 border px-3 py-2 text-sm">
+						{loginError}
+					</p>
+				)}
 				<Outlet />
 			</main>
 		</div>

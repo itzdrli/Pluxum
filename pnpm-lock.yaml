@@ -89,6 +89,9 @@ catalogs:
     '@electric-sql/pglite':
       specifier: ^0.5.10
       version: 0.5.14
+    jose:
+      specifier: ^6.2.12
+      version: 6.2.17
   test:
     vitest:
       specifier: 5.0.5
@@ -233,6 +236,9 @@ importers:
       '@forum/forum-api':
         specifier: workspace:*
         version: link:../plugins/forum-api
+      '@forum/forum-auth':
+        specifier: workspace:*
+        version: link:../plugins/forum-auth
       '@forum/forum-core':
         specifier: workspace:*
         version: link:../plugins/forum-core
@@ -403,13 +409,13 @@ importers:
       elysia:
         specifier: catalog:backend
         version: 2.0.0-rc.0(exact-mirror@1.2.6(typebox@1.4.3))(openapi-types@12.1.3)(typebox@1.4.3)(typescript@7.0.2)
-      valibot:
-        specifier: catalog:validation
-        version: 1.5.0(typescript@7.0.2)
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
+      '@forum/forum-auth':
+        specifier: workspace:*
+        version: link:../forum-auth
       '@forum/forum-core':
         specifier: workspace:*
         version: link:../forum-core
@@ -422,6 +428,58 @@ importers:
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      typescript:
+        specifier: catalog:tooling
+        version: 7.0.2
+      vite-plus:
+        specifier: catalog:tooling
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
+      vitest:
+        specifier: catalog:test
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5(vitest@5.0.5))(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
+
+  plugins/forum-auth:
+    dependencies:
+      '@forum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@pluxel/core':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/plugin-redis':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
+      '@pluxel/services':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      jose:
+        specifier: catalog:prod
+        version: 6.2.17
+      valibot:
+        specifier: catalog:validation
+        version: 1.5.0(typescript@7.0.2)
+    devDependencies:
+      '@electric-sql/pglite':
+        specifier: catalog:prod
+        version: 0.5.14
+      '@forum/forum-core':
+        specifier: workspace:*
+        version: link:../forum-core
+      '@forum/forum-redis':
+        specifier: workspace:*
+        version: link:../forum-redis
+      '@pluxel/cli':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+      '@pluxel/test':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@types/node':
+        specifier: catalog:tooling
+        version: 26.6.6
       typescript:
         specifier: catalog:tooling
         version: 7.0.2
@@ -2283,6 +2341,9 @@ packages:
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
+
+  jose@6.2.17:
+    resolution: {integrity: sha512-wOuK9V1yujQFH5S0ZWmLcDZN7+IKh9bUCC2ZPCf2HDlol3WWHy+PPyNjEI75FXRLMp3vDKQcupP59xhVU95hcg==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -4583,6 +4644,8 @@ snapshots:
   isbot@5.2.2: {}
 
   jiti@2.7.0: {}
+
+  jose@6.2.17: {}
 
   js-tokens@4.0.0: {}
 

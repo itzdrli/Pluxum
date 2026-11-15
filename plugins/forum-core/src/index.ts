@@ -171,6 +171,29 @@ export class ForumCorePlugin extends BasePlugin {
 		})
 	}
 
+	/** The account of an identity-provider subject, or null when it has never logged in. */
+	async findUserBySubject(subject: string): Promise<UserDto | null> {
+		const [user] = await this.database.read((db) =>
+			db.select(author).from(users).where(eq(users.subject, subject)),
+		)
+		return user ?? null
+	}
+
+	/** Privileged: changes an account's display name; callers decide who may. */
+	async renameUser(userId: string, displayName: string): Promise<ForumResult<UserDto>> {
+		if (!isEntityId(userId)) return notFound('用户')
+		const name = validateDisplayName(displayName)
+		if (!name.ok) return invalid(name.reason)
+		const [user] = await this.database.transaction((tx) =>
+			tx
+				.update(users)
+				.set({ displayName: name.value })
+				.where(eq(users.id, userId))
+				.returning(author),
+		)
+		return user ? Result.ok(user) : notFound('用户')
+	}
+
 	async getUser(userId: string): Promise<ForumResult<UserDto>> {
 		if (!isEntityId(userId)) return notFound('用户')
 		const [user] = await this.database.read((db) =>

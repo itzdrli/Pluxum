@@ -1,13 +1,15 @@
 import { VaultAdminPlugin } from '@pluxel/services/plugins'
 import { pluginNodeAddressOf } from '@pluxel/core'
 import * as v from 'valibot'
-import { ForumApiConfig, ForumApiPlugin } from '@forum/forum-api'
+import { ForumApiPlugin } from '@forum/forum-api'
+import { ForumAuthConfig, ForumAuthPlugin } from '@forum/forum-auth'
 import { ForumCorePlugin } from '@forum/forum-core'
 import { ForumRedisConfig, ForumRedisPlugin } from '@forum/forum-redis'
 
 export const appPlugins = [
 	ForumRedisPlugin,
 	ForumCorePlugin,
+	ForumAuthPlugin,
 	ForumApiPlugin,
 	VaultAdminPlugin,
 ] as const
@@ -19,14 +21,17 @@ export function appHostState() {
 }
 
 export type AppConfigEnv = Readonly<{
-	NODE_ENV?: string
-	FORUM_DEV_IDENTITY?: string
+	FORUM_WEB_PUBLIC_ORIGIN?: string
+	FORUM_OIDC_ISSUER?: string
+	FORUM_OIDC_CLIENT_ID?: string
+	FORUM_OIDC_PROVIDER_LOGOUT?: string
+	FORUM_ADMIN_SUBJECTS?: string
 	REDIS_CONNECTIONS?: string
 }>
 
 export function appConfigRecords(env: AppConfigEnv) {
 	return {
-		initial: [...redisConfigRecord(env.REDIS_CONNECTIONS), ...devIdentityConfigRecord(env)],
+		initial: [...redisConfigRecord(env.REDIS_CONNECTIONS), ...authConfigRecord(env)],
 	}
 }
 
@@ -55,25 +60,45 @@ function redisConfigRecord(raw: string | undefined) {
 	]
 }
 
+const set = (value: string | undefined): string | undefined => (value === '' ? undefined : value)
+
 /**
- * FORUM_DEV_IDENTITY (JSON object: subject?, displayName?, roles?) makes every forum request act
- * as one account until real login lands (M2). Development only: a production host refuses it here,
- * and ForumApiPlugin refuses it again at start.
+ * Base config layer of ForumAuthPlugin (Workbench edits can override it, like Redis above):
+ * - FORUM_WEB_PUBLIC_ORIGIN: the forum frontend's origin as browsers see it;
+ * - FORUM_OIDC_ISSUER + FORUM_OIDC_CLIENT_ID: the Zitadel instance and the forum's OIDC application;
+ * - FORUM_OIDC_PROVIDER_LOGOUT=true: logging out of the forum also ends the Zitadel session;
+ * - FORUM_ADMIN_SUBJECTS: comma-separated Zitadel user IDs that become forum admins at login.
+ * The client secret is never an environment value here; it lives in the plugin's Vault record.
  */
-function devIdentityConfigRecord(env: AppConfigEnv) {
-	const raw = env.FORUM_DEV_IDENTITY
-	if (raw === undefined || raw === '') return []
-	if (env.NODE_ENV === 'production') {
-		throw new Error('FORUM_DEV_IDENTITY must not be set when NODE_ENV is "production"')
+function authConfigRecord(env: AppConfigEnv) {
+	const issuer = set(env.FORUM_OIDC_ISSUER)
+	const clientId = set(env.FORUM_OIDC_CLIENT_ID)
+	if ((issuer === undefined) !== (clientId === undefined)) {
+		throw new TypeError('FORUM_OIDC_ISSUER and FORUM_OIDC_CLIENT_ID must be set together')
 	}
-	const identity = parseJsonEnv('FORUM_DEV_IDENTITY', raw)
-	if (typeof identity !== 'object' || identity === null || Array.isArray(identity)) {
-		throw new TypeError('FORUM_DEV_IDENTITY must be a JSON object')
-	}
+	const publicOrigin = set(env.FORUM_WEB_PUBLIC_ORIGIN)
+	const adminSubjects = (env.FORUM_ADMIN_SUBJECTS ?? '')
+		.split(',')
+		.map((subject) => subject.trim())
+		.filter(Boolean)
+	if (publicOrigin === undefined && issuer === undefined && adminSubjects.length === 0) return []
 	return [
 		{
-			owner: pluginNodeAddressOf(ForumApiPlugin),
-			config: v.parse(ForumApiConfig, { devIdentity: { ...identity, enabled: true } }),
+			owner: pluginNodeAddressOf(ForumAuthPlugin),
+			// Config records hold plain data: an unset option is left out, not stored as undefined.
+			config: v.parse(ForumAuthConfig, {
+				...(publicOrigin === undefined ? {} : { publicOrigin }),
+				...(issuer === undefined
+					? {}
+					: {
+							oidc: {
+								issuer,
+								clientId,
+								providerLogout: env.FORUM_OIDC_PROVIDER_LOGOUT === 'true',
+							},
+						}),
+				adminSubjects,
+			}),
 		},
 	]
 }

@@ -29,6 +29,7 @@ const ERROR_CODES = [
 	'forbidden',
 	'not_found',
 	'conflict',
+	'unavailable',
 	'internal',
 ] as const satisfies ReadonlyArray<ApiError['code']>
 
@@ -51,9 +52,12 @@ type CallInit = Readonly<{ method?: 'GET' | 'POST'; body?: unknown }>
  */
 async function call<T>(request: Request, path: string, init: CallInit = {}): Promise<ApiResult<T>> {
 	const headers = new Headers({ accept: 'application/json' })
-	// The visitor's session travels with the call (used from M2 on).
-	const cookie = request.headers.get('cookie')
-	if (cookie !== null) headers.set('cookie', cookie)
+	// The visitor's session travels with the call, and so does the browser's Origin: forum-api
+	// refuses writes that a page on another site made the browser send.
+	for (const name of ['cookie', 'origin']) {
+		const value = request.headers.get(name)
+		if (value !== null) headers.set(name, value)
+	}
 	if (init.body !== undefined) headers.set('content-type', 'application/json')
 	let response: Response
 	try {

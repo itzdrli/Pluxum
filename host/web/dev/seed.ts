@@ -19,7 +19,8 @@ const welcome = {
 // only together with a newly created announcements category.
 export default defineDevConsole(async (dev) => {
 	const core = dev.plugins.require(ForumCorePlugin)
-	const user = await core.ensureUser({ subject: 'dev:local', displayName: '开发者' })
+	// A system account that owns the seeded content; nobody can log in as it.
+	const user = await core.ensureUser({ subject: 'system:seed', displayName: '论坛' })
 	if (user.isErr()) throw new Error(user.error.message)
 	// The core trusts the principal it is given; seeding acts as an admin regardless of stored roles.
 	const admin = { userId: user.value.id, roles: ['member', 'admin'] } as const

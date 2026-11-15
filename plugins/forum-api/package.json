@@ -16,11 +16,11 @@
 	},
 	"dependencies": {
 		"@forum/domain": "workspace:*",
-		"elysia": "catalog:backend",
-		"valibot": "catalog:validation"
+		"elysia": "catalog:backend"
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "catalog:prod",
+		"@forum/forum-auth": "workspace:*",
 		"@forum/forum-core": "workspace:*",
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
@@ -32,6 +32,7 @@
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
+		"@forum/forum-auth": "*",
 		"@forum/forum-core": "*",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel"
@@ -41,6 +42,7 @@
 		"nodeArtifacts": true,
 		"workbenchArtifacts": true,
 		"pluginPackages": {
+			"@forum/forum-auth": "required",
 			"@forum/forum-core": "required"
 		}
 	},

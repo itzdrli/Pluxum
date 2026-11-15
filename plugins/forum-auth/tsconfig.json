@@ -1,0 +1,11 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"paths": {
+			// Type-check against plugin-redis's built declarations rather than re-checking framework
+			// source (exported under `@pluxel/hmr`) with this workspace's compiler settings.
+			"@pluxel/plugin-redis": ["./node_modules/@pluxel/plugin-redis/dist/index.d.mts"]
+		}
+	},
+	"include": ["src/**/*.ts", "tests/**/*.ts", "vitest.config.ts"]
+}

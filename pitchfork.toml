@@ -24,3 +24,14 @@ mise = true
 depends = ["app"]
 port = { expect = [3000], bump = 100 }
 ready_output = { pattern = "Local:", timeout = "5m" }
+
+# Production build of the frontend for a public origin behind a reverse proxy (not the dev server:
+# Vite's dev server must never be reachable from the internet). Rebuilds on every start.
+# Bind address and port come from FORUM_WEB_BIND_HOST / FORUM_WEB_BIND_PORT (mise.local.toml);
+# the default is loopback only. Start with `pitchfork start web-public`.
+[daemons.web-public]
+run = "sh -c 'pnpm --dir apps/web exec react-router build && NODE_ENV=production HOST=${FORUM_WEB_BIND_HOST:-127.0.0.1} PORT=${FORUM_WEB_BIND_PORT:-3100} exec pnpm --dir apps/web exec react-router-serve ./build/server/index.js'"
+mise = true
+depends = ["app"]
+auto = []
+ready_output = { pattern = "react-router-serve", timeout = "5m" }

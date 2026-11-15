@@ -70,6 +70,10 @@ export type ViewerDto = Readonly<{
 
 export type MetaDto = Readonly<{
 	viewer: ViewerDto
+	auth: Readonly<{
+		/** Whether the forum can start a login right now (an identity provider is configured). */
+		loginAvailable: boolean
+	}>
 	limits: Readonly<{
 		categoryNameMax: number
 		threadTitleMax: number
@@ -92,9 +96,12 @@ export type ForumError = Readonly<{
 	message: string
 }>
 
-/** Error as the HTTP API reports it; `internal` covers failures outside the forum's own rules. */
+/**
+ * Error as the HTTP API reports it. `unavailable`: a dependency (session store, identity provider)
+ * is down and retrying later may work; `internal` covers other failures outside the forum's rules.
+ */
 export type ApiError = Readonly<{
-	code: ForumErrorCode | 'internal'
+	code: ForumErrorCode | 'unavailable' | 'internal'
 	message: string
 }>
 

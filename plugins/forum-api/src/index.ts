@@ -1,5 +1,4 @@
 import {
-	ASSIGNABLE_ROLES,
 	GUEST,
 	LIMITS,
 	type ApiError,
@@ -9,34 +8,15 @@ import {
 	type PageRequest,
 	type Principal,
 } from '@forum/domain'
+import { ForumAuth, type AuthFailure, type Logout } from '@forum/forum-auth'
 import { ForumCorePlugin, type ForumResult } from '@forum/forum-core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { ElysiaApp } from '@pluxel/services/elysia'
 import type { Elysia } from 'elysia'
-import * as v from 'valibot'
 import * as schema from './schemas'
 
 /** Public prefix for every forum HTTP route; the frontend proxies this path on its own origin. */
 export const FORUM_API_PREFIX = '/api/forum'
-
-export const ForumApiConfig = v.object({
-	/**
-	 * Development stand-in for login until forum-auth exists (M2): when enabled, every request acts
-	 * as this one account. Refused when NODE_ENV is "production".
-	 */
-	devIdentity: v.optional(
-		v.object({
-			enabled: v.optional(v.boolean(), false),
-			subject: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(255)), 'dev:local'),
-			displayName: v.optional(
-				v.pipe(v.string(), v.minLength(1), v.maxLength(LIMITS.displayNameMax)),
-				'开发者',
-			),
-			roles: v.optional(v.array(v.picklist(ASSIGNABLE_ROLES)), []),
-		}),
-		{},
-	),
-})
 
 const STATUS: Readonly<Record<ForumErrorCode, number>> = {
 	invalid: 422,
@@ -50,16 +30,48 @@ function errorResponse(status: number, error: ApiError): Response {
 	return Response.json({ error }, { status })
 }
 
-/** Carries an expected forum failure from a handler to the shared error response. */
-class ForumFailure extends Error {
-	constructor(readonly failure: ForumError) {
+const AUTH_STATUS: Readonly<Record<AuthFailure['code'], number>> = {
+	unavailable: 503,
+	rejected: 400,
+	unauthenticated: 401,
+}
+
+/** Carries an expected failure from a handler to the shared error response. */
+class ApiFailure extends Error {
+	constructor(
+		readonly status: number,
+		readonly failure: ApiError,
+	) {
 		super(failure.message)
 	}
 }
 
+const forumFailure = (failure: ForumError) => new ApiFailure(STATUS[failure.code], failure)
+const authFailure = (failure: AuthFailure) =>
+	new ApiFailure(AUTH_STATUS[failure.code], {
+		code: failure.code === 'rejected' ? 'invalid' : failure.code,
+		message: failure.message,
+	})
+
+function redirect(location: string, setCookie?: string): Response {
+	const headers = new Headers({ location, 'cache-control': 'no-store' })
+	if (setCookie !== undefined) headers.set('set-cookie', setCookie)
+	// 303: the browser follows with GET, also after the logout form's POST.
+	return new Response(null, { status: 303, headers })
+}
+
+/** After a logout the browser goes to the provider's logout page when there is one, else home. */
+const loggedOut = (logout: Logout) => redirect(logout.providerUrl ?? '/', logout.setCookie)
+
+/** The `logout_token` form field of an OIDC back-channel logout request. */
+function logoutTokenOf(body: unknown): string | null {
+	if (typeof body !== 'object' || body === null || !('logout_token' in body)) return null
+	return typeof body.logout_token === 'string' ? body.logout_token : null
+}
+
 /** The value of a core result; a failure becomes the error response every forum route shares. */
 function valueOf<T>(result: ForumResult<T>): T {
-	if (result.isErr()) throw new ForumFailure(result.error)
+	if (result.isErr()) throw forumFailure(result.error)
 	return result.value
 }
 
@@ -96,21 +108,18 @@ function pageOf(query: { page?: string; pageSize?: string }): PageRequest {
  */
 @Plugin({ displayName: 'Forum API' })
 export class ForumApiPlugin extends BasePlugin {
-	private readonly config = this.configs.use(ForumApiConfig)
-	private devUserId: string | null = null
-
-	constructor(private readonly core: ForumCorePlugin) {
+	constructor(
+		private readonly core: ForumCorePlugin,
+		private readonly auth: ForumAuth,
+	) {
 		super()
 	}
 
-	protected override async init(): Promise<void> {
-		await this.setUpDevIdentity()
+	protected override init(): void {
 		this.ctx
 			.require(ElysiaApp)
 			.onError(({ error }) => {
-				if (error instanceof ForumFailure) {
-					return errorResponse(STATUS[error.failure.code], error.failure)
-				}
+				if (error instanceof ApiFailure) return errorResponse(error.status, error.failure)
 				const { code, status } = elysiaErrorFacts(error)
 				// A response that fails its own schema is a server fault (500), not bad input.
 				if (code === 'validation' && status === 422) {
@@ -132,7 +141,8 @@ export class ForumApiPlugin extends BasePlugin {
 						service: 'forum-api' as const,
 						time: new Date().toISOString(),
 					}))
-					.get('/meta', { response: schema.meta }, () => this.meta())
+					.get('/meta', { response: schema.meta }, ({ request }) => this.meta(request))
+					.use(this.authRoutes())
 					.use(this.categoryRoutes())
 					.use(this.threadRoutes())
 					.use(this.postRoutes()),
@@ -142,32 +152,38 @@ export class ForumApiPlugin extends BasePlugin {
 	private categoryRoutes() {
 		return (app: Elysia) =>
 			app
-				.get('/categories', { response: schema.categoryList }, async () => ({
-					items: await this.core.listCategories(await this.principal()),
+				.get('/categories', { response: schema.categoryList }, async ({ request }) => ({
+					items: await this.core.listCategories(await this.viewer(request)),
 				}))
 				.post(
 					'/categories',
 					{ body: schema.createCategoryBody, response: { 201: schema.category } },
-					async ({ body, status }) =>
-						status(201, valueOf(await this.core.createCategory(await this.principal(), body))),
+					async ({ request, body, status }) =>
+						status(201, valueOf(await this.core.createCategory(await this.actor(request), body))),
 				)
 				// `:category` is the slug when reading threads and the ID when managing the category.
 				.get(
 					'/categories/:category/threads',
 					{ query: schema.paging, response: schema.categoryThreads },
-					async ({ params, query }) =>
+					async ({ request, params, query }) =>
 						valueOf(
-							await this.core.listThreads(await this.principal(), params.category, pageOf(query)),
+							await this.core.listThreads(
+								await this.viewer(request),
+								params.category,
+								pageOf(query),
+							),
 						),
 				)
 				.patch(
 					'/categories/:category',
 					{ body: schema.updateCategoryBody, response: schema.category },
-					async ({ params, body }) =>
-						valueOf(await this.core.updateCategory(await this.principal(), params.category, body)),
+					async ({ request, params, body }) =>
+						valueOf(
+							await this.core.updateCategory(await this.actor(request), params.category, body),
+						),
 				)
-				.delete('/categories/:category', async ({ params }) =>
-					noContent(await this.core.deleteCategory(await this.principal(), params.category)),
+				.delete('/categories/:category', async ({ request, params }) =>
+					noContent(await this.core.deleteCategory(await this.actor(request), params.category)),
 				)
 	}
 
@@ -177,32 +193,34 @@ export class ForumApiPlugin extends BasePlugin {
 				.post(
 					'/threads',
 					{ body: schema.createThreadBody, response: { 201: schema.thread } },
-					async ({ body, status }) =>
-						status(201, valueOf(await this.core.createThread(await this.principal(), body))),
+					async ({ request, body, status }) =>
+						status(201, valueOf(await this.core.createThread(await this.actor(request), body))),
 				)
 				.get(
 					'/threads/:id',
 					{ query: schema.paging, response: schema.threadDetail },
-					async ({ params, query }) =>
-						valueOf(await this.core.getThread(await this.principal(), params.id, pageOf(query))),
+					async ({ request, params, query }) =>
+						valueOf(
+							await this.core.getThread(await this.viewer(request), params.id, pageOf(query)),
+						),
 				)
 				.patch(
 					'/threads/:id',
 					{ body: schema.updateThreadBody, response: schema.thread },
-					async ({ params, body }) =>
-						valueOf(await this.core.updateThread(await this.principal(), params.id, body)),
+					async ({ request, params, body }) =>
+						valueOf(await this.core.updateThread(await this.actor(request), params.id, body)),
 				)
-				.delete('/threads/:id', async ({ params }) =>
-					noContent(await this.core.deleteThread(await this.principal(), params.id)),
+				.delete('/threads/:id', async ({ request, params }) =>
+					noContent(await this.core.deleteThread(await this.actor(request), params.id)),
 				)
 				.post(
 					'/threads/:id/posts',
 					{ body: schema.postBody, response: { 201: schema.post } },
-					async ({ params, body, status }) =>
+					async ({ request, params, body, status }) =>
 						status(
 							201,
 							valueOf(
-								await this.core.createPost(await this.principal(), {
+								await this.core.createPost(await this.actor(request), {
 									threadId: params.id,
 									body: body.body,
 								}),
@@ -217,16 +235,53 @@ export class ForumApiPlugin extends BasePlugin {
 				.patch(
 					'/posts/:id',
 					{ body: schema.postBody, response: schema.post },
-					async ({ params, body }) =>
-						valueOf(await this.core.updatePost(await this.principal(), params.id, body)),
+					async ({ request, params, body }) =>
+						valueOf(await this.core.updatePost(await this.actor(request), params.id, body)),
 				)
-				.delete('/posts/:id', async ({ params }) =>
-					noContent(await this.core.deletePost(await this.principal(), params.id)),
+				.delete('/posts/:id', async ({ request, params }) =>
+					noContent(await this.core.deletePost(await this.actor(request), params.id)),
 				)
 	}
 
-	private async meta(): Promise<MetaDto> {
-		const principal = await this.principal()
+	private authRoutes() {
+		return (app: Elysia) =>
+			app
+				.get('/auth/login', async ({ request }) => {
+					const returnTo = new URL(request.url).searchParams.get('returnTo')
+					const started = await this.auth.beginLogin(returnTo)
+					if (started.isErr()) throw authFailure(started.error)
+					return redirect(started.value)
+				})
+				.get('/auth/callback', async ({ request }) => {
+					const login = await this.auth.completeLogin(request)
+					// The browser arrives here by redirect, so a failure goes back to a page, not JSON.
+					if (login.isErr()) return redirect(`/?login=${login.error.code}`)
+					return redirect(login.value.returnTo, login.value.setCookie)
+				})
+				.post('/auth/logout', async ({ request }) => {
+					this.requireSameOrigin(request)
+					return loggedOut(await this.auth.logout(request))
+				})
+				.post('/auth/logout-all', async ({ request }) => {
+					this.requireSameOrigin(request)
+					const logout = await this.auth.logoutEverywhere(request)
+					if (logout.isErr()) throw authFailure(logout.error)
+					return loggedOut(logout.value)
+				})
+				// Called by the identity provider, not by a browser: the signed token is the credential.
+				.post('/auth/backchannel-logout', async ({ body }) => {
+					const token = logoutTokenOf(body)
+					if (token === null) {
+						throw new ApiFailure(400, { code: 'invalid', message: 'logout_token is required' })
+					}
+					const result = await this.auth.backchannelLogout(token)
+					if (result.isErr()) throw authFailure(result.error)
+					return new Response(null, { status: 200, headers: { 'cache-control': 'no-store' } })
+				})
+	}
+
+	private async meta(request: Request): Promise<MetaDto> {
+		const principal = await this.viewer(request)
 		const user =
 			principal.userId === null ? null : (await this.core.getUser(principal.userId)).unwrapOr(null)
 		return {
@@ -235,6 +290,7 @@ export class ForumApiPlugin extends BasePlugin {
 				roles: [...principal.roles],
 				can: { manageCategories: this.core.can(principal, 'category.manage') },
 			},
+			auth: { loginAvailable: this.auth.loginAvailable() },
 			limits: {
 				categoryNameMax: LIMITS.categoryNameMax,
 				threadTitleMax: LIMITS.threadTitleMax,
@@ -243,37 +299,35 @@ export class ForumApiPlugin extends BasePlugin {
 		}
 	}
 
-	/** Who the current request acts as. Sessions replace the development identity in M2. */
-	private principal(): Promise<Principal> {
-		return this.devUserId === null ? Promise.resolve(GUEST) : this.core.principalOf(this.devUserId)
+	/**
+	 * Who a read acts as. A session that cannot be checked right now reads as a guest, so public
+	 * pages stay up while the session store is down.
+	 */
+	private async viewer(request: Request): Promise<Principal> {
+		const authentication = await this.auth.authenticate(request)
+		return authentication.status === 'authenticated'
+			? this.core.principalOf(authentication.userId)
+			: GUEST
 	}
 
-	private async setUpDevIdentity(): Promise<void> {
-		const identity = this.config.devIdentity
-		if (!identity.enabled) return
-		if (process.env.NODE_ENV === 'production') {
-			throw new Error('Forum API devIdentity must not be enabled when NODE_ENV is "production"')
+	/**
+	 * Who a write acts as. Refuses cross-site browser requests, and answers 503 rather than
+	 * "not logged in" when the request has a session that cannot be checked.
+	 */
+	private async actor(request: Request): Promise<Principal> {
+		this.requireSameOrigin(request)
+		const authentication = await this.auth.authenticate(request)
+		if (authentication.status === 'unavailable') {
+			throw new ApiFailure(503, { code: 'unavailable', message: '登录服务暂时不可用，请稍后再试' })
 		}
-		const user = await this.core.ensureUser({
-			subject: identity.subject,
-			displayName: identity.displayName,
-		})
-		if (user.isErr()) throw new Error(`Invalid Forum API devIdentity: ${user.error.message}`)
-		// Stored roles follow the configured ones in both directions.
-		const changes = await Promise.all(
-			ASSIGNABLE_ROLES.map((role) =>
-				identity.roles.includes(role)
-					? this.core.grantRole(user.value.id, role)
-					: this.core.revokeRole(user.value.id, role),
-			),
-		)
-		if (changes.some((change) => change.isErr())) {
-			throw new Error('Cannot apply the Forum API devIdentity roles')
+		return authentication.status === 'authenticated'
+			? this.core.principalOf(authentication.userId)
+			: GUEST
+	}
+
+	private requireSameOrigin(request: Request): void {
+		if (!this.auth.allowsOrigin(request)) {
+			throw new ApiFailure(403, { code: 'forbidden', message: '不允许跨站请求' })
 		}
-		this.devUserId = user.value.id
-		this.ctx.logger.warn('forum api runs with a development identity; every request is this user', {
-			subject: identity.subject,
-			roles: identity.roles,
-		})
 	}
 }
