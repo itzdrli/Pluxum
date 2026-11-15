@@ -19,24 +19,8 @@
  * Pages and components use the Tailwind names in `@theme inline` below, never raw colour values.
  */
 
-/* Graphite (default): neutral grey, so content carries the colour. */
+/* Nord (default): the original blue-grey palette. */
 :root,
-[data-theme='graphite'] {
-	--c-page: #1b1b1b;
-	--c-panel: #262626;
-	--c-control: #303030;
-	--c-line: #444444;
-	--c-text-weak: #a1a1a1;
-	--c-text: #c4c4c4;
-	--c-text-strong: #ececec;
-	--c-accent: #5aa2ee;
-	--c-danger: #e0645c;
-	--c-warning: #d9bb62;
-	--c-success: #7cc08a;
-	--c-shadow: rgb(0 0 0 / 0.35);
-}
-
-/* Nord: the original blue-grey palette. */
 [data-theme='nord'] {
 	--c-page: #2e3440;
 	--c-panel: #3b4252;
@@ -441,6 +425,59 @@
 		border-top: 1px solid var(--c-line);
 		margin-block: 1.4em;
 	}
+	/* Images of forum files, inline with the text; a click opens them in the viewer. */
+	.post-body img {
+		display: inline-block;
+		max-width: 100%;
+		max-height: 28rem;
+		vertical-align: bottom;
+		/* No border or fill: a picture with transparent margins would show them as a frame. */
+		border-radius: 2px;
+	}
+	.post-body:not(.composer-editor) img {
+		cursor: zoom-in;
+	}
+	.composer-editor img.ProseMirror-selectednode {
+		outline: 2px solid var(--c-accent);
+		outline-offset: 1px;
+	}
+
+	/*
+	 * The image viewer: the picture on a dark veil whatever the theme, so its colours are judged
+	 * against neutral black, as in any photo viewer.
+	 */
+	.lightbox-backdrop {
+		background: rgb(0 0 0 / 0.82);
+	}
+	.lightbox,
+	.lightbox .lightbox-dialog {
+		background: transparent;
+		box-shadow: none;
+	}
+	.lightbox .lightbox-dialog {
+		display: flex;
+		flex-direction: column;
+		width: 100vw;
+		height: 100dvh;
+		max-width: none;
+		max-height: none;
+		padding: 0;
+		border-radius: 0;
+		outline: none;
+	}
+	.lightbox-control {
+		color: rgb(255 255 255 / 0.85);
+	}
+	.lightbox-control:hover {
+		background: rgb(255 255 255 / 0.12);
+		color: #fff;
+	}
+	.lightbox-nav {
+		position: absolute;
+		top: 50%;
+		translate: 0 -50%;
+		background: rgb(0 0 0 / 0.35);
+	}
 
 	/*
 	 * The rich-text composer: a field-like box with a toolbar on top. The editing area carries
@@ -492,6 +529,78 @@
 		line-height: 1.75;
 		color: color-mix(in srgb, var(--c-text-weak) 60%, transparent);
 		pointer-events: none;
+	}
+
+	/* Highlighted matched terms inside sanitized search result excerpts. */
+	.search-snippet mark {
+		border-radius: 2px;
+		background-color: color-mix(in srgb, var(--c-accent) 22%, transparent);
+		color: var(--c-text-strong);
+		padding-inline: 2px;
+		font-weight: 700;
+	}
+
+	/* Off-screen post cards skip layout & paint until near the viewport. */
+	.post-card-cv {
+		content-visibility: auto;
+		contain-intrinsic-size: auto 180px;
+	}
+	.post-card-cv:target {
+		content-visibility: visible;
+	}
+
+	/* Mobile bottom sheet enter/exit animations driven by React Aria data attributes. */
+	@keyframes sheet-fade-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+	@keyframes sheet-fade-out {
+		from {
+			opacity: 1;
+		}
+		to {
+			opacity: 0;
+		}
+	}
+	@keyframes sheet-slide-up {
+		from {
+			transform: translate3d(0, 100%, 0);
+		}
+		to {
+			transform: translate3d(0, 0, 0);
+		}
+	}
+	@keyframes sheet-slide-down {
+		from {
+			transform: translate3d(0, 0, 0);
+		}
+		to {
+			transform: translate3d(0, 100%, 0);
+		}
+	}
+	.bottom-sheet-overlay[data-entering] {
+		animation: sheet-fade-in 200ms ease-out forwards;
+	}
+	.bottom-sheet-overlay[data-exiting] {
+		animation: sheet-fade-out 180ms ease-in forwards;
+	}
+	.bottom-sheet-modal[data-entering] {
+		animation: sheet-slide-up 200ms ease-out forwards;
+	}
+	.bottom-sheet-modal[data-exiting] {
+		animation: sheet-slide-down 180ms ease-in forwards;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.bottom-sheet-overlay[data-entering],
+		.bottom-sheet-overlay[data-exiting],
+		.bottom-sheet-modal[data-entering],
+		.bottom-sheet-modal[data-exiting] {
+			animation-duration: 0.01ms;
+		}
 	}
 }
 

@@ -8,6 +8,7 @@ import {
 	normalizePage,
 	slugify,
 	validatePostBody,
+	validateSearchQuery,
 	validateSlug,
 	validateThreadTitle,
 	type ForumAction,
@@ -52,6 +53,11 @@ describe('default role policy', () => {
 		expect(can(moderator, 'thread.moderate')).toBe(true)
 		expect(can(moderator, 'category.manage')).toBe(false)
 		expect(can(admin, 'category.manage')).toBe(true)
+		expect(can(member, 'user.edit', { userId: 'u-member' })).toBe(true)
+		expect(can(member, 'user.edit', { userId: 'u-other' })).toBe(false)
+		expect(can(moderator, 'user.edit', { userId: 'u-other' })).toBe(false)
+		expect(can(admin, 'user.edit', { userId: 'u-other' })).toBe(true)
+		expect(can(GUEST, 'user.edit', { userId: null })).toBe(false)
 	})
 })
 
@@ -87,6 +93,8 @@ describe('content rules', () => {
 		expect(validateThreadTitle('   ').ok).toBe(false)
 		expect(validateThreadTitle('字'.repeat(LIMITS.threadTitleMax)).ok).toBe(true)
 		expect(validateThreadTitle('字'.repeat(LIMITS.threadTitleMax + 1)).ok).toBe(false)
+		expect(validateSearchQuery('  乒乓球拍  ')).toEqual({ ok: true, value: '乒乓球拍' })
+		expect(validateSearchQuery('   ').ok).toBe(false)
 	})
 
 	it('keeps post formatting while normalizing line endings', () => {

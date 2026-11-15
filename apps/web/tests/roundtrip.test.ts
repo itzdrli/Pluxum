@@ -56,6 +56,13 @@ const PRESERVED: readonly (readonly [name: string, source: string, rewritten: st
 		'2 \\* 3 \\* 4、snake\\_case\\_name、a &lt; b &amp; c',
 	],
 	['escaped markup', '\\*不是斜体\\* \\# 不是标题', '\\*不是斜体\\* # 不是标题'],
+	[
+		'images of forum files, in the text',
+		'看 ![截图]($/api/forum/ext/forum-attachments/files/0b9e8f1c-3a2d-4c5e-9f10-1234567890ab) 结尾',
+		'看 ![截图]($/api/forum/ext/forum-attachments/files/0b9e8f1c-3a2d-4c5e-9f10-1234567890ab) 结尾',
+	],
+	// Shown as typed text by the renderer, before and after.
+	['images from elsewhere', '![图](https://example.com/a.png)', '![图](https://example.com/a.png)'],
 ]
 
 /**
@@ -66,7 +73,6 @@ const PRESERVED: readonly (readonly [name: string, source: string, rewritten: st
 const OUTSIDE: readonly (readonly [name: string, source: string])[] = [
 	['tables', '| a | b |\n|---|---|\n| 1 | 2 |'],
 	['task lists', '- [ ] todo\n- [x] done'],
-	['images', '![图](https://example.com/a.png)'],
 	['inline HTML', '<b>html</b>'],
 	['block HTML', '<div>block</div>'],
 ]

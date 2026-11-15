@@ -48,6 +48,7 @@ export default defineConfig({
 			match: [
 				/^@discordjs\//,
 				/^@gqloom\//,
+				'@node-rs/jieba',
 				'@libsql/client',
 				'capnweb',
 				'cbor-x',
@@ -61,6 +62,7 @@ export default defineConfig({
 				'nanoid',
 				'qrcode',
 				'redis',
+				's3mini',
 				'sanitize-html',
 				'tinybase',
 				'valibot',

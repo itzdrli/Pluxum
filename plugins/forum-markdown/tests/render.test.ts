@@ -3,6 +3,8 @@ import { renderMarkdown } from '../src/render'
 
 const html = (source: string) => renderMarkdown(source).trim()
 
+const FILE = '/api/forum/ext/forum-attachments/files/0b9e8f1c-3a2d-4c5e-9f10-1234567890ab'
+
 describe('renderMarkdown', () => {
 	it('renders the supported dialect', () => {
 		expect(html('**粗体** _斜体_ ~~删除~~ `code`')).toBe(
@@ -29,6 +31,18 @@ describe('renderMarkdown', () => {
 	it('clamps headings to levels two through four', () => {
 		expect(html('# 一级')).toBe('<h2>一级</h2>')
 		expect(html('###### 六级')).toBe('<h4>六级</h4>')
+	})
+
+	it('shows images of forum files and nothing else', () => {
+		expect(html(`看 ![截图 "a"](${FILE} "标题") 这里`)).toBe(
+			`<p>看 <img src="${FILE}" alt="截图 &quot;a&quot;" title="标题"> 这里</p>`,
+		)
+		expect(html('![x](/api/forum/ext/a/files/not-an-id)')).toBe(
+			'<p>![x](/api/forum/ext/a/files/not-an-id)</p>',
+		)
+		expect(html(`![x](https://evil.example${FILE})`)).toBe(
+			`<p>![x](https://evil.example${FILE})</p>`,
+		)
 	})
 
 	it('shows syntax outside the dialect as the text that was typed', () => {

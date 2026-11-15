@@ -21,6 +21,10 @@ export type RenderedBody = Readonly<{ html: string; format: BodyFormat }>
  * Everything a post may contain, whatever a renderer emits. Tags outside the list are dropped and
  * their text kept; scripts and styles are dropped with their content.
  */
+/** Files the forum serves itself; the only images a post may show (see forum-markdown). */
+const FORUM_FILE =
+	/^\/api\/forum\/ext\/[a-z][a-z0-9-]{0,63}\/files\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i
+
 const ALLOWED: sanitizeHtml.IOptions = {
 	allowedTags: [
 		// Blocks
@@ -41,14 +45,25 @@ const ALLOWED: sanitizeHtml.IOptions = {
 		'del',
 		'code',
 		'a',
+		'img',
 	],
-	allowedAttributes: { a: ['href', 'rel'], ol: ['start'] },
+	allowedAttributes: {
+		a: ['href', 'rel'],
+		ol: ['start'],
+		img: ['src', 'alt', 'title', 'loading', 'decoding'],
+	},
+	// An image of anything but a forum file is dropped (its alt text has nowhere to go).
+	exclusiveFilter: (frame) => frame.tag === 'img' && !FORUM_FILE.test(frame.attribs.src ?? ''),
 	// Code blocks carry their language as `language-xxx`.
 	allowedClasses: { code: [/^language-[\w+#.-]{1,32}$/] },
 	// Relative URLs (paths within the forum) are allowed as well; protocol-relative ones are not.
 	allowedSchemes: ['http', 'https', 'mailto'],
 	allowProtocolRelative: false,
 	transformTags: {
+		img: (tagName, attribs) => ({
+			tagName,
+			attribs: { ...attribs, loading: 'lazy', decoding: 'async' },
+		}),
 		a: (tagName, attribs) => {
 			const { rel: _, ...rest } = attribs
 			return {

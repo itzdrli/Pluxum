@@ -9,9 +9,9 @@ import {
 import { CONTRIBUTION_ID } from './policies'
 
 /** The entities whose DTOs carry extension data. */
-export type ExtendableEntity = 'thread' | 'post'
+export type ExtendableEntity = 'thread' | 'post' | 'user'
 
-/** Extra data for threads or posts, contributed by an extension plugin that keeps its own tables. */
+/** Extra data for threads, posts or users, contributed by an extension plugin that keeps its own tables. */
 export type EntityExtensionContribution = Readonly<{
 	/** The extension's ID, e.g. `forum-reactions`; also the key of its data in a DTO's `ext`. */
 	id: string
@@ -27,9 +27,9 @@ export type EntityExtensionContribution = Readonly<{
 /** A page waits this long for one extension; after that it is served without that extension. */
 export const EXTENSION_TIMEOUT_MS = 2000
 
-const TIMED_OUT = Symbol('timed out')
+export const TIMED_OUT = Symbol('timed out')
 
-function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | typeof TIMED_OUT> {
+export function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | typeof TIMED_OUT> {
 	let timer: ReturnType<typeof setTimeout> | undefined
 	const timeout = new Promise<typeof TIMED_OUT>((resolve) => {
 		timer = setTimeout(() => resolve(TIMED_OUT), ms)
@@ -50,7 +50,7 @@ export class EntityExtensionRegistry {
 		if (typeof id !== 'string' || !CONTRIBUTION_ID.test(id)) {
 			throw new TypeError(`Invalid entity extension ID: ${id}`)
 		}
-		if (entity !== 'thread' && entity !== 'post') {
+		if (entity !== 'thread' && entity !== 'post' && entity !== 'user') {
 			throw new TypeError(`Entity extension "${id}" names an unknown entity: ${String(entity)}`)
 		}
 		if (typeof load !== 'function') {

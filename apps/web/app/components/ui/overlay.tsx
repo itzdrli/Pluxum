@@ -77,7 +77,7 @@ export function ConfirmDialog({
 	const form = useRef<HTMLFormElement>(null)
 	return (
 		<AlertDialog isOpen={isOpen} onOpenChange={onOpenChange}>
-			<AlertDialog.Backdrop>
+			<AlertDialog.Backdrop isKeyboardDismissDisabled={false}>
 				<AlertDialog.Container size="sm">
 					<AlertDialog.Dialog>
 						<AlertDialog.Header>

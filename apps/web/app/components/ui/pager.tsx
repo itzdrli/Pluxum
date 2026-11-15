@@ -1,11 +1,27 @@
 import { buttonVariants } from '@heroui/react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 
 import { pageCount } from '../../lib/format'
 
-function pageHref(page: number): string {
-	return page > 1 ? `?page=${page}` : '?'
+/** Builds a pagination href preserving `pathname` and orthogonal query parameters. */
+export function buildPageHref(
+	pathname: string,
+	search: string,
+	targetPage: number,
+	paramName = 'page',
+): string {
+	const params = new URLSearchParams(search)
+	if (paramName === 'cpage' && /^\/c\/[^/]+\/?$/.test(pathname)) {
+		params.delete('page')
+	}
+	if (targetPage > 1) {
+		params.set(paramName, String(targetPage))
+	} else {
+		params.delete(paramName)
+	}
+	const query = params.toString()
+	return query === '' ? pathname : `${pathname}?${query}`
 }
 
 /** Page numbers to show: the first, the last, and two either side of the current one. */
@@ -26,18 +42,23 @@ export function pageWindow(page: number, pages: number): Array<number | 'gap'> {
 
 const STEP = buttonVariants({ variant: 'ghost', size: 'sm' })
 
-/** Pages of a `?page=` list. Renders nothing when everything fits on one page. */
+/** Pages of a `?page=` or `?cpage=` list. Renders nothing when everything fits on one page. */
 export function Pager({
 	page,
 	pageSize,
 	total,
+	paramName = 'page',
 }: {
 	page: number
 	pageSize: number
 	total: number
+	paramName?: string
 }) {
+	const location = useLocation()
 	const pages = pageCount(total, pageSize)
 	if (pages <= 1) return null
+	const pageHref = (targetPage: number) =>
+		buildPageHref(location.pathname, location.search, targetPage, paramName)
 	return (
 		<nav aria-label="分页" className="mt-4 flex items-center justify-center gap-1">
 			{page > 1 ? (

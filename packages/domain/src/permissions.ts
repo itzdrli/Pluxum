@@ -34,6 +34,8 @@ export const FORUM_ACTIONS = [
 	'post.delete',
 	// Reacting to a post (a like). The feature itself lives in an extension plugin.
 	'post.react',
+	// Editing a user's profile (display name, avatar).
+	'user.edit',
 ] as const
 export type ForumAction = (typeof FORUM_ACTIONS)[number]
 
@@ -42,6 +44,8 @@ export type ForumResource = Readonly<{
 	categoryId?: string
 	threadId?: string
 	postId?: string
+	/** Target user for profile operations. */
+	userId?: string | null
 	/** Author of the thread or post being changed. */
 	authorId?: string | null
 	/** Whether the containing thread is locked. */
@@ -111,6 +115,11 @@ export const defaultRolePolicy: PermissionPolicy = ({ principal, action, resourc
 			if (staff) return 'allow'
 			if (!member || !isAuthor) return 'abstain'
 			return resource.locked ? 'deny' : 'allow'
+		case 'user.edit':
+			if (hasRole(principal, 'admin')) return 'allow'
+			return member && principal.userId !== null && resource.userId === principal.userId
+				? 'allow'
+				: 'abstain'
 		// An action this policy does not know stays closed until some policy opens it.
 		default:
 			return 'abstain'

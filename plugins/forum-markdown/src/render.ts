@@ -8,6 +8,14 @@ const ESCAPES: Readonly<Record<string, string>> = {
 	"'": '&#39;',
 }
 
+/**
+ * Files the forum serves itself (`/api/forum/ext/<extension>/files/<id>`). Only these become
+ * images: an outside address would let a post load anything from anywhere into every reader's
+ * browser. The forum core enforces the same rule on the HTML.
+ */
+const FORUM_FILE =
+	/^\/api\/forum\/ext\/[a-z][a-z0-9-]{0,63}\/files\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i
+
 function escapeHtml(text: string): string {
 	return text.replaceAll(/[&<>"']/g, (char) => ESCAPES[char] ?? char)
 }
@@ -34,9 +42,11 @@ marked.use({
 			const shown = escapeHtml(block ? text.trim() : text)
 			return block ? `<p>${shown.replaceAll('\n', '<br>')}</p>\n` : shown
 		},
-		// Images wait for attachments (M4).
-		image({ raw }: Tokens.Image): string {
-			return escapeHtml(raw)
+		// Images of the forum's own files are shown; any other image stays the text that was typed.
+		image({ raw, href, text, title }: Tokens.Image): string {
+			if (!FORUM_FILE.test(href)) return escapeHtml(raw)
+			const titled = title ? ` title="${escapeHtml(title)}"` : ''
+			return `<img src="${escapeHtml(href)}" alt="${escapeHtml(text)}"${titled}>`
 		},
 		// Task lists are not part of the dialect; keep the brackets instead of a checkbox.
 		checkbox({ checked }: Tokens.Checkbox): string {

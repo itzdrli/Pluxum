@@ -34,7 +34,8 @@
 		"@tiptap/pm": "catalog:frontend",
 		"@tiptap/core": "catalog:frontend",
 		"@tiptap/starter-kit": "catalog:frontend",
-		"@tiptap/markdown": "catalog:frontend"
+		"@tiptap/markdown": "catalog:frontend",
+		"@tiptap/extension-image": "catalog:frontend"
 	},
 	"devDependencies": {
 		"@react-router/dev": "catalog:frontend",

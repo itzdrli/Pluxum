@@ -5,6 +5,7 @@ import type { Role } from './permissions'
 export type UserDto = Readonly<{
 	id: string
 	displayName: string
+	ext?: ExtensionData
 }>
 
 export type CategoryDto = Readonly<{
@@ -69,12 +70,129 @@ export type PreviewDto = Readonly<{
 	bodyFormat: BodyFormat
 }>
 
+/** A notification delivered through the forum's notification channels. */
+export type ForumNotification = Readonly<{
+	id: string
+	recipientId: string
+	kind: string
+	title: string
+	body?: string
+	path?: string
+	threadId?: string
+	postId?: string
+	actor?: UserDto | null
+	createdAt: string
+}>
+
+/** A persisted in-app notification item returned by `forum-notifications`. */
+export type NotificationDto = Readonly<{
+	id: string
+	recipientId: string
+	kind: string
+	title: string
+	body: string | null
+	path: string | null
+	threadId: string | null
+	postId: string | null
+	actor: UserDto | null
+	read: boolean
+	readAt: string | null
+	createdAt: string
+}>
+
+export type NotificationPageDto = PageDto<NotificationDto> &
+	Readonly<{
+		unreadCount: number
+	}>
+
+export type SearchRequest = Readonly<{
+	query: string
+	categoryId?: string
+	authorId?: string
+	threadsOnly?: boolean
+	page?: number
+	pageSize?: number
+}>
+
+export type SearchHitDto = Readonly<{
+	postId: string
+	threadId: string
+	categoryId: string
+	opening: boolean
+	title: string
+	/** Safe HTML excerpt where matched terms are wrapped in `<mark>`. */
+	snippetHtml: string
+	author: UserDto
+	createdAt: string
+}>
+
+export type SearchPageDto = PageDto<SearchHitDto>
+
+export type ModerationTargetType = 'post' | 'thread'
+
+export type ModerationReportStatus = 'open' | 'resolved' | 'dismissed'
+
+export type ModerationQueueStatus = ModerationReportStatus | 'all'
+
+export type ModerationReportDto = Readonly<{
+	id: string
+	targetType: ModerationTargetType
+	targetId: string
+	threadId: string
+	postId: string | null
+	reason: string
+	status: ModerationReportStatus
+	reporter: UserDto
+	targetAuthor: UserDto | null
+	resolutionNote: string | null
+	resolvedBy: UserDto | null
+	resolvedAt: string | null
+	createdAt: string
+}>
+
+export type ModerationQueuePageDto = PageDto<ModerationReportDto> &
+	Readonly<{
+		openCount: number
+	}>
+
+export type ModerationLogDto = Readonly<{
+	id: string
+	actor: UserDto
+	action: string
+	targetType: string
+	targetId: string
+	targetUser: UserDto | null
+	detail: string | null
+	createdAt: string
+}>
+
+export type ModerationLogPageDto = PageDto<ModerationLogDto>
+
+export type UserBanStatusDto = Readonly<{
+	banned: boolean
+	reason?: string
+	expiresAt?: string | null
+}>
+
 export type PageDto<T> = Readonly<{
 	items: T[]
 	page: number
 	pageSize: number
 	total: number
 }>
+
+export type CategorySummaryDto = Readonly<{
+	id: string
+	slug: string
+	name: string
+}>
+
+export type RecentThreadDto = ThreadDto &
+	Readonly<{
+		category: CategorySummaryDto
+	}>
+
+export type RecentThreadsDto = PageDto<RecentThreadDto>
 
 export type CategoryThreadsDto = Readonly<{
 	category: CategoryDto
@@ -95,6 +213,17 @@ export type ViewerDto = Readonly<{
 	can: Readonly<{ manageCategories: boolean }>
 }>
 
+export type UserProfileDto = Readonly<{
+	user: UserDto
+	roles: Role[]
+	createdAt: string
+	threadCount: number
+	postCount: number
+	threads: PageDto<ThreadDto>
+	can: Readonly<{ edit: boolean }>
+	ext: ExtensionData
+}>
+
 /** The places in the frontend where extension plugins may show a component of their own. */
 export const UI_SLOTS = [
 	'post.footer',
@@ -102,6 +231,7 @@ export const UI_SLOTS = [
 	'thread.sidebar',
 	'user.profile.tabs',
 	'composer.toolbar',
+	'shell.actions',
 ] as const
 export type UiSlot = (typeof UI_SLOTS)[number]
 
@@ -121,10 +251,15 @@ export type MetaDto = Readonly<{
 		/** Whether the forum can start a login right now (an identity provider is configured). */
 		loginAvailable: boolean
 	}>
+	search: Readonly<{
+		/** Whether a search provider plugin is currently running. */
+		available: boolean
+	}>
 	limits: Readonly<{
 		categoryNameMax: number
 		threadTitleMax: number
 		postBodyMax: number
+		displayNameMax: number
 	}>
 	content: Readonly<{
 		/** How new posts will be rendered right now; the composer offers formatting only for `markdown`. */
@@ -140,6 +275,7 @@ export const FORUM_ERROR_CODES = [
 	'forbidden',
 	'not_found',
 	'conflict',
+	'unavailable',
 ] as const
 export type ForumErrorCode = (typeof FORUM_ERROR_CODES)[number]
 

@@ -1,5 +1,5 @@
 import type { Route } from './+types/api-forum'
-import { forumApiUrl } from '../lib/forum-api.server'
+import { forumApiUrl, invalidateForumCaches } from '../lib/forum-api.server'
 
 // Hop-by-hop headers must not be forwarded by a proxy (RFC 9110 §7.6.1).
 const HOP_BY_HOP = ['connection', 'keep-alive', 'transfer-encoding', 'upgrade', 'host']
@@ -36,6 +36,8 @@ export function loader({ request }: Route.LoaderArgs) {
 	return forward(request)
 }
 
-export function action({ request }: Route.ActionArgs) {
-	return forward(request)
+export async function action({ request }: Route.ActionArgs) {
+	const response = await forward(request)
+	invalidateForumCaches()
+	return response
 }

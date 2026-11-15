@@ -1,5 +1,6 @@
 import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 
 import { formatDateTime } from '../../lib/format'
@@ -38,16 +39,45 @@ const AVATAR_SIZES = {
 	sm: 'size-5 text-[11px]',
 	md: 'size-7 text-[13px]',
 	lg: 'size-9 text-[15px]',
+	xl: 'size-16 text-[26px]',
 }
 
-/** Monogram avatar: the first character of the name on the control colour, no extra hue. */
-export function Avatar({ name, size = 'md' }: { name: string; size?: keyof typeof AVATAR_SIZES }) {
+/**
+ * A user's picture when there is one (`src`), otherwise a monogram: the first character of the
+ * name on the control colour, no extra hue. A picture that fails to load falls back to the monogram.
+ */
+export function Avatar({
+	name,
+	src,
+	size = 'md',
+}: {
+	name: string
+	src?: string
+	size?: keyof typeof AVATAR_SIZES
+}) {
+	const [failed, setFailed] = useState<string | null>(null)
+	const box = `border-line inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[2px] border select-none ${AVATAR_SIZES[size]}`
+	if (src !== undefined && failed !== src) {
+		return (
+			<span aria-hidden className={`bg-control ${box}`}>
+				<img
+					src={src}
+					alt=""
+					loading="lazy"
+					decoding="async"
+					className="size-full object-cover"
+					// An error before hydration is missed by onError; check once mounted.
+					ref={(image) => {
+						if (image?.complete === true && image.naturalWidth === 0) setFailed(src)
+					}}
+					onError={() => setFailed(src)}
+				/>
+			</span>
+		)
+	}
 	const initial = Array.from(name.trim())[0]?.toUpperCase() ?? '?'
 	return (
-		<span
-			aria-hidden
-			className={`bg-control text-ink-strong border-line inline-flex shrink-0 items-center justify-center rounded-[2px] border font-bold select-none ${AVATAR_SIZES[size]}`}
-		>
+		<span aria-hidden className={`bg-control text-ink-strong font-bold ${box}`}>
 			{initial}
 		</span>
 	)

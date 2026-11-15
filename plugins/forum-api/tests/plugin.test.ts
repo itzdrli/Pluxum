@@ -4,8 +4,12 @@ import type {
 	MetaDto,
 	PostDto,
 	PreviewDto,
+	RecentThreadsDto,
+	SearchPageDto,
 	ThreadDetailDto,
 	ThreadDto,
+	UserDto,
+	UserProfileDto,
 } from '@forum/domain'
 import { ForumApiPlugin } from '@forum/forum-api'
 import { ForumAuth, type Authentication, type Logout } from '@forum/forum-auth'
@@ -170,6 +174,42 @@ class DuplicateExtPlugin extends BasePlugin {
 	}
 }
 
+@Plugin()
+class SimpleSearchPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerSearchProvider({
+				id: 'test.search',
+				search: async (query) => {
+					const posts = await this.core.listIndexablePosts()
+					const items = posts
+						.filter(
+							(post) =>
+								query.categoryIds.includes(post.categoryId) &&
+								(!query.threadsOnly || post.opening) &&
+								`${post.threadTitle} ${post.body}`.includes(query.query),
+						)
+						.map((post) => ({
+							postId: post.postId,
+							threadId: post.threadId,
+							categoryId: post.categoryId,
+							authorId: post.authorId,
+							opening: post.opening,
+							title: post.threadTitle,
+							snippetHtml: `<mark>${query.query}</mark>`,
+							createdAt: post.createdAt,
+						}))
+					return { items, total: items.length }
+				},
+			}),
+		)
+	}
+}
+
 async function start(host: Host) {
 	await host.commit((change) => {
 		change.start(ForumCorePlugin)
@@ -311,10 +351,77 @@ describe('ForumApiPlugin', () => {
 			await api.ok<CategoryDto>('PATCH', `/categories/${category.id}`, { name: 'Lounge' }),
 		).toMatchObject({ name: 'Lounge', slug: 'general' })
 
+		const userId = meta.viewer.user!.id
+		expect(await api.ok<UserProfileDto>('GET', `/users/${userId}`)).toMatchObject({
+			user: { id: userId, displayName: 'Dev' },
+			roles: ['member', 'admin'],
+			threadCount: 1,
+			postCount: 2,
+			can: { edit: true },
+		})
+		expect(
+			await api.ok<UserDto>('PATCH', `/users/${userId}`, { displayName: 'Developer' }),
+		).toEqual({
+			id: userId,
+			displayName: 'Developer',
+		})
+
 		expect(await api.call('DELETE', `/posts/${reply.id}`)).toEqual({ status: 204, body: undefined })
 		expect((await api.call('DELETE', `/categories/${category.id}`)).status).toBe(409)
 		expect((await api.call('DELETE', `/threads/${thread.id}`)).status).toBe(204)
 		expect((await api.call('GET', `/threads/${thread.id}`)).status).toBe(404)
+	})
+
+	it('lists recent active threads across categories with paging', async () => {
+		await using host = await createHost()
+		const api = await startAs(host, ['admin'])
+		const guest = client(host)
+
+		const general = await api.ok<CategoryDto>('POST', '/categories', {
+			name: 'General',
+			slug: 'general',
+			position: 1,
+		})
+		const news = await api.ok<CategoryDto>('POST', '/categories', {
+			name: 'Announcements',
+			slug: 'news',
+			position: 2,
+		})
+
+		const first = await api.ok<ThreadDto>('POST', '/threads', {
+			categoryId: general.id,
+			title: 'First Thread',
+			body: 'One',
+		})
+		const second = await api.ok<ThreadDto>('POST', '/threads', {
+			categoryId: news.id,
+			title: 'Second Thread',
+			body: 'Two',
+		})
+		await api.ok<PostDto>('POST', `/threads/${first.id}/posts`, { body: 'Bump first' })
+
+		const recentDefault = await guest.ok<RecentThreadsDto>('GET', '/threads')
+		expect(recentDefault).toMatchObject({ page: 1, total: 2 })
+		expect(recentDefault.items.map((item) => item.id)).toEqual([first.id, second.id])
+		expect(recentDefault.items[0]).toMatchObject({
+			id: first.id,
+			title: 'First Thread',
+			replyCount: 1,
+			category: { id: general.id, slug: 'general', name: 'General' },
+		})
+		expect(recentDefault.items[1]).toMatchObject({
+			id: second.id,
+			title: 'Second Thread',
+			category: { id: news.id, slug: 'news', name: 'Announcements' },
+		})
+
+		const recentPage2 = await guest.ok<RecentThreadsDto>('GET', '/threads?page=2&pageSize=1')
+		expect(recentPage2).toMatchObject({ page: 2, pageSize: 1, total: 2 })
+		expect(recentPage2.items).toHaveLength(1)
+		expect(recentPage2.items[0]).toMatchObject({
+			id: second.id,
+			category: { id: news.id, slug: 'news', name: 'Announcements' },
+		})
 	})
 
 	it('reports every failure in one error shape', async () => {
@@ -426,6 +533,7 @@ describe('ForumApiPlugin', () => {
 
 		const meta = await api.ok<MetaDto>('GET', '/meta')
 		expect(meta.content).toEqual({ format: 'plain' })
+		expect(meta.search).toEqual({ available: false })
 		expect(meta.uiSlots).toEqual([])
 
 		expect(await api.ok<PreviewDto>('POST', '/preview', { body: 'a < b' })).toEqual({
@@ -437,6 +545,52 @@ describe('ForumApiPlugin', () => {
 			body: error('invalid'),
 		})
 		expect((await client(host).call('POST', '/preview', { body: 'x' })).status).toBe(401)
+	})
+
+	it('serves search only while a search provider plugin runs', async () => {
+		await using host = await createHost()
+		const api = await startAs(host, ['admin'])
+		const category = await api.ok<CategoryDto>('POST', '/categories', {
+			name: 'General',
+			slug: 'general',
+		})
+		const thread = await api.ok<ThreadDto>('POST', '/threads', {
+			categoryId: category.id,
+			title: '乒乓球拍',
+			body: '底板评测',
+		})
+
+		expect(await api.call('GET', '/search?q=乒乓')).toEqual({
+			status: 503,
+			body: error('unavailable'),
+		})
+
+		await host.start(SimpleSearchPlugin)
+		expect((await api.ok<MetaDto>('GET', '/meta')).search).toEqual({ available: true })
+		expect(await api.call('GET', '/search?q=')).toEqual({
+			status: 422,
+			body: error('invalid'),
+		})
+
+		const page = await api.ok<SearchPageDto>('GET', '/search?q=乒乓&threadsOnly=1')
+		expect(page).toMatchObject({
+			total: 1,
+			page: 1,
+			items: [
+				{
+					threadId: thread.id,
+					categoryId: category.id,
+					opening: true,
+					title: '乒乓球拍',
+					snippetHtml: '<mark>乒乓</mark>',
+					author: { displayName: 'Dev' },
+				},
+			],
+		})
+
+		await host.stop(SimpleSearchPlugin)
+		expect((await api.ok<MetaDto>('GET', '/meta')).search).toEqual({ available: false })
+		expect((await api.call('GET', '/search?q=乒乓')).status).toBe(503)
 	})
 })
 

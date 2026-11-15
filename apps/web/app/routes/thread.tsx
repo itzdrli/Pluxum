@@ -8,15 +8,25 @@ import {
 	PinOff,
 	Send,
 	Trash2,
+	X,
 } from 'lucide-react'
-import { useState } from 'react'
-import { data, Form, redirect, useNavigation, useRouteLoaderData, useSubmit } from 'react-router'
+import { useEffect, useState } from 'react'
+import {
+	data,
+	Form,
+	redirect,
+	useNavigate,
+	useNavigation,
+	useRouteLoaderData,
+	useSubmit,
+} from 'react-router'
 
 import type { Route } from './+types/thread'
 import { Composer } from '../components/composer/composer'
 import { PostCard } from '../components/forum/post'
 import { ThreadFlags } from '../components/forum/rows'
-import { Button, ButtonAnchor } from '../components/ui/button'
+import { MobileThreadBar } from '../components/shell/mobile-stage-bar'
+import { Button, ButtonAnchor, ButtonLink } from '../components/ui/button'
 import { Crumbs, EmptyState, FormError, Notice, PageHeader, Panel } from '../components/ui/display'
 import { TextInputField } from '../components/ui/field'
 import { ActionMenu, ConfirmDialog, type MenuItem } from '../components/ui/overlay'
@@ -25,13 +35,19 @@ import { pageCount } from '../lib/format'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { keepOnThemeChange } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
+import { ThreadSidebarSlots, useHasFilledSlot } from '../slots/slots'
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
 	return [{ title: `${loaderData ? `${loaderData.thread.title} · ` : ''}Pluxel Forum` }]
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
-	return orThrow(await forumApi.thread(request, params.id, pageParam(request)))
+	const detail = orThrow(await forumApi.thread(request, params.id, pageParam(request)))
+	if (params.slug !== undefined && detail.category.slug !== params.slug) {
+		const { search } = new URL(request.url)
+		throw redirect(`/c/${detail.category.slug}/t/${detail.thread.id}${search}`)
+	}
+	return detail
 }
 
 export const shouldRevalidate = keepOnThemeChange
@@ -56,10 +72,19 @@ export async function action({ request, params }: Route.ActionArgs) {
 		case 'reply': {
 			const result = await forumApi.createPost(request, params.id, textField(form, 'body'))
 			if (!result.ok) return failed(intent, result)
-			// Land on the page that now holds the reply.
-			const { posts } = orThrow(await forumApi.thread(request, params.id))
+			// Land on the page that now holds the reply, preserving the active category page (`?cpage=`).
+			const { category, posts } = orThrow(await forumApi.thread(request, params.id))
 			const last = pageCount(posts.total, posts.pageSize)
-			return redirect(`/t/${params.id}${last > 1 ? `?page=${last}` : ''}#post-${result.value.id}`)
+			const search = new URLSearchParams()
+			const cpage = new URL(request.url).searchParams.get('cpage')
+			if (cpage !== null && /^[1-9]\d{0,5}$/.test(cpage) && Number(cpage) > 1) {
+				search.set('cpage', cpage)
+			}
+			if (last > 1) search.set('page', String(last))
+			const query = search.toString()
+			return redirect(
+				`/c/${category.slug}/t/${params.id}${query === '' ? '' : `?${query}`}#post-${result.value.id}`,
+			)
 		}
 		case 'edit-post': {
 			const result = await forumApi.updatePost(request, postId, textField(form, 'body'))
@@ -100,6 +125,8 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const { thread, category, posts, can } = loaderData
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const submit = useSubmit()
+	const navigate = useNavigate()
+	const hasSidebar = useHasFilledSlot('thread.sidebar')
 	// The title the rename form was opened for. A saved title differs from it, which closes the form.
 	const [renamingFrom, setRenamingFrom] = useState<string | undefined>(undefined)
 	const renaming = renamingFrom === thread.title
@@ -114,6 +141,35 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 		actionData.intent !== 'reply'
 			? actionData.error
 			: undefined
+
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key !== 'Escape' || event.defaultPrevented) return
+			if (confirmingDelete || renaming) return
+			if (
+				document.querySelector(
+					'[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]',
+				) !== null
+			) {
+				return
+			}
+			const active = document.activeElement
+			if (
+				active instanceof HTMLElement &&
+				(active.tagName === 'INPUT' ||
+					active.tagName === 'TEXTAREA' ||
+					active.tagName === 'SELECT' ||
+					active.isContentEditable ||
+					active.getAttribute('contenteditable') === 'true' ||
+					active.closest('form') !== null)
+			) {
+				return
+			}
+			void navigate(`/c/${category.slug}`)
+		}
+		window.addEventListener('keydown', onKeyDown)
+		return () => window.removeEventListener('keydown', onKeyDown)
+	}, [category.slug, confirmingDelete, navigate, renaming])
 
 	const menu: MenuItem[] = []
 	if (can.edit) {
@@ -159,7 +215,13 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 		})
 	}
 
-	return (
+	const replyError = actionData?.intent === 'reply' ? actionData.error : undefined
+	const loginHref =
+		forum?.viewer.user === null && forum.auth.loginAvailable
+			? `/api/forum/auth/login?returnTo=${encodeURIComponent(`/c/${category.slug}/t/${thread.id}`)}`
+			: undefined
+
+	const mainContent = (
 		<>
 			<Crumbs
 				items={[
@@ -188,7 +250,19 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 						</>
 					}
 					actions={
-						menu.length > 0 ? <ActionMenu label="主题操作" items={menu} size="md" /> : undefined
+						<>
+							{menu.length > 0 && <ActionMenu label="主题操作" items={menu} size="md" />}
+							<ButtonLink
+								to={`/c/${category.slug}`}
+								tone="ghost"
+								size="sm"
+								aria-label="关闭主题"
+								title="关闭主题"
+								className="button--icon-only"
+							>
+								<X aria-hidden />
+							</ButtonLink>
+						</>
 					}
 				/>
 			)}
@@ -214,15 +288,22 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			<ReplyArea
 				canReply={can.reply}
 				locked={thread.locked}
-				loginHref={
-					forum?.viewer.user === null && forum.auth.loginAvailable
-						? `/api/forum/auth/login?returnTo=${encodeURIComponent(`/t/${thread.id}`)}`
-						: undefined
-				}
-				// Keyed by the post count so the field empties once a reply has landed.
-				key={posts.total}
-				error={actionData?.intent === 'reply' ? actionData.error : undefined}
+				loginHref={loginHref}
+				// Keyed by thread + post count so rapid switches never leak drafts and replies reset cleanly.
+				key={`${thread.id}-${posts.total}`}
+				error={replyError}
 				bodyMax={forum?.limits.postBodyMax}
+			/>
+			<MobileThreadBar
+				category={category}
+				threadId={thread.id}
+				postsTotal={posts.total}
+				canReply={can.reply}
+				locked={thread.locked}
+				loginHref={loginHref}
+				replyError={replyError}
+				bodyMax={forum?.limits.postBodyMax}
+				menu={menu}
 			/>
 			<ConfirmDialog
 				isOpen={confirmingDelete}
@@ -234,6 +315,19 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			/>
 		</>
 	)
+
+	if (hasSidebar) {
+		return (
+			<div className="mx-auto grid max-w-[1180px] gap-6 2xl:grid-cols-[minmax(0,1fr)_260px]">
+				<div className="min-w-0">{mainContent}</div>
+				<aside aria-label="主题侧栏" className="flex min-w-0 flex-col gap-4">
+					<ThreadSidebarSlots thread={thread} />
+				</aside>
+			</div>
+		)
+	}
+
+	return <div className="mx-auto max-w-[880px]">{mainContent}</div>
 }
 
 function RenameThread({
@@ -307,7 +401,7 @@ function ReplyArea({
 		)
 	}
 	return (
-		<Panel as="section" className="mt-6 p-4">
+		<Panel as="section" className="mt-6 p-4 max-lg:hidden">
 			<h2 className="section-label mb-2">回复</h2>
 			<Form method="post" className="flex flex-col gap-3">
 				<input type="hidden" name="intent" value="reply" />
@@ -323,6 +417,7 @@ function ReplyArea({
 					maxLength={bodyMax}
 					rows={5}
 					placeholder="写下你的回复"
+					deferRich
 				/>
 				<div className="flex justify-end">
 					<Button type="submit" tone="primary" isPending={submitting}>

@@ -1,4 +1,5 @@
 import { type Editor, Extension, type Extensions, markInputRule } from '@tiptap/core'
+import { Image } from '@tiptap/extension-image'
 import { Markdown } from '@tiptap/markdown'
 import { StarterKit } from '@tiptap/starter-kit'
 
@@ -20,10 +21,29 @@ const InlineInputRules = Extension.create({
 	},
 })
 
+/** Files the forum serves itself; the only images a post shows (see forum-markdown). */
+export const FORUM_FILE =
+	/^\/api\/forum\/ext\/[a-z][a-z0-9-]{0,63}\/files\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i
+
+/**
+ * Images inside the text, as the renderer shows them. Pasted HTML brings in only images of forum
+ * files; an outside picture would be saved as Markdown the forum then shows as plain text.
+ */
+const ForumImage = Image.extend({
+	parseHTML() {
+		return [
+			{
+				tag: 'img[src]',
+				getAttrs: (element) => (FORUM_FILE.test(element.getAttribute('src') ?? '') ? null : false),
+			},
+		]
+	},
+}).configure({ inline: true, allowBase64: false })
+
 /**
  * The editor's extensions for the forum's Markdown dialect (see forum-markdown): paragraphs, line
  * breaks, headings 2–4, bold, italic, strikethrough, inline code, code blocks, quotes, lists,
- * links and rules. Everything the renderer does not show as formatting stays switched off here,
+ * links, rules and images of forum files. Everything the renderer does not show as formatting stays switched off here,
  * so the editor cannot produce what a post would not display.
  *
  * Built per editor rather than shared: this is where formats contributed by other extensions
@@ -45,6 +65,7 @@ export function composerExtensions(): Extensions {
 				HTMLAttributes: { rel: 'nofollow ugc noopener', target: null },
 			},
 		}),
+		ForumImage,
 		InlineInputRules,
 		// The same parser options as the renderer: GFM, and a single newline is a line break.
 		Markdown.configure({ markedOptions: { gfm: true, breaks: true } }),

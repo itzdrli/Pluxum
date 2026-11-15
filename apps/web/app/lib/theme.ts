@@ -2,7 +2,6 @@
 // this module only knows their names and whether they are dark.
 
 export const THEMES = [
-	{ id: 'graphite', label: 'Graphite', dark: true },
 	{ id: 'nord', label: 'Nord', dark: true },
 	{ id: 'dusk', label: 'Dusk', dark: true },
 	{ id: 'frost', label: 'Frost', dark: false },
@@ -11,7 +10,7 @@ export const THEMES = [
 
 export type ThemeId = (typeof THEMES)[number]['id']
 
-export const DEFAULT_THEME: ThemeId = 'graphite'
+export const DEFAULT_THEME: ThemeId = 'nord'
 
 /** Cookie that remembers the visitor's theme, so server-rendered pages come out right first time. */
 export const THEME_COOKIE = 'forum_theme'

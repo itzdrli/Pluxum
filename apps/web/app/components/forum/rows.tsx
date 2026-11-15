@@ -2,7 +2,8 @@ import type { CategoryDto, ThreadDto } from '@forum/domain'
 import { Hash, Lock, MessageSquare, Pin } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { Avatar, Tag, Timestamp } from '../ui/display'
+import { Tag, Timestamp } from '../ui/display'
+import { UserAvatar } from './user-avatar'
 
 function Stat({ value, label }: { value: number; label: string }) {
 	return (
@@ -19,6 +20,7 @@ export function CategoryRow({ category }: { category: CategoryDto }) {
 		<li>
 			<Link
 				to={`/c/${category.slug}`}
+				prefetch="intent"
 				className="hover:bg-hover active:bg-pressed flex items-center gap-3 px-4 py-3"
 			>
 				<span
@@ -60,34 +62,65 @@ export function ThreadFlags({ thread }: { thread: Pick<ThreadDto, 'pinned' | 'lo
 	)
 }
 
-/** One thread in a category's list. */
-export function ThreadRow({ thread }: { thread: ThreadDto }) {
+/** One thread in a category's list; adapts via `@container/threads` between wide and split-pane widths. */
+export function ThreadRow({
+	thread,
+	categorySlug,
+	categoryPage = 1,
+	isActive = false,
+}: {
+	thread: ThreadDto
+	categorySlug?: string
+	categoryPage?: number
+	isActive?: boolean
+}) {
+	const cpageQuery = categoryPage > 1 ? `?cpage=${categoryPage}` : ''
+	const href =
+		categorySlug !== undefined
+			? `/c/${categorySlug}/t/${thread.id}${cpageQuery}`
+			: `/t/${thread.id}`
 	return (
-		<li className="hover:bg-hover relative flex items-start gap-3 px-4 py-3">
-			<Avatar name={thread.author.displayName} />
+		<li
+			className={`hover:bg-hover relative flex items-start gap-3 border-l-2 px-3 py-2.5 transition-colors @lg/threads:px-4 @lg/threads:py-3 ${
+				isActive ? 'border-l-accent bg-selected' : 'border-l-transparent'
+			}`}
+		>
+			<div className="hidden shrink-0 @lg/threads:block">
+				<UserAvatar user={thread.author} />
+			</div>
 			<div className="min-w-0 flex-1">
 				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
 					<ThreadFlags thread={thread} />
 					{/* The link's box covers the row, so the whole row is clickable. */}
 					<Link
-						to={`/t/${thread.id}`}
-						className="text-ink-strong text-[14px] font-bold break-words after:absolute after:inset-0"
+						to={href}
+						prefetch="intent"
+						aria-current={isActive ? 'page' : undefined}
+						className="text-ink-strong line-clamp-2 text-[13px] font-bold break-words after:absolute after:inset-0 @lg/threads:line-clamp-none @lg/threads:text-[14px]"
 					>
 						{thread.title}
 					</Link>
 				</div>
-				<p className="text-ink-weak mt-1 flex flex-wrap items-center gap-x-1.5 text-[12px]">
-					<span className="text-ink">{thread.author.displayName}</span>
-					<span aria-hidden>·</span>
-					<Timestamp iso={thread.createdAt} />
-					<span className="flex items-center gap-1 tabular-nums sm:hidden">
+				<div className="text-ink-weak mt-1 flex items-center justify-between gap-2 text-[12px]">
+					<p className="flex min-w-0 flex-wrap items-center gap-x-1.5">
+						{/* Above the row link's box, so the name opens the profile instead. */}
+						<Link
+							to={`/u/${thread.author.id}`}
+							className="text-ink relative z-10 truncate hover:underline"
+						>
+							{thread.author.displayName}
+						</Link>
 						<span aria-hidden>·</span>
+						<Timestamp iso={thread.lastPostAt} className="@lg/threads:hidden" />
+						<Timestamp iso={thread.createdAt} className="hidden @lg/threads:inline" />
+					</p>
+					<span className="flex shrink-0 items-center gap-1 tabular-nums @lg/threads:hidden">
 						<MessageSquare aria-hidden size={12} />
 						{thread.replyCount}
 					</span>
-				</p>
+				</div>
 			</div>
-			<div className="hidden shrink-0 flex-col items-end gap-1 text-[12px] sm:flex">
+			<div className="hidden shrink-0 flex-col items-end gap-1 text-[12px] @lg/threads:flex">
 				<span className="text-ink-strong flex items-center gap-1 tabular-nums">
 					<MessageSquare aria-hidden size={13} className="text-ink-weak" />
 					{thread.replyCount}

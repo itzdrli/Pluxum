@@ -1,5 +1,10 @@
-import { GUEST, type Principal } from '@forum/domain'
-import { ForumCorePlugin, type ForumResult } from '@forum/forum-core'
+import { GUEST, type ForumNotification, type Principal } from '@forum/domain'
+import {
+	ForumCorePlugin,
+	type ForumResult,
+	type PostAfterWriteEvent,
+	type SearchProviderQuery,
+} from '@forum/forum-core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { database } from '@pluxel/services/database'
 import { pglite } from '@pluxel/services/database/pglite'
@@ -253,6 +258,53 @@ describe('ForumCorePlugin', () => {
 		expect((await core.ensureUser({ subject: ' ', displayName: 'x' })).isErr()).toBe(true)
 	})
 
+	it('reads user profiles and lets members or admins update display names', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { admin, alice, bob, category } = await seed(core)
+
+		const thread = (
+			await core.createThread(alice, {
+				categoryId: category.id,
+				title: 'Alice Thread',
+				body: 'Opening body',
+			})
+		).unwrap()
+		;(await core.createPost(alice, { threadId: thread.id, body: 'Second post' })).unwrap()
+
+		const asGuest = (await core.getUserProfile(GUEST, alice.userId!)).unwrap()
+		expect(asGuest).toMatchObject({
+			user: { id: alice.userId, displayName: 'Alice' },
+			roles: ['member'],
+			threadCount: 1,
+			postCount: 2,
+			can: { edit: false },
+		})
+		expect(asGuest.threads.items).toHaveLength(1)
+
+		const asAlice = (await core.getUserProfile(alice, alice.userId!)).unwrap()
+		expect(asAlice.can.edit).toBe(true)
+
+		expect(await codeOf(core.updateProfile(GUEST, alice.userId!, { displayName: 'Hack' }))).toBe(
+			'unauthenticated',
+		)
+		expect(await codeOf(core.updateProfile(bob, alice.userId!, { displayName: 'Hack' }))).toBe(
+			'forbidden',
+		)
+		expect(
+			(await core.updateProfile(alice, alice.userId!, { displayName: '  Alice   W ' })).unwrap(),
+		).toEqual({
+			id: alice.userId,
+			displayName: 'Alice W',
+		})
+		expect(
+			(await core.updateProfile(admin, alice.userId!, { displayName: 'Alice Admin' })).unwrap(),
+		).toEqual({
+			id: alice.userId,
+			displayName: 'Alice Admin',
+		})
+	})
+
 	it('runs a thread from creation through replies with consistent counters', async () => {
 		await using host = await createHost()
 		const core = await host.start(ForumCorePlugin)
@@ -327,6 +379,101 @@ describe('ForumCorePlugin', () => {
 		expect(await titles(1)).toEqual(['second', 'first'])
 		expect(await titles(2)).toEqual(['third'])
 		expect(third.title).toBe('third')
+	})
+
+	it('lists recent active threads across visible categories with category summary and paging', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { admin, alice, bob, category: general } = await seed(core)
+		const secret = (
+			await core.createCategory(admin, { name: 'Secret', description: 'Staff only' })
+		).unwrap()
+		const announcements = (
+			await core.createCategory(admin, { name: 'Announcements', slug: 'news' })
+		).unwrap()
+
+		const t1 = (
+			await core.createThread(alice, { categoryId: general.id, title: 'General 1', body: 'a' })
+		).unwrap()
+		const t2 = (
+			await core.createThread(bob, { categoryId: announcements.id, title: 'News 1', body: 'b' })
+		).unwrap()
+		const tSecret = (
+			await core.createThread(admin, { categoryId: secret.id, title: 'Secret 1', body: 'c' })
+		).unwrap()
+		const tDeleted = (
+			await core.createThread(alice, { categoryId: general.id, title: 'Deleted 1', body: 'd' })
+		).unwrap()
+
+		// Pinning t2 does not force it ahead of newer activity; bumping t1 puts t1 first.
+		;(await core.updateThread(admin, t2.id, { pinned: true })).unwrap()
+		;(await core.createPost(bob, { threadId: t1.id, body: 'bump' })).unwrap()
+		;(await core.deleteThread(alice, tDeleted.id)).unwrap()
+
+		const allVisible = await core.listRecentThreads(GUEST)
+		expect(allVisible.total).toBe(3)
+		expect(allVisible.page).toBe(1)
+		expect(allVisible.items.map((item) => item.id)).toEqual([t1.id, tSecret.id, t2.id])
+		expect(allVisible.items[0]).toMatchObject({
+			id: t1.id,
+			title: 'General 1',
+			replyCount: 1,
+			category: { id: general.id, slug: 'general', name: 'General' },
+			author: { id: alice.userId, displayName: 'Alice' },
+			ext: {},
+		})
+		expect(allVisible.items[2]?.category).toEqual({
+			id: announcements.id,
+			slug: 'news',
+			name: 'Announcements',
+		})
+
+		// Pagination across categories.
+		const page1 = await core.listRecentThreads(GUEST, { page: 1, pageSize: 2 })
+		expect(page1.total).toBe(3)
+		expect(page1.page).toBe(1)
+		expect(page1.pageSize).toBe(2)
+		expect(page1.items.map((item) => item.title)).toEqual(['General 1', 'Secret 1'])
+
+		const page2 = await core.listRecentThreads(GUEST, { page: 2, pageSize: 2 })
+		expect(page2.total).toBe(3)
+		expect(page2.page).toBe(2)
+		expect(page2.pageSize).toBe(2)
+		expect(page2.items.map((item) => item.title)).toEqual(['News 1'])
+
+		// Custom permission policy hides restricted categories for non-admins.
+		const disposeHideSecret = core.registerPermissionPolicy({
+			id: 'test.hide-secret',
+			evaluate: ({ principal, action, resource }) =>
+				action === 'category.view' &&
+				resource.categoryId === secret.id &&
+				!principal.roles.includes('admin')
+					? 'deny'
+					: 'abstain',
+		})
+
+		const guestRestricted = await core.listRecentThreads(GUEST)
+		expect(guestRestricted.total).toBe(2)
+		expect(guestRestricted.items.map((item) => item.id)).toEqual([t1.id, t2.id])
+
+		const adminView = await core.listRecentThreads(admin)
+		expect(adminView.total).toBe(3)
+		expect(adminView.items.map((item) => item.id)).toEqual([t1.id, tSecret.id, t2.id])
+
+		disposeHideSecret()
+
+		// When no categories are visible, returns an empty page immediately.
+		const disposeHideAll = core.registerPermissionPolicy({
+			id: 'test.hide-all',
+			evaluate: ({ action }) => (action === 'category.view' ? 'deny' : 'abstain'),
+		})
+		expect(await core.listRecentThreads(GUEST, { page: 2, pageSize: 5 })).toEqual({
+			items: [],
+			page: 2,
+			pageSize: 5,
+			total: 0,
+		})
+		disposeHideAll()
 	})
 
 	it('rejects writes from guests and from members without the right', async () => {
@@ -599,6 +746,7 @@ describe('content renderer', () => {
 			'<a href="/c/general" rel="x">in</a><a href="mailto:a@example.com">mail</a>',
 			'<pre><code class="language-ts evil">code</code></pre><ol start="3"><li>x</li></ol>',
 			'<iframe src="https://example.com"></iframe><form><input name="q"></form>',
+			'<img src="/api/forum/ext/forum-attachments/files/0b9e8f1c-3a2d-4c5e-9f10-1234567890ab" alt="a" onerror="x()" width="9"><img src="https://example.com/api/forum/ext/forum-attachments/files/0b9e8f1c-3a2d-4c5e-9f10-1234567890ab">',
 		].join('\n')
 		const read = await openingPost(core, source)
 
@@ -614,6 +762,7 @@ describe('content renderer', () => {
 				'<a href="/c/general">in</a><a href="mailto:a@example.com">mail</a>',
 				'<pre><code class="language-ts">code</code></pre><ol start="3"><li>x</li></ol>',
 				'',
+				'<img src="/api/forum/ext/forum-attachments/files/0b9e8f1c-3a2d-4c5e-9f10-1234567890ab" alt="a" loading="lazy" decoding="async" />',
 			].join('\n'),
 		)
 	})
@@ -757,5 +906,510 @@ describe('entity extensions and UI slots', () => {
 			bodyHtml: '<p>HI</p>',
 			bodyFormat: 'markdown',
 		})
+	})
+})
+
+const afterWriteLog: PostAfterWriteEvent[] = []
+
+/** Filters banned words before writes and records committed writes after they happen. */
+@Plugin()
+class WordFilterHookPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerPostHook({
+				id: 'test.word-filter',
+				beforeWrite: (event) => {
+					const text =
+						event.kind === 'thread.create'
+							? `${event.title} ${event.body}`
+							: event.kind === 'thread.update'
+								? event.title
+								: event.body
+					if (text.includes('FORBIDDEN')) return { code: 'forbidden', message: '账号已被限制发言' }
+					if (text.includes('SPAM')) return { message: '内容包含违禁词' }
+					return undefined
+				},
+				afterWrite: (event) => {
+					afterWriteLog.push(event)
+				},
+			}),
+		)
+	}
+}
+
+@Plugin()
+class DuplicateHookPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerPostHook({
+				id: 'test.word-filter',
+				afterWrite: () => {},
+			}),
+		)
+	}
+}
+
+@Plugin()
+class EmptyHookPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(this.core.registerPostHook({ id: 'test.empty-hook' }))
+	}
+}
+
+@Plugin()
+class BrokenHookPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerPostHook({
+				id: 'test.broken-hook',
+				beforeWrite: () => {
+					throw new Error('beforeWrite bug')
+				},
+				afterWrite: () => Promise.reject(new Error('afterWrite bug')),
+			}),
+		)
+	}
+}
+
+describe('post hooks registry', () => {
+	it('runs beforeWrite validation and emits afterWrite events while the contributor runs', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { alice, bob, category } = await seed(core)
+
+		afterWriteLog.length = 0
+		await host.start(WordFilterHookPlugin)
+		expect(core.postHookIds()).toEqual(['test.word-filter'])
+
+		// Rejected writes abort the transaction and emit no afterWrite event.
+		expect(
+			await codeOf(
+				core.createThread(alice, { categoryId: category.id, title: 'Buy SPAM', body: 'ok' }),
+			),
+		).toBe('invalid')
+		expect(
+			await codeOf(
+				core.createThread(alice, { categoryId: category.id, title: 'ok', body: 'FORBIDDEN' }),
+			),
+		).toBe('forbidden')
+		expect(afterWriteLog).toEqual([])
+		const [unchangedCat] = await core.listCategories(GUEST)
+		expect(unchangedCat).toMatchObject({ threadCount: 0, postCount: 0 })
+
+		const thread = (
+			await core.createThread(alice, {
+				categoryId: category.id,
+				title: 'Clean title',
+				body: 'Opening body',
+			})
+		).unwrap()
+		const opening = (await core.getThread(alice, thread.id)).unwrap().posts.items[0]
+		expect(afterWriteLog).toHaveLength(1)
+		expect(afterWriteLog[0]).toMatchObject({
+			kind: 'thread.created',
+			categoryId: category.id,
+			threadId: thread.id,
+			postId: opening.id,
+			authorId: alice.userId,
+			title: 'Clean title',
+			body: 'Opening body',
+		})
+
+		expect(
+			await codeOf(core.createPost(bob, { threadId: thread.id, body: 'more SPAM here' })),
+		).toBe('invalid')
+		const reply = (
+			await core.createPost(bob, { threadId: thread.id, body: 'Nice thread' })
+		).unwrap()
+		expect(afterWriteLog[1]).toMatchObject({
+			kind: 'post.created',
+			categoryId: category.id,
+			threadId: thread.id,
+			threadAuthorId: alice.userId,
+			threadTitle: 'Clean title',
+			postId: reply.id,
+			authorId: bob.userId,
+			body: 'Nice thread',
+		})
+
+		expect(await codeOf(core.updatePost(bob, reply.id, { body: 'SPAM edit' }))).toBe('invalid')
+		// Editing with the identical body writes nothing and emits no event.
+		;(await core.updatePost(bob, reply.id, { body: 'Nice thread' })).unwrap()
+		expect(afterWriteLog).toHaveLength(2)
+
+		;(await core.updatePost(bob, reply.id, { body: 'Edited reply' })).unwrap()
+		expect(afterWriteLog[2]).toMatchObject({
+			kind: 'post.updated',
+			categoryId: category.id,
+			threadId: thread.id,
+			threadTitle: 'Clean title',
+			postId: reply.id,
+			authorId: bob.userId,
+			opening: false,
+			body: 'Edited reply',
+		})
+
+		expect(await codeOf(core.updateThread(alice, thread.id, { title: 'SPAM title' }))).toBe(
+			'invalid',
+		)
+		;(await core.updateThread(alice, thread.id, { title: 'Renamed title' })).unwrap()
+		expect(afterWriteLog[3]).toMatchObject({
+			kind: 'thread.updated',
+			categoryId: category.id,
+			threadId: thread.id,
+			postId: opening.id,
+			authorId: alice.userId,
+			title: 'Renamed title',
+			body: 'Opening body',
+		})
+
+		;(await core.deletePost(bob, reply.id)).unwrap()
+		expect(afterWriteLog[4]).toMatchObject({
+			kind: 'post.deleted',
+			categoryId: category.id,
+			threadId: thread.id,
+			postId: reply.id,
+			authorId: bob.userId,
+		})
+
+		;(await core.deleteThread(alice, thread.id)).unwrap()
+		expect(afterWriteLog[5]).toMatchObject({
+			kind: 'thread.deleted',
+			categoryId: category.id,
+			threadId: thread.id,
+			authorId: alice.userId,
+		})
+
+		await host.stop(WordFilterHookPlugin)
+		expect(core.postHookIds()).toEqual([])
+		expect(
+			(
+				await core.createThread(alice, {
+					categoryId: category.id,
+					title: 'SPAM is allowed after stop',
+					body: 'ok',
+				})
+			).isOk(),
+		).toBe(true)
+		expect(afterWriteLog).toHaveLength(6)
+	})
+
+	it('isolates broken hooks, rejects bad registrations and survives core restarts', async () => {
+		await using host = await createHost()
+		const before = (await host.start([ForumCorePlugin, WordFilterHookPlugin, BrokenHookPlugin]))[0]
+		const { alice, category } = await seed(before)
+
+		// BrokenHookPlugin throws in both beforeWrite and afterWrite, yet normal writes succeed.
+		expect(
+			(await before.createThread(alice, { categoryId: category.id, title: 'T', body: 'B' })).isOk(),
+		).toBe(true)
+
+		const core = await host.restart(ForumCorePlugin)
+		expect(core).not.toBe(before)
+		expect(core.postHookIds().toSorted()).toEqual(['test.broken-hook', 'test.word-filter'])
+
+		const duplicate = await host.commitExpectFail((change) => change.start(DuplicateHookPlugin))
+		const empty = await host.commitExpectFail((change) => change.start(EmptyHookPlugin))
+		for (const failure of [duplicate, empty]) {
+			expect(failure.lifecycleReport.issues).toContainEqual(
+				expect.objectContaining({ kind: 'start-failed' }),
+			)
+		}
+		expect(core.postHookIds().toSorted()).toEqual(['test.broken-hook', 'test.word-filter'])
+	})
+})
+
+const inboxDeliveries: ForumNotification[] = []
+const mailDeliveries: ForumNotification[] = []
+
+@Plugin()
+class InboxChannelPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerNotificationChannel({
+				id: 'test.inbox',
+				deliver: (notification) => {
+					inboxDeliveries.push(notification)
+				},
+			}),
+		)
+	}
+}
+
+@Plugin()
+class MailAndBrokenChannelPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerNotificationChannel({
+				id: 'test.broken-channel',
+				deliver: () => Promise.reject(new Error('smtp down')),
+			}),
+		)
+		this.ctx.effects.defer(
+			this.core.registerNotificationChannel({
+				id: 'test.mail',
+				deliver: async (notification) => {
+					await Promise.resolve()
+					mailDeliveries.push(notification)
+				},
+			}),
+		)
+	}
+}
+
+@Plugin()
+class DuplicateChannelPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerNotificationChannel({
+				id: 'test.inbox',
+				deliver: () => {},
+			}),
+		)
+	}
+}
+
+describe('notification channels registry', () => {
+	it('delivers notifications across running channels and isolates channel failures', async () => {
+		await using host = await createHost()
+		let core = await host.start(ForumCorePlugin)
+		const sample: ForumNotification = {
+			id: '00000000-0000-4000-8000-000000000099',
+			recipientId: '00000000-0000-4000-8000-000000000001',
+			kind: 'thread.reply',
+			title: 'Bob 回复了你的主题',
+			path: '/t/1#post-2',
+			createdAt: new Date().toISOString(),
+		}
+
+		inboxDeliveries.length = 0
+		mailDeliveries.length = 0
+		expect(await core.deliverNotification(sample)).toEqual([])
+
+		await host.start([InboxChannelPlugin, MailAndBrokenChannelPlugin])
+		expect(core.notificationChannelIds()).toEqual([
+			'test.inbox',
+			'test.broken-channel',
+			'test.mail',
+		])
+		expect(await core.deliverNotification(sample)).toEqual(['test.inbox', 'test.mail'])
+		expect(inboxDeliveries).toEqual([sample])
+		expect(mailDeliveries).toEqual([sample])
+
+		core = await host.restart(ForumCorePlugin)
+		expect(core.notificationChannelIds().toSorted()).toEqual([
+			'test.broken-channel',
+			'test.inbox',
+			'test.mail',
+		])
+
+		await host.stop(MailAndBrokenChannelPlugin)
+		expect(core.notificationChannelIds()).toEqual(['test.inbox'])
+		expect(await core.deliverNotification(sample)).toEqual(['test.inbox'])
+		expect(inboxDeliveries).toHaveLength(2)
+		expect(mailDeliveries).toHaveLength(1)
+
+		const failure = await host.commitExpectFail((change) => change.start(DuplicateChannelPlugin))
+		expect(failure.lifecycleReport.issues).toContainEqual(
+			expect.objectContaining({ kind: 'start-failed' }),
+		)
+	})
+})
+
+const searchQueries: SearchProviderQuery[] = []
+
+@Plugin()
+class FakeSearchPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerSearchProvider({
+				id: 'test.search',
+				search: async (query) => {
+					searchQueries.push(query)
+					const posts = await this.core.listIndexablePosts()
+					const matched = posts.filter(
+						(post) =>
+							query.categoryIds.includes(post.categoryId) &&
+							(query.authorId === undefined || post.authorId === query.authorId) &&
+							(!query.threadsOnly || post.opening) &&
+							`${post.threadTitle} ${post.body}`.toLowerCase().includes(query.query.toLowerCase()),
+					)
+					return {
+						items: matched.map((post) => ({
+							postId: post.postId,
+							threadId: post.threadId,
+							categoryId: post.categoryId,
+							authorId: post.authorId,
+							opening: post.opening,
+							title: post.threadTitle,
+							snippetHtml: `<script>evil()</script><mark>${query.query}</mark> in <b>${post.body}</b>`,
+							createdAt: post.createdAt,
+						})),
+						total: matched.length,
+					}
+				},
+			}),
+		)
+	}
+}
+
+@Plugin()
+class SecondSearchPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerSearchProvider({
+				id: 'test.second-search',
+				search: () => Promise.resolve({ items: [], total: 0 }),
+			}),
+		)
+	}
+}
+
+@Plugin()
+class BrokenSearchPlugin extends BasePlugin {
+	constructor(private readonly core: ForumCorePlugin) {
+		super()
+	}
+
+	protected override init(): void {
+		this.ctx.effects.defer(
+			this.core.registerSearchProvider({
+				id: 'test.broken-search',
+				search: () => Promise.reject(new Error('index corrupt')),
+			}),
+		)
+	}
+}
+
+describe('search providers registry and indexable post scan', () => {
+	it('scans visible posts in batches and serves search only while a provider runs', async () => {
+		await using host = await createHost()
+		let core = await host.start(ForumCorePlugin)
+		const { alice, bob, category } = await seed(core)
+
+		const thread = (
+			await core.createThread(alice, {
+				categoryId: category.id,
+				title: '乒乓球拍推荐',
+				body: '求推荐底板',
+			})
+		).unwrap()
+		const reply = (
+			await core.createPost(bob, { threadId: thread.id, body: '乒乓球胶皮也很重要' })
+		).unwrap()
+		const doomed = (
+			await core.createPost(bob, { threadId: thread.id, body: '将被删除的回复' })
+		).unwrap()
+		;(await core.deletePost(bob, doomed.id)).unwrap()
+
+		// Backfill cursor scan skips deleted posts and respects afterPostId + limit.
+		const firstBatch = await core.listIndexablePosts({ limit: 1 })
+		expect(firstBatch).toHaveLength(1)
+		const secondBatch = await core.listIndexablePosts({
+			afterPostId: firstBatch[0].postId,
+			limit: 10,
+		})
+		expect(secondBatch).toHaveLength(1)
+		expect([...firstBatch, ...secondBatch].map((item) => item.body).toSorted()).toEqual([
+			'乒乓球胶皮也很重要',
+			'求推荐底板',
+		])
+
+		expect(core.searchAvailable()).toBe(false)
+		expect(core.searchProviderId()).toBeNull()
+		expect(await codeOf(core.search(GUEST, { query: '乒乓' }))).toBe('unavailable')
+
+		searchQueries.length = 0
+		await host.start(FakeSearchPlugin)
+		expect(core.searchAvailable()).toBe(true)
+		expect(core.searchProviderId()).toBe('test.search')
+
+		expect(await codeOf(core.search(GUEST, { query: '   ' }))).toBe('invalid')
+		expect(await codeOf(core.search(GUEST, { query: '乒乓', categoryId: MISSING_ID }))).toBe(
+			'not_found',
+		)
+		expect(await codeOf(core.search(GUEST, { query: '乒乓', authorId: 'bad-id' }))).toBe(
+			'not_found',
+		)
+
+		const allHits = (await core.search(GUEST, { query: '乒乓' })).unwrap()
+		expect(allHits.total).toBe(2)
+		expect(allHits.items.find((hit) => hit.postId === reply.id)).toMatchObject({
+			threadId: thread.id,
+			categoryId: category.id,
+			opening: false,
+			title: '乒乓球拍推荐',
+			snippetHtml: '<mark>乒乓</mark> in 乒乓球胶皮也很重要',
+			author: { id: bob.userId, displayName: 'Bob' },
+		})
+
+		const topicOnly = (
+			await core.search(GUEST, {
+				query: '乒乓',
+				categoryId: category.id,
+				authorId: alice.userId!,
+				threadsOnly: true,
+			})
+		).unwrap()
+		expect(topicOnly.items).toHaveLength(1)
+		expect(topicOnly.items[0]).toMatchObject({
+			opening: true,
+			author: { id: alice.userId, displayName: 'Alice' },
+		})
+
+		core = await host.restart(ForumCorePlugin)
+		expect(core.searchProviderId()).toBe('test.search')
+
+		// Refuses a second search provider while the first is installed, then accepts it once free.
+		const duplicate = await host.commitExpectFail((change) => change.start(SecondSearchPlugin))
+		expect(duplicate.lifecycleReport.issues).toContainEqual(
+			expect.objectContaining({ kind: 'start-failed' }),
+		)
+		expect(core.searchProviderId()).toBe('test.search')
+
+		await host.stop(FakeSearchPlugin)
+		await host.start(SecondSearchPlugin)
+		expect(core.searchProviderId()).toBe('test.second-search')
+
+		await host.stop(SecondSearchPlugin)
+		expect(core.searchAvailable()).toBe(false)
+		await host.start(BrokenSearchPlugin)
+		expect(await codeOf(core.search(GUEST, { query: '乒乓' }))).toBe('unavailable')
 	})
 })

@@ -200,6 +200,12 @@ function ToolButton({
 	)
 }
 
+/** Inserts an uploaded file at the cursor. */
+export type InsertAttachment = (item: AttachmentRef) => void
+
+/** A file to put into the text: an image shown in place, or a link to the file. */
+export type AttachmentRef = Readonly<{ kind: 'image' | 'link'; text: string; href: string }>
+
 export function RichEditor({
 	initial,
 	label,
@@ -208,6 +214,7 @@ export function RichEditor({
 	autoFocus,
 	onChange,
 	onSubmit,
+	insertRef,
 }: {
 	/** Markdown to start from. Later changes of this prop are ignored: the editor owns the text. */
 	initial: string
@@ -219,6 +226,8 @@ export function RichEditor({
 	onChange: (markdown: string) => void
 	/** Ctrl/⌘+Enter. */
 	onSubmit: () => void
+	/** Filled with a function that inserts a link at the cursor while the editor is mounted. */
+	insertRef?: { current: InsertAttachment | null }
 }) {
 	// The editor is created once; these refs let its callbacks reach the latest props.
 	const changed = useRef(onChange)
@@ -261,6 +270,24 @@ export function RichEditor({
 		},
 		onUpdate: ({ editor: current }) => changed.current(markdownOf(current)),
 	})
+
+	useEffect(() => {
+		if (insertRef === undefined) return undefined
+		insertRef.current = ({ kind, text, href }) => {
+			const node =
+				kind === 'image'
+					? { type: 'image', attrs: { src: href, alt: text } }
+					: { type: 'text', text, marks: [{ type: 'link', attrs: { href } }] }
+			editor
+				.chain()
+				.focus()
+				.insertContent([node, { type: 'text', text: ' ' }])
+				.run()
+		}
+		return () => {
+			insertRef.current = null
+		}
+	}, [editor, insertRef])
 
 	const state = useEditorState({
 		editor,

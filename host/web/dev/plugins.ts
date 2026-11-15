@@ -3,19 +3,28 @@ import { defineDevConsole } from '@pluxel/host-vite/console'
 import { Commands } from '@pluxel/services/commands'
 import { ForumRedisPlugin } from '@forum/forum-redis'
 import { ForumApiPlugin } from '@forum/forum-api'
+import { ForumAttachmentsPlugin, ForumStoragePlugin } from '@forum/forum-attachments'
 import { ForumAuthPlugin } from '@forum/forum-auth'
 import { ForumCorePlugin } from '@forum/forum-core'
 import { ForumMarkdownPlugin } from '@forum/forum-markdown'
+import { ForumModerationPlugin } from '@forum/forum-moderation'
+import { ForumNotificationsPlugin } from '@forum/forum-notifications'
 import { ForumReactionsPlugin } from '@forum/forum-reactions'
+import { ForumSearchPlugin } from '@forum/forum-search'
 
 // Forum plugins that run in every dev session by default.
 const forumPlugins = [
 	ForumRedisPlugin,
+	ForumStoragePlugin,
 	ForumCorePlugin,
 	ForumAuthPlugin,
 	ForumApiPlugin,
 	ForumMarkdownPlugin,
 	ForumReactionsPlugin,
+	ForumAttachmentsPlugin,
+	ForumNotificationsPlugin,
+	ForumSearchPlugin,
+	ForumModerationPlugin,
 ] as const
 
 // vp exec pluxel dev run host/web/dev/plugins.ts                    → list plugin states

@@ -90,3 +90,62 @@ export class ExtActionRegistry {
 		return [...this.entries.keys()]
 	}
 }
+
+/** A binary object served by an extension behind `GET /api/forum/ext/:extId/files/:fileId`. */
+export type ExtFileObject = Readonly<{
+	body: ArrayBuffer | Uint8Array<ArrayBuffer> | ReadableStream<Uint8Array<ArrayBuffer>>
+	contentType: string
+	size?: number
+	filename?: string
+	etag?: string
+	/** Whether the URL is content-addressed or otherwise immutable and can be cached long-term. */
+	immutable?: boolean
+}>
+
+export type ExtFileContribution = Readonly<{
+	/** The extension's ID and the `:extId` segment, e.g. `forum-attachments`. */
+	extId: string
+	read: (request: {
+		principal: Principal
+		fileId: string
+		ifNoneMatch?: string | null
+	}) => Promise<ForumResult<ExtFileObject | 'not_modified'>>
+}>
+
+/**
+ * Open registry of binary file handlers for extensions. Registration is scoped to the
+ * contributor's generation: the returned disposer withdraws that registration, after which
+ * `GET /api/forum/ext/:extId/files/:fileId` answers 404.
+ */
+export class ExtFileRegistry {
+	private readonly entries = new Map<string, ExtFileContribution>()
+
+	register(contribution: ExtFileContribution): () => void {
+		const { extId, read } = contribution
+		if (typeof extId !== 'string' || !SEGMENT.test(extId)) {
+			throw new TypeError(`Invalid extension ID for an ext file handler: ${extId}`)
+		}
+		if (typeof read !== 'function') {
+			throw new TypeError(`Ext file handler "${extId}" must provide a read function`)
+		}
+		if (this.entries.has(extId)) {
+			throw new Error(`Ext file handler "${extId}" is already registered`)
+		}
+		this.entries.set(extId, contribution)
+		return () => {
+			if (this.entries.get(extId) === contribution) this.entries.delete(extId)
+		}
+	}
+
+	find(extId: string): ExtFileContribution | undefined {
+		return this.entries.get(extId)
+	}
+
+	holds(contribution: ExtFileContribution): boolean {
+		return this.entries.get(contribution.extId) === contribution
+	}
+
+	ids(): string[] {
+		return [...this.entries.keys()]
+	}
+}

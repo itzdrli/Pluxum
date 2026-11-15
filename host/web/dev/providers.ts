@@ -2,13 +2,14 @@ import { pluginDefinitionAddressOf, pluginNodeAddressOf } from '@pluxel/core'
 import { hostStatePatch, requirePluginHostCoordinator } from '@pluxel/host/internal'
 import { defineDevConsole } from '@pluxel/host-vite/console'
 import { Redis } from '@pluxel/plugin-redis'
+import { S3 } from '@pluxel/plugin-storage'
+import { ForumStoragePlugin } from '@forum/forum-attachments'
 import { ForumRedisPlugin } from '@forum/forum-redis'
 
-// vp exec pluxel dev run host/web/dev/providers.ts → make ForumRedisPlugin the provider of `Redis`
-// Needed once on a data directory whose saved state still routes `Redis` to the official
-// RedisPlugin, which this host no longer installs; consumers of `Redis` cannot start until then.
+// vp exec pluxel dev run host/web/dev/providers.ts → route `Redis` and `S3` to forum providers
 export default defineDevConsole(async (dev) => {
-	const report = await requirePluginHostCoordinator(dev.ctx).updateRuntimeState(
+	const coordinator = requirePluginHostCoordinator(dev.ctx)
+	const redisReport = await coordinator.updateRuntimeState(
 		hostStatePatch({
 			type: 'set-provider-default',
 			token: pluginDefinitionAddressOf(Redis),
@@ -16,5 +17,13 @@ export default defineDevConsole(async (dev) => {
 		}),
 		'provider-default',
 	)
-	return { issues: report.reconciliation }
+	const s3Report = await coordinator.updateRuntimeState(
+		hostStatePatch({
+			type: 'set-provider-default',
+			token: pluginDefinitionAddressOf(S3),
+			provider: pluginNodeAddressOf(ForumStoragePlugin),
+		}),
+		'provider-default',
+	)
+	return { redis: redisReport.reconciliation, s3: s3Report.reconciliation }
 })

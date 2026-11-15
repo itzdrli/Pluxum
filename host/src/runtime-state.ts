@@ -2,19 +2,32 @@ import { VaultAdminPlugin } from '@pluxel/services/plugins'
 import { pluginNodeAddressOf } from '@pluxel/core'
 import * as v from 'valibot'
 import { ForumApiPlugin } from '@forum/forum-api'
+import {
+	ForumAttachmentsPlugin,
+	ForumStorageConfig,
+	ForumStoragePlugin,
+} from '@forum/forum-attachments'
 import { ForumAuthConfig, ForumAuthPlugin } from '@forum/forum-auth'
 import { ForumCorePlugin } from '@forum/forum-core'
 import { ForumMarkdownPlugin } from '@forum/forum-markdown'
+import { ForumModerationPlugin } from '@forum/forum-moderation'
+import { ForumNotificationsPlugin } from '@forum/forum-notifications'
 import { ForumReactionsPlugin } from '@forum/forum-reactions'
 import { ForumRedisConfig, ForumRedisPlugin } from '@forum/forum-redis'
+import { ForumSearchPlugin } from '@forum/forum-search'
 
 export const appPlugins = [
 	ForumRedisPlugin,
+	ForumStoragePlugin,
 	ForumCorePlugin,
 	ForumAuthPlugin,
 	ForumApiPlugin,
 	ForumMarkdownPlugin,
 	ForumReactionsPlugin,
+	ForumAttachmentsPlugin,
+	ForumNotificationsPlugin,
+	ForumSearchPlugin,
+	ForumModerationPlugin,
 	VaultAdminPlugin,
 ] as const
 
@@ -31,11 +44,16 @@ export type AppConfigEnv = Readonly<{
 	FORUM_OIDC_PROVIDER_LOGOUT?: string
 	FORUM_ADMIN_SUBJECTS?: string
 	REDIS_CONNECTIONS?: string
+	S3_BUCKETS?: string
 }>
 
 export function appConfigRecords(env: AppConfigEnv) {
 	return {
-		initial: [...redisConfigRecord(env.REDIS_CONNECTIONS), ...authConfigRecord(env)],
+		initial: [
+			...redisConfigRecord(env.REDIS_CONNECTIONS),
+			...storageConfigRecord(env.S3_BUCKETS),
+			...authConfigRecord(env),
+		],
 	}
 }
 
@@ -59,6 +77,18 @@ function redisConfigRecord(raw: string | undefined) {
 			owner: pluginNodeAddressOf(ForumRedisPlugin),
 			config: v.parse(ForumRedisConfig, {
 				connections: parseJsonEnv('REDIS_CONNECTIONS', raw),
+			}),
+		},
+	]
+}
+
+function storageConfigRecord(raw: string | undefined) {
+	if (raw === undefined) return []
+	return [
+		{
+			owner: pluginNodeAddressOf(ForumStoragePlugin),
+			config: v.parse(ForumStorageConfig, {
+				buckets: parseJsonEnv('S3_BUCKETS', raw),
 			}),
 		},
 	]

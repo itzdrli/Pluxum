@@ -5,12 +5,23 @@ import { t } from 'elysia'
 
 const paged = { page: t.Number(), pageSize: t.Number(), total: t.Number() }
 
-export const user = t.Object({ id: t.String(), displayName: t.String() })
-
-const bodyFormat = t.Union([t.Literal('markdown'), t.Literal('plain')])
-
 // Extension data is opaque to the API: each extension owns the shape under its own ID.
 const ext = t.Record(t.String(), t.Unknown())
+
+export const user = t.Object({
+	id: t.String(),
+	displayName: t.String(),
+	ext: t.Optional(ext),
+})
+
+const role = t.Union([
+	t.Literal('guest'),
+	t.Literal('member'),
+	t.Literal('moderator'),
+	t.Literal('admin'),
+])
+
+const bodyFormat = t.Union([t.Literal('markdown'), t.Literal('plain')])
 
 export const category = t.Object({
 	id: t.String(),
@@ -20,6 +31,12 @@ export const category = t.Object({
 	position: t.Number(),
 	threadCount: t.Number(),
 	postCount: t.Number(),
+})
+
+export const categorySummary = t.Object({
+	id: t.String(),
+	slug: t.String(),
+	name: t.String(),
 })
 
 export const thread = t.Object({
@@ -33,6 +50,11 @@ export const thread = t.Object({
 	pinned: t.Boolean(),
 	locked: t.Boolean(),
 	ext,
+})
+
+export const recentThread = t.Object({
+	...thread.properties,
+	category: categorySummary,
 })
 
 export const post = t.Object({
@@ -51,7 +73,25 @@ export const post = t.Object({
 
 export const preview = t.Object({ bodyHtml: t.String(), bodyFormat })
 
+export const searchHit = t.Object({
+	postId: t.String(),
+	threadId: t.String(),
+	categoryId: t.String(),
+	opening: t.Boolean(),
+	title: t.String(),
+	snippetHtml: t.String(),
+	author: user,
+	createdAt: t.String(),
+})
+
+export const searchPage = t.Object({ items: t.Array(searchHit), ...paged })
+
 export const categoryList = t.Object({ items: t.Array(category) })
+
+export const recentThreads = t.Object({
+	items: t.Array(recentThread),
+	...paged,
+})
 
 export const categoryThreads = t.Object({
 	category,
@@ -71,24 +111,30 @@ export const threadDetail = t.Object({
 	}),
 })
 
+export const userProfile = t.Object({
+	user,
+	roles: t.Array(role),
+	createdAt: t.String(),
+	threadCount: t.Number(),
+	postCount: t.Number(),
+	threads: t.Object({ items: t.Array(thread), ...paged }),
+	can: t.Object({ edit: t.Boolean() }),
+	ext,
+})
+
 export const meta = t.Object({
 	viewer: t.Object({
 		user: t.Union([user, t.Null()]),
-		roles: t.Array(
-			t.Union([
-				t.Literal('guest'),
-				t.Literal('member'),
-				t.Literal('moderator'),
-				t.Literal('admin'),
-			]),
-		),
+		roles: t.Array(role),
 		can: t.Object({ manageCategories: t.Boolean() }),
 	}),
 	auth: t.Object({ loginAvailable: t.Boolean() }),
+	search: t.Object({ available: t.Boolean() }),
 	limits: t.Object({
 		categoryNameMax: t.Number(),
 		threadTitleMax: t.Number(),
 		postBodyMax: t.Number(),
+		displayNameMax: t.Number(),
 	}),
 	content: t.Object({ format: bodyFormat }),
 	uiSlots: t.Array(
@@ -100,6 +146,7 @@ export const meta = t.Object({
 				t.Literal('thread.sidebar'),
 				t.Literal('user.profile.tabs'),
 				t.Literal('composer.toolbar'),
+				t.Literal('shell.actions'),
 			]),
 			extId: t.String(),
 		}),
@@ -117,6 +164,15 @@ export const ping = t.Object({
 const text = (max: number) => t.String({ maxLength: max * 2 })
 
 export const paging = t.Object({
+	page: t.Optional(t.String({ maxLength: 10 })),
+	pageSize: t.Optional(t.String({ maxLength: 10 })),
+})
+
+export const searchQuery = t.Object({
+	q: t.Optional(text(LIMITS.searchQueryMax)),
+	categoryId: t.Optional(t.String({ maxLength: 64 })),
+	authorId: t.Optional(t.String({ maxLength: 64 })),
+	threadsOnly: t.Optional(t.String({ maxLength: 10 })),
 	page: t.Optional(t.String({ maxLength: 10 })),
 	pageSize: t.Optional(t.String({ maxLength: 10 })),
 })
@@ -148,3 +204,7 @@ export const updateThreadBody = t.Object({
 })
 
 export const postBody = t.Object({ body: text(LIMITS.postBodyMax) })
+
+export const updateUserBody = t.Object({
+	displayName: text(LIMITS.displayNameMax),
+})

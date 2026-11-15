@@ -21,6 +21,7 @@ import type { Route } from './+types/root'
 import './app.css'
 import { Shell } from './components/shell/shell'
 import { useTheme } from './components/shell/theme-picker'
+import { LightboxProvider } from './components/ui/lightbox'
 import { ButtonLink } from './components/ui/button'
 import { forumApi } from './lib/forum-api.server'
 import { keepOnThemeChange } from './lib/revalidate'
@@ -30,8 +31,19 @@ import { isDarkTheme, themeFromRequest } from './lib/theme'
 // useRouteLoaderData('root').
 export async function loader({ request }: Route.LoaderArgs) {
 	const meta = await forumApi.meta(request)
+	const forumMeta = meta.ok ? meta.value : null
+	let unreadNotifications = 0
+	if (
+		forumMeta?.viewer.user != null &&
+		forumMeta.uiSlots.some(
+			(slot) => slot.slot === 'shell.actions' && slot.extId === 'forum-notifications',
+		)
+	) {
+		const unread = await forumApi.unreadNotificationsCount(request)
+		if (unread.ok) unreadNotifications = unread.value.count
+	}
 	// The shell still renders when the API is down; the page below reports the failure itself.
-	return { meta: meta.ok ? meta.value : null, theme: themeFromRequest(request) }
+	return { meta: forumMeta, unreadNotifications, theme: themeFromRequest(request) }
 }
 
 export const shouldRevalidate = keepOnThemeChange
@@ -58,9 +70,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App({ loaderData }: Route.ComponentProps) {
 	return (
-		<Shell meta={loaderData.meta}>
-			<Outlet />
-		</Shell>
+		<LightboxProvider>
+			<Shell meta={loaderData.meta}>
+				<Outlet />
+			</Shell>
+		</LightboxProvider>
 	)
 }
 

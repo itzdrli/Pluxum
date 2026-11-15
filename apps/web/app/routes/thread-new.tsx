@@ -1,4 +1,4 @@
-import { Send } from 'lucide-react'
+import { Send, X } from 'lucide-react'
 import { data, Form, redirect, useNavigation, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/thread-new'
@@ -30,7 +30,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 	const { category } = orThrow(await forumApi.categoryThreads(request, params.slug))
 	const result = await forumApi.createThread(request, { categoryId: category.id, title, body })
 	if (!result.ok) return data({ error: result.error.message }, { status: result.status })
-	return redirect(`/t/${result.value.id}`)
+	return redirect(`/c/${category.slug}/t/${result.value.id}`)
 }
 
 export default function ThreadNew({ loaderData, actionData }: Route.ComponentProps) {
@@ -38,7 +38,7 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 	const limits = useRouteLoaderData<typeof rootLoader>('root')?.meta?.limits
 	const submitting = useNavigation().state === 'submitting'
 	return (
-		<>
+		<div className="mx-auto max-w-[860px]">
 			<Crumbs
 				items={[
 					{ label: '版块', to: '/' },
@@ -46,7 +46,22 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 					{ label: '发布主题' },
 				]}
 			/>
-			<PageHeader title="发布主题" description={`发布到「${category.name}」`} />
+			<PageHeader
+				title="发布主题"
+				description={`发布到「${category.name}」`}
+				actions={
+					<ButtonLink
+						to={`/c/${category.slug}`}
+						tone="ghost"
+						size="sm"
+						aria-label="关闭发布主题"
+						title="关闭发布主题"
+						className="button--icon-only"
+					>
+						<X aria-hidden />
+					</ButtonLink>
+				}
+			/>
 			<Panel as="section" className="p-4">
 				<Form method="post" className="flex flex-col gap-4">
 					<FormError message={actionData?.error} />
@@ -70,6 +85,6 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 					</div>
 				</Form>
 			</Panel>
-		</>
+		</div>
 	)
 }

@@ -1,13 +1,15 @@
 import type { PostDto } from '@forum/domain'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { Form, useActionData, useNavigation } from 'react-router'
+import { Form, Link, useActionData, useNavigation } from 'react-router'
 
 import { PostSlots } from '../../slots/slots'
 import { Composer } from '../composer/composer'
 import { Button } from '../ui/button'
-import { Avatar, FormError, Tag, Timestamp } from '../ui/display'
+import { FormError, Tag, Timestamp } from '../ui/display'
+import { imagesForClick, useLightbox } from '../ui/lightbox'
 import { ActionMenu, ConfirmDialog, type MenuItem } from '../ui/overlay'
+import { UserAvatar } from './user-avatar'
 
 /**
  * One post of a thread. Editing happens in place; deleting asks first. Both post to the thread
@@ -33,6 +35,7 @@ export function PostCard({
 	const editing = editingFrom !== undefined && editingFrom === post.editedAt
 	const setEditing = (open: boolean) => setEditingFrom(open ? post.editedAt : undefined)
 	const [confirming, setConfirming] = useState(false)
+	const lightbox = useLightbox()
 	const items: MenuItem[] = []
 	if (!post.deleted && post.can.edit) {
 		items.push({ id: 'edit', label: '编辑', icon: Pencil, onAction: () => setEditing(true) })
@@ -49,12 +52,27 @@ export function PostCard({
 	return (
 		<li
 			id={`post-${post.id}`}
-			className="border-line bg-panel group scroll-mt-16 rounded-[2px] border"
+			className={`border-line bg-panel group scroll-mt-16 rounded-[2px] border${!opening && !editing ? ' post-card-cv' : ''}`}
+			// Images in the body and the attachment strip open in the viewer, all of this post's in turn.
+			onClick={(event) => {
+				const found = lightbox ? imagesForClick(event, event.currentTarget) : null
+				if (lightbox && found) {
+					event.preventDefault()
+					lightbox(found.images, found.index)
+				}
+			}}
 		>
 			<div className="flex items-center gap-2.5 px-4 pt-3">
-				<Avatar name={post.author.displayName} />
+				<Link to={`/u/${post.author.id}`} tabIndex={-1} aria-hidden>
+					<UserAvatar user={post.author} />
+				</Link>
 				<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
-					<span className="text-ink-strong truncate font-bold">{post.author.displayName}</span>
+					<Link
+						to={`/u/${post.author.id}`}
+						className="text-ink-strong truncate font-bold hover:underline"
+					>
+						{post.author.displayName}
+					</Link>
 					{byThreadAuthor && <Tag>楼主</Tag>}
 					<span className="text-ink-weak flex items-center gap-1.5 text-[12px]">
 						<Timestamp iso={post.createdAt} />

@@ -5,6 +5,7 @@ export const LIMITS = Object.freeze({
 	threadTitleMax: 120,
 	postBodyMax: 20_000,
 	displayNameMax: 40,
+	searchQueryMax: 120,
 	pageSizeDefault: 20,
 	pageSizeMax: 50,
 })
@@ -41,6 +42,10 @@ export function validateCategoryName(input: string): Validated<string> {
 
 export function validateDisplayName(input: string): Validated<string> {
 	return singleLine(input, '昵称', LIMITS.displayNameMax)
+}
+
+export function validateSearchQuery(input: string): Validated<string> {
+	return singleLine(input, '搜索词', LIMITS.searchQueryMax)
 }
 
 export function validateCategoryDescription(input: string): Validated<string> {

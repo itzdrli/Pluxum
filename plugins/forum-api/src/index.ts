@@ -15,10 +15,21 @@ import { ElysiaApp } from '@pluxel/services/elysia'
 import type { Elysia } from 'elysia'
 import type { TSchema } from 'typebox'
 import { Value } from 'typebox/value'
-import { ExtActionRegistry, type ExtActionContribution, type ExtActionMethod } from './ext'
+import {
+	ExtActionRegistry,
+	ExtFileRegistry,
+	type ExtActionContribution,
+	type ExtActionMethod,
+	type ExtFileContribution,
+} from './ext'
 import * as schema from './schemas'
 
-export type { ExtActionContribution, ExtActionMethod } from './ext'
+export type {
+	ExtActionContribution,
+	ExtActionMethod,
+	ExtFileContribution,
+	ExtFileObject,
+} from './ext'
 
 /** Public prefix for every forum HTTP route; the frontend proxies this path on its own origin. */
 export const FORUM_API_PREFIX = '/api/forum'
@@ -29,6 +40,7 @@ const STATUS: Readonly<Record<ForumErrorCode, number>> = {
 	forbidden: 403,
 	not_found: 404,
 	conflict: 409,
+	unavailable: 503,
 }
 
 function errorResponse(status: number, error: ApiError): Response {
@@ -111,9 +123,20 @@ function pageOf(query: { page?: string; pageSize?: string }): PageRequest {
  * URLs, resolves who is calling and projects results onto the wire contract. Dynamic extensions
  * never mount routes: they contribute handlers to `registerExtAction`, served under `/ext`.
  */
+const SAFE_INLINE_IMAGES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
+
+function contentDisposition(inline: boolean, filename?: string): string {
+	const kind = inline ? 'inline' : 'attachment'
+	const clean = filename?.replaceAll(/[\r\n\0/\\]/g, '').trim()
+	if (!clean) return kind
+	const ascii = clean.replaceAll(/[^\x20-\x7e]|["\\;]/g, '_')
+	return `${kind}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(clean)}`
+}
+
 @Plugin({ displayName: 'Forum API' })
 export class ForumApiPlugin extends BasePlugin {
 	private readonly extActions = new ExtActionRegistry()
+	private readonly extFiles = new ExtFileRegistry()
 
 	constructor(
 		private readonly core: ForumCorePlugin,
@@ -138,6 +161,20 @@ export class ForumApiPlugin extends BasePlugin {
 	/** The registered ext actions as `extId/action`. */
 	extActionKeys(): string[] {
 		return this.extActions.keys()
+	}
+
+	/**
+	 * Serves an extension's binary files at `GET /api/forum/ext/:extId/files/:fileId` with strict
+	 * `nosniff`, CSP and `Content-Disposition` headers. The returned disposer must be handed to the
+	 * contributor's `ctx.effects`.
+	 */
+	registerExtFile(contribution: ExtFileContribution): () => void {
+		return this.extFiles.register(contribution)
+	}
+
+	/** The registered ext file contributor IDs. */
+	extFileIds(): string[] {
+		return this.extFiles.ids()
 	}
 
 	protected override init(): void {
@@ -167,7 +204,22 @@ export class ForumApiPlugin extends BasePlugin {
 						time: new Date().toISOString(),
 					}))
 					.get('/meta', { response: schema.meta }, ({ request }) => this.meta(request))
+					.get(
+						'/search',
+						{ query: schema.searchQuery, response: schema.searchPage },
+						async ({ request, query }) =>
+							valueOf(
+								await this.core.search(await this.viewer(request), {
+									query: query.q ?? '',
+									categoryId: query.categoryId,
+									authorId: query.authorId,
+									threadsOnly: query.threadsOnly === 'true' || query.threadsOnly === '1',
+									...pageOf(query),
+								}),
+							),
+					)
 					.use(this.authRoutes())
+					.use(this.userRoutes())
 					.use(this.categoryRoutes())
 					.use(this.threadRoutes())
 					.use(this.postRoutes())
@@ -175,16 +227,54 @@ export class ForumApiPlugin extends BasePlugin {
 			)
 	}
 
-	// The two fixed routes behind which every extension action lives.
+	// The fixed routes behind which every extension action and file lives.
 	private extRoutes() {
 		return (app: Elysia) =>
 			app
+				.get('/ext/:extId/files/:fileId', ({ request, params }) =>
+					this.serveExtFile(request, params),
+				)
 				.get('/ext/:extId/:action', ({ request, params, query }) =>
 					this.runExtAction('GET', request, params, query),
 				)
 				.post('/ext/:extId/:action', ({ request, params, body }) =>
 					this.runExtAction('POST', request, params, body),
 				)
+	}
+
+	private async serveExtFile(
+		request: Request,
+		params: { extId: string; fileId: string },
+	): Promise<Response> {
+		const found = this.extFiles.find(params.extId)
+		if (!found) throw new ApiFailure(404, { code: 'not_found', message: '接口不存在' })
+		const principal = await this.viewer(request)
+		const result = await found.read({
+			principal,
+			fileId: params.fileId,
+			ifNoneMatch: request.headers.get('if-none-match'),
+		})
+		if (!this.extFiles.holds(found)) {
+			throw new ApiFailure(404, { code: 'not_found', message: '接口不存在' })
+		}
+		const payload = valueOf(result)
+		if (payload === 'not_modified') {
+			return new Response(null, { status: 304 })
+		}
+		const inline = SAFE_INLINE_IMAGES.has(payload.contentType)
+		const headers = new Headers({
+			'content-type': payload.contentType,
+			'content-disposition': contentDisposition(inline, payload.filename),
+			'x-content-type-options': 'nosniff',
+			'content-security-policy':
+				"default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
+			'cache-control': payload.immutable
+				? 'public, max-age=31536000, immutable'
+				: 'private, max-age=0, must-revalidate',
+		})
+		if (payload.etag) headers.set('etag', payload.etag)
+		if (payload.size !== undefined) headers.set('content-length', String(payload.size))
+		return new Response(payload.body, { status: 200, headers })
 	}
 
 	private async runExtAction(
@@ -216,6 +306,25 @@ export class ForumApiPlugin extends BasePlugin {
 			throw new Error(`Ext action "${params.extId}/${params.action}" broke its output schema`)
 		}
 		return Response.json(output, { headers: { 'cache-control': 'no-store' } })
+	}
+
+	private userRoutes() {
+		return (app: Elysia) =>
+			app
+				.get(
+					'/users/:id',
+					{ query: schema.paging, response: schema.userProfile },
+					async ({ request, params, query }) =>
+						valueOf(
+							await this.core.getUserProfile(await this.viewer(request), params.id, pageOf(query)),
+						),
+				)
+				.patch(
+					'/users/:id',
+					{ body: schema.updateUserBody, response: schema.user },
+					async ({ request, params, body }) =>
+						valueOf(await this.core.updateProfile(await this.actor(request), params.id, body)),
+				)
 	}
 
 	private categoryRoutes() {
@@ -259,6 +368,12 @@ export class ForumApiPlugin extends BasePlugin {
 	private threadRoutes() {
 		return (app: Elysia) =>
 			app
+				.get(
+					'/threads',
+					{ query: schema.paging, response: schema.recentThreads },
+					async ({ request, query }) =>
+						await this.core.listRecentThreads(await this.viewer(request), pageOf(query)),
+				)
 				.post(
 					'/threads',
 					{ body: schema.createThreadBody, response: { 201: schema.thread } },
@@ -364,7 +479,9 @@ export class ForumApiPlugin extends BasePlugin {
 	private async meta(request: Request): Promise<MetaDto> {
 		const principal = await this.viewer(request)
 		const user =
-			principal.userId === null ? null : (await this.core.getUser(principal.userId)).unwrapOr(null)
+			principal.userId === null
+				? null
+				: (await this.core.getUser(principal.userId, principal)).unwrapOr(null)
 		return {
 			viewer: {
 				user,
@@ -372,10 +489,12 @@ export class ForumApiPlugin extends BasePlugin {
 				can: { manageCategories: this.core.can(principal, 'category.manage') },
 			},
 			auth: { loginAvailable: this.auth.loginAvailable() },
+			search: { available: this.core.searchAvailable() },
 			limits: {
 				categoryNameMax: LIMITS.categoryNameMax,
 				threadTitleMax: LIMITS.threadTitleMax,
 				postBodyMax: LIMITS.postBodyMax,
+				displayNameMax: LIMITS.displayNameMax,
 			},
 			content: { format: this.core.contentFormat() },
 			uiSlots: this.core.uiSlots(),
