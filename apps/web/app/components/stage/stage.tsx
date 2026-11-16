@@ -1,5 +1,15 @@
 import { type ComponentProps, useCallback, useLayoutEffect, useMemo, useRef } from 'react'
-import { Link, Outlet, useLocation, useMatches, useNavigate } from 'react-router'
+import {
+	Link,
+	Outlet,
+	useLocation,
+	useMatches,
+	useNavigate,
+	useNavigation,
+	useParams,
+} from 'react-router'
+
+import { useFocusReading } from '../../lib/focus'
 
 import {
 	type ResolvedStage,
@@ -17,6 +27,18 @@ export function useStage(): ResolvedStage {
 		() => resolveStage(matches, new URL(`${pathname}${search}`, 'http://stage.local')),
 		[matches, pathname, search],
 	)
+}
+
+/**
+ * The thread open beside the list, as the list should show it: while a move to another thread of
+ * the same list is under way that one already counts, so a J/K or a click lights the row at once
+ * and the detail follows when its data arrives.
+ */
+export function useOpenThreadRef(): string | undefined {
+	const params = useParams()
+	const pending = useNavigation().location?.pathname
+	const next = pending === undefined ? null : /\/t\/([^/]+)\/?$/.exec(pending)
+	return next?.[1] ?? params.id
 }
 
 /** The current stage and a link that opens a thread beside the current list. */
@@ -93,6 +115,7 @@ export function StageSplit({
 	const stage = useStage()
 	const location = useLocation()
 	const detailOpen = stage.depth === 2
+	const focus = useFocusReading() && detailOpen
 
 	// Another list (path, filters or page) starts at the top; opening a detail keeps the scroll.
 	const listRef = useRef<HTMLElement>(null)
@@ -117,7 +140,12 @@ export function StageSplit({
 
 	return (
 		<div className="flex min-h-0 w-full flex-1 lg:overflow-hidden">
-			<section ref={listRef} aria-label={label} className={detailOpen ? LIST_NARROW : LIST_WIDE}>
+			<section
+				ref={listRef}
+				aria-label={label}
+				data-list-pane
+				className={`${detailOpen ? LIST_NARROW : LIST_WIDE}${focus ? ' hidden!' : ''}`}
+			>
 				<div
 					className={
 						detailOpen ? '@container/threads' : '@container/threads mx-auto max-w-[1040px]'
@@ -127,7 +155,7 @@ export function StageSplit({
 				</div>
 			</section>
 			{detailOpen && (
-				<div ref={detailRef} className={DETAIL}>
+				<div ref={detailRef} data-focus={focus} className={`group/detail ${DETAIL}`}>
 					{/* The detail pane is the brightest surface, so the panels on it (posts, the reply box) sit
 					    half a step into it instead of floating above it. */}
 					<div className="[--c-panel:color-mix(in_srgb,var(--c-page)_50%,var(--c-panel))]">

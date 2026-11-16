@@ -6,7 +6,7 @@ import { data, Form, redirect, useNavigation, useParams, useRouteLoaderData } fr
 import type { Route } from './+types/user'
 import { ThreadRow } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
-import { StageSplit, useStageLinks } from '../components/stage/stage'
+import { StageSplit, useOpenThreadRef, useStageLinks } from '../components/stage/stage'
 import { Button } from '../components/ui/button'
 import {
 	EmptyState,
@@ -94,7 +94,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 	const isSelf = forum?.viewer.user?.id === user.id
 	// Roles are listed weakest first; members are the default and need no tag.
 	const shownRoles = roles.filter((role) => role !== 'member' && role !== 'guest')
-	const params = useParams()
+	const openRef = useOpenThreadRef()
 	const { detail } = useStageLinks()
 
 	return (
@@ -113,7 +113,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 								</p>
 							</div>
 						</header>
-						<UserThreads threads={threads} activeId={params.id} detail={detail} />
+						<UserThreads threads={threads} activeId={openRef} detail={detail} />
 					</>
 				) : (
 					<>
@@ -165,7 +165,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 							<ProfileSlots profile={loaderData} />
 							<section>
 								<SectionLabel>发布的主题 · {threads.total}</SectionLabel>
-								<UserThreads threads={threads} activeId={params.id} detail={detail} />
+								<UserThreads threads={threads} activeId={openRef} detail={detail} />
 							</section>
 						</div>
 					</>

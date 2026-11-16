@@ -111,6 +111,7 @@ export function ThreadRow({
 					<StageLink
 						to={href}
 						prefetch="intent"
+						data-thread-link
 						aria-current={isActive ? 'page' : undefined}
 						className="text-ink-strong line-clamp-2 text-ui font-bold break-words after:absolute after:inset-0 @lg/threads:line-clamp-none @lg/threads:text-title"
 					>

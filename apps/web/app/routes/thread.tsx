@@ -1,4 +1,4 @@
-import { Lock, MessageSquare, Reply, Trash2, X } from 'lucide-react'
+import { Lock, MessageSquare, PanelLeftClose, PanelLeftOpen, Reply, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
 	data,
@@ -18,7 +18,7 @@ import { PostCard } from '../components/forum/post'
 import { ThreadFlags } from '../components/forum/rows'
 import { MobileThreadBar } from '../components/shell/mobile-stage-bar'
 import { StageLink, useStage, useStageNavigate } from '../components/stage/stage'
-import { Button, ButtonAnchor, ButtonLink } from '../components/ui/button'
+import { Button, ButtonAnchor, ButtonLink, IconButton } from '../components/ui/button'
 import {
 	Crumbs,
 	EmptyState,
@@ -32,6 +32,7 @@ import { TextInputField } from '../components/ui/field'
 import { ActionMenu, ConfirmDialog, type MenuItem } from '../components/ui/overlay'
 import { Pager } from '../components/ui/pager'
 import { pageCount } from '../lib/format'
+import { toggleFocusReading, useFocusReading } from '../lib/focus'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { defineStage, listPathOf, pagePathOf } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
@@ -136,6 +137,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const { thread, category, posts, can } = loaderData
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const dock = useDock()
+	const focusReading = useFocusReading()
 	const submit = useSubmit()
 	const stage = useStage()
 	const navigate = useStageNavigate()
@@ -313,6 +315,8 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 								<Button
 									tone="ghost"
 									size="sm"
+									data-shortcut="reply"
+									{...{ title: '回复（R）' }}
 									onPress={() =>
 										dock.openReply({
 											threadId: thread.id,
@@ -325,6 +329,13 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 									回复
 								</Button>
 							)}
+							<IconButton
+								label={focusReading ? '退出专注阅读（[）' : '专注阅读（[）'}
+								aria-pressed={focusReading}
+								onPress={toggleFocusReading}
+							>
+								{focusReading ? <PanelLeftOpen aria-hidden /> : <PanelLeftClose aria-hidden />}
+							</IconButton>
 							<ActionMenu label="主题操作" items={menu} size="md" />
 							<ButtonLink
 								to={closeHref}
@@ -400,7 +411,11 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 		)
 	}
 
-	return <div className="mx-auto max-w-[880px]">{mainContent}</div>
+	return (
+		<div className="mx-auto max-w-[880px] group-data-[focus=true]/detail:max-w-[1040px]">
+			{mainContent}
+		</div>
+	)
 }
 
 function RenameThread({

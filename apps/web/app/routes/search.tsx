@@ -5,7 +5,7 @@ import { Form, useNavigation, useParams, useRouteLoaderData } from 'react-router
 import type { Route } from './+types/search'
 import type { loader as stageLoader } from './forum-stage'
 import { UserAvatar } from '../components/forum/user-avatar'
-import { StageLink, StageSplit, useStageLinks } from '../components/stage/stage'
+import { StageLink, StageSplit, useOpenThreadRef, useStageLinks } from '../components/stage/stage'
 import { Button } from '../components/ui/button'
 import {
 	EmptyState,
@@ -145,7 +145,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 	const navigation = useNavigation()
 	const isSearching =
 		navigation.state === 'loading' && navigation.location?.pathname.startsWith('/search')
-	const params = useParams()
+	const openRef = useOpenThreadRef()
 	const { stage } = useStageLinks()
 
 	if (!available) {
@@ -262,7 +262,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 										key={hit.postId}
 										hit={hit}
 										href={buildSearchHitHref(hit, stage)}
-										isActive={hit.threadRef === params.id || hit.threadId === params.id}
+										isActive={hit.threadRef === openRef || hit.threadId === openRef}
 										category={categoriesById.get(hit.categoryId)}
 									/>
 								))}
@@ -345,6 +345,7 @@ function SearchHitRow({
 					<StageLink
 						to={href}
 						prefetch="intent"
+						data-thread-link
 						aria-current={isActive ? 'page' : undefined}
 						className="text-ink-strong text-ui font-bold break-words after:absolute after:inset-0 hover:underline @lg/threads:text-title"
 					>

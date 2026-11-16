@@ -4,7 +4,7 @@ import { useParams, useRouteLoaderData } from 'react-router'
 import type { Route } from './+types/category'
 import { ThreadRow } from '../components/forum/rows'
 import { MobileCategoryBar } from '../components/shell/mobile-stage-bar'
-import { StageLink, StageSplit, useStageLinks } from '../components/stage/stage'
+import { StageLink, StageSplit, useOpenThreadRef, useStageLinks } from '../components/stage/stage'
 import { useDock } from '../components/dock/composer-dock'
 import { Button, ButtonAnchor } from '../components/ui/button'
 import { Crumbs, EmptyState, PageHeader, Panel, SectionLabel } from '../components/ui/display'
@@ -50,7 +50,7 @@ export const shouldRevalidate = listShouldRevalidate()
 
 export default function Category({ loaderData }: Route.ComponentProps) {
 	const { category, threads, can } = loaderData
-	const params = useParams()
+	const openRef = useOpenThreadRef()
 	const { detail } = useStageLinks()
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const dock = useDock()
@@ -130,7 +130,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 									key={thread.id}
 									thread={thread}
 									href={detail(thread.ref)}
-									isActive={thread.ref === params.id || thread.id === params.id}
+									isActive={thread.ref === openRef || thread.id === openRef}
 								/>
 							))}
 						</Panel>

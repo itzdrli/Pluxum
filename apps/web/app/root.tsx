@@ -24,6 +24,7 @@ import './app.css'
 import { Shell } from './components/shell/shell'
 import { useTheme } from './components/shell/theme-picker'
 import { DockProvider } from './components/dock/composer-dock'
+import { GlobalShortcuts } from './components/shell/shortcuts'
 import { PaletteProvider } from './components/palette/command-palette'
 import { LightboxProvider } from './components/ui/lightbox'
 import { ButtonLink } from './components/ui/button'
@@ -96,6 +97,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
 		<LightboxProvider>
 			<DockProvider>
 				<PaletteProvider>
+					<GlobalShortcuts />
 					<Shell meta={loaderData.meta}>
 						<Outlet />
 					</Shell>
