@@ -1,6 +1,7 @@
 import { type Editor, Extension, type Extensions, markInputRule } from '@tiptap/core'
 import { Image } from '@tiptap/extension-image'
 import { Markdown } from '@tiptap/markdown'
+import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { StarterKit } from '@tiptap/starter-kit'
 
 /**
@@ -17,6 +18,49 @@ const InlineInputRules = Extension.create({
 			...(bold ? [markInputRule({ find: /(?<![*\\])(\*\*([^*\s][^*]*)\*\*)$/, type: bold })] : []),
 			...(strike ? [markInputRule({ find: /(?<![~\\])(~~([^~\s][^~]*)~~)$/, type: strike })] : []),
 			...(code ? [markInputRule({ find: /(?<![`\\])(`([^`]+)`)$/, type: code })] : []),
+		]
+	},
+})
+
+/** Block or inline syntax that only means something as Markdown. */
+const MARKDOWN_SIGNS = [
+	/^#{1,6}\s+\S/m, // headings
+	/^\s{0,3}(?:[-*+]|\d{1,9}[.)])\s+\S/m, // list items
+	/^\s{0,3}>\s?/m, // quotes
+	/^\s{0,3}(?:```|~~~)/m, // code fences
+	/^\s{0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/m, // rules
+	/\*\*[^*\n]+\*\*|~~[^~\n]+~~|`[^`\n]+`/, // bold, strike, inline code
+	/!?\[[^\]\n]*\]\([^)\s]+\)/, // links and images
+]
+
+/**
+ * Pasting Markdown source (from a text editor, a terminal, a `.md` file) inserts it formatted, as
+ * if it had been typed. The browser hands such text over as plain text, which ProseMirror would
+ * otherwise insert verbatim with every `##` left as characters. Rich HTML from a web page still
+ * goes through the normal HTML paste; VS Code also offers HTML, but of the source as coloured
+ * text, so its plain text wins. Inside a code block everything stays literal.
+ */
+const MarkdownPaste = Extension.create({
+	name: 'markdownPaste',
+	addProseMirrorPlugins() {
+		const { editor } = this
+		return [
+			new Plugin({
+				key: new PluginKey('markdownPaste'),
+				props: {
+					handlePaste: (view, event) => {
+						const data = event.clipboardData
+						if (data === null) return false
+						if (view.state.selection.$from.parent.type.spec.code === true) return false
+						const text = data.getData('text/plain')
+						if (text.trim() === '') return false
+						const fromCodeEditor = data.types.includes('vscode-editor-data')
+						if (data.getData('text/html') !== '' && !fromCodeEditor) return false
+						if (!MARKDOWN_SIGNS.some((sign) => sign.test(text))) return false
+						return editor.commands.insertContent(text, { contentType: 'markdown' })
+					},
+				},
+			}),
 		]
 	},
 })
@@ -67,6 +111,7 @@ export function composerExtensions(): Extensions {
 		}),
 		ForumImage,
 		InlineInputRules,
+		MarkdownPaste,
 		// The same parser options as the renderer: GFM, and a single newline is a line break.
 		Markdown.configure({ markedOptions: { gfm: true, breaks: true } }),
 	]
