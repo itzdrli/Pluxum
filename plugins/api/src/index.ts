@@ -212,6 +212,11 @@ export class ForumApiPlugin extends BasePlugin {
 					}))
 					.get('/meta', { response: schema.meta }, ({ request }) => this.meta(request))
 					.get(
+						'/community',
+						{ response: schema.community },
+						async ({ request }) => await this.core.communityPulse(await this.viewer(request)),
+					)
+					.get(
 						'/search',
 						{ query: schema.searchQuery, response: schema.searchPage },
 						async ({ request, query }) =>

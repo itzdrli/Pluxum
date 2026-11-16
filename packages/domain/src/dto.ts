@@ -9,6 +9,16 @@ export type UserDto = Readonly<{
 	ext?: ExtensionData
 }>
 
+/** Who is around: the overview's community panel. */
+export type CommunityDto = Readonly<{
+	members: number
+	/** The newest members, newest first. */
+	newMembers: UserDto[]
+	/** Members with the most posts in the last `days` days (in categories the viewer may see). */
+	activeMembers: Array<Readonly<{ user: UserDto; posts: number }>>
+	days: number
+}>
+
 export type CategoryDto = Readonly<{
 	id: string
 	slug: string

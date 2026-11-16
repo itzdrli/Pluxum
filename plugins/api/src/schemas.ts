@@ -204,6 +204,13 @@ export const paging = t.Object({
 	pageSize: t.Optional(t.String({ maxLength: 10 })),
 })
 
+export const community = t.Object({
+	members: t.Number(),
+	newMembers: t.Array(user),
+	activeMembers: t.Array(t.Object({ user, posts: t.Number() })),
+	days: t.Number(),
+})
+
 export const recentThreadsQuery = t.Object({
 	page: t.Optional(t.String({ maxLength: 10 })),
 	pageSize: t.Optional(t.String({ maxLength: 10 })),

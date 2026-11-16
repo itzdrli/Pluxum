@@ -24,6 +24,7 @@ import {
 	type BodyFormat,
 	type CategoryDto,
 	type CategorySummaryDto,
+	type CommunityDto,
 	type CategoryThreadsDto,
 	type ForumAction,
 	type ForumError,
@@ -149,6 +150,10 @@ export type RecentThreadsFilter = Readonly<{ sort?: RecentSort }>
 
 /** `hot` only ranks threads with activity this recently, so old long threads do not stay on top. */
 const HOT_WINDOW_DAYS = 30
+
+/** The community panel counts posts this recent, and lists this many members in each of its lists. */
+const ACTIVE_WINDOW_DAYS = 7
+const COMMUNITY_LIST_SIZE = 5
 
 export type CreateCategoryInput = Readonly<{
 	name: string
@@ -1178,6 +1183,61 @@ export class ForumCorePlugin extends BasePlugin {
 			page,
 			pageSize,
 			total: read.total,
+		}
+	}
+
+	/**
+	 * The overview's community panel: how many members there are, who joined last, and who posted
+	 * most in the last `ACTIVE_WINDOW_DAYS` days. Only posts in categories the viewer may see count.
+	 */
+	async communityPulse(principal: Principal): Promise<CommunityDto> {
+		const read = await this.database.read(async (db) => {
+			const allCategories = await db.select({ id: categories.id }).from(categories)
+			const visibleIds = allCategories
+				.filter((category) => this.can(principal, 'category.view', { categoryId: category.id }))
+				.map((category) => category.id)
+			const [members] = await db.select({ value: count() }).from(users)
+			const newest = await db
+				.select(author)
+				.from(users)
+				.orderBy(desc(users.number))
+				.limit(COMMUNITY_LIST_SIZE)
+			const since = new Date(Date.now() - ACTIVE_WINDOW_DAYS * 86_400_000)
+			const posted = count()
+			const active =
+				visibleIds.length === 0
+					? []
+					: await db
+							.select({ ...author, posts: posted })
+							.from(posts)
+							.innerJoin(threads, eq(threads.id, posts.threadId))
+							.innerJoin(users, eq(users.id, posts.authorId))
+							.where(
+								and(
+									inArray(threads.categoryId, visibleIds),
+									isNull(threads.deletedAt),
+									isNull(posts.deletedAt),
+									gte(posts.createdAt, since),
+								),
+							)
+							.groupBy(users.id, users.handle, users.displayName, users.number)
+							.orderBy(desc(posted), asc(users.number))
+							.limit(COMMUNITY_LIST_SIZE)
+			return { members: members?.value ?? 0, newest, active }
+		})
+		const byId = await this.extendedUsers(principal, [
+			...read.newest,
+			...read.active.map(({ id, handle, displayName }) => ({ id, handle, displayName })),
+		])
+		const userOf = (user: UserDto): UserDto => byId.get(user.id) ?? user
+		return {
+			members: read.members,
+			newMembers: read.newest.map(userOf),
+			activeMembers: read.active.map(({ posts: total, ...user }) => ({
+				user: userOf(user),
+				posts: total,
+			})),
+			days: ACTIVE_WINDOW_DAYS,
 		}
 	}
 

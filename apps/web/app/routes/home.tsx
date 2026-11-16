@@ -1,4 +1,4 @@
-import type { CategoryDto, RecentThreadDto } from '@pluxum/domain'
+import type { CategoryDto, CommunityDto, RecentThreadDto, UserDto } from '@pluxum/domain'
 import { Dropdown } from '@heroui/react'
 import { LayoutList, MessageSquare, MessagesSquare, Plus } from 'lucide-react'
 import { useState } from 'react'
@@ -34,13 +34,16 @@ export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const sort = homeSortOf(new URL(request.url))
-	const [categoriesResult, recentResult] = await Promise.all([
+	const [categoriesResult, recentResult, communityResult] = await Promise.all([
 		forumApi.categories(request),
 		forumApi.recentThreads(request, pageParam(request), HOME_PAGE_SIZE, sort),
+		forumApi.community(request),
 	])
 	return {
 		categories: orThrow(categoriesResult).items,
 		recentThreads: orThrow(recentResult),
+		// A side panel: the feed is served without it when it cannot be had.
+		community: communityResult.ok ? communityResult.value : null,
 		sort,
 	}
 }
@@ -60,7 +63,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
-	const { categories, recentThreads, sort } = loaderData
+	const { categories, recentThreads, community, sort } = loaderData
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const canManage = root?.meta?.viewer.can.manageCategories === true
 	const signedIn = root?.meta?.viewer.user != null
@@ -128,68 +131,151 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
 			{/* Wide screens: one feed; the categories are the column beside it. Phones have no such
 			    column, so the categories are the second tab. */}
-			<div className="sm:max-lg:mt-4 lg:mx-auto lg:max-w-[880px]">
-				<section
-					aria-label="最新活跃讨论"
-					className={mobileTab === 'recent' ? '' : 'max-lg:hidden'}
-				>
-					{!signedIn && <GuestWelcome root={root} loginHref={loginHref} />}
-					<div className="mb-2 flex items-center justify-between gap-3">
-						<SortTabs sort={sort} />
-						<div className="flex items-center gap-3">
-							<span className="text-ink-weak text-meta tabular-nums max-lg:hidden">
-								{categories.length} 版块 · {totalThreads} 主题 · {totalPosts} 帖子
-							</span>
-							{signedIn && <NewThreadMenu categories={categories} />}
+			<div className="sm:max-lg:mt-4 lg:mx-auto lg:max-w-[880px] xl:grid xl:max-w-[1180px] xl:grid-cols-[minmax(0,1fr)_272px] xl:items-start xl:gap-6">
+				<div className="min-w-0">
+					<section
+						aria-label="最新活跃讨论"
+						className={mobileTab === 'recent' ? '' : 'max-lg:hidden'}
+					>
+						{!signedIn && <GuestWelcome root={root} loginHref={loginHref} />}
+						<div className="mb-2 flex items-center justify-between gap-3">
+							<SortTabs sort={sort} />
+							<div className="flex items-center gap-3">
+								<span className="text-ink-weak text-meta tabular-nums max-lg:hidden xl:hidden">
+									{categories.length} 版块 · {totalThreads} 主题 · {totalPosts} 帖子
+								</span>
+								{signedIn && <NewThreadMenu categories={categories} />}
+							</div>
 						</div>
-					</div>
-					{recentThreads.items.length === 0 ? (
-						<EmptyState
-							icon={MessagesSquare}
-							title="还没有讨论"
-							hint="版块内发布的主题与最新回复会在这里实时汇总。"
+						{recentThreads.items.length === 0 ? (
+							<EmptyState
+								icon={MessagesSquare}
+								title="还没有讨论"
+								hint="版块内发布的主题与最新回复会在这里实时汇总。"
+							/>
+						) : (
+							<Panel
+								as="ul"
+								className="divide-line divide-y max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0"
+							>
+								{recentThreads.items.map((item) => (
+									<RecentThreadItem key={item.id} item={item} sort={sort} />
+								))}
+							</Panel>
+						)}
+						<Pager
+							page={recentThreads.page}
+							pageSize={recentThreads.pageSize}
+							total={recentThreads.total}
 						/>
-					) : (
-						<Panel
-							as="ul"
-							className="divide-line divide-y max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0"
-						>
-							{recentThreads.items.map((item) => (
-								<RecentThreadItem key={item.id} item={item} sort={sort} />
-							))}
-						</Panel>
-					)}
-					<Pager
-						page={recentThreads.page}
-						pageSize={recentThreads.pageSize}
-						total={recentThreads.total}
-					/>
-				</section>
+					</section>
 
-				<section aria-label="版块" className={mobileTab === 'categories' ? 'lg:hidden' : 'hidden'}>
-					{categories.length === 0 ? (
-						<EmptyState
-							icon={LayoutList}
-							title="还没有版块"
-							hint={
-								canManage
-									? '新建第一个版块后，成员就可以在里面发布主题。'
-									: '管理员还没有创建版块。'
-							}
-						/>
-					) : (
-						<Panel
-							as="ul"
-							className="divide-line divide-y max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0"
-						>
-							{categories.map((category) => (
-								<CategoryItem key={category.id} category={category} />
-							))}
-						</Panel>
-					)}
-				</section>
+					<section
+						aria-label="版块"
+						className={mobileTab === 'categories' ? 'lg:hidden' : 'hidden'}
+					>
+						{categories.length === 0 ? (
+							<EmptyState
+								icon={LayoutList}
+								title="还没有版块"
+								hint={
+									canManage
+										? '新建第一个版块后，成员就可以在里面发布主题。'
+										: '管理员还没有创建版块。'
+								}
+							/>
+						) : (
+							<Panel
+								as="ul"
+								className="divide-line divide-y max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0"
+							>
+								{categories.map((category) => (
+									<CategoryItem key={category.id} category={category} />
+								))}
+							</Panel>
+						)}
+					</section>
+				</div>
+				{community !== null && (
+					<CommunityPanel community={community} threads={totalThreads} posts={totalPosts} />
+				)}
 			</div>
 		</>
+	)
+}
+
+/**
+ * Who is around, beside the feed on wide screens: the numbers, the most active members of the
+ * last days and the newest ones. Phones and narrow windows do without it.
+ */
+function CommunityPanel({
+	community,
+	threads,
+	posts,
+}: {
+	community: CommunityDto
+	threads: number
+	posts: number
+}) {
+	return (
+		<aside aria-label="社区" className="min-w-0 max-xl:hidden xl:sticky xl:top-0">
+			<h2 className="section-label mb-2 flex min-h-7 items-center">社区</h2>
+			<Panel className="flex flex-col divide-y divide-line">
+				<dl className="grid grid-cols-3 gap-2 px-4 py-3 text-center">
+					{[
+						['成员', community.members],
+						['主题', threads],
+						['帖子', posts],
+					].map(([label, value]) => (
+						<div key={label}>
+							<dd className="text-ink-strong text-heading font-bold tabular-nums">{value}</dd>
+							<dt className="text-ink-weak text-meta">{label}</dt>
+						</div>
+					))}
+				</dl>
+				{community.activeMembers.length > 0 && (
+					<MemberList title={`近 ${community.days} 天活跃`}>
+						{community.activeMembers.map(({ user, posts: total }) => (
+							<MemberRow key={user.id} user={user} note={`${total} 帖`} />
+						))}
+					</MemberList>
+				)}
+				{community.newMembers.length > 0 && (
+					<MemberList title="新加入">
+						{community.newMembers.map((user) => (
+							<MemberRow key={user.id} user={user} />
+						))}
+					</MemberList>
+				)}
+			</Panel>
+		</aside>
+	)
+}
+
+function MemberList({ title, children }: { title: string; children: React.ReactNode }) {
+	return (
+		<section className="px-2 py-2">
+			<h3 className="text-ink-weak px-2 pb-1 text-meta">{title}</h3>
+			<ul>{children}</ul>
+		</section>
+	)
+}
+
+function MemberRow({ user, note }: { user: UserDto; note?: string }) {
+	return (
+		<li>
+			<StageLink
+				to={`/u/${user.handle}`}
+				prefetch="intent"
+				className="hover:bg-hover flex items-center gap-2.5 rounded-[2px] px-2 py-1.5"
+			>
+				<UserAvatar user={user} size="sm" />
+				<span className="text-ink min-w-0 flex-1 truncate">{user.displayName}</span>
+				{note !== undefined && (
+					<span className="text-ink-weak shrink-0 text-meta tabular-nums">{note}</span>
+				)}
+			</StageLink>
+		</li>
 	)
 }
 

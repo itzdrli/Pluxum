@@ -517,6 +517,36 @@ describe('ForumCorePlugin', () => {
 		disposeHideAll()
 	})
 
+	it('summarises members and recent posting for the community panel', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { alice, bob, category } = await seed(core)
+		const thread = (
+			await core.createThread(alice, { categoryId: category.id, title: 'Hello', body: 'a' })
+		).unwrap()
+		;(await core.createPost(bob, { threadId: thread.id, body: 'one' })).unwrap()
+		;(await core.createPost(bob, { threadId: thread.id, body: 'two' })).unwrap()
+
+		const pulse = await core.communityPulse(GUEST)
+		expect(pulse.days).toBe(7)
+		expect(pulse.members).toBeGreaterThanOrEqual(3)
+		expect(pulse.newMembers.map((user) => user.id)).toEqual(
+			expect.arrayContaining([alice.userId, bob.userId]),
+		)
+		expect(pulse.activeMembers.map((member) => [member.user.id, member.posts])).toEqual([
+			[bob.userId, 2],
+			[alice.userId, 1],
+		])
+
+		// Posts in a category the viewer cannot see do not show up for them.
+		const dispose = core.registerPermissionPolicy({
+			id: 'test.hide-all',
+			evaluate: ({ action }) => (action === 'category.view' ? 'deny' : 'abstain'),
+		})
+		expect((await core.communityPulse(GUEST)).activeMembers).toEqual([])
+		dispose()
+	})
+
 	it('rejects writes from guests and from members without the right', async () => {
 		await using host = await createHost()
 		const core = await host.start(ForumCorePlugin)

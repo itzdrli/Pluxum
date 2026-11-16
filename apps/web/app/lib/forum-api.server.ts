@@ -4,6 +4,7 @@ import type {
 	ApiError,
 	CategoryDto,
 	CategoryThreadsDto,
+	CommunityDto,
 	MetaDto,
 	ModerationLogPageDto,
 	ModerationQueuePageDto,
@@ -332,6 +333,7 @@ export function buildModerationLogsApiPath(query: ModerationLogsQuery = {}): str
 export const forumApi = {
 	meta: cachedMeta,
 	categories: cachedCategories,
+	community: (request: Request) => call<CommunityDto>(request, '/community'),
 	search: (request: Request, query: SearchRequest) =>
 		call<SearchPageDto>(request, buildSearchApiPath(query)),
 	notifications: async (request: Request, query: NotificationsQuery = {}) => {
