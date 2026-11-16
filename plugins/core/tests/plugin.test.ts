@@ -747,6 +747,7 @@ describe('content renderer', () => {
 			'<pre><code class="language-ts evil">code</code></pre><ol start="3"><li>x</li></ol>',
 			'<iframe src="https://example.com"></iframe><form><input name="q"></form>',
 			'<img src="/api/forum/ext/forum-attachments/files/0b9e8f1c-3a2d-4c5e-9f10-1234567890ab" alt="a" onerror="x()" width="9"><img src="https://example.com/api/forum/ext/forum-attachments/files/0b9e8f1c-3a2d-4c5e-9f10-1234567890ab">',
+			'<table style="width:9px" border="1"><thead><tr><th align="center" onclick="x()">h</th></tr></thead><tbody><tr><td align="justify" colspan="2">c</td></tr></tbody><tfoot><tr><td>f</td></tr></tfoot></table>',
 		].join('\n')
 		const read = await openingPost(core, source)
 
@@ -763,6 +764,7 @@ describe('content renderer', () => {
 				'<pre><code class="language-ts">code</code></pre><ol start="3"><li>x</li></ol>',
 				'',
 				'<img src="/api/forum/ext/forum-attachments/files/0b9e8f1c-3a2d-4c5e-9f10-1234567890ab" alt="a" loading="lazy" decoding="async" />',
+				'<table><thead><tr><th align="center">h</th></tr></thead><tbody><tr><td>c</td></tr></tbody><tr><td>f</td></tr></table>',
 			].join('\n'),
 		)
 	})

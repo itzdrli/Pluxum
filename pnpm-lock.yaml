@@ -85,6 +85,9 @@ catalogs:
     '@tiptap/extension-image':
       specifier: 3.32.0
       version: 3.32.0
+    '@tiptap/extension-table':
+      specifier: 3.32.0
+      version: 3.32.0
     '@tiptap/markdown':
       specifier: 3.32.0
       version: 3.32.0
@@ -251,6 +254,9 @@ importers:
       '@tiptap/extension-image':
         specifier: catalog:frontend
         version: 3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))
+      '@tiptap/extension-table':
+        specifier: catalog:frontend
+        version: 3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)
       '@tiptap/markdown':
         specifier: catalog:frontend
         version: 3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)
@@ -330,6 +336,33 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
+      '@pluxel/commands':
+        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+commands-cab504b891c5
+        version: link:../.pluxel/sources/6b76349dc399/pluxel+commands-cab504b891c5
+      '@pluxel/core':
+        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+        version: link:../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+      '@pluxel/plugin-cache':
+        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-cache-3bd15591b12e
+        version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-cache-3bd15591b12e
+      '@pluxel/plugin-rates':
+        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
+        version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
+      '@pluxel/plugin-redis':
+        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
+        version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
+      '@pluxel/plugin-storage':
+        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-storage-5689af5b2082
+        version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-storage-5689af5b2082
+      '@pluxel/services':
+        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+        version: link:../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      '@pluxel/workbench':
+        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
+        version: link:../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
       '@pluxum/api':
         specifier: workspace:*
         version: link:../plugins/api
@@ -360,33 +393,6 @@ importers:
       '@pluxum/search':
         specifier: workspace:*
         version: link:../plugins/search
-      '@pluxel/commands':
-        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+commands-cab504b891c5
-        version: link:../.pluxel/sources/6b76349dc399/pluxel+commands-cab504b891c5
-      '@pluxel/core':
-        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-        version: link:../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-      '@pluxel/host':
-        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-      '@pluxel/plugin-cache':
-        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-cache-3bd15591b12e
-        version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-cache-3bd15591b12e
-      '@pluxel/plugin-rates':
-        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
-        version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
-      '@pluxel/plugin-redis':
-        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
-        version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
-      '@pluxel/plugin-storage':
-        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-storage-5689af5b2082
-        version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-storage-5689af5b2082
-      '@pluxel/services':
-        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-        version: link:../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-      '@pluxel/workbench':
-        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
-        version: link:../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
       '@sinclair/typebox':
         specifier: catalog:backend
         version: 0.34.52
@@ -409,9 +415,6 @@ importers:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
     devDependencies:
-      '@pluxum/host-web':
-        specifier: workspace:*
-        version: link:web
       '@mantine/core':
         specifier: catalog:frontend
         version: 9.7.3(@mantine/hooks@9.7.3(react@19.3.1))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -427,6 +430,9 @@ importers:
       '@pluxel/rolldown':
         specifier: link:../.pluxel/sources/6b76349dc399/pluxel+rolldown-024b50fbff58
         version: link:../.pluxel/sources/6b76349dc399/pluxel+rolldown-024b50fbff58
+      '@pluxum/host-web':
+        specifier: workspace:*
+        version: link:web
       '@tabler/icons-react':
         specifier: catalog:frontend
         version: 3.50.0(react@19.3.1)
@@ -461,6 +467,18 @@ importers:
         specifier: catalog:frontend
         version: 19.3.1(react@19.3.1)
     devDependencies:
+      '@pluxel/core':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host-vite':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-vite-e7663d385b22
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-vite-e7663d385b22
+      '@pluxel/plugin-redis':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
+      '@pluxel/services':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
       '@pluxum/api':
         specifier: workspace:*
         version: link:../../plugins/api
@@ -476,18 +494,6 @@ importers:
       '@pluxum/redis':
         specifier: workspace:*
         version: link:../../plugins/redis
-      '@pluxel/core':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-      '@pluxel/host-vite':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-vite-e7663d385b22
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-vite-e7663d385b22
-      '@pluxel/plugin-redis':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
-      '@pluxel/services':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
       '@types/node':
         specifier: catalog:tooling
         version: 26.6.6
@@ -521,15 +527,15 @@ importers:
 
   plugins/api:
     dependencies:
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      '@pluxum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       elysia:
         specifier: catalog:backend
         version: 2.0.0-rc.0(exact-mirror@1.2.6(typebox@1.4.3))(openapi-types@12.1.3)(typebox@1.4.3)(typescript@7.0.2)
@@ -540,12 +546,6 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@pluxum/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@pluxum/core':
-        specifier: workspace:*
-        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -555,6 +555,12 @@ importers:
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@pluxum/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@pluxum/core':
+        specifier: workspace:*
+        version: link:../core
       typescript:
         specifier: catalog:tooling
         version: 7.0.2
@@ -567,9 +573,6 @@ importers:
 
   plugins/attachments:
     dependencies:
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
@@ -579,6 +582,9 @@ importers:
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      '@pluxum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       drizzle-orm:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
@@ -595,15 +601,6 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@pluxum/api':
-        specifier: workspace:*
-        version: link:../api
-      '@pluxum/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@pluxum/core':
-        specifier: workspace:*
-        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -613,6 +610,15 @@ importers:
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@pluxum/api':
+        specifier: workspace:*
+        version: link:../api
+      '@pluxum/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@pluxum/core':
+        specifier: workspace:*
+        version: link:../core
       typescript:
         specifier: catalog:tooling
         version: 7.0.2
@@ -625,9 +631,6 @@ importers:
 
   plugins/auth:
     dependencies:
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
@@ -637,6 +640,9 @@ importers:
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      '@pluxum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       jose:
         specifier: catalog:prod
         version: 6.2.17
@@ -647,12 +653,6 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@pluxum/core':
-        specifier: workspace:*
-        version: link:../core
-      '@pluxum/redis':
-        specifier: workspace:*
-        version: link:../redis
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -662,6 +662,12 @@ importers:
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@pluxum/core':
+        specifier: workspace:*
+        version: link:../core
+      '@pluxum/redis':
+        specifier: workspace:*
+        version: link:../redis
       '@types/node':
         specifier: catalog:tooling
         version: 26.6.6
@@ -677,15 +683,15 @@ importers:
 
   plugins/core:
     dependencies:
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      '@pluxum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       drizzle-orm:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
@@ -730,12 +736,6 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
-      '@pluxum/core':
-        specifier: workspace:*
-        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -748,6 +748,12 @@ importers:
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@pluxum/core':
+        specifier: workspace:*
+        version: link:../core
+      '@pluxum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       typescript:
         specifier: catalog:tooling
         version: 7.0.2
@@ -760,15 +766,15 @@ importers:
 
   plugins/moderation:
     dependencies:
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      '@pluxum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       drizzle-orm:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
@@ -782,15 +788,6 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@pluxum/api':
-        specifier: workspace:*
-        version: link:../api
-      '@pluxum/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@pluxum/core':
-        specifier: workspace:*
-        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -800,6 +797,15 @@ importers:
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@pluxum/api':
+        specifier: workspace:*
+        version: link:../api
+      '@pluxum/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@pluxum/core':
+        specifier: workspace:*
+        version: link:../core
       typescript:
         specifier: catalog:tooling
         version: 7.0.2
@@ -812,15 +818,15 @@ importers:
 
   plugins/notifications:
     dependencies:
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      '@pluxum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       drizzle-orm:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
@@ -831,15 +837,6 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@pluxum/api':
-        specifier: workspace:*
-        version: link:../api
-      '@pluxum/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@pluxum/core':
-        specifier: workspace:*
-        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -849,6 +846,15 @@ importers:
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@pluxum/api':
+        specifier: workspace:*
+        version: link:../api
+      '@pluxum/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@pluxum/core':
+        specifier: workspace:*
+        version: link:../core
       typescript:
         specifier: catalog:tooling
         version: 7.0.2
@@ -861,15 +867,15 @@ importers:
 
   plugins/reactions:
     dependencies:
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      '@pluxum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       drizzle-orm:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
@@ -880,15 +886,6 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@pluxum/api':
-        specifier: workspace:*
-        version: link:../api
-      '@pluxum/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@pluxum/core':
-        specifier: workspace:*
-        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -898,6 +895,15 @@ importers:
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@pluxum/api':
+        specifier: workspace:*
+        version: link:../api
+      '@pluxum/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@pluxum/core':
+        specifier: workspace:*
+        version: link:../core
       typescript:
         specifier: catalog:tooling
         version: 7.0.2
@@ -963,18 +969,6 @@ importers:
       '@electric-sql/pglite':
         specifier: catalog:prod
         version: 0.5.14
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
-      '@pluxum/api':
-        specifier: workspace:*
-        version: link:../api
-      '@pluxum/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@pluxum/core':
-        specifier: workspace:*
-        version: link:../core
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -984,6 +978,18 @@ importers:
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@pluxum/api':
+        specifier: workspace:*
+        version: link:../api
+      '@pluxum/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@pluxum/core':
+        specifier: workspace:*
+        version: link:../core
+      '@pluxum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@types/node':
         specifier: catalog:tooling
         version: 26.6.6
@@ -2244,6 +2250,12 @@ packages:
     resolution: {integrity: sha512-J9Vw6wmh/wV6SxSsN9RhurvAGcXSY5J3p4EQrROD5PARBl0VOnDFi7/UVoz1RkSdqOKPgAiqDZpaLRgtdBO9Rg==}
     peerDependencies:
       '@tiptap/core': 3.32.0
+
+  '@tiptap/extension-table@3.32.0':
+    resolution: {integrity: sha512-uOqCzWzxXvMccapZo+1CDxp3JGegxqNl11Lj8XiiWLxwmg81B/bKwMJW7+YlIdffgGNYJETk5YwL8T0IVBD2QQ==}
+    peerDependencies:
+      '@tiptap/core': 3.32.0
+      '@tiptap/pm': 3.32.0
 
   '@tiptap/extension-text@3.32.0':
     resolution: {integrity: sha512-sF0jIK67IHdZMnzv2mz5vPTyK7R0ui6/YZgFg+/bLnFCNmweVAoYcHZLlC7ISRnwu0mqJr+epNtzJepY1ZDCjg==}
@@ -4989,6 +5001,11 @@ snapshots:
   '@tiptap/extension-strike@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))':
     dependencies:
       '@tiptap/core': 3.32.0(@tiptap/pm@3.32.0)
+
+  '@tiptap/extension-table@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)':
+    dependencies:
+      '@tiptap/core': 3.32.0(@tiptap/pm@3.32.0)
+      '@tiptap/pm': 3.32.0
 
   '@tiptap/extension-text@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))':
     dependencies:

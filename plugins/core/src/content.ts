@@ -25,6 +25,14 @@ export type RenderedBody = Readonly<{ html: string; format: BodyFormat }>
 const FORUM_FILE =
 	/^\/api\/forum\/ext\/[a-z][a-z0-9-]{0,63}\/files\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i
 
+const ALIGNMENTS = new Set(['left', 'center', 'right'])
+
+/** A table cell keeps its `align` only for the three values GFM produces. */
+function cellAlign(tagName: string, attribs: sanitizeHtml.Attributes): sanitizeHtml.Tag {
+	const align = attribs.align?.trim().toLowerCase()
+	return { tagName, attribs: align !== undefined && ALIGNMENTS.has(align) ? { align } : {} }
+}
+
 const ALLOWED: sanitizeHtml.IOptions = {
 	allowedTags: [
 		// Blocks
@@ -39,6 +47,12 @@ const ALLOWED: sanitizeHtml.IOptions = {
 		'ul',
 		'ol',
 		'li',
+		'table',
+		'thead',
+		'tbody',
+		'tr',
+		'th',
+		'td',
 		// Inline
 		'strong',
 		'em',
@@ -50,6 +64,9 @@ const ALLOWED: sanitizeHtml.IOptions = {
 	allowedAttributes: {
 		a: ['href', 'rel'],
 		ol: ['start'],
+		// Column alignment from the GFM delimiter row.
+		th: ['align'],
+		td: ['align'],
 		img: ['src', 'alt', 'title', 'loading', 'decoding'],
 	},
 	// An image of anything but a forum file is dropped (its alt text has nowhere to go).
@@ -60,6 +77,8 @@ const ALLOWED: sanitizeHtml.IOptions = {
 	allowedSchemes: ['http', 'https', 'mailto'],
 	allowProtocolRelative: false,
 	transformTags: {
+		th: cellAlign,
+		td: cellAlign,
 		img: (tagName, attribs) => ({
 			tagName,
 			attribs: { ...attribs, loading: 'lazy', decoding: 'async' },

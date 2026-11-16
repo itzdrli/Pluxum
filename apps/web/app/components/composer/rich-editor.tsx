@@ -4,6 +4,8 @@
 import { Editor, Extension } from '@tiptap/core'
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import {
+	BetweenHorizontalEnd,
+	BetweenVerticalEnd,
 	Bold,
 	Code,
 	Heading2,
@@ -17,7 +19,11 @@ import {
 	Redo2,
 	SquareCode,
 	Strikethrough,
+	Table,
+	TableColumnsSplit,
+	TableRowsSplit,
 	TextQuote,
+	Trash2,
 	Undo2,
 } from 'lucide-react'
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
@@ -131,6 +137,14 @@ const TOOL_GROUPS: readonly (readonly Tool[])[] = [
 			icon: Minus,
 			run: (editor) => editor.chain().focus().setHorizontalRule().run(),
 		},
+		{
+			id: 'table',
+			label: '插入表格',
+			icon: Table,
+			run: (editor) =>
+				editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
+			enabled: (editor) => !editor.isActive('table') && editor.can().insertTable(),
+		},
 	],
 	[
 		{
@@ -150,7 +164,43 @@ const TOOL_GROUPS: readonly (readonly Tool[])[] = [
 	],
 ]
 
-const TOOLS = TOOL_GROUPS.flat()
+/** Shown only while the cursor is inside a table. */
+const TABLE_TOOLS: readonly Tool[] = [
+	{
+		id: 'row-after',
+		label: '在下方插入行',
+		icon: BetweenHorizontalEnd,
+		run: (editor) => editor.chain().focus().addRowAfter().run(),
+	},
+	{
+		id: 'column-after',
+		label: '在右侧插入列',
+		icon: BetweenVerticalEnd,
+		run: (editor) => editor.chain().focus().addColumnAfter().run(),
+	},
+	{
+		id: 'row-delete',
+		label: '删除行',
+		icon: TableRowsSplit,
+		run: (editor) => editor.chain().focus().deleteRow().run(),
+		enabled: (editor) => editor.can().deleteRow(),
+	},
+	{
+		id: 'column-delete',
+		label: '删除列',
+		icon: TableColumnsSplit,
+		run: (editor) => editor.chain().focus().deleteColumn().run(),
+		enabled: (editor) => editor.can().deleteColumn(),
+	},
+	{
+		id: 'table-delete',
+		label: '删除表格',
+		icon: Trash2,
+		run: (editor) => editor.chain().focus().deleteTable().run(),
+	},
+]
+
+const TOOLS = [...TOOL_GROUPS.flat(), ...TABLE_TOOLS]
 
 /** A link target as the forum accepts it; a bare domain gets `https://`. */
 function linkHref(input: string): string | null {
@@ -294,6 +344,7 @@ export function RichEditor({
 		selector: ({ editor: current }) => ({
 			empty: current.isEmpty,
 			link: current.isActive('link'),
+			table: current.isActive('table'),
 			active: TOOLS.filter((tool) => tool.active?.(current) === true).map((tool) => tool.id),
 			disabled: TOOLS.filter((tool) => tool.enabled?.(current) === false).map((tool) => tool.id),
 		}),
@@ -343,6 +394,19 @@ export function RichEditor({
 						)}
 					</div>
 				))}
+				{state.table && (
+					<div className="composer-tool-group">
+						{TABLE_TOOLS.map((tool) => (
+							<ToolButton
+								key={tool.id}
+								label={tool.label}
+								icon={tool.icon}
+								disabled={state.disabled.includes(tool.id)}
+								onClick={() => tool.run(editor)}
+							/>
+						))}
+					</div>
+				)}
 			</div>
 			{linkDraft !== null && (
 				<div className="composer-link">

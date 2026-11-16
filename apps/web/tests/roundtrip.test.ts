@@ -61,6 +61,16 @@ const PRESERVED: readonly (readonly [name: string, source: string, rewritten: st
 		'看 ![截图]($/api/forum/ext/forum-attachments/files/0b9e8f1c-3a2d-4c5e-9f10-1234567890ab) 结尾',
 		'看 ![截图]($/api/forum/ext/forum-attachments/files/0b9e8f1c-3a2d-4c5e-9f10-1234567890ab) 结尾',
 	],
+	[
+		'tables, padded into columns',
+		'| a | b |\n|---|---|\n| 1 | 2 |',
+		'| a   | b   |\n| --- | --- |\n| 1   | 2   |',
+	],
+	[
+		'tables with alignment, formatting, escaped pipes and line breaks in cells',
+		'前文\n\n| 左 | 中 | 右 |\n|:--|:-:|--:|\n| **粗** | `a\\|b` | [链](/t/1) |\n| 1<br>2 |  | x |\n\n后文',
+		'前文\n\n\n| 左      | 中      | 右         |\n| :------ | :------: | ---------: |\n| **粗**  | `a\\|b` | [链](/t/1) |\n| 1<br>2 |        | x         |\n\n\n后文',
+	],
 	// Shown as typed text by the renderer, before and after.
 	['images from elsewhere', '![图](https://example.com/a.png)', '![图](https://example.com/a.png)'],
 ]
@@ -71,7 +81,6 @@ const PRESERVED: readonly (readonly [name: string, source: string, rewritten: st
  * such a post as Markdown source instead.
  */
 const OUTSIDE: readonly (readonly [name: string, source: string])[] = [
-	['tables', '| a | b |\n|---|---|\n| 1 | 2 |'],
 	['task lists', '- [ ] todo\n- [x] done'],
 	['inline HTML', '<b>html</b>'],
 	['block HTML', '<div>block</div>'],

@@ -452,6 +452,48 @@
 		border-top: 1px solid var(--c-line);
 		margin-block: 1.4em;
 	}
+	/* Tables scroll sideways on their own rather than widening the post. */
+	.post-body table {
+		display: block;
+		max-width: 100%;
+		width: max-content;
+		overflow-x: auto;
+		border-collapse: collapse;
+		line-height: 1.6;
+		overflow-wrap: normal;
+	}
+	.post-body :is(th, td) {
+		border: 1px solid var(--c-line);
+		padding: 6px 12px;
+		min-width: 4em;
+		vertical-align: top;
+		text-align: left;
+	}
+	.post-body th {
+		background: var(--c-control);
+		color: var(--c-text-strong);
+		font-weight: 700;
+	}
+	.post-body :is(th, td)[align='center'],
+	.post-body :is(th, td)[style*='center'] {
+		text-align: center;
+	}
+	.post-body :is(th, td)[align='right'],
+	.post-body :is(th, td)[style*='right'] {
+		text-align: right;
+	}
+	.post-body :is(th, td) > p + p {
+		margin-top: 0.25em;
+	}
+	/* The editor's wrapper around a table, and the cells of a multi-cell selection. */
+	.composer-editor .tableWrapper {
+		max-width: 100%;
+		overflow-x: auto;
+	}
+	.composer-editor .selectedCell {
+		background: color-mix(in srgb, var(--c-accent) 18%, transparent);
+	}
+
 	/* Images of forum files, inline with the text; a click opens them in the viewer. */
 	.post-body img {
 		display: inline-block;

@@ -21,24 +21,26 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * The forum's Markdown dialect: CommonMark plus GFM strikethrough and autolinks, with a single
- * newline kept as a line break. Syntax outside the dialect is shown as the text that was typed.
+ * The forum's Markdown dialect: CommonMark plus GFM tables, strikethrough and autolinks, with a
+ * single newline kept as a line break. Syntax outside the dialect is shown as the text that was
+ * typed. The one piece of raw HTML it reads is `<br>`, the GFM way to break a line inside a table
+ * cell (and what the composer saves for one).
  */
 const marked = new Marked({ gfm: true, breaks: true, async: false })
 
+const LINE_BREAK = /^<br\s*\/?>$/i
+
 marked.use({
-	tokenizer: {
-		// Tables are not part of the dialect: the lines stay an ordinary paragraph.
-		table: () => undefined,
-	},
 	renderer: {
 		// Level 1 belongs to the thread title, and levels below 4 have no style of their own.
 		heading({ tokens, depth }: Tokens.Heading): string {
 			const level = Math.min(Math.max(depth, 2), 4)
 			return `<h${level}>${this.parser.parseInline(tokens)}</h${level}>\n`
 		},
-		// Raw HTML is text. Block-level HTML would otherwise sit outside any paragraph.
+		// Raw HTML is text, except a line break. Block-level HTML would otherwise sit outside any
+		// paragraph.
 		html({ text, block }: Tokens.HTML | Tokens.Tag): string {
+			if (!block && LINE_BREAK.test(text)) return '<br>'
 			const shown = escapeHtml(block ? text.trim() : text)
 			return block ? `<p>${shown.replaceAll('\n', '<br>')}</p>\n` : shown
 		},

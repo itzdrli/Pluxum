@@ -52,9 +52,18 @@ describe('renderMarkdown', () => {
 		expect(html('<div>\nblock\n</div>')).toBe('<p>&lt;div&gt;<br>block<br>&lt;/div&gt;</p>')
 		expect(html('![图](https://example.com/a.png)')).toBe('<p>![图](https://example.com/a.png)</p>')
 		expect(html('- [ ] 待办\n- [x] 完成')).toBe('<ul>\n<li>[ ] 待办</li>\n<li>[x] 完成</li>\n</ul>')
-		expect(html('| a | b |\n|---|---|\n| 1 | 2 |')).toBe(
-			'<p>| a | b |<br>|---|---|<br>| 1 | 2 |</p>',
+	})
+
+	it('renders GFM tables, with alignment and line breaks in cells', () => {
+		expect(html('| a | b |\n|:--|--:|\n| 1<br>2 | **3** |')).toBe(
+			'<table>\n<thead>\n<tr>\n<th align="left">a</th>\n<th align="right">b</th>\n</tr>\n</thead>\n' +
+				'<tbody><tr>\n<td align="left">1<br>2</td>\n<td align="right"><strong>3</strong></td>\n</tr>\n</tbody></table>',
 		)
+	})
+
+	it('reads <br> as the only raw HTML', () => {
+		expect(html('一<br/>二 <br >三')).toBe('<p>一<br>二 <br>三</p>')
+		expect(html('<br onclick="x">')).toBe('<p>&lt;br onclick=&quot;x&quot;&gt;</p>')
 	})
 
 	it('leaves plain prose with Markdown punctuation readable', () => {

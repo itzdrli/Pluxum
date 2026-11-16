@@ -1,5 +1,6 @@
 import { type Editor, Extension, type Extensions, markInputRule } from '@tiptap/core'
 import { Image } from '@tiptap/extension-image'
+import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table'
 import { Markdown } from '@tiptap/markdown'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { StarterKit } from '@tiptap/starter-kit'
@@ -29,6 +30,7 @@ const MARKDOWN_SIGNS = [
 	/^\s{0,3}>\s?/m, // quotes
 	/^\s{0,3}(?:```|~~~)/m, // code fences
 	/^\s{0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/m, // rules
+	/^\s*\|?[^\n]*\|[^\n]*\n\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$/m, // tables
 	/\*\*[^*\n]+\*\*|~~[^~\n]+~~|`[^`\n]+`/, // bold, strike, inline code
 	/!?\[[^\]\n]*\]\([^)\s]+\)/, // links and images
 ]
@@ -85,9 +87,21 @@ const ForumImage = Image.extend({
 }).configure({ inline: true, allowBase64: false })
 
 /**
+ * GFM tables. A Markdown cell holds one line of inline text, so a cell here holds paragraphs and
+ * nothing else (lists or code blocks would have no way back to Markdown); a second paragraph or a
+ * line break is saved as `<br>`. No column widths: Markdown has none to keep.
+ */
+const tableExtensions: Extensions = [
+	Table.configure({ resizable: false }),
+	TableRow,
+	TableHeader.extend({ content: 'paragraph+' }),
+	TableCell.extend({ content: 'paragraph+' }),
+]
+
+/**
  * The editor's extensions for the forum's Markdown dialect (see forum-markdown): paragraphs, line
  * breaks, headings 2–4, bold, italic, strikethrough, inline code, code blocks, quotes, lists,
- * links, rules and images of forum files. Everything the renderer does not show as formatting stays switched off here,
+ * links, rules, tables and images of forum files. Everything the renderer does not show as formatting stays switched off here,
  * so the editor cannot produce what a post would not display.
  *
  * Built per editor rather than shared: this is where formats contributed by other extensions
@@ -110,6 +124,7 @@ export function composerExtensions(): Extensions {
 			},
 		}),
 		ForumImage,
+		...tableExtensions,
 		InlineInputRules,
 		MarkdownPaste,
 		// The same parser options as the renderer: GFM, and a single newline is a line break.
@@ -118,9 +133,10 @@ export function composerExtensions(): Extensions {
 }
 
 /**
- * The editor's content as Markdown. The serialiser can leave blank lines after the last block
- * (an empty paragraph at the end, for one); they mean nothing in a post and are dropped.
+ * The editor's content as Markdown. The serialiser can leave blank lines before the first block
+ * (a table starts with one) or after the last (an empty paragraph at the end, for one); they mean
+ * nothing in a post and are dropped.
  */
 export function markdownOf(editor: Editor): string {
-	return editor.getMarkdown().trimEnd()
+	return editor.getMarkdown().replace(/^\n+/, '').trimEnd()
 }
