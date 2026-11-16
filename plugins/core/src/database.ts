@@ -8,6 +8,7 @@ import {
 	primaryKey,
 	text,
 	timestamp,
+	uniqueIndex,
 	uuid,
 } from 'drizzle-orm/pg-core'
 import { defineDatabase } from '@pluxel/services/database'
@@ -16,6 +17,10 @@ const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultN
 
 export const users = pgTable('users', {
 	id: uuid('id').defaultRandom().primaryKey(),
+	/** Monotonic account number (`1`, `2`, …); drives fallback handles (`u1`, `u2`, …). */
+	number: integer('number').generatedByDefaultAsIdentity().notNull().unique(),
+	/** Unique lowercase URL handle (`/u/:handle`). */
+	handle: text('handle').notNull().unique(),
 	/** Identity provider subject (OIDC `sub` from M2 on); unique per account. */
 	subject: text('subject').notNull().unique(),
 	displayName: text('display_name').notNull(),
@@ -49,6 +54,12 @@ export const threads = pgTable(
 	'threads',
 	{
 		id: uuid('id').defaultRandom().primaryKey(),
+		/** Monotonic thread number starting at 1001 (`/t/1001-...`). */
+		number: integer('number').generatedByDefaultAsIdentity({ startWith: 1001 }).notNull().unique(),
+		/** Concise ASCII slug derived from `title`, or `""` for non-ASCII titles. */
+		slug: text('slug').notNull().default(''),
+		/** Highest floor number assigned in this thread (`1` for the opening post; never decrements). */
+		postSeq: integer('post_seq').notNull().default(1),
 		categoryId: uuid('category_id')
 			.notNull()
 			.references(() => categories.id),
@@ -74,6 +85,8 @@ export const posts = pgTable(
 		threadId: uuid('thread_id')
 			.notNull()
 			.references(() => threads.id),
+		/** 1-based floor number inside the thread (`1` for the opening post). */
+		number: integer('number').notNull().default(1),
 		authorId: uuid('author_id')
 			.notNull()
 			.references(() => users.id),
@@ -85,7 +98,10 @@ export const posts = pgTable(
 		editedAt: timestamp('edited_at', { withTimezone: true }),
 		deletedAt: timestamp('deleted_at', { withTimezone: true }),
 	},
-	(table) => [index('posts_thread_idx').on(table.threadId, table.createdAt)],
+	(table) => [
+		index('posts_thread_idx').on(table.threadId, table.createdAt),
+		uniqueIndex('posts_thread_number_idx').on(table.threadId, table.number),
+	],
 )
 
 /** The body a post had before each edit. */

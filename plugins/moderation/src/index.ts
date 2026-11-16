@@ -69,6 +69,7 @@ type ReportRow = typeof reports.$inferSelect
 
 export const ModerationUser = Type.Object({
 	id: Type.String(),
+	handle: Type.String(),
 	displayName: Type.String(),
 	ext: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
 })
@@ -448,7 +449,12 @@ export class ForumModerationPlugin extends BasePlugin {
 		await Promise.all(
 			uniqueIds.map(async (userId) => {
 				const resolved = await this.core.getUser(userId, viewer)
-				byId.set(userId, resolved.isOk() ? resolved.value : { id: userId, displayName: '未知用户' })
+				byId.set(
+					userId,
+					resolved.isOk()
+						? resolved.value
+						: { id: userId, handle: userId, displayName: '未知用户' },
+				)
 			}),
 		)
 		return byId
@@ -466,19 +472,28 @@ export class ForumModerationPlugin extends BasePlugin {
 			postId: row.postId,
 			reason: row.reason,
 			status: row.status,
-			reporter: usersById.get(row.reporterId) ?? { id: row.reporterId, displayName: '未知用户' },
+			reporter: usersById.get(row.reporterId) ?? {
+				id: row.reporterId,
+				handle: row.reporterId,
+				displayName: '未知用户',
+			},
 			targetAuthor:
 				row.targetAuthorId === null
 					? null
 					: (usersById.get(row.targetAuthorId) ?? {
 							id: row.targetAuthorId,
+							handle: row.targetAuthorId,
 							displayName: '未知用户',
 						}),
 			resolutionNote: row.resolutionNote,
 			resolvedBy:
 				row.resolvedBy === null
 					? null
-					: (usersById.get(row.resolvedBy) ?? { id: row.resolvedBy, displayName: '未知用户' }),
+					: (usersById.get(row.resolvedBy) ?? {
+							id: row.resolvedBy,
+							handle: row.resolvedBy,
+							displayName: '未知用户',
+						}),
 			resolvedAt: row.resolvedAt === null ? null : row.resolvedAt.toISOString(),
 			createdAt: row.createdAt.toISOString(),
 		}
@@ -903,13 +918,21 @@ export class ForumModerationPlugin extends BasePlugin {
 
 		const items: ModerationLogDto[] = rows.map((row) => ({
 			id: row.id,
-			actor: usersById.get(row.actorId) ?? { id: row.actorId, displayName: '未知用户' },
+			actor: usersById.get(row.actorId) ?? {
+				id: row.actorId,
+				handle: row.actorId,
+				displayName: '未知用户',
+			},
 			action: row.action,
 			targetType: row.targetType,
 			targetId: row.targetId,
 			targetUser:
 				row.targetType === 'user'
-					? (usersById.get(row.targetId) ?? { id: row.targetId, displayName: '未知用户' })
+					? (usersById.get(row.targetId) ?? {
+							id: row.targetId,
+							handle: row.targetId,
+							displayName: '未知用户',
+						})
 					: null,
 			detail: row.detail,
 			createdAt: row.createdAt.toISOString(),

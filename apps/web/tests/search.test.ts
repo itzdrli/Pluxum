@@ -46,18 +46,30 @@ describe('search route & API helpers', () => {
 
 	it('opens hits beside the results, carrying the query, and anchors replies on their post', () => {
 		const stage = { listPath: '/search', listHref: '/search?q=PostgreSQL&cpage=2' }
-		expect(buildSearchHitHref({ postId: 'p1', threadId: 't1', opening: true }, stage)).toBe(
-			'/search/t/t1?q=PostgreSQL&cpage=2',
-		)
-		expect(buildSearchHitHref({ postId: 'p2', threadId: 't1', opening: false }, stage)).toBe(
-			'/search/t/t1?q=PostgreSQL&cpage=2#post-p2',
-		)
 		expect(
 			buildSearchHitHref(
-				{ postId: 'p2', threadId: 't1', opening: false },
+				{ postId: 'p1', postNumber: 1, threadId: 't1', threadRef: '1001-pg', opening: true },
+				stage,
+			),
+		).toBe('/search/t/1001-pg?q=PostgreSQL&cpage=2')
+		expect(
+			buildSearchHitHref(
+				{ postId: 'p2', postNumber: 5, threadId: 't1', threadRef: '1001-pg', opening: false },
+				stage,
+			),
+		).toBe('/search/t/1001-pg?q=PostgreSQL&cpage=2#post-5')
+		expect(
+			buildSearchHitHref(
+				{ postId: 'p25', postNumber: 25, threadId: 't1', threadRef: '1001-pg', opening: false },
+				stage,
+			),
+		).toBe('/search/t/1001-pg?q=PostgreSQL&cpage=2&page=2#post-25')
+		expect(
+			buildSearchHitHref(
+				{ postId: 'p25', postNumber: 25, threadId: 't1', threadRef: '1001-pg', opening: false },
 				{ listPath: null, listHref: null },
 			),
-		).toBe('/t/t1#post-p2')
+		).toBe('/t/1001-pg/25')
 	})
 
 	it('preserves search filters across pagination links', () => {

@@ -113,8 +113,8 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 								<ThreadRow
 									key={thread.id}
 									thread={thread}
-									href={detail(thread.id)}
-									isActive={thread.id === params.id}
+									href={detail(thread.ref)}
+									isActive={thread.ref === params.id || thread.id === params.id}
 								/>
 							))}
 						</Panel>

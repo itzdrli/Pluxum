@@ -42,7 +42,7 @@ export function resolveNotificationHref(
 		return item.path
 	}
 	if (item.threadId !== null) {
-		return item.postId !== null ? `/t/${item.threadId}#post-${item.postId}` : `/t/${item.threadId}`
+		return item.postId !== null ? `/t/${item.threadId}/${item.postId}` : `/t/${item.threadId}`
 	}
 	return null
 }
@@ -309,7 +309,7 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 		>
 			<div className=" flex min-w-0 flex-1 items-start gap-3">
 				{item.actor !== null ? (
-					<StageLink to={`/u/${item.actor.id}`} className="mt-0.5 shrink-0">
+					<StageLink to={`/u/${item.actor.handle}`} className="mt-0.5 shrink-0">
 						<UserAvatar user={item.actor} size="md" />
 					</StageLink>
 				) : (
@@ -354,7 +354,7 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 					<div className="text-ink-weak mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta">
 						{item.actor !== null && (
 							<>
-								<StageLink to={`/u/${item.actor.id}`} className="hover:text-ink-strong">
+								<StageLink to={`/u/${item.actor.handle}`} className="hover:text-ink-strong">
 									{item.actor.displayName}
 								</StageLink>
 								<span aria-hidden>·</span>

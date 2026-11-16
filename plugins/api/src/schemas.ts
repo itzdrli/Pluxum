@@ -10,6 +10,7 @@ const ext = t.Record(t.String(), t.Unknown())
 
 export const user = t.Object({
 	id: t.String(),
+	handle: t.String(),
 	displayName: t.String(),
 	ext: t.Optional(ext),
 })
@@ -41,6 +42,9 @@ export const categorySummary = t.Object({
 
 export const thread = t.Object({
 	id: t.String(),
+	number: t.Number(),
+	slug: t.String(),
+	ref: t.String(),
 	categoryId: t.String(),
 	title: t.String(),
 	author: user,
@@ -60,6 +64,7 @@ export const recentThread = t.Object({
 export const post = t.Object({
 	id: t.String(),
 	threadId: t.String(),
+	number: t.Number(),
 	author: user,
 	body: t.String(),
 	bodyHtml: t.String(),
@@ -71,11 +76,16 @@ export const post = t.Object({
 	ext,
 })
 
+/** Where a post lives: its thread's URL segment and its floor number. */
+export const postLocation = t.Object({ threadRef: t.String(), postNumber: t.Number() })
+
 export const preview = t.Object({ bodyHtml: t.String(), bodyFormat })
 
 export const searchHit = t.Object({
 	postId: t.String(),
+	postNumber: t.Number(),
 	threadId: t.String(),
+	threadRef: t.String(),
 	categoryId: t.String(),
 	opening: t.Boolean(),
 	title: t.String(),
@@ -135,6 +145,7 @@ export const meta = t.Object({
 		threadTitleMax: t.Number(),
 		postBodyMax: t.Number(),
 		displayNameMax: t.Number(),
+		handleMax: t.Number(),
 	}),
 	content: t.Object({ format: bodyFormat }),
 	uiSlots: t.Array(
@@ -206,5 +217,6 @@ export const updateThreadBody = t.Object({
 export const postBody = t.Object({ body: text(LIMITS.postBodyMax) })
 
 export const updateUserBody = t.Object({
-	displayName: text(LIMITS.displayNameMax),
+	displayName: t.Optional(text(LIMITS.displayNameMax)),
+	handle: t.Optional(text(LIMITS.handleMax)),
 })

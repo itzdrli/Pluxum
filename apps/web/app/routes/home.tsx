@@ -246,7 +246,7 @@ function RecentThreadItem({ item }: { item: RecentThreadDto }) {
 				<ThreadFlags thread={item} />
 			</div>
 			<StageLink
-				to={`/c/${item.category.slug}/t/${item.id}`}
+				to={`/c/${item.category.slug}/t/${item.ref}`}
 				prefetch="intent"
 				className="text-ink-strong text-ui font-bold break-words after:absolute after:inset-0"
 			>
@@ -255,7 +255,7 @@ function RecentThreadItem({ item }: { item: RecentThreadDto }) {
 			<div className="text-ink-weak flex items-center justify-between gap-2 text-meta">
 				<span className="flex min-w-0 items-center gap-1.5">
 					<StageLink
-						to={`/u/${item.author.id}`}
+						to={`/u/${item.author.handle}`}
 						className="text-ink relative z-10 truncate hover:underline"
 					>
 						{item.author.displayName}

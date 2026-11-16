@@ -2,9 +2,14 @@ export const LIMITS = Object.freeze({
 	categoryNameMax: 40,
 	categoryDescriptionMax: 200,
 	slugMax: 48,
+	threadSlugMax: 48,
+	threadSlugMaxWords: 6,
+	threadNumberStart: 1001,
 	threadTitleMax: 120,
 	postBodyMax: 20_000,
 	displayNameMax: 40,
+	handleMin: 2,
+	handleMax: 24,
 	searchQueryMax: 120,
 	pageSizeDefault: 20,
 	pageSizeMax: 50,
@@ -97,11 +102,131 @@ export function slugify(input: string): string {
 		.replace(/-+$/, '')
 }
 
+/**
+ * Extracts a concise ASCII slug from a thread title (at most `threadSlugMaxWords` words and
+ * `threadSlugMax` characters, cut on word boundaries). Returns `""` when the title has no ASCII
+ * letters or digits, so pure-CJK titles produce clean `/t/1001` URLs without percent-encoding.
+ */
+export function slugifyAsciiTitle(input: string): string {
+	if (typeof input !== 'string') return ''
+	const words =
+		input
+			.normalize('NFKD')
+			.replaceAll(/\p{M}/gu, '')
+			.normalize('NFKC')
+			.toLowerCase()
+			.match(/[a-z0-9]+/g) ?? []
+	if (words.length === 0) return ''
+	const picked: string[] = []
+	let length = 0
+	for (const word of words.slice(0, LIMITS.threadSlugMaxWords)) {
+		if (picked.length === 0) {
+			picked.push(word.slice(0, LIMITS.threadSlugMax))
+			length = picked[0].length
+			continue
+		}
+		if (length + 1 + word.length > LIMITS.threadSlugMax) break
+		picked.push(word)
+		length += 1 + word.length
+	}
+	return picked.join('-')
+}
+
+/** Canonical URL segment for a thread: `1001` or `1001-ascii-slug`. */
+export function formatThreadRef(number: number, slug: string): string {
+	return slug === '' ? String(number) : `${number}-${slug}`
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const THREAD_REF = /^([1-9]\d{0,8})(?:-([a-z0-9]+(?:-[a-z0-9]+)*))?$/
+const FLOOR_NUMBER = /^[1-9]\d{0,6}$/
+const HANDLE = /^[a-z](?:[a-z0-9]|[-_](?=[a-z0-9]))+$/
 
 /** Entity IDs are UUIDs; anything else cannot exist and is treated as not found. */
 export function isEntityId(value: unknown): value is string {
 	return typeof value === 'string' && UUID.test(value)
+}
+
+export type ParsedThreadRef =
+	| Readonly<{ kind: 'id'; id: string }>
+	| Readonly<{ kind: 'number'; number: number; slug: string }>
+
+/**
+ * Parses a thread URL segment (`1001`, `1001-pluxel-hmr`, or a legacy 36-char UUID).
+ * UUIDs are checked first so a UUID whose first 8 hex digits are all decimal is never misread as
+ * a thread number.
+ */
+export function parseThreadRef(raw: unknown): ParsedThreadRef | null {
+	if (isEntityId(raw)) return { kind: 'id', id: raw }
+	if (typeof raw !== 'string') return null
+	const match = THREAD_REF.exec(raw)
+	if (!match) return null
+	const number = Number(match[1])
+	if (!Number.isSafeInteger(number) || number < 1) return null
+	return { kind: 'number', number, slug: match[2] ?? '' }
+}
+
+/** Parses a 1-based post floor number from a URL segment. */
+export function parseFloorNumber(raw: unknown): number | null {
+	if (typeof raw !== 'string' || !FLOOR_NUMBER.test(raw)) return null
+	const floor = Number(raw)
+	return Number.isSafeInteger(floor) && floor >= 1 ? floor : null
+}
+
+/** 1-based thread page that holds the given 1-based post floor number. */
+export function floorPageOf(floor: number, pageSize: number = LIMITS.pageSizeDefault): number {
+	const safeFloor = Number.isSafeInteger(floor) && floor >= 1 ? floor : 1
+	const safeSize =
+		Number.isSafeInteger(pageSize) && pageSize >= 1 ? pageSize : LIMITS.pageSizeDefault
+	return Math.ceil(safeFloor / safeSize)
+}
+
+export function validateHandle(input: string): Validated<string> {
+	if (typeof input !== 'string') return invalid('用户名必须是文本')
+	const value = input.trim().toLowerCase()
+	if (value.length < LIMITS.handleMin) {
+		return invalid(`用户名至少需要 ${LIMITS.handleMin} 个字符`)
+	}
+	if (value.length > LIMITS.handleMax) {
+		return invalid(`用户名不能超过 ${LIMITS.handleMax} 个字符`)
+	}
+	if (!HANDLE.test(value)) {
+		return invalid(
+			'用户名需以小写字母开头，只能包含小写字母、数字、连字符和下划线，且不能以符号结尾',
+		)
+	}
+	return valid(value)
+}
+
+/**
+ * Derives a candidate ASCII handle stem from an OIDC username or display name. Returns `""` when
+ * no usable ASCII stem can be formed; callers then fall back to `u<number>`.
+ */
+export function deriveHandleBase(input: string): string {
+	if (typeof input !== 'string') return ''
+	let cleaned = input
+		.normalize('NFKD')
+		.replaceAll(/\p{M}/gu, '')
+		.normalize('NFKC')
+		.toLowerCase()
+		.replaceAll(/[^a-z0-9]+/g, '-')
+		.replaceAll(/^-+|-+$/g, '')
+	if (!cleaned) return ''
+	if (!/^[a-z]/.test(cleaned)) cleaned = `u-${cleaned}`
+	cleaned = cleaned.slice(0, 16).replaceAll(/-+$/g, '')
+	return HANDLE.test(cleaned) ? cleaned : ''
+}
+
+export type ParsedUserRef =
+	| Readonly<{ kind: 'id'; id: string }>
+	| Readonly<{ kind: 'handle'; handle: string }>
+
+/** Parses a user URL segment: a legacy 36-char UUID or a normalized user handle. */
+export function parseUserRef(raw: unknown): ParsedUserRef | null {
+	if (isEntityId(raw)) return { kind: 'id', id: raw }
+	if (typeof raw !== 'string') return null
+	const checked = validateHandle(raw)
+	return checked.ok ? { kind: 'handle', handle: checked.value } : null
 }
 
 export type PageRequest = Readonly<{ page?: number; pageSize?: number }>

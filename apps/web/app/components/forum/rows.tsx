@@ -100,7 +100,7 @@ export function ThreadRow({
 					<p className="flex min-w-0 flex-wrap items-center gap-x-1.5">
 						{/* Above the row link's box, so the name opens the profile instead. */}
 						<StageLink
-							to={`/u/${thread.author.id}`}
+							to={`/u/${thread.author.handle}`}
 							className="text-ink relative z-10 truncate hover:underline"
 						>
 							{thread.author.displayName}

@@ -416,6 +416,17 @@ export class ForumApiPlugin extends BasePlugin {
 	private postRoutes() {
 		return (app: Elysia) =>
 			app
+				// Resolves a post id to its floor, for links that only know the id.
+				.get(
+					'/posts/:id/location',
+					{ response: schema.postLocation },
+					async ({ request, params }) => {
+						const located = valueOf(
+							await this.core.locatePost(await this.viewer(request), params.id),
+						)
+						return { threadRef: located.threadRef, postNumber: located.postNumber }
+					},
+				)
 				.patch(
 					'/posts/:id',
 					{ body: schema.postBody, response: schema.post },
@@ -495,6 +506,7 @@ export class ForumApiPlugin extends BasePlugin {
 				threadTitleMax: LIMITS.threadTitleMax,
 				postBodyMax: LIMITS.postBodyMax,
 				displayNameMax: LIMITS.displayNameMax,
+				handleMax: LIMITS.handleMax,
 			},
 			content: { format: this.core.contentFormat() },
 			uiSlots: this.core.uiSlots(),

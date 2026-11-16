@@ -54,12 +54,16 @@ export function parseSearchUrl(url: URL): ParsedSearchUrl {
 	}
 }
 
-/** Opens a hit beside the results; a reply hit lands on its post. */
+/** Opens a hit beside the results; a reply hit lands on its post floor (and page). */
 export function buildSearchHitHref(
-	hit: Pick<SearchHitDto, 'postId' | 'threadId' | 'opening'>,
+	hit: Pick<SearchHitDto, 'postId' | 'threadId' | 'opening'> &
+		Partial<Pick<SearchHitDto, 'postNumber' | 'threadRef'>>,
 	stage: Pick<ResolvedStage, 'listPath' | 'listHref'>,
 ): string {
-	return stageDetailHref(stage, hit.threadId, hit.opening ? undefined : hit.postId)
+	const threadTarget = hit.threadRef ?? hit.threadId
+	if (hit.opening) return stageDetailHref(stage, threadTarget)
+	const postTarget = hit.postNumber ?? hit.postId
+	return stageDetailHref(stage, threadTarget, postTarget)
 }
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
@@ -252,7 +256,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 										key={hit.postId}
 										hit={hit}
 										href={buildSearchHitHref(hit, stage)}
-										isActive={hit.threadId === params.id}
+										isActive={hit.threadRef === params.id || hit.threadId === params.id}
 										category={categoriesById.get(hit.categoryId)}
 									/>
 								))}
@@ -320,7 +324,7 @@ function SearchHitRow({
 			}`}
 		>
 			<StageLink
-				to={`/u/${hit.author.id}`}
+				to={`/u/${hit.author.handle}`}
 				tabIndex={-1}
 				aria-hidden
 				className="relative z-10 hidden shrink-0 @lg/threads:block"
@@ -352,7 +356,7 @@ function SearchHitRow({
 
 				<div className="text-ink-weak mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta">
 					<StageLink
-						to={`/u/${hit.author.id}`}
+						to={`/u/${hit.author.handle}`}
 						className="text-ink relative z-10 truncate hover:underline"
 					>
 						{hit.author.displayName}

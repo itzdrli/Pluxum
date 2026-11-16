@@ -4,6 +4,7 @@ import type { Role } from './permissions'
 
 export type UserDto = Readonly<{
 	id: string
+	handle: string
 	displayName: string
 	ext?: ExtensionData
 }>
@@ -27,6 +28,10 @@ export type ExtensionData = Readonly<Record<string, unknown>>
 
 export type ThreadDto = Readonly<{
 	id: string
+	number: number
+	slug: string
+	/** Canonical URL segment (`1001` or `1001-ascii-slug`). */
+	ref: string
 	categoryId: string
 	title: string
 	author: UserDto
@@ -47,6 +52,8 @@ export type BodyFormat = 'markdown' | 'plain'
 export type PostDto = Readonly<{
 	id: string
 	threadId: string
+	/** 1-based floor number inside the thread (`1` for the opening post). */
+	number: number
 	author: UserDto
 	/** Source text as written, for editing; empty when the post was deleted. */
 	body: string
@@ -116,7 +123,9 @@ export type SearchRequest = Readonly<{
 
 export type SearchHitDto = Readonly<{
 	postId: string
+	postNumber: number
 	threadId: string
+	threadRef: string
 	categoryId: string
 	opening: boolean
 	title: string
@@ -260,6 +269,7 @@ export type MetaDto = Readonly<{
 		threadTitleMax: number
 		postBodyMax: number
 		displayNameMax: number
+		handleMax: number
 	}>
 	content: Readonly<{
 		/** How new posts will be rendered right now; the composer offers formatting only for `markdown`. */

@@ -1,15 +1,21 @@
 import {
 	defaultRolePolicy,
+	deriveHandleBase,
 	evaluatePolicies,
+	formatThreadRef,
 	GUEST,
 	isAssignableRole,
 	isEntityId,
 	normalizePage,
+	parseThreadRef,
+	parseUserRef,
 	ROLES,
 	slugify,
+	slugifyAsciiTitle,
 	validateCategoryDescription,
 	validateCategoryName,
 	validateDisplayName,
+	validateHandle,
 	validatePostBody,
 	validateSearchQuery,
 	validateSlug,
@@ -121,9 +127,13 @@ export type CreateThreadInput = Readonly<{ categoryId: string; title: string; bo
 export type UpdateThreadInput = Readonly<{ title?: string; pinned?: boolean; locked?: boolean }>
 export type CreatePostInput = Readonly<{ threadId: string; body: string }>
 export type UpdatePostInput = Readonly<{ body: string }>
-export type EnsureUserInput = Readonly<{ subject: string; displayName: string }>
+export type EnsureUserInput = Readonly<{
+	subject: string
+	displayName: string
+	handleHint?: string
+}>
 
-export type UpdateProfileInput = Readonly<{ displayName: string }>
+export type UpdateProfileInput = Readonly<{ displayName?: string; handle?: string }>
 
 /**
  * A post that exists and that the asking principal may see, as extension plugins need it: the
@@ -132,6 +142,10 @@ export type UpdateProfileInput = Readonly<{ displayName: string }>
 export type PostLocation = Readonly<{
 	postId: string
 	threadId: string
+	/** Canonical URL segment of the thread (`1001` or `1001-ascii-slug`). */
+	threadRef: string
+	/** 1-based floor number of the post inside its thread. */
+	postNumber: number
 	resource: ForumResource
 }>
 
@@ -161,7 +175,17 @@ const denied = (principal: Principal) =>
 		? fail('unauthenticated', '请先登录')
 		: fail('forbidden', '没有权限执行此操作')
 
-const author = { id: users.id, displayName: users.displayName }
+/** Postgres `unique_violation`, possibly wrapped by the query builder in `cause`. */
+function isUniqueViolation(error: unknown): boolean {
+	for (let current = error, depth = 0; current && depth < 4; depth++) {
+		if (typeof current !== 'object') return false
+		if ((current as { code?: unknown }).code === '23505') return true
+		current = (current as { cause?: unknown }).cause
+	}
+	return false
+}
+
+const author = { id: users.id, handle: users.handle, displayName: users.displayName }
 
 type CategoryRow = typeof categories.$inferSelect
 type ThreadRow = typeof threads.$inferSelect
@@ -182,9 +206,12 @@ function toCategoryDto(row: CategoryRow): CategoryDto {
 function toThreadDto(row: ThreadRow, by: UserDto): ThreadDto {
 	return {
 		id: row.id,
+		number: row.number,
+		slug: row.slug,
+		ref: formatThreadRef(row.number, row.slug),
 		categoryId: row.categoryId,
 		title: row.title,
-		author: { id: by.id, displayName: by.displayName },
+		author: { id: by.id, handle: by.handle, displayName: by.displayName },
 		createdAt: row.createdAt.toISOString(),
 		lastPostAt: row.lastPostAt.toISOString(),
 		replyCount: row.replyCount,
@@ -375,8 +402,19 @@ export class ForumCorePlugin extends BasePlugin {
 		if (request.categoryId !== undefined && !isEntityId(request.categoryId)) {
 			return notFound('版块')
 		}
-		if (request.authorId !== undefined && !isEntityId(request.authorId)) {
-			return notFound('用户')
+		let resolvedAuthorId: string | undefined
+		if (request.authorId !== undefined) {
+			const parsedAuthor = parseUserRef(request.authorId)
+			if (!parsedAuthor) return notFound('用户')
+			if (parsedAuthor.kind === 'id') {
+				resolvedAuthorId = parsedAuthor.id
+			} else {
+				const [foundAuthor] = await this.database.read((db) =>
+					db.select({ id: users.id }).from(users).where(eq(users.handle, parsedAuthor.handle)),
+				)
+				if (!foundAuthor) return notFound('用户')
+				resolvedAuthorId = foundAuthor.id
+			}
 		}
 		const { page, pageSize } = normalizePage(request)
 		const visibleCategories = await this.listCategories(principal)
@@ -395,7 +433,7 @@ export class ForumCorePlugin extends BasePlugin {
 			{
 				query: query.value,
 				categoryIds,
-				authorId: request.authorId,
+				authorId: resolvedAuthorId,
 				threadsOnly: request.threadsOnly ?? false,
 				page,
 				pageSize,
@@ -405,21 +443,47 @@ export class ForumCorePlugin extends BasePlugin {
 		if (!raw) return fail('unavailable', '搜索服务暂时不可用')
 		const hits = raw.items.filter((hit) => visibleIds.has(hit.categoryId))
 		const authorIds = [...new Set(hits.map((hit) => hit.authorId).filter(isEntityId))]
-		const authorRows =
-			authorIds.length === 0
-				? []
-				: await this.database.read((db) =>
-						db.select(author).from(users).where(inArray(users.id, authorIds)),
-					)
+		const threadIds = [...new Set(hits.map((hit) => hit.threadId).filter(isEntityId))]
+		const postIds = [...new Set(hits.map((hit) => hit.postId).filter(isEntityId))]
+		const { authorRows, threadRows, postRows } = await this.database.read(async (db) => {
+			const [authors, threadMeta, postMeta] = await Promise.all([
+				authorIds.length === 0
+					? []
+					: db.select(author).from(users).where(inArray(users.id, authorIds)),
+				threadIds.length === 0
+					? []
+					: db
+							.select({ id: threads.id, number: threads.number, slug: threads.slug })
+							.from(threads)
+							.where(inArray(threads.id, threadIds)),
+				postIds.length === 0
+					? []
+					: db
+							.select({ id: posts.id, number: posts.number })
+							.from(posts)
+							.where(inArray(posts.id, postIds)),
+			])
+			return { authorRows: authors, threadRows: threadMeta, postRows: postMeta }
+		})
 		const authorsById = await this.extendedUsers(principal, authorRows)
+		const threadRefById = new Map(
+			threadRows.map((row) => [row.id, formatThreadRef(row.number, row.slug)]),
+		)
+		const postNumberById = new Map(postRows.map((row) => [row.id, row.number]))
 		const items: SearchHitDto[] = hits.map((hit) => ({
 			postId: hit.postId,
+			postNumber: postNumberById.get(hit.postId) ?? 1,
 			threadId: hit.threadId,
+			threadRef: threadRefById.get(hit.threadId) ?? hit.threadId,
 			categoryId: hit.categoryId,
 			opening: hit.opening,
 			title: hit.title,
 			snippetHtml: sanitizeSearchSnippet(hit.snippetHtml),
-			author: authorsById.get(hit.authorId) ?? { id: hit.authorId, displayName: '未知用户' },
+			author: authorsById.get(hit.authorId) ?? {
+				id: hit.authorId,
+				handle: hit.authorId,
+				displayName: '未知用户',
+			},
 			createdAt: hit.createdAt,
 		}))
 		return Result.ok({ items, page, pageSize, total: raw.total })
@@ -481,6 +545,8 @@ export class ForumCorePlugin extends BasePlugin {
 		return Result.ok({
 			postId: found.post.id,
 			threadId: found.thread.id,
+			threadRef: formatThreadRef(found.thread.number, found.thread.slug),
+			postNumber: found.post.number,
 			resource: this.postResource(found.post, found.thread),
 		})
 	}
@@ -493,11 +559,57 @@ export class ForumCorePlugin extends BasePlugin {
 		if (!subject || subject.length > 255) return invalid('无效的账号标识')
 		const displayName = validateDisplayName(input.displayName)
 		if (!displayName.ok) return invalid(displayName.reason)
+		// A concurrent first login may claim the same handle (or subject) between our read and
+		// write; the retry then sees that row and picks the next candidate or the existing account.
+		for (let attempt = 1; ; attempt++) {
+			try {
+				// oxlint-disable-next-line no-await-in-loop -- retries are sequential on purpose.
+				return await this.createOrFindUser(subject, displayName.value, input.handleHint)
+			} catch (error) {
+				if (attempt >= 3 || !isUniqueViolation(error)) throw error
+			}
+		}
+	}
+
+	private createOrFindUser(
+		subject: string,
+		displayName: string,
+		handleHint: string | undefined,
+	): Promise<ForumResult<UserDto>> {
 		return this.database.transaction(async (tx) => {
-			await tx
+			const [existing] = await tx.select(author).from(users).where(eq(users.subject, subject))
+			if (existing) return Result.ok(existing)
+
+			const tempHandle = `u-tmp-${crypto.randomUUID().replaceAll('-', '').slice(0, 16)}`
+			const [inserted] = await tx
 				.insert(users)
-				.values({ subject, displayName: displayName.value })
+				.values({ subject, handle: tempHandle, displayName })
 				.onConflictDoNothing({ target: users.subject })
+				.returning({ id: users.id, number: users.number })
+
+			if (inserted) {
+				const base = deriveHandleBase(handleHint ?? '') || deriveHandleBase(displayName)
+				const rawCandidates =
+					base === ''
+						? [`u${inserted.number}`]
+						: [base, `${base}-${inserted.number}`, `u${inserted.number}`]
+				const candidates = rawCandidates.flatMap((candidate) => {
+					const checked = validateHandle(candidate)
+					return checked.ok ? [checked.value] : []
+				})
+				const takenRows =
+					candidates.length === 0
+						? []
+						: await tx
+								.select({ handle: users.handle })
+								.from(users)
+								.where(inArray(users.handle, candidates))
+				const taken = new Set(takenRows.map((row) => row.handle))
+				const chosen =
+					candidates.find((candidate) => !taken.has(candidate)) ?? `u${inserted.number}`
+				await tx.update(users).set({ handle: chosen }).where(eq(users.id, inserted.id))
+			}
+
 			const [user] = await tx.select(author).from(users).where(eq(users.subject, subject))
 			if (!user) throw new Error('User row is missing right after its upsert')
 			return Result.ok(user)
@@ -527,11 +639,11 @@ export class ForumCorePlugin extends BasePlugin {
 		return user ? Result.ok(user) : notFound('用户')
 	}
 
-	async getUser(userId: string, viewer: Principal = GUEST): Promise<ForumResult<UserDto>> {
-		if (!isEntityId(userId)) return notFound('用户')
-		const [user] = await this.database.read((db) =>
-			db.select(author).from(users).where(eq(users.id, userId)),
-		)
+	async getUser(userRef: string, viewer: Principal = GUEST): Promise<ForumResult<UserDto>> {
+		const parsed = parseUserRef(userRef)
+		if (!parsed) return notFound('用户')
+		const match = parsed.kind === 'id' ? eq(users.id, parsed.id) : eq(users.handle, parsed.handle)
+		const [user] = await this.database.read((db) => db.select(author).from(users).where(match))
 		if (!user) return notFound('用户')
 		const enriched = await this.extendedUsers(viewer, [user])
 		return Result.ok(enriched.get(user.id) ?? user)
@@ -540,43 +652,84 @@ export class ForumCorePlugin extends BasePlugin {
 	/** Changes a user's profile (`user.edit` on that user: the user themselves or an admin). */
 	async updateProfile(
 		principal: Principal,
-		userId: string,
+		userRef: string,
 		input: UpdateProfileInput,
 	): Promise<ForumResult<UserDto>> {
-		if (!isEntityId(userId)) return notFound('用户')
-		if (!this.can(principal, 'user.edit', { userId })) return denied(principal)
-		const renamed = await this.renameUser(userId, input.displayName)
-		if (renamed.isErr()) return renamed
-		const enriched = await this.extendedUsers(principal, [renamed.value])
-		return Result.ok(enriched.get(renamed.value.id) ?? renamed.value)
+		const parsed = parseUserRef(userRef)
+		if (!parsed) return notFound('用户')
+		const patch: Partial<Pick<typeof users.$inferInsert, 'displayName' | 'handle'>> = {}
+		if (input.displayName !== undefined) {
+			const name = validateDisplayName(input.displayName)
+			if (!name.ok) return invalid(name.reason)
+			patch.displayName = name.value
+		}
+		if (input.handle !== undefined) {
+			const handle = validateHandle(input.handle)
+			if (!handle.ok) return invalid(handle.reason)
+			patch.handle = handle.value
+		}
+
+		const updated = await this.database
+			.transaction(async (tx): Promise<ForumResult<UserDto>> => {
+				const match =
+					parsed.kind === 'id' ? eq(users.id, parsed.id) : eq(users.handle, parsed.handle)
+				const [current] = await tx.select(author).from(users).where(match)
+				if (!current) return notFound('用户')
+				if (!this.can(principal, 'user.edit', { userId: current.id })) return denied(principal)
+				if (Object.keys(patch).length === 0) return Result.ok(current)
+				if (patch.handle !== undefined && patch.handle !== current.handle) {
+					const [taken] = await tx
+						.select({ id: users.id })
+						.from(users)
+						.where(eq(users.handle, patch.handle))
+					if (taken) return fail('conflict', '用户名已被使用')
+				}
+				const [row] = await tx
+					.update(users)
+					.set(patch)
+					.where(eq(users.id, current.id))
+					.returning(author)
+				return row ? Result.ok(row) : notFound('用户')
+			})
+			// Another account took the handle between the check above and the write.
+			.catch((error: unknown) => {
+				if (isUniqueViolation(error)) return fail('conflict', '用户名已被使用')
+				throw error
+			})
+		if (updated.isErr()) return updated
+		const enriched = await this.extendedUsers(principal, [updated.value])
+		return Result.ok(enriched.get(updated.value.id) ?? updated.value)
 	}
 
 	/** Public profile of a user together with one page of their visible threads. */
 	async getUserProfile(
 		principal: Principal,
-		userId: string,
+		userRef: string,
 		paging: PageRequest = {},
 	): Promise<ForumResult<UserProfileDto>> {
-		if (!isEntityId(userId)) return notFound('用户')
+		const parsed = parseUserRef(userRef)
+		if (!parsed) return notFound('用户')
 		const { page, pageSize } = normalizePage(paging)
 		const visibleCategories = await this.listCategories(principal)
 		const visibleCategoryIds = visibleCategories.map((category) => category.id)
 
 		const read = await this.database.read(async (db) => {
+			const match = parsed.kind === 'id' ? eq(users.id, parsed.id) : eq(users.handle, parsed.handle)
 			const [account] = await db
 				.select({
 					id: users.id,
+					handle: users.handle,
 					displayName: users.displayName,
 					createdAt: users.createdAt,
 				})
 				.from(users)
-				.where(eq(users.id, userId))
+				.where(match)
 			if (!account) return null
 
 			const roleRows = await db
 				.select({ role: userRoles.role })
 				.from(userRoles)
-				.where(eq(userRoles.userId, userId))
+				.where(eq(userRoles.userId, account.id))
 			const roleSet = new Set<Role>(['member'])
 			for (const { role } of roleRows) if (isAssignableRole(role)) roleSet.add(role)
 			const roles = ROLES.filter((role) => roleSet.has(role))
@@ -592,7 +745,7 @@ export class ForumCorePlugin extends BasePlugin {
 			}
 
 			const visibleThreads = and(
-				eq(threads.authorId, userId),
+				eq(threads.authorId, account.id),
 				isNull(threads.deletedAt),
 				inArray(threads.categoryId, visibleCategoryIds),
 			)
@@ -603,7 +756,7 @@ export class ForumCorePlugin extends BasePlugin {
 				.innerJoin(threads, eq(threads.id, posts.threadId))
 				.where(
 					and(
-						eq(posts.authorId, userId),
+						eq(posts.authorId, account.id),
 						isNull(posts.deletedAt),
 						isNull(threads.deletedAt),
 						inArray(threads.categoryId, visibleCategoryIds),
@@ -627,7 +780,11 @@ export class ForumCorePlugin extends BasePlugin {
 		})
 		if (!read) return notFound('用户')
 
-		const baseUser: UserDto = { id: read.account.id, displayName: read.account.displayName }
+		const baseUser: UserDto = {
+			id: read.account.id,
+			handle: read.account.handle,
+			displayName: read.account.displayName,
+		}
 		const rawThreads = read.threadRows.map((row) => toThreadDto(row, baseUser))
 		const [usersById, extendedThreads] = await Promise.all([
 			this.extendedUsers(principal, [baseUser]),
@@ -909,13 +1066,13 @@ export class ForumCorePlugin extends BasePlugin {
 	/** A thread with one page of its posts, oldest first. Deleted posts stay as placeholders. */
 	async getThread(
 		principal: Principal,
-		threadId: string,
+		threadRef: string,
 		paging: PageRequest = {},
 	): Promise<ForumResult<ThreadDetailDto>> {
-		if (!isEntityId(threadId)) return notFound('主题')
+		if (!parseThreadRef(threadRef)) return notFound('主题')
 		const { page, pageSize } = normalizePage(paging)
 		const detail = await this.database.read(async (db): Promise<ForumResult<ThreadDetailDto>> => {
-			const found = await this.findThread(db, threadId)
+			const found = await this.findThread(db, threadRef)
 			if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
 				return notFound('主题')
 			}
@@ -927,7 +1084,7 @@ export class ForumCorePlugin extends BasePlugin {
 				.from(posts)
 				.innerJoin(users, eq(users.id, posts.authorId))
 				.where(inThread)
-				.orderBy(desc(posts.opening), asc(posts.createdAt), asc(posts.id))
+				.orderBy(asc(posts.number), asc(posts.id))
 				.limit(pageSize)
 				.offset((page - 1) * pageSize)
 			const resource = this.threadResource(thread)
@@ -975,6 +1132,7 @@ export class ForumCorePlugin extends BasePlugin {
 		if (!this.can(principal, 'thread.create', { categoryId })) return denied(principal)
 		const authorId = principal.userId
 		if (authorId === null) return denied(principal)
+		const slug = slugifyAsciiTitle(title.value)
 
 		const written = await this.database.transaction(
 			async (
@@ -997,12 +1155,18 @@ export class ForumCorePlugin extends BasePlugin {
 				if (rejected) return Result.err(rejected)
 				const [thread] = await tx
 					.insert(threads)
-					.values({ categoryId, authorId, title: title.value })
+					.values({ categoryId, authorId, title: title.value, slug, postSeq: 1 })
 					.returning()
 				if (!thread) throw new Error('Thread insert returned no row')
 				const [opening] = await tx
 					.insert(posts)
-					.values({ threadId: thread.id, authorId, body: body.value, opening: true })
+					.values({
+						threadId: thread.id,
+						number: 1,
+						authorId,
+						body: body.value,
+						opening: true,
+					})
 					.returning({ id: posts.id })
 				if (!opening) throw new Error('Opening post insert returned no row')
 				await tx
@@ -1012,13 +1176,15 @@ export class ForumCorePlugin extends BasePlugin {
 						postCount: sql`${categories.postCount} + 1`,
 					})
 					.where(eq(categories.id, categoryId))
+				const dto = toThreadDto(thread, by)
 				return Result.ok({
-					dto: toThreadDto(thread, by),
+					dto,
 					event: {
 						kind: 'thread.created',
 						principal,
 						categoryId,
 						threadId: thread.id,
+						threadRef: dto.ref,
 						postId: opening.id,
 						authorId,
 						title: thread.title,
@@ -1036,15 +1202,16 @@ export class ForumCorePlugin extends BasePlugin {
 	/** Renames a thread (`thread.edit`) and/or pins or locks it (`thread.moderate`). */
 	async updateThread(
 		principal: Principal,
-		threadId: string,
+		threadRef: string,
 		input: UpdateThreadInput,
 	): Promise<ForumResult<ThreadDto>> {
-		if (!isEntityId(threadId)) return notFound('主题')
-		const patch: Partial<Pick<ThreadRow, 'title' | 'pinned' | 'locked'>> = {}
+		if (!parseThreadRef(threadRef)) return notFound('主题')
+		const patch: Partial<Pick<ThreadRow, 'title' | 'slug' | 'pinned' | 'locked'>> = {}
 		if (input.title !== undefined) {
 			const title = validateThreadTitle(input.title)
 			if (!title.ok) return invalid(title.reason)
 			patch.title = title.value
+			patch.slug = slugifyAsciiTitle(title.value)
 		}
 		if (input.pinned !== undefined) patch.pinned = input.pinned
 		if (input.locked !== undefined) patch.locked = input.locked
@@ -1053,7 +1220,7 @@ export class ForumCorePlugin extends BasePlugin {
 			async (
 				tx,
 			): Promise<ForumResult<Readonly<{ dto: ThreadDto; event: PostAfterWriteEvent | null }>>> => {
-				const found = await this.findThread(tx, threadId)
+				const found = await this.findThread(tx, threadRef)
 				if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
 					return notFound('主题')
 				}
@@ -1083,21 +1250,23 @@ export class ForumCorePlugin extends BasePlugin {
 				const [row] = await tx
 					.update(threads)
 					.set(patch)
-					.where(eq(threads.id, threadId))
+					.where(eq(threads.id, found.thread.id))
 					.returning()
 				if (!row) return notFound('主题')
 				const [opening] = await tx
 					.select({ id: posts.id, body: posts.body })
 					.from(posts)
-					.where(and(eq(posts.threadId, threadId), eq(posts.opening, true)))
+					.where(and(eq(posts.threadId, found.thread.id), eq(posts.opening, true)))
+				const dto = toThreadDto(row, found.author)
 				return Result.ok({
-					dto: toThreadDto(row, found.author),
+					dto,
 					event: opening
 						? {
 								kind: 'thread.updated',
 								principal,
 								categoryId: row.categoryId,
 								threadId: row.id,
+								threadRef: dto.ref,
 								postId: opening.id,
 								authorId: row.authorId,
 								title: row.title,
@@ -1116,11 +1285,11 @@ export class ForumCorePlugin extends BasePlugin {
 	}
 
 	/** Hides a thread and all of its posts. The rows stay for moderation history. */
-	async deleteThread(principal: Principal, threadId: string): Promise<ForumResult<void>> {
-		if (!isEntityId(threadId)) return notFound('主题')
+	async deleteThread(principal: Principal, threadRef: string): Promise<ForumResult<void>> {
+		if (!parseThreadRef(threadRef)) return notFound('主题')
 		const deleted = await this.database.transaction(
 			async (tx): Promise<ForumResult<PostAfterWriteEvent>> => {
-				const found = await this.findThread(tx, threadId)
+				const found = await this.findThread(tx, threadRef)
 				if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
 					return notFound('主题')
 				}
@@ -1158,7 +1327,7 @@ export class ForumCorePlugin extends BasePlugin {
 	async createPost(principal: Principal, input: CreatePostInput): Promise<ForumResult<PostDto>> {
 		const body = validatePostBody(input.body)
 		if (!body.ok) return invalid(body.reason)
-		if (!isEntityId(input.threadId)) return notFound('主题')
+		if (!parseThreadRef(input.threadId)) return notFound('主题')
 		const authorId = principal.userId
 
 		const written = await this.database.transaction(
@@ -1183,15 +1352,28 @@ export class ForumCorePlugin extends BasePlugin {
 					body: body.value,
 				})
 				if (rejected) return Result.err(rejected)
+				const now = new Date()
+				const [updatedThread] = await tx
+					.update(threads)
+					.set({
+						postSeq: sql`${threads.postSeq} + 1`,
+						replyCount: sql`${threads.replyCount} + 1`,
+						lastPostAt: now,
+					})
+					.where(eq(threads.id, thread.id))
+					.returning({ postSeq: threads.postSeq })
+				if (!updatedThread) throw new Error('Thread update returned no row')
 				const [post] = await tx
 					.insert(posts)
-					.values({ threadId: thread.id, authorId, body: body.value })
+					.values({
+						threadId: thread.id,
+						number: updatedThread.postSeq,
+						authorId,
+						body: body.value,
+						createdAt: now,
+					})
 					.returning()
 				if (!post) throw new Error('Post insert returned no row')
-				await tx
-					.update(threads)
-					.set({ replyCount: sql`${threads.replyCount} + 1`, lastPostAt: post.createdAt })
-					.where(eq(threads.id, thread.id))
 				await tx
 					.update(categories)
 					.set({ postCount: sql`${categories.postCount} + 1` })
@@ -1203,9 +1385,11 @@ export class ForumCorePlugin extends BasePlugin {
 						principal,
 						categoryId: thread.categoryId,
 						threadId: thread.id,
+						threadRef: formatThreadRef(thread.number, thread.slug),
 						threadAuthorId: thread.authorId,
 						threadTitle: thread.title,
 						postId: post.id,
+						postNumber: post.number,
 						authorId,
 						body: post.body,
 						createdAt: post.createdAt.toISOString(),
@@ -1270,8 +1454,10 @@ export class ForumCorePlugin extends BasePlugin {
 						principal,
 						categoryId: thread.categoryId,
 						threadId: thread.id,
+						threadRef: formatThreadRef(thread.number, thread.slug),
 						threadTitle: thread.title,
 						postId: row.id,
+						postNumber: row.number,
 						authorId: row.authorId,
 						opening: row.opening,
 						body: row.body,
@@ -1393,8 +1579,8 @@ export class ForumCorePlugin extends BasePlugin {
 			byId.set(
 				item.id,
 				ext && Object.keys(ext).length > 0
-					? { id: item.id, displayName: item.displayName, ext }
-					: { id: item.id, displayName: item.displayName },
+					? { id: item.id, handle: item.handle, displayName: item.displayName, ext }
+					: { id: item.id, handle: item.handle, displayName: item.displayName },
 			)
 		}
 		return byId
@@ -1458,7 +1644,8 @@ export class ForumCorePlugin extends BasePlugin {
 		return {
 			id: post.id,
 			threadId: post.threadId,
-			author: { id: by.id, displayName: by.displayName },
+			number: post.number,
+			author: { id: by.id, handle: by.handle, displayName: by.displayName },
 			body: deleted ? '' : post.body,
 			bodyHtml: rendered.html,
 			bodyFormat: rendered.format,
@@ -1474,13 +1661,17 @@ export class ForumCorePlugin extends BasePlugin {
 	}
 
 	/** A thread that has not been deleted, with its author and category. */
-	private async findThread(db: Db, threadId: string) {
+	private async findThread(db: Db, threadRef: string) {
+		const parsed = parseThreadRef(threadRef)
+		if (!parsed) return undefined
+		const match =
+			parsed.kind === 'id' ? eq(threads.id, parsed.id) : eq(threads.number, parsed.number)
 		const [row] = await db
 			.select({ thread: threads, author, category: categories })
 			.from(threads)
 			.innerJoin(users, eq(users.id, threads.authorId))
 			.innerJoin(categories, eq(categories.id, threads.categoryId))
-			.where(and(eq(threads.id, threadId), isNull(threads.deletedAt)))
+			.where(and(match, isNull(threads.deletedAt)))
 		return row
 	}
 

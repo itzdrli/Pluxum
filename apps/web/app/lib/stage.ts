@@ -15,6 +15,8 @@
  * Pure module: no React, so loaders, `shouldRevalidate` and tests can use it.
  */
 
+import { floorPageOf } from '@pluxum/domain'
+
 /** Query parameter of the list's own page while a detail is open; `?page=` belongs to the detail. */
 export const LIST_PAGE_PARAM = 'cpage'
 
@@ -170,17 +172,35 @@ export function resolveStage(matches: readonly StageMatch[], url: URL): Resolved
 	}
 }
 
-/** Link that opens thread `threadId` in the detail pane of the current list. */
+/**
+ * Link that opens thread `threadRef` in the detail pane of the current list.
+ * When `postRef` is a 1-based floor number (`number`), it also sets `?page=` when the floor is
+ * past page 1, or links to `/t/<threadRef>/<floor>` when no list is active.
+ */
 export function stageDetailHref(
 	stage: Pick<ResolvedStage, 'listPath' | 'listHref'>,
-	threadId: string,
-	postId?: string,
+	threadRef: string,
+	postRef?: string | number,
 ): string {
-	const hash = postId === undefined ? '' : `#post-${postId}`
-	if (stage.listPath === null || stage.listHref === null) return `/t/${threadId}${hash}`
+	const floor =
+		typeof postRef === 'number' && Number.isSafeInteger(postRef) && postRef >= 1
+			? postRef
+			: undefined
+	const hash = postRef === undefined ? '' : `#post-${postRef}`
+	if (stage.listPath === null || stage.listHref === null) {
+		return floor !== undefined && floor > 1 ? `/t/${threadRef}/${floor}` : `/t/${threadRef}${hash}`
+	}
 	const base = stage.listPath === '/' ? '' : stage.listPath
 	const query = stage.listHref.slice(stage.listPath.length)
-	return `${base}/t/${threadId}${query}${hash}`
+	if (floor !== undefined) {
+		const page = floorPageOf(floor)
+		if (page > 1) {
+			const params = new URLSearchParams(query.startsWith('?') ? query.slice(1) : query)
+			params.set('page', String(page))
+			return `${base}/t/${threadRef}?${params.toString()}${hash}`
+		}
+	}
+	return `${base}/t/${threadRef}${query}${hash}`
 }
 
 /** How the stage moves between two states; drives the CSS of the view transition. */

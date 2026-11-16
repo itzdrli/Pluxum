@@ -241,8 +241,14 @@ describe('ForumCorePlugin', () => {
 
 		const first = (await core.ensureUser({ subject: 'idp|1', displayName: ' Ada  L ' })).unwrap()
 		const again = (await core.ensureUser({ subject: 'idp|1', displayName: 'Renamed' })).unwrap()
-		expect(first).toEqual({ id: again.id, displayName: 'Ada L' })
+		expect(first).toEqual({ id: again.id, handle: 'ada-l', displayName: 'Ada L' })
 		expect(again.displayName).toBe('Ada L')
+
+		// A second account with the same derived handle gets a numeric suffix; pure-CJK gets u<number>.
+		const duplicate = (await core.ensureUser({ subject: 'idp|2', displayName: 'Ada L' })).unwrap()
+		expect(duplicate.handle).toBe('ada-l-2')
+		const cjk = (await core.ensureUser({ subject: 'idp|3', displayName: '张三' })).unwrap()
+		expect(cjk.handle).toBe('u3')
 
 		expect(await core.principalOf(first.id)).toEqual({ userId: first.id, roles: ['member'] })
 		;(await core.grantRole(first.id, 'moderator')).unwrap()
@@ -292,17 +298,25 @@ describe('ForumCorePlugin', () => {
 			'forbidden',
 		)
 		expect(
-			(await core.updateProfile(alice, alice.userId!, { displayName: '  Alice   W ' })).unwrap(),
+			(await core.updateProfile(alice, 'alice', { displayName: '  Alice   W ' })).unwrap(),
 		).toEqual({
 			id: alice.userId,
+			handle: 'alice',
 			displayName: 'Alice W',
 		})
 		expect(
-			(await core.updateProfile(admin, alice.userId!, { displayName: 'Alice Admin' })).unwrap(),
+			(
+				await core.updateProfile(admin, alice.userId!, {
+					displayName: 'Alice Admin',
+					handle: 'alice-admin',
+				})
+			).unwrap(),
 		).toEqual({
 			id: alice.userId,
+			handle: 'alice-admin',
 			displayName: 'Alice Admin',
 		})
+		expect(await codeOf(core.updateProfile(bob, 'bob', { handle: 'alice-admin' }))).toBe('conflict')
 	})
 
 	it('runs a thread from creation through replies with consistent counters', async () => {
@@ -877,6 +891,8 @@ describe('entity extensions and UI slots', () => {
 		expect((await core.locatePost(GUEST, reply.id)).unwrap()).toEqual({
 			postId: reply.id,
 			threadId: thread.id,
+			threadRef: thread.ref,
+			postNumber: 2,
 			resource: {
 				categoryId: category.id,
 				threadId: thread.id,

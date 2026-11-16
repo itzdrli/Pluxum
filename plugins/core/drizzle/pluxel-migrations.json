@@ -7,6 +7,11 @@
 			"id": "0000_initial",
 			"file": "0000_initial.sql",
 			"checksum": "8b92fbf4e8163533b1c0e164182707cb2e14e0be167bb8f720859bc80258577e"
+		},
+		{
+			"id": "0001_readable_routes",
+			"file": "0001_readable_routes.sql",
+			"checksum": "ed00f8b9c356e7daabec3b44616b18fb68f093118d4e573d0c6fd4af3b9c0e58"
 		}
 	]
 }

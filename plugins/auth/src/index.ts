@@ -233,6 +233,7 @@ export class ForumAuthPlugin extends ForumAuth {
 			const user = await this.core.ensureUser({
 				subject: identity.subject,
 				displayName: displayNameOf(identity.name),
+				handleHint: identity.preferredUsername,
 			})
 			if (user.isErr()) return fail('rejected', user.error.message)
 			// An account created before the provider shared a name picks it up once it does.

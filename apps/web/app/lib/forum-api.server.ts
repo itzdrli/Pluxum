@@ -433,6 +433,11 @@ export const forumApi = {
 		if (result.ok) categoriesCache.clear()
 		return result
 	},
+	postLocation: (request: Request, id: string) =>
+		call<Readonly<{ threadRef: string; postNumber: number }>>(
+			request,
+			`/posts/${encodeURIComponent(id)}/location`,
+		),
 	updatePost: (request: Request, id: string, body: string) =>
 		call<PostDto>(request, `/posts/${encodeURIComponent(id)}`, {
 			method: 'PATCH',
@@ -447,7 +452,11 @@ export const forumApi = {
 	},
 	userProfile: (request: Request, id: string, page = 1) =>
 		call<UserProfileDto>(request, `/users/${encodeURIComponent(id)}${pageQuery(page)}`),
-	updateProfile: async (request: Request, id: string, body: Readonly<{ displayName: string }>) => {
+	updateProfile: async (
+		request: Request,
+		id: string,
+		body: Readonly<{ displayName?: string; handle?: string }>,
+	) => {
 		const result = await call<UserDto>(request, `/users/${encodeURIComponent(id)}`, {
 			method: 'PATCH',
 			body,

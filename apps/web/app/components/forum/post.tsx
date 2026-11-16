@@ -51,7 +51,7 @@ export function PostCard({
 	}
 	return (
 		<li
-			id={`post-${post.id}`}
+			id={`post-${post.number}`}
 			className={`border-line bg-panel group scroll-mt-16 rounded-[2px] border${!opening && !editing ? ' post-card-cv' : ''}`}
 			// Images in the body and the attachment strip open in the viewer, all of this post's in turn.
 			onClick={(event) => {
@@ -63,12 +63,12 @@ export function PostCard({
 			}}
 		>
 			<div className="flex items-center gap-2.5 px-4 pt-3">
-				<Link to={`/u/${post.author.id}`} tabIndex={-1} aria-hidden>
+				<Link to={`/u/${post.author.handle}`} tabIndex={-1} aria-hidden>
 					<UserAvatar user={post.author} />
 				</Link>
 				<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
 					<Link
-						to={`/u/${post.author.id}`}
+						to={`/u/${post.author.handle}`}
 						className="text-ink-strong truncate font-bold hover:underline"
 					>
 						{post.author.displayName}
@@ -83,7 +83,7 @@ export function PostCard({
 				</div>
 				<div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-60 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
 					<a
-						href={`#post-${post.id}`}
+						href={`#post-${post.number}`}
 						className="text-ink-weak hover:text-ink-strong px-1 text-meta tabular-nums"
 						aria-label={`第 ${number} 楼的链接`}
 					>

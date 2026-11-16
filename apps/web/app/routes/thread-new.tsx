@@ -30,7 +30,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 	const { category } = orThrow(await forumApi.categoryThreads(request, params.slug))
 	const result = await forumApi.createThread(request, { categoryId: category.id, title, body })
 	if (!result.ok) return data({ error: result.error.message }, { status: result.status })
-	return redirect(`/c/${category.slug}/t/${result.value.id}`)
+	return redirect(`/c/${category.slug}/t/${result.value.ref}`)
 }
 
 export default function ThreadNew({ loaderData, actionData }: Route.ComponentProps) {

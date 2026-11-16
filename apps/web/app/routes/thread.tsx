@@ -1,4 +1,6 @@
 import {
+	Check,
+	Link2,
 	Lock,
 	LockOpen,
 	LogIn,
@@ -16,6 +18,7 @@ import {
 	Form,
 	redirect,
 	useLocation,
+	useNavigate,
 	useNavigation,
 	useRouteLoaderData,
 	useSubmit,
@@ -42,14 +45,25 @@ import { ThreadSidebarSlots, useHasFilledSlot } from '../slots/slots'
 export const handle = defineStage({ layer: 'detail' })
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
-	return [{ title: `${loaderData ? `${loaderData.thread.title} · ` : ''}Pluxum` }]
+	if (!loaderData) return [{ title: 'Pluxum' }]
+	return [
+		{ title: `${loaderData.thread.title} · Pluxum` },
+		{
+			tagName: 'link',
+			rel: 'canonical',
+			href: `/c/${loaderData.category.slug}/t/${loaderData.thread.ref}`,
+		},
+	]
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
 	const detail = orThrow(await forumApi.thread(request, params.id, pageParam(request)))
-	if (params.slug !== undefined && detail.category.slug !== params.slug) {
-		const { search } = new URL(request.url)
-		throw redirect(`/c/${detail.category.slug}/t/${detail.thread.id}${search}`)
+	const wrongCategory = params.slug !== undefined && detail.category.slug !== params.slug
+	const wrongRef = params.id !== detail.thread.ref
+	if (wrongCategory || wrongRef) {
+		const url = new URL(request.url)
+		const base = params.slug !== undefined ? `/c/${detail.category.slug}` : listPathOf(url.pathname)
+		throw redirect(`${base}/t/${detail.thread.ref}${url.search}`)
 	}
 	return detail
 }
@@ -80,7 +94,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 			const url = new URL(request.url)
 			if (last > 1) url.searchParams.set('page', String(last))
 			else url.searchParams.delete('page')
-			return redirect(`${url.pathname}${url.search}#post-${result.value.id}`)
+			return redirect(`${url.pathname}${url.search}#post-${result.value.number}`)
 		}
 		case 'edit-post': {
 			const result = await forumApi.updatePost(request, postId, textField(form, 'body'))
@@ -134,7 +148,8 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const renaming = renamingFrom === thread.title
 	const setRenaming = (open: boolean) => setRenamingFrom(open ? thread.title : undefined)
 	const [confirmingDelete, setConfirmingDelete] = useState(false)
-	const firstNumber = (posts.page - 1) * posts.pageSize + 1
+	const [copiedFor, setCopiedFor] = useState<string | undefined>(undefined)
+	const copied = copiedFor === thread.ref
 	// Failures of thread-level actions show above the posts; post-level ones show on the post.
 	const threadError =
 		actionData !== undefined &&
@@ -143,6 +158,21 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 		actionData.intent !== 'reply'
 			? actionData.error
 			: undefined
+
+	// Links from before floor numbers point at `#post-<post id>`; move them to the floor anchor.
+	const replaceUrl = useNavigate()
+	useEffect(() => {
+		const legacyId = /^#post-([0-9a-f-]{36})$/i.exec(location.hash)?.[1]
+		if (legacyId === undefined) return
+		const target = posts.items.find((post) => post.id === legacyId)
+		if (target === undefined) return
+		void Promise.resolve(
+			replaceUrl(`${location.pathname}${location.search}#post-${target.number}`, {
+				replace: true,
+				preventScrollReset: true,
+			}),
+		).then(() => document.getElementById(`post-${target.number}`)?.scrollIntoView())
+	}, [location.hash, location.pathname, location.search, posts.items, replaceUrl])
 
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
@@ -253,6 +283,22 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 					}
 					actions={
 						<>
+							<Button
+								tone="ghost"
+								size="sm"
+								aria-label={copied ? '已复制短链' : '复制主题短链'}
+								className="button--icon-only"
+								onPress={() => {
+									const url = `${window.location.origin}/t/${thread.ref}`
+									void navigator.clipboard?.writeText(url)
+									setCopiedFor(thread.ref)
+									window.setTimeout(() => {
+										setCopiedFor((current) => (current === thread.ref ? undefined : current))
+									}, 2000)
+								}}
+							>
+								{copied ? <Check aria-hidden /> : <Link2 aria-hidden />}
+							</Button>
 							{menu.length > 0 && <ActionMenu label="主题操作" items={menu} size="md" />}
 							<ButtonLink
 								to={closeHref}
@@ -277,7 +323,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 						<PostCard
 							key={post.id}
 							post={post}
-							number={firstNumber + index}
+							number={post.number}
 							byThreadAuthor={post.author.id === thread.author.id}
 							// Posts are oldest first and the opening post cannot be deleted on its own.
 							opening={posts.page === 1 && index === 0}

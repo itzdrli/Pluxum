@@ -60,7 +60,7 @@ describe('moderation route, slots & API helpers', () => {
 
 	it('resolves report target jump links for post and thread reports', () => {
 		expect(resolveReportTargetHref({ threadId: 'thread-1', postId: 'post-9' })).toBe(
-			'/t/thread-1#post-post-9',
+			'/t/thread-1/post-9',
 		)
 		expect(resolveReportTargetHref({ threadId: 'thread-1', postId: null })).toBe('/t/thread-1')
 	})

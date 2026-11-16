@@ -17,7 +17,7 @@ export default [
 			route('t/:id', 'routes/thread.tsx', { id: 'routes/user-thread' }),
 		]),
 	]),
-	route('t/:id', 'routes/thread-shortlink.ts'),
+	route('t/:id/:floor?', 'routes/thread-shortlink.ts'),
 	route('notifications', 'routes/notifications.tsx'),
 	route('moderation', 'routes/moderation.tsx'),
 	// Write actions of extension plugins, called by their slot components.

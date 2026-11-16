@@ -324,45 +324,61 @@ describe('ForumApiPlugin', () => {
 			title: 'Hello',
 			body: 'First',
 		})
-		const reply = await api.ok<PostDto>('POST', `/threads/${thread.id}/posts`, { body: 'Second' })
-		expect(reply).toMatchObject({ threadId: thread.id, body: 'Second' })
+		expect(thread).toMatchObject({
+			number: 1001,
+			slug: 'hello',
+			ref: '1001-hello',
+		})
+		const reply = await api.ok<PostDto>('POST', `/threads/${thread.ref}/posts`, { body: 'Second' })
+		expect(reply).toMatchObject({ threadId: thread.id, number: 2, body: 'Second' })
 
 		const listing = await api.ok<CategoryThreadsDto>('GET', '/categories/general/threads')
 		expect(listing.category).toMatchObject({ threadCount: 1, postCount: 2 })
 		expect(listing.threads.items).toHaveLength(1)
 		expect(listing.can.createThread).toBe(true)
 
-		const firstPage = await api.ok<ThreadDetailDto>('GET', `/threads/${thread.id}?pageSize=1`)
+		const firstPage = await api.ok<ThreadDetailDto>('GET', `/threads/${thread.ref}?pageSize=1`)
 		expect(firstPage.posts).toMatchObject({ page: 1, pageSize: 1, total: 2 })
 		expect(firstPage.posts.items.map((post) => post.body)).toEqual(['First'])
 		const secondPage = await api.ok<ThreadDetailDto>(
 			'GET',
-			`/threads/${thread.id}?page=2&pageSize=1`,
+			`/threads/${thread.number}?page=2&pageSize=1`,
 		)
 		expect(secondPage.posts.items.map((post) => post.body)).toEqual(['Second'])
+		expect(await api.ok('GET', `/posts/${reply.id}/location`)).toEqual({
+			threadRef: thread.ref,
+			postNumber: 2,
+		})
 
 		expect(await api.ok<PostDto>('PATCH', `/posts/${reply.id}`, { body: 'Edited' })).toMatchObject({
 			body: 'Edited',
 		})
 		expect(
-			await api.ok<ThreadDto>('PATCH', `/threads/${thread.id}`, { title: 'Renamed', locked: true }),
-		).toMatchObject({ title: 'Renamed', locked: true })
+			await api.ok<ThreadDto>('PATCH', `/threads/${thread.ref}`, {
+				title: 'Renamed',
+				locked: true,
+			}),
+		).toMatchObject({ title: 'Renamed', slug: 'renamed', ref: '1001-renamed', locked: true })
 		expect(
 			await api.ok<CategoryDto>('PATCH', `/categories/${category.id}`, { name: 'Lounge' }),
 		).toMatchObject({ name: 'Lounge', slug: 'general' })
 
 		const userId = meta.viewer.user!.id
-		expect(await api.ok<UserProfileDto>('GET', `/users/${userId}`)).toMatchObject({
-			user: { id: userId, displayName: 'Dev' },
+		expect(await api.ok<UserProfileDto>('GET', `/users/dev`)).toMatchObject({
+			user: { id: userId, handle: 'dev', displayName: 'Dev' },
 			roles: ['member', 'admin'],
 			threadCount: 1,
 			postCount: 2,
 			can: { edit: true },
 		})
 		expect(
-			await api.ok<UserDto>('PATCH', `/users/${userId}`, { displayName: 'Developer' }),
+			await api.ok<UserDto>('PATCH', `/users/${userId}`, {
+				displayName: 'Developer',
+				handle: 'developer',
+			}),
 		).toEqual({
 			id: userId,
+			handle: 'developer',
 			displayName: 'Developer',
 		})
 

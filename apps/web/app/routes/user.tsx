@@ -1,7 +1,7 @@
-import type { Role } from '@pluxum/domain'
+import { parseThreadRef, type Role } from '@pluxum/domain'
 import { CalendarDays, MessagesSquare, Pencil } from 'lucide-react'
 import { useState } from 'react'
-import { data, Form, useNavigation, useParams, useRouteLoaderData } from 'react-router'
+import { data, Form, redirect, useNavigation, useParams, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/user'
 import { ThreadRow } from '../components/forum/rows'
@@ -44,9 +44,15 @@ export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
 
 export async function loader({ request, params }: Route.LoaderArgs) {
 	const url = new URL(request.url)
-	return orThrow(
-		await forumApi.userProfile(request, params.userId, listPageOf(url, isDetailPath(url.pathname))),
+	const detailOpen = isDetailPath(url.pathname)
+	const profile = orThrow(
+		await forumApi.userProfile(request, params.userId, listPageOf(url, detailOpen)),
 	)
+	if (params.userId !== profile.user.handle) {
+		const suffix = detailOpen && params.id !== undefined ? `/t/${params.id}` : ''
+		throw redirect(`/u/${profile.user.handle}${suffix}${url.search}`)
+	}
+	return profile
 }
 
 export const shouldRevalidate = listShouldRevalidate()
@@ -55,10 +61,24 @@ type ActionFailure = Readonly<{ error: string }>
 
 export async function action({ request, params }: Route.ActionArgs) {
 	const form = await request.formData()
+	const displayName = textField(form, 'displayName')
+	const nextHandle = textField(form, 'handle').trim()
 	const result = await forumApi.updateProfile(request, params.userId, {
-		displayName: textField(form, 'displayName'),
+		displayName,
+		...(nextHandle === '' ? {} : { handle: nextHandle }),
 	})
-	if (result.ok) return null
+	if (result.ok) {
+		if (result.value.handle !== params.userId) {
+			// Keep the thread that was open beside the profile (the form posts to the profile route,
+			// so it says which one) across the move to the new address.
+			const openThread = parseThreadRef(textField(form, 'openThread'))
+				? textField(form, 'openThread')
+				: ''
+			const suffix = openThread === '' ? '' : `/t/${openThread}`
+			return redirect(`/u/${result.value.handle}${suffix}`)
+		}
+		return null
+	}
 	const failure: ActionFailure = { error: result.error.message }
 	return data(failure, { status: result.status })
 }
@@ -66,9 +86,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function UserProfile({ loaderData, actionData }: Route.ComponentProps) {
 	const { user, roles, createdAt, threadCount, postCount, threads, can } = loaderData
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
-	// The name the rename form was opened for. A saved name differs from it, which closes the form.
+	// The profile identity the edit form was opened for. A saved change differs from it, closing it.
+	const profileIdentity = `${user.handle}:${user.displayName}`
 	const [renamingFrom, setRenamingFrom] = useState<string | undefined>(undefined)
-	const renaming = renamingFrom === user.displayName
+	const renaming = renamingFrom === profileIdentity
 	const isSelf = forum?.viewer.user?.id === user.id
 	// Roles are listed weakest first; members are the default and need no tag.
 	const shownRoles = roles.filter((role) => role !== 'member' && role !== 'guest')
@@ -87,7 +108,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 									{user.displayName}
 								</p>
 								<p className="text-ink-weak text-meta tabular-nums">
-									{threadCount} 主题 · {postCount} 回复
+									@{user.handle} · {threadCount} 主题 · {postCount} 回复
 								</p>
 							</div>
 						</header>
@@ -101,7 +122,9 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 								{renaming ? (
 									<RenameUser
 										name={user.displayName}
+										userHandle={user.handle}
 										max={forum?.limits.displayNameMax}
+										handleMax={forum?.limits.handleMax}
 										error={actionData?.error}
 										onCancel={() => setRenamingFrom(undefined)}
 									/>
@@ -111,6 +134,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 											<h1 className="text-ink-strong text-[20px] leading-snug font-bold break-words">
 												{user.displayName}
 											</h1>
+											<span className="text-ink-weak font-mono text-meta">@{user.handle}</span>
 											{shownRoles.map((role) => (
 												<Tag key={role} tone="accent">
 													{ROLE_LABELS[role]}
@@ -130,9 +154,9 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 								)}
 							</div>
 							{can.edit && !renaming && (
-								<Button tone="ghost" size="sm" onPress={() => setRenamingFrom(user.displayName)}>
+								<Button tone="ghost" size="sm" onPress={() => setRenamingFrom(profileIdentity)}>
 									<Pencil aria-hidden />
-									修改昵称
+									编辑资料
 								</Button>
 							)}
 						</Panel>
@@ -173,8 +197,8 @@ function UserThreads({
 						<ThreadRow
 							key={thread.id}
 							thread={thread}
-							href={detail(thread.id)}
-							isActive={thread.id === activeId}
+							href={detail(thread.ref)}
+							isActive={thread.ref === activeId || thread.id === activeId}
 						/>
 					))}
 				</Panel>
@@ -191,34 +215,50 @@ function UserThreads({
 
 function RenameUser({
 	name,
+	userHandle,
 	max,
+	handleMax,
 	error,
 	onCancel,
 }: {
 	name: string
+	userHandle: string
 	max: number | undefined
+	handleMax: number | undefined
 	error: string | undefined
 	onCancel: () => void
 }) {
 	const submitting = useNavigation().state === 'submitting'
+	const openThread = useParams().id
 	return (
-		<Form method="post" className="flex flex-col gap-2">
+		<Form method="post" className="flex flex-col gap-3">
+			{openThread !== undefined && <input type="hidden" name="openThread" value={openThread} />}
 			<FormError message={error} />
-			<TextInputField
-				name="displayName"
-				label="昵称"
-				hint="只在本论坛显示，不会改动登录账号的名字。"
-				required
-				maxLength={max}
-				defaultValue={name}
-				autoFocus
-			/>
+			<div className="grid gap-3 sm:grid-cols-2">
+				<TextInputField
+					name="displayName"
+					label="昵称"
+					hint="只在本论坛显示，不会改动登录账号的名字。"
+					required
+					maxLength={max}
+					defaultValue={name}
+					autoFocus
+				/>
+				<TextInputField
+					name="handle"
+					label="用户名"
+					hint="用于个人主页地址 /u/用户名（小写字母开头）。"
+					required
+					maxLength={handleMax}
+					defaultValue={userHandle}
+				/>
+			</div>
 			<div className="flex justify-end gap-2">
 				<Button tone="ghost" size="sm" onPress={onCancel}>
 					取消
 				</Button>
 				<Button tone="primary" size="sm" type="submit" isPending={submitting}>
-					保存昵称
+					保存资料
 				</Button>
 			</div>
 		</Form>

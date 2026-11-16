@@ -1,12 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import {
 	defaultRolePolicy,
+	deriveHandleBase,
 	evaluatePolicies,
+	floorPageOf,
+	formatThreadRef,
 	GUEST,
 	isEntityId,
 	LIMITS,
 	normalizePage,
+	parseFloorNumber,
+	parseThreadRef,
+	parseUserRef,
 	slugify,
+	slugifyAsciiTitle,
+	validateHandle,
 	validatePostBody,
 	validateSearchQuery,
 	validateSlug,
@@ -118,6 +126,59 @@ describe('content rules', () => {
 		expect(isEntityId('3f2b8c1e-9d4a-4c1b-8e2f-0a1b2c3d4e5f')).toBe(true)
 		expect(isEntityId('42')).toBe(false)
 		expect(isEntityId(undefined)).toBe(false)
+	})
+
+	it('derives ASCII thread slugs and formats thread refs without CJK percent-encoding', () => {
+		expect(slugifyAsciiTitle('Pluxel 1.5 的 HMR 怎么配？(Vite+)')).toBe('pluxel-1-5-hmr-vite')
+		expect(slugifyAsciiTitle('综合讨论与水帖')).toBe('')
+		expect(slugifyAsciiTitle('one two three four five six seven eight')).toBe(
+			'one-two-three-four-five-six',
+		)
+		expect(formatThreadRef(1001, '')).toBe('1001')
+		expect(formatThreadRef(1001, 'pluxel-hmr')).toBe('1001-pluxel-hmr')
+	})
+
+	it('parses thread refs and distinguishes all-digit-prefix UUIDs from thread numbers', () => {
+		expect(parseThreadRef('1001')).toEqual({ kind: 'number', number: 1001, slug: '' })
+		expect(parseThreadRef('1001-pluxel-hmr')).toEqual({
+			kind: 'number',
+			number: 1001,
+			slug: 'pluxel-hmr',
+		})
+		// A UUID whose first 8 hex chars are decimal digits must stay a UUID, not thread #12345678.
+		expect(parseThreadRef('12345678-e29b-41d4-a716-446655440000')).toEqual({
+			kind: 'id',
+			id: '12345678-e29b-41d4-a716-446655440000',
+		})
+		expect(parseThreadRef('0')).toBeNull()
+		expect(parseThreadRef('1001-')).toBeNull()
+		expect(parseThreadRef('not-a-thread')).toBeNull()
+	})
+
+	it('parses floor numbers and computes their 1-based page', () => {
+		expect(parseFloorNumber('1')).toBe(1)
+		expect(parseFloorNumber('25')).toBe(25)
+		expect(parseFloorNumber('0')).toBeNull()
+		expect(parseFloorNumber('abc')).toBeNull()
+		expect(floorPageOf(1, 20)).toBe(1)
+		expect(floorPageOf(20, 20)).toBe(1)
+		expect(floorPageOf(21, 20)).toBe(2)
+	})
+
+	it('validates and derives user handles and parses user refs', () => {
+		expect(validateHandle('Ada_Lovelace')).toEqual({ ok: true, value: 'ada_lovelace' })
+		expect(validateHandle('u1')).toEqual({ ok: true, value: 'u1' })
+		expect(validateHandle('1ada').ok).toBe(false)
+		expect(validateHandle('a').ok).toBe(false)
+		expect(validateHandle('ada-').ok).toBe(false)
+		expect(deriveHandleBase('Ada Lovelace')).toBe('ada-lovelace')
+		expect(deriveHandleBase('12345')).toBe('u-12345')
+		expect(deriveHandleBase('纯中文昵称')).toBe('')
+		expect(parseUserRef('ada-lovelace')).toEqual({ kind: 'handle', handle: 'ada-lovelace' })
+		expect(parseUserRef('3f2b8c1e-9d4a-4c1b-8e2f-0a1b2c3d4e5f')).toEqual({
+			kind: 'id',
+			id: '3f2b8c1e-9d4a-4c1b-8e2f-0a1b2c3d4e5f',
+		})
 	})
 
 	it('clamps paging input', () => {

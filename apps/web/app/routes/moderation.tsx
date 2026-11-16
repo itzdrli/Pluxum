@@ -103,9 +103,8 @@ export function buildModerationHref(
 export function resolveReportTargetHref(
 	report: Pick<ModerationReportDto, 'threadId' | 'postId'>,
 ): string {
-	return report.postId !== null
-		? `/t/${report.threadId}#post-${report.postId}`
-		: `/t/${report.threadId}`
+	// The shortlink resolves a post id to its floor and page.
+	return report.postId !== null ? `/t/${report.threadId}/${report.postId}` : `/t/${report.threadId}`
 }
 
 /** Maps a moderation audit log action code to a localized badge label and tone. */
@@ -473,7 +472,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 					<span className="text-ink-weak flex items-center gap-1.5 text-meta">
 						<span>举报人：</span>
 						<StageLink
-							to={`/u/${report.reporter.id}`}
+							to={`/u/${report.reporter.handle}`}
 							className="text-ink-strong inline-flex items-center gap-1 font-bold hover:underline"
 						>
 							<UserAvatar user={report.reporter} size="sm" />
@@ -484,7 +483,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 						<span className="text-ink-weak flex items-center gap-1.5 text-meta">
 							<span>· 被举报作者：</span>
 							<StageLink
-								to={`/u/${report.targetAuthor.id}`}
+								to={`/u/${report.targetAuthor.handle}`}
 								className="text-ink-strong font-bold hover:underline"
 							>
 								{report.targetAuthor.displayName}
@@ -515,7 +514,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 						由{' '}
 						{report.resolvedBy !== null ? (
 							<StageLink
-								to={`/u/${report.resolvedBy.id}`}
+								to={`/u/${report.resolvedBy.handle}`}
 								className="text-ink-strong font-bold hover:underline"
 							>
 								{report.resolvedBy.displayName}
@@ -604,7 +603,7 @@ function LogRow({ entry }: { entry: ModerationLogDto }) {
 				<div className="flex flex-wrap items-center gap-2">
 					<Tag tone={actionMeta.tone}>{actionMeta.label}</Tag>
 					<StageLink
-						to={`/u/${entry.actor.id}`}
+						to={`/u/${entry.actor.handle}`}
 						className="text-ink-strong inline-flex items-center gap-1.5 font-bold hover:underline"
 					>
 						<UserAvatar user={entry.actor} size="sm" />
@@ -614,7 +613,7 @@ function LogRow({ entry }: { entry: ModerationLogDto }) {
 						<span className="text-ink-weak text-meta">
 							目标用户：
 							<StageLink
-								to={`/u/${entry.targetUser.id}`}
+								to={`/u/${entry.targetUser.handle}`}
 								className="text-ink-strong font-bold hover:underline"
 							>
 								{entry.targetUser.displayName}

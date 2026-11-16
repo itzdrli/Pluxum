@@ -55,7 +55,7 @@ describe('notifications route, slot & API helpers', () => {
 				threadId: 'thread-1',
 				postId: '2',
 			}),
-		).toBe('/t/thread-1#post-2')
+		).toBe('/t/thread-1/2')
 		expect(
 			resolveNotificationHref({
 				path: 'https://evil.example/phish',

@@ -178,10 +178,10 @@ describe('ForumNotificationsPlugin', () => {
 			kind: 'thread.reply',
 			title: 'Bob 回复了你的主题《Notifications Thread》',
 			body: 'Here is a helpful reply!',
-			path: `/t/${thread.id}#post-${reply.id}`,
+			path: `/t/${thread.ref}/${reply.number}`,
 			threadId: thread.id,
 			postId: reply.id,
-			actor: { id: bob.id, displayName: 'Bob' },
+			actor: { id: bob.id, handle: bob.handle, displayName: 'Bob' },
 			read: false,
 			readAt: null,
 		})
@@ -191,8 +191,8 @@ describe('ForumNotificationsPlugin', () => {
 			id: reply.id,
 			recipientId: alice.id,
 			kind: 'thread.reply',
-			path: `/t/${thread.id}#post-${reply.id}`,
-			actor: { id: bob.id, displayName: 'Bob' },
+			path: `/t/${thread.ref}/${reply.number}`,
+			actor: { id: bob.id, handle: bob.handle, displayName: 'Bob' },
 		})
 	})
 
@@ -207,7 +207,7 @@ describe('ForumNotificationsPlugin', () => {
 			title: '欢迎来到 Pluxel 论坛',
 			body: '祝你交流愉快',
 			path: '/',
-			actor: { id: bob.id, displayName: 'Bob' },
+			actor: { id: bob.id, handle: bob.handle, displayName: 'Bob' },
 			createdAt: '2026-11-15T10:00:00.000Z',
 		}
 		const second: ForumNotification = {
@@ -249,7 +249,11 @@ describe('ForumNotificationsPlugin', () => {
 			unreadCount: 3,
 		})
 		expect(secondPage.items.map((item) => item.id)).toEqual([custom.id])
-		expect(secondPage.items[0]?.actor).toEqual({ id: bob.id, displayName: 'Bob' })
+		expect(secondPage.items[0]?.actor).toEqual({
+			id: bob.id,
+			handle: bob.handle,
+			displayName: 'Bob',
+		})
 
 		// Mark `second` read and check `unreadOnly=true` filtering.
 		expect((await asAlice.post(MARK_READ, { id: second.id })).status).toBe(200)

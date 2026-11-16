@@ -29,7 +29,7 @@ export function isForumPath(value: string): boolean {
 
 const forumPath = z
 	.string()
-	.describe('A path on this forum starting with "/", e.g. "/t/<thread id>" or "/c/<category slug>"')
+	.describe('A path on this forum starting with "/", e.g. "/t/1001" or "/c/<category slug>"')
 
 /** Renders `href` as a client-side link when it is a forum path, as plain text otherwise. */
 function SafeLink({
@@ -143,7 +143,9 @@ const PostQuote = defineComponent({
 	name: 'PostQuote',
 	description: 'Quotes part of a specific post, with its author and a link to it.',
 	props: z.object({
-		href: forumPath.describe('Path to the post, e.g. "/t/<thread id>#post-<post id>"'),
+		href: forumPath.describe(
+			'Path to the post, e.g. "/t/1001/5" (thread number, then floor number)',
+		),
 		author: z.string(),
 		excerpt: z.string().describe('The quoted words, verbatim'),
 	}),

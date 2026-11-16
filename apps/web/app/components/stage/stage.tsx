@@ -23,7 +23,7 @@ export function useStage(): ResolvedStage {
 export function useStageLinks() {
 	const stage = useStage()
 	const detail = useCallback(
-		(threadId: string, postId?: string) => stageDetailHref(stage, threadId, postId),
+		(threadRef: string, postRef?: string | number) => stageDetailHref(stage, threadRef, postRef),
 		[stage],
 	)
 	return { stage, detail }

@@ -29,6 +29,8 @@ export type OidcIdentity = Readonly<{
 	sid: string | undefined
 	/** Best available human-readable name; may be empty. */
 	name: string
+	/** Optional ASCII username hint from `preferred_username` or `email`. */
+	preferredUsername?: string
 }>
 
 export type LogoutTokenClaims = Readonly<{ subject: string | undefined; sid: string | undefined }>
@@ -54,6 +56,10 @@ function nameOf(claims: Record<string, unknown>): string {
 		text(claims.email)?.split('@')[0] ??
 		''
 	)
+}
+
+function usernameOf(claims: Record<string, unknown>): string | undefined {
+	return text(claims.preferred_username)?.split('@')[0] ?? text(claims.email)?.split('@')[0]
 }
 
 function isJwks(value: unknown): value is JSONWebKeySet {
@@ -145,7 +151,13 @@ export class OidcClient {
 		// (Zitadel does unless the application opts in).
 		const name =
 			nameOf(claims) || (await this.userinfoName(subject, text(body.access_token)).catch(() => ''))
-		return { subject, sid: text(claims.sid), name }
+		const preferredUsername = usernameOf(claims)
+		return {
+			subject,
+			sid: text(claims.sid),
+			name,
+			...(preferredUsername === undefined ? {} : { preferredUsername }),
+		}
 	}
 
 	/** The account's name from the UserInfo endpoint; empty when it cannot be had. */

@@ -50,6 +50,7 @@ export type PostAfterWriteEvent =
 			principal: Principal
 			categoryId: string
 			threadId: string
+			threadRef: string
 			postId: string
 			authorId: string
 			title: string
@@ -61,6 +62,7 @@ export type PostAfterWriteEvent =
 			principal: Principal
 			categoryId: string
 			threadId: string
+			threadRef: string
 			postId: string
 			authorId: string
 			title: string
@@ -81,9 +83,11 @@ export type PostAfterWriteEvent =
 			principal: Principal
 			categoryId: string
 			threadId: string
+			threadRef: string
 			threadAuthorId: string
 			threadTitle: string
 			postId: string
+			postNumber: number
 			authorId: string
 			body: string
 			createdAt: string
@@ -93,8 +97,10 @@ export type PostAfterWriteEvent =
 			principal: Principal
 			categoryId: string
 			threadId: string
+			threadRef: string
 			threadTitle: string
 			postId: string
+			postNumber: number
 			authorId: string
 			opening: boolean
 			body: string

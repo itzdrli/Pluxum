@@ -25,6 +25,7 @@ const BODY_EXCERPT_MAX = 160
 
 export const NotificationActor = Type.Object({
 	id: Type.String(),
+	handle: Type.String(),
 	displayName: Type.String(),
 	ext: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
 })
@@ -234,7 +235,7 @@ export class ForumNotificationsPlugin extends BasePlugin {
 		const actorResult = await this.core.getUser(event.authorId)
 		const actor: UserDto = actorResult.isOk()
 			? actorResult.value
-			: { id: event.authorId, displayName: '论坛成员' }
+			: { id: event.authorId, handle: event.authorId, displayName: '论坛成员' }
 		const excerpt = summarizeReplyBody(event.body)
 		const notification: ForumNotification = {
 			id: isEntityId(event.postId) ? event.postId : crypto.randomUUID(),
@@ -242,7 +243,7 @@ export class ForumNotificationsPlugin extends BasePlugin {
 			kind: 'thread.reply',
 			title: `${actor.displayName} 回复了你的主题《${event.threadTitle}》`,
 			...(excerpt === undefined ? {} : { body: excerpt }),
-			path: `/t/${event.threadId}#post-${event.postId}`,
+			path: `/t/${event.threadRef}/${event.postNumber}`,
 			threadId: event.threadId,
 			postId: event.postId,
 			actor,
@@ -297,7 +298,9 @@ export class ForumNotificationsPlugin extends BasePlugin {
 				const resolved = await this.core.getUser(actorId, principal)
 				actorsById.set(
 					actorId,
-					resolved.isOk() ? resolved.value : { id: actorId, displayName: '未知用户' },
+					resolved.isOk()
+						? resolved.value
+						: { id: actorId, handle: actorId, displayName: '未知用户' },
 				)
 			}),
 		)
@@ -314,7 +317,11 @@ export class ForumNotificationsPlugin extends BasePlugin {
 			actor:
 				row.actorId === null
 					? null
-					: (actorsById.get(row.actorId) ?? { id: row.actorId, displayName: '未知用户' }),
+					: (actorsById.get(row.actorId) ?? {
+							id: row.actorId,
+							handle: row.actorId,
+							displayName: '未知用户',
+						}),
 			read: row.readAt !== null,
 			readAt: row.readAt === null ? null : row.readAt.toISOString(),
 			createdAt: row.createdAt.toISOString(),

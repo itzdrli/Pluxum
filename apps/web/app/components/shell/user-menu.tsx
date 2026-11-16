@@ -82,7 +82,7 @@ function AccountMenu({
 					<Dropdown.Menu
 						aria-label="账号"
 						onAction={(key) => {
-							if (key === 'profile') void navigate(`/u/${user.id}`)
+							if (key === 'profile') void navigate(`/u/${user.handle}`)
 							if (key === 'moderation') void navigate('/moderation')
 							if (key === 'logout') logout.current?.requestSubmit()
 							if (key === 'logout-all') logoutAll.current?.requestSubmit()
