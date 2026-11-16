@@ -53,101 +53,93 @@ function FooterAnchor({
 
 /**
  * Under every page that scrolls. Its content is Forum Core's site and footer config plus the links
- * running plugins add (both in `/meta`): brand and tagline, optional link columns, then a bottom
- * row with notes, theme swatches and icon links.
+ * running plugins add (both in `/meta`). Top: the brand with its blurb on the left, link columns
+ * on the right (a built-in "站内" column first, then the configured ones). Bottom bar: copyright
+ * and notes, then theme swatches and icon links.
  */
 export function SiteFooter() {
 	const root = useRouteLoaderData<typeof rootLoader>('root')
-	const { name, tagline } = siteOf(root)
+	const { name, tagline, description } = siteOf(root)
 	const { groups, icons, notes } = footerOf(root)
-	const brand = (
-		<div className="flex min-w-0 items-center gap-2.5">
-			<LogoMark className="size-5 shrink-0" />
-			<span className="text-ink-strong font-bold">{name}</span>
-			{tagline !== '' && <span className="text-ink-weak text-meta">{tagline}</span>}
-		</div>
+	const searchAvailable = root?.meta?.search.available === true
+	const siteLinks: FooterLink[] = [
+		{ label: '版块', href: '/' },
+		...(searchAvailable ? [{ label: '搜索', href: '/search' }] : []),
+	]
+	const columns = [{ title: '站内', links: siteLinks }, ...groups]
+	const blurb = [tagline, description].filter(
+		(text, i, all) => text !== '' && all.indexOf(text) === i,
 	)
-	const tools = (
-		<div className="flex items-center gap-4">
-			{/* Phones switch theme from the user menu; the footer stays quiet. */}
-			<div className="hidden md:block">
-				<ThemeSwatches />
-			</div>
-			{icons.length > 0 && (
-				<ul className="flex items-center gap-1">
-					{icons.map((link) => {
-						const Icon = FOOTER_ICONS[link.icon]
-						return (
-							<li key={link.href}>
-								<FooterAnchor
-									link={link}
-									aria-label={link.label}
-									title={link.label}
-									className="text-ink-weak hover:bg-hover hover:text-ink-strong size-control flex items-center justify-center rounded-[2px]"
-								>
-									<Icon size={16} />
-								</FooterAnchor>
-							</li>
-						)
-					})}
-				</ul>
-			)}
-		</div>
-	)
-	const noteLine =
-		notes.length > 0 ? (
-			<p className="text-ink-weak flex flex-wrap gap-x-3 gap-y-1 text-meta">
-				{notes.map((note) => (
-					<span key={note}>{note}</span>
-				))}
-			</p>
-		) : null
 
 	return (
 		<footer className="border-line bg-panel border-t">
-			<div className="mx-auto w-full max-w-[1760px] px-4 py-5 lg:px-6">
-				{groups.length === 0 ? (
-					// Nothing but the brand and the tools: one compact row.
-					<div className="flex flex-col gap-3">
-						<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-							{brand}
-							{tools}
+			<div className="mx-auto flex w-full max-w-[1760px] flex-col gap-8 px-4 py-8 lg:px-6">
+				<div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between md:gap-12">
+					<div className="flex max-w-sm min-w-0 flex-col gap-3">
+						<div className="flex items-center gap-2.5">
+							<LogoMark className="size-6 shrink-0" />
+							<span className="text-ink-strong text-title font-bold">{name}</span>
 						</div>
-						{noteLine}
+						{blurb.length > 0 && (
+							<p className="text-ink-weak text-ui leading-relaxed">{blurb.join(' · ')}</p>
+						)}
 					</div>
-				) : (
-					<div className="flex flex-col gap-6">
-						<div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-							{brand}
-							<nav
-								aria-label="页脚链接"
-								className="grid grid-cols-2 gap-x-10 gap-y-6 sm:grid-cols-3 md:flex"
-							>
-								{groups.map((group) => (
-									<div key={group.title} className="flex min-w-24 flex-col gap-2">
-										<h2 className="section-label">{group.title}</h2>
-										<ul className="flex flex-col gap-1.5">
-											{group.links.map((link) => (
-												<li key={`${link.label} ${link.href}`}>
-													<FooterAnchor
-														link={link}
-														className="text-ink hover:text-ink-strong text-ui hover:underline"
-													>
-														{link.label}
-													</FooterAnchor>
-												</li>
-											))}
-										</ul>
-									</div>
-								))}
-							</nav>
+					<nav
+						aria-label="页脚链接"
+						className="grid grid-cols-2 gap-x-10 gap-y-6 sm:grid-cols-3 md:flex md:gap-x-16"
+					>
+						{columns.map((group) => (
+							<div key={group.title} className="flex min-w-24 flex-col gap-3">
+								<h2 className="section-label">{group.title}</h2>
+								<ul className="flex flex-col gap-2">
+									{group.links.map((link) => (
+										<li key={`${link.label} ${link.href}`}>
+											<FooterAnchor
+												link={link}
+												className="text-ink hover:text-ink-strong text-ui hover:underline"
+											>
+												{link.label}
+											</FooterAnchor>
+										</li>
+									))}
+								</ul>
+							</div>
+						))}
+					</nav>
+				</div>
+				<div className="border-line text-ink-weak text-meta flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t pt-5">
+					<p className="flex flex-wrap items-center gap-x-4 gap-y-1">
+						<span>© {name}</span>
+						{notes.map((note) => (
+							<span key={note}>{note}</span>
+						))}
+					</p>
+					<div className="flex items-center gap-4">
+						{/* Phones switch theme from the user menu; the footer stays quiet. */}
+						<div className="hidden md:block">
+							<ThemeSwatches />
 						</div>
-						<div className="border-line flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-							{noteLine ?? <span />}
-							{tools}
-						</div>
+						{icons.length > 0 && (
+							<ul className="-mr-2 flex items-center gap-1">
+								{icons.map((link) => {
+									const Icon = FOOTER_ICONS[link.icon]
+									return (
+										<li key={link.href}>
+											<FooterAnchor
+												link={link}
+												aria-label={link.label}
+												title={link.label}
+												className="text-ink-weak hover:bg-hover hover:text-ink-strong size-control flex items-center justify-center rounded-[2px]"
+											>
+												<Icon size={16} />
+											</FooterAnchor>
+										</li>
+									)
+								})}
+							</ul>
+						)}
 					</div>
-				)}
+				</div>
 			</div>
 		</footer>
 	)
