@@ -1,12 +1,14 @@
 import { LIMITS, type MetaDto } from '@pluxum/domain'
 import { Search } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { Form, Link, NavLink, useLocation } from 'react-router'
 
 import { StageMotionSync, useStage } from '../stage/stage'
+import { ButtonLink } from '../ui/button'
 import { Notice } from '../ui/display'
 import { ShellSlots } from '../../slots/slots'
 import { LogoMark } from './logo-mark'
-import { ThemePicker } from './theme-picker'
+import { ThemeSwatches } from './theme-picker'
 import { UserMenu } from './user-menu'
 
 // Reasons forum-api appends to `/?login=` when a login could not be completed.
@@ -18,8 +20,10 @@ const LOGIN_ERRORS: Readonly<Record<string, string>> = {
 /** Width of the reading column for standard standalone pages. */
 export const CONTENT_WIDTH = 'mx-auto w-full max-w-[1040px] px-4'
 
+const REPO_URL = 'https://github.com/itzdrli/Pluxum'
+
 function navClass({ isActive }: { isActive: boolean }): string {
-	return `flex h-8 items-center rounded-[2px] px-2.5 ${isActive ? 'bg-selected text-ink-strong' : 'text-ink-weak hover:bg-hover hover:text-ink-strong'}`
+	return `h-control flex items-center rounded-[2px] px-2.5 ${isActive ? 'bg-selected text-ink-strong' : 'text-ink-weak hover:bg-hover hover:text-ink-strong'}`
 }
 
 /** Top bar, page column and footer around every page, error pages included. */
@@ -53,48 +57,38 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 				跳到正文
 			</a>
 			<header className="border-line bg-panel sticky top-0 z-30 shrink-0 border-b [view-transition-name:site-header]">
-				<div className="mx-auto flex h-12 w-full max-w-[1760px] items-center gap-3 px-4 lg:px-6">
-					<Link to="/" viewTransition className="text-ink-strong flex items-center gap-2 font-bold">
+				<div className="h-bar mx-auto flex w-full max-w-[1760px] items-center gap-2 px-4 lg:px-6">
+					<Link
+						to="/"
+						viewTransition
+						aria-label="Pluxum 首页"
+						className="text-ink-strong flex shrink-0 items-center gap-2 font-bold"
+					>
 						<LogoMark className="size-6 shrink-0" />
-						<span className="hidden text-title min-[400px]:inline">Pluxum</span>
+						<span className="text-title max-md:hidden">Pluxum</span>
 					</Link>
-					<nav aria-label="主导航" className="ml-2 flex items-center gap-1">
+					{/* Phones reach the forum through the logo; the one nav entry is for wide screens. */}
+					<nav aria-label="主导航" className="ml-3 flex items-center gap-1 max-md:hidden">
 						<NavLink to="/" viewTransition className={() => navClass({ isActive: inForum })} end>
 							版块
 						</NavLink>
-						{searchAvailable && (
-							<NavLink to="/search" viewTransition className={navClass}>
-								搜索
-							</NavLink>
-						)}
 					</nav>
-					<div className="ml-auto flex items-center gap-1.5">
+					<div className="ml-auto flex items-center gap-1">
 						{searchAvailable && !isSearchPage && (
-							<Form
-								method="get"
-								action="/search"
-								role="search"
-								className="relative hidden items-center md:flex"
-							>
-								<Search
-									aria-hidden
-									size={14}
-									className="text-ink-weak pointer-events-none absolute left-2.5"
-								/>
-								<input
-									key={headerQuery}
-									type="search"
-									name="q"
-									defaultValue={headerQuery}
-									maxLength={LIMITS.searchQueryMax}
-									placeholder="搜索帖子…"
-									aria-label="搜索论坛"
-									className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-7 w-44 rounded-[2px] border pr-2.5 pl-8 text-ui outline-none lg:w-56"
-								/>
-							</Form>
+							<>
+								<HeaderSearch query={headerQuery} />
+								<ButtonLink
+									to="/search"
+									tone="ghost"
+									aria-label="搜索"
+									title="搜索"
+									className="button--icon-only md:hidden"
+								>
+									<Search aria-hidden />
+								</ButtonLink>
+							</>
 						)}
 						<ShellSlots meta={meta} />
-						<ThemePicker />
 						<UserMenu meta={meta} here={here} />
 					</div>
 				</div>
@@ -107,14 +101,89 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 				)}
 				{children}
 			</main>
-			{!isSplitStage && (
-				<footer className="border-line text-ink-weak border-t text-meta">
-					<div className="mx-auto flex h-12 w-full max-w-[1760px] items-center justify-between px-4 lg:px-6">
-						<span>Pluxum</span>
-						<span>万物皆插件</span>
-					</div>
-				</footer>
-			)}
+			{!isSplitStage && <SiteFooter />}
 		</div>
+	)
+}
+
+/** The header's search box on wide screens; `/` focuses it from anywhere outside a field. */
+function HeaderSearch({ query }: { query: string }) {
+	const input = useRef<HTMLInputElement>(null)
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key !== '/' || event.defaultPrevented || event.metaKey || event.ctrlKey) return
+			const active = document.activeElement
+			if (
+				active instanceof HTMLElement &&
+				(active.tagName === 'INPUT' ||
+					active.tagName === 'TEXTAREA' ||
+					active.tagName === 'SELECT' ||
+					active.isContentEditable)
+			) {
+				return
+			}
+			event.preventDefault()
+			input.current?.focus()
+		}
+		window.addEventListener('keydown', onKeyDown)
+		return () => window.removeEventListener('keydown', onKeyDown)
+	}, [])
+	return (
+		<Form
+			method="get"
+			action="/search"
+			role="search"
+			className="relative mr-1 flex items-center max-md:hidden"
+		>
+			<Search
+				aria-hidden
+				size={14}
+				className="text-ink-weak pointer-events-none absolute left-2.5"
+			/>
+			<input
+				ref={input}
+				key={query}
+				type="search"
+				name="q"
+				defaultValue={query}
+				maxLength={LIMITS.searchQueryMax}
+				placeholder="搜索"
+				aria-label="搜索论坛"
+				aria-keyshortcuts="/"
+				className="peer border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control w-48 rounded-[2px] border pr-8 pl-8 text-ui outline-none lg:w-64"
+			/>
+			<kbd
+				aria-hidden
+				className="border-line text-ink-weak pointer-events-none absolute right-2 inline-flex h-5 min-w-5 items-center justify-center rounded-[2px] border px-1 font-mono text-micro peer-focus:hidden"
+			>
+				/
+			</kbd>
+		</Form>
+	)
+}
+
+/** Under every page that scrolls: the brand, the theme swatches and where the code lives. */
+function SiteFooter() {
+	return (
+		<footer className="border-line bg-panel border-t">
+			<div className="mx-auto flex w-full max-w-[1760px] flex-wrap items-center justify-between gap-x-6 gap-y-4 px-4 py-5 lg:px-6">
+				<div className="flex min-w-0 items-center gap-2.5">
+					<LogoMark className="size-5 shrink-0" />
+					<span className="text-ink-strong font-bold">Pluxum</span>
+					<span className="text-ink-weak text-meta">万物皆插件 · 基于 Pluxel</span>
+				</div>
+				<div className="flex items-center gap-5">
+					<ThemeSwatches />
+					<a
+						href={REPO_URL}
+						target="_blank"
+						rel="noreferrer"
+						className="text-ink-weak hover:text-ink-strong text-meta"
+					>
+						GitHub
+					</a>
+				</div>
+			</div>
+		</footer>
 	)
 }

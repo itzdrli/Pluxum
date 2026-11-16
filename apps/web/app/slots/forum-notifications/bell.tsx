@@ -84,14 +84,14 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 				tone="ghost"
 				data-testid="notification-bell"
 				aria-label={label}
-				className={`relative gap-1.5 px-2 ${active ? 'bg-selected text-ink-strong' : 'text-ink-weak hover:text-ink-strong'}`}
+				className={`button--icon-only relative ${active ? 'bg-selected text-ink-strong' : 'text-ink-weak hover:text-ink-strong'}`}
 				{...{ title: label }}
 			>
-				<Bell aria-hidden size={15} />
+				<Bell aria-hidden />
 				{badge !== null && (
 					<span
 						data-testid="notification-unread-badge"
-						className="bg-accent text-page inline-flex h-4 min-w-4 items-center justify-center rounded-[2px] px-1 text-micro leading-none font-bold tabular-nums"
+						className="bg-accent text-page absolute top-0.5 right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-[2px] px-1 text-micro leading-none font-bold tabular-nums"
 					>
 						{badge}
 					</span>

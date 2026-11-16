@@ -1,12 +1,11 @@
 import type { MetaDto, UserDto } from '@pluxum/domain'
 import { Dropdown } from '@heroui/react'
-import { ChevronDown, LogIn, LogOut, MonitorSmartphone, ShieldAlert, UserRound } from 'lucide-react'
 import { useRef } from 'react'
 import { useNavigate } from 'react-router'
 
 import { ButtonAnchor } from '../ui/button'
-import { Tag } from '../ui/display'
 import { UserAvatar } from '../forum/user-avatar'
+import { ThemeSwatches } from './theme-picker'
 
 const ROLE_LABELS = { guest: '游客', member: '成员', moderator: '版主', admin: '管理员' } as const
 
@@ -27,9 +26,7 @@ export function UserMenu({ meta, here }: { meta: MetaDto | null; here: string })
 				data-testid="viewer"
 				href={`/api/forum/auth/login?returnTo=${encodeURIComponent(here)}`}
 				tone="primary"
-				size="sm"
 			>
-				<LogIn aria-hidden />
 				登录
 			</ButtonAnchor>
 		)
@@ -61,23 +58,21 @@ function AccountMenu({
 			<form ref={logout} method="post" action="/api/forum/auth/logout" hidden />
 			<form ref={logoutAll} method="post" action="/api/forum/auth/logout-all" hidden />
 			<Dropdown>
+				{/* Only the avatar: name and role are inside the menu. */}
 				<Dropdown.Trigger
 					data-testid="viewer"
-					className="text-ink hover:bg-hover active:bg-pressed flex h-8 items-center gap-2 rounded-[2px] px-1.5 outline-none data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-[var(--c-accent)]"
+					aria-label={`账号：${name}`}
+					className="hover:bg-hover active:bg-pressed size-control flex items-center justify-center rounded-[2px] outline-none data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-[var(--c-accent)]"
 				>
-					<UserAvatar user={user} size="sm" />
-					<span className="hidden max-w-32 truncate sm:inline">{name}</span>
-					{role !== undefined && role !== 'member' && role !== 'guest' && (
-						<span className="hidden sm:inline-flex">
-							<Tag tone="accent">{ROLE_LABELS[role]}</Tag>
-						</span>
-					)}
-					<ChevronDown aria-hidden size={14} className="text-ink-weak" />
+					<UserAvatar user={user} />
 				</Dropdown.Trigger>
-				<Dropdown.Popover placement="bottom end" className="min-w-48">
-					<div className="border-line border-b px-3 py-2">
-						<p className="text-ink-strong truncate font-bold">{name}</p>
-						{role !== undefined && <p className="text-ink-weak text-meta">{ROLE_LABELS[role]}</p>}
+				<Dropdown.Popover placement="bottom end" className="min-w-52">
+					<div className="border-line flex items-center gap-2.5 border-b px-3 py-2.5">
+						<UserAvatar user={user} />
+						<div className="min-w-0">
+							<p className="text-ink-strong truncate font-bold">{name}</p>
+							{role !== undefined && <p className="text-ink-weak text-meta">{ROLE_LABELS[role]}</p>}
+						</div>
 					</div>
 					<Dropdown.Menu
 						aria-label="账号"
@@ -89,24 +84,24 @@ function AccountMenu({
 						}}
 					>
 						<Dropdown.Item id="profile" textValue="个人资料">
-							<UserRound aria-hidden size={14} />
 							个人资料
 						</Dropdown.Item>
 						{showModeration && (
 							<Dropdown.Item id="moderation" textValue="审核队列">
-								<ShieldAlert aria-hidden size={14} />
 								审核队列
 							</Dropdown.Item>
 						)}
 						<Dropdown.Item id="logout" textValue="退出">
-							<LogOut aria-hidden size={14} />
 							退出
 						</Dropdown.Item>
 						<Dropdown.Item id="logout-all" textValue="退出所有设备">
-							<MonitorSmartphone aria-hidden size={14} />
 							退出所有设备
 						</Dropdown.Item>
 					</Dropdown.Menu>
+					<div className="border-line flex items-center justify-between gap-3 border-t px-3 py-2.5">
+						<span className="text-ink-weak text-meta">主题</span>
+						<ThemeSwatches />
+					</div>
 				</Dropdown.Popover>
 			</Dropdown>
 		</>
