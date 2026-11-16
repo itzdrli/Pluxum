@@ -68,11 +68,11 @@ export function StageMotionSync() {
 }
 
 const LIST_WIDE =
-	'min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-list] lg:overflow-y-auto lg:px-8'
+	'min-w-0 flex-1 px-4 py-4 [view-transition-name:stage-list] lg:overflow-y-auto lg:px-8 lg:py-5'
 const LIST_NARROW =
 	'border-line bg-panel/35 w-[280px] shrink-0 border-r px-3 py-4 [view-transition-name:stage-list-side] max-lg:hidden lg:overflow-y-auto xl:w-[320px] 2xl:w-[380px]'
 const DETAIL =
-	'bg-page min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-detail] lg:overflow-y-auto lg:px-8'
+	'bg-page min-w-0 flex-1 px-4 py-4 [view-transition-name:stage-detail] lg:overflow-y-auto lg:px-8 lg:py-5'
 
 /**
  * The list layer's panes: the list on its own at depth 1, and list + detail (the child route) at
@@ -137,5 +137,10 @@ export function StageSplit({
  * only pages that have a bar reserve the room.
  */
 export function MobileBarSpacer() {
-	return <div aria-hidden className="h-[calc(4.75rem+env(safe-area-inset-bottom))] lg:hidden" />
+	return (
+		<div
+			aria-hidden
+			className="h-[calc(var(--h-control)+2rem+env(safe-area-inset-bottom))] lg:hidden"
+		/>
+	)
 }

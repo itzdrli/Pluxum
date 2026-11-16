@@ -1,19 +1,6 @@
 import type { CategoryDto } from '@pluxum/domain'
 import { buttonVariants } from '@heroui/react'
-import {
-	ArrowDown,
-	ArrowLeft,
-	ArrowUpToLine,
-	Check,
-	ChevronsUpDown,
-	Hash,
-	LayoutGrid,
-	Lock,
-	LogIn,
-	MessageSquarePlus,
-	Plus,
-	Send,
-} from 'lucide-react'
+import { ArrowLeft, Check, ChevronsUpDown, Hash, Lock, PenLine, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Form, useNavigation, useRouteLoaderData } from 'react-router'
 
@@ -21,13 +8,33 @@ import type { loader as forumStageLoader } from '../../routes/forum-stage'
 import { Composer } from '../composer/composer'
 import { MobileBarSpacer, StageLink, useStage } from '../stage/stage'
 import { BottomSheet } from '../ui/bottom-sheet'
-import { Button, ButtonAnchor, ButtonLink, IconButton } from '../ui/button'
+import { Button, ButtonAnchor, ButtonLink } from '../ui/button'
 import { FormError, Notice } from '../ui/display'
 import { ActionMenu, type MenuItem } from '../ui/overlay'
 
-// Every bar shares one view-transition name, so switching bars cross-fades in place.
+// Every bar shares one view-transition name, so switching bars cross-fades in place. Its controls
+// are all `md` (40px on touch screens): one height across the bar, no per-control sizes.
 const BAR_CLASS =
 	'stage-bar border-line bg-panel fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] [view-transition-name:stage-bar] lg:hidden'
+
+/** The bar's back control: an arrow only, its destination named for assistive technology. */
+function BarBack({ to, label }: { to: string; label: string }) {
+	return (
+		<StageLink
+			to={to}
+			prefetch="intent"
+			aria-label={label}
+			title={label}
+			className={buttonVariants({
+				variant: 'ghost',
+				isIconOnly: true,
+				className: 'shrink-0',
+			})}
+		>
+			<ArrowLeft aria-hidden />
+		</StageLink>
+	)
+}
 
 /** Decides whether the mobile floor-jump control scrolls back to top or down to the latest post. */
 export function resolveFloorJumpDirection(scrollY: number): 'top' | 'bottom' {
@@ -53,7 +60,7 @@ export function nextMobileReplySheetOpen({
 	return isOpen
 }
 
-/** Depth 1 (`/c/:slug`) mobile thumb-zone bar with Home link, Category Switcher sheet, and post CTA. */
+/** Depth 1 (`/c/:slug`) mobile thumb-zone bar: back home, category switcher sheet, post CTA. */
 export function MobileCategoryBar({
 	category,
 	canCreateThread,
@@ -81,20 +88,13 @@ export function MobileCategoryBar({
 		<>
 			<MobileBarSpacer />
 			<nav aria-label="版块快捷栏" className={BAR_CLASS}>
-				<StageLink
-					to="/"
-					prefetch="intent"
-					className={buttonVariants({ variant: 'ghost', size: 'sm', className: 'shrink-0' })}
-				>
-					<LayoutGrid aria-hidden />
-					<span>首页</span>
-				</StageLink>
+				<BarBack to="/" label="返回首页" />
 
 				<button
 					type="button"
 					onClick={() => setSwitcherOpen(true)}
-					aria-label="切换版块"
-					className="border-line bg-control text-ink-strong hover:bg-hover active:bg-pressed flex h-10 min-w-0 flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-[2px] border px-2.5 text-ui font-bold"
+					aria-label={`切换版块，当前：${category.name}`}
+					className="border-line bg-control text-ink-strong hover:bg-hover active:bg-pressed h-control flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-[2px] border px-3 text-ui font-bold"
 				>
 					<span className="flex min-w-0 items-center gap-1.5">
 						<Hash aria-hidden size={14} className="text-accent shrink-0" />
@@ -108,7 +108,6 @@ export function MobileCategoryBar({
 						to={`/c/${category.slug}/new`}
 						prefetch="intent"
 						tone="primary"
-						size="sm"
 						className="shrink-0"
 					>
 						<Plus aria-hidden />
@@ -116,8 +115,7 @@ export function MobileCategoryBar({
 					</ButtonLink>
 				) : (
 					loginToPost !== undefined && (
-						<ButtonAnchor href={loginToPost} tone="primary" size="sm" className="shrink-0">
-							<LogIn aria-hidden />
+						<ButtonAnchor href={loginToPost} tone="primary" className="shrink-0">
 							登录
 						</ButtonAnchor>
 					)
@@ -154,7 +152,7 @@ export function MobileCategoryBar({
 										/>
 										<span className="min-w-0 flex-1 truncate">{cat.name}</span>
 										<span className="text-ink-weak shrink-0 text-meta tabular-nums">
-											{cat.threadCount} 主题
+											{cat.threadCount}
 										</span>
 										{isActive && <Check aria-hidden size={14} className="text-accent shrink-0" />}
 									</StageLink>
@@ -170,7 +168,7 @@ export function MobileCategoryBar({
 
 /**
  * Depth 2 mobile thumb-zone bar of a thread, whichever list opened it: back to that list, reply
- * sheet trigger, floor jump, and thread menu.
+ * sheet trigger, and one menu holding the floor jump and the thread's actions.
  */
 export function MobileThreadBar({
 	threadId,
@@ -249,53 +247,45 @@ export function MobileThreadBar({
 		}
 	}
 
+	// Jumping through the floors is an occasional move, so it sits in the menu with the rest.
+	const barMenu: MenuItem[] = [
+		{
+			id: 'floor-jump',
+			label: jumpDirection === 'top' ? '回到顶部' : '跳到最新回复',
+			onAction: handleFloorJump,
+		},
+		...menu,
+	]
+
 	return (
 		<>
 			<MobileBarSpacer />
 			<nav aria-label="主题快捷栏" className={BAR_CLASS}>
-				<StageLink
-					to={stage.listHref ?? '/'}
-					prefetch="intent"
-					className={buttonVariants({ variant: 'ghost', size: 'sm', className: 'shrink-0' })}
-				>
-					<ArrowLeft aria-hidden />
-					<span>{stage.backLabel}</span>
-				</StageLink>
+				<BarBack to={stage.listHref ?? '/'} label={`返回${stage.backLabel}`} />
 
 				{canReply ? (
 					<button
 						type="button"
 						onClick={() => setReplyOpen(true)}
-						className="border-line bg-page text-ink-weak hover:border-ink-weak hover:text-ink flex h-10 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-ui"
+						className="border-line bg-page text-ink-weak hover:border-ink-weak hover:text-ink h-control flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[2px] border px-3 text-ui"
 					>
-						<MessageSquarePlus aria-hidden size={14} className="text-accent shrink-0" />
+						<PenLine aria-hidden size={14} className="shrink-0" />
 						<span className="truncate">写回复…</span>
 					</button>
 				) : locked ? (
-					<span className="text-ink-weak flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 text-meta">
+					<span className="text-ink-weak h-control flex min-w-0 flex-1 items-center justify-center gap-1.5 text-meta">
 						<Lock aria-hidden size={13} className="shrink-0" />
 						<span className="truncate">主题已锁定</span>
 					</span>
 				) : loginHref !== undefined ? (
-					<ButtonAnchor href={loginHref} tone="primary" size="sm" className="min-w-0 flex-1">
-						<LogIn aria-hidden />
+					<ButtonAnchor href={loginHref} tone="primary" className="min-w-0 flex-1">
 						登录后回复
 					</ButtonAnchor>
 				) : (
 					<div className="flex-1" />
 				)}
 
-				<div className="flex shrink-0 items-center gap-2">
-					<IconButton
-						label={jumpDirection === 'top' ? '回到顶部' : '跳到底部'}
-						tone="ghost"
-						size="sm"
-						onPress={handleFloorJump}
-					>
-						{jumpDirection === 'top' ? <ArrowUpToLine aria-hidden /> : <ArrowDown aria-hidden />}
-					</IconButton>
-					{menu.length > 0 && <ActionMenu label="主题操作" items={menu} size="sm" />}
-				</div>
+				<ActionMenu label="主题操作" items={barMenu} size="md" />
 			</nav>
 
 			{canReply && (
@@ -317,11 +307,10 @@ export function MobileThreadBar({
 								deferRich
 							/>
 							<div className="flex justify-end gap-2">
-								<Button tone="ghost" size="sm" onPress={close}>
+								<Button tone="ghost" onPress={close}>
 									取消
 								</Button>
-								<Button type="submit" tone="primary" size="sm" isPending={submitting}>
-									<Send aria-hidden />
+								<Button type="submit" tone="primary" isPending={submitting}>
 									发表回复
 								</Button>
 							</div>

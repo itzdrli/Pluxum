@@ -1,4 +1,4 @@
-import { MessagesSquare, PenSquare } from 'lucide-react'
+import { MessagesSquare, Plus } from 'lucide-react'
 import { useParams, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/category'
@@ -60,7 +60,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 	const action = (compact: boolean) =>
 		can.createThread ? (
 			<ButtonLink to={newThread} prefetch="intent" tone="primary" size={compact ? 'sm' : 'md'}>
-				<PenSquare aria-hidden />
+				<Plus aria-hidden />
 				发布主题
 			</ButtonLink>
 		) : loginToPost !== undefined ? (
@@ -91,13 +91,18 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 						</header>
 					) : (
 						<>
-							<Crumbs items={[{ label: '版块', to: '/' }, { label: category.name }]} />
+							{/* Phones have the way back and the post button in the bottom bar. */}
+							<div className="max-lg:hidden">
+								<Crumbs items={[{ label: '版块', to: '/' }, { label: category.name }]} />
+							</div>
 							<PageHeader
 								title={category.name}
 								description={category.description}
-								actions={action(false)}
+								actions={<div className="max-lg:hidden">{action(false)}</div>}
 							/>
-							<SectionLabel>主题 · {threads.total}</SectionLabel>
+							<div className="max-lg:hidden">
+								<SectionLabel>主题 · {threads.total}</SectionLabel>
+							</div>
 						</>
 					)}
 					{threads.items.length === 0 ? (
@@ -108,7 +113,10 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 							action={threads.total === 0 ? action(detailOpen) : undefined}
 						/>
 					) : (
-						<Panel as="ul" className="divide-line divide-y">
+						<Panel
+							as="ul"
+							className="divide-line divide-y max-lg:-mx-4 max-lg:rounded-none max-lg:border-x-0"
+						>
 							{threads.items.map((thread) => (
 								<ThreadRow
 									key={thread.id}

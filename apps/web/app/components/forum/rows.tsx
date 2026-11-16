@@ -76,7 +76,7 @@ export function ThreadRow({
 }) {
 	return (
 		<li
-			className={`hover:bg-hover relative flex items-start gap-3 border-l-2 px-3 py-2.5 transition-colors @lg/threads:px-4 @lg/threads:py-3 ${
+			className={`hover:bg-hover relative flex items-start gap-3 border-l-2 px-4 py-3 transition-colors ${
 				isActive ? 'border-l-accent bg-selected' : 'border-l-transparent'
 			}`}
 		>
