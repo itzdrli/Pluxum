@@ -348,6 +348,14 @@
 		width: 20px;
 		height: 20px;
 	}
+	/* HeroUI colours `.button:hover` unconditionally; touch browsers (Firefox on Android) leave
+	 * :hover stuck on the last tapped button, so it keeps the hover fill after its menu closes.
+	 * Pressed feedback (`:active`, data-pressed) is untouched. */
+	@media (hover: none) {
+		.button:hover:not([data-hovered='true'], [data-pressed='true'], :active) {
+			background-color: var(--button-bg);
+		}
+	}
 }
 
 @layer utilities {
