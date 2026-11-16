@@ -7,7 +7,7 @@ import { Vault } from '@pluxel/services/vault'
 import * as v from 'valibot'
 import { repairBase64Url } from './base64-repair'
 import { ForumAuthConfig } from './config'
-import { pkceChallenge, randomToken } from './crypto'
+import { matchesSha256, pkceChallenge, randomToken } from './crypto'
 import { OidcClient, OidcRejectedError, OidcUnavailableError } from './oidc'
 import { SessionStore } from './sessions'
 
@@ -46,6 +46,17 @@ export type CompletedLogin = Readonly<{
 	setCookie: string
 }>
 
+export type TestLoginInput = Readonly<{
+	/** Names the account: `[a-z0-9-]{1,24}`; the same name logs into the same account again. */
+	name: string
+	/** Also grant the admin role, to see moderation and admin UI. */
+	admin?: boolean
+}>
+
+/** Subject prefix of accounts made by test login; no provider issues subjects like this. */
+export const TEST_SUBJECT_PREFIX = 'pluxum-test:'
+const TEST_NAME = /^[a-z0-9-]{1,24}$/
+
 export type Logout = Readonly<{
 	/** `Set-Cookie` value that removes the session cookie. */
 	setCookie: string
@@ -79,6 +90,17 @@ export abstract class ForumAuth extends BasePlugin {
 	abstract revokeUserSessions(userId: string): Promise<number>
 	/** Handles an OIDC back-channel logout token; returns how many sessions it ended. */
 	abstract backchannelLogout(logoutToken: string): Promise<AuthResult<number>>
+	/** Whether test login is configured (`testLoginTokenSha256`). */
+	abstract testLoginAvailable(): boolean
+	/**
+	 * Opens a session for a throwaway test account, for checking signed-in UI without the provider.
+	 * `unavailable` unless `testLoginTokenSha256` is configured; `rejected` for a wrong token.
+	 */
+	abstract testLogin(
+		token: string | null,
+		input: TestLoginInput,
+		userAgent: string | null,
+	): Promise<AuthResult<Readonly<{ userId: string; setCookie: string }>>>
 }
 
 const LoginState = v.object({
@@ -308,6 +330,44 @@ export class ForumAuthPlugin extends ForumAuth {
 				this.ctx.logger.error('forum back-channel logout failed', { error })
 			}
 			return fail('unavailable', 'Logout cannot be processed right now')
+		}
+	}
+
+	override testLoginAvailable(): boolean {
+		return this.config.testLoginTokenSha256 !== undefined
+	}
+
+	override async testLogin(
+		token: string | null,
+		input: TestLoginInput,
+		userAgent: string | null,
+	): Promise<AuthResult<Readonly<{ userId: string; setCookie: string }>>> {
+		const expected = this.config.testLoginTokenSha256
+		if (expected === undefined) return fail('unavailable', '测试登录未启用')
+		if (token === null || token.length > 512 || !(await matchesSha256(token, expected))) {
+			return fail('rejected', '测试登录令牌无效')
+		}
+		if (!TEST_NAME.test(input.name)) return fail('rejected', '测试账号名只能用小写字母、数字和 -')
+		try {
+			const user = await this.core.ensureUser({
+				subject: `${TEST_SUBJECT_PREFIX}${input.name}`,
+				displayName: `测试 ${input.name}`,
+				handleHint: `test-${input.name}`,
+			})
+			if (user.isErr()) return fail('rejected', user.error.message)
+			if (input.admin === true) {
+				const granted = await this.core.grantRole(user.value.id, 'admin')
+				if (granted.isErr()) return fail('rejected', granted.error.message)
+			}
+			const id = await this.sessions.create({ userId: user.value.id, sid: undefined, userAgent })
+			this.ctx.logger.warn('test login opened a session', { userId: user.value.id })
+			return Result.ok({
+				userId: user.value.id,
+				setCookie: this.cookie(id, this.config.session.absoluteTtlSeconds),
+			})
+		} catch (error) {
+			this.ctx.logger.error('test login failed', { error })
+			return fail('unavailable', TRY_LATER)
 		}
 	}
 

@@ -86,6 +86,13 @@ function logoutTokenOf(body: unknown): string | null {
 	return typeof body.logout_token === 'string' ? body.logout_token : null
 }
 
+/** `{ name, admin? }` of a test login request. */
+function testLoginInputOf(body: unknown): { name: string; admin: boolean } | null {
+	if (typeof body !== 'object' || body === null || !('name' in body)) return null
+	if (typeof body.name !== 'string') return null
+	return { name: body.name, admin: 'admin' in body && body.admin === true }
+}
+
 /** The value of a core result; a failure becomes the error response every forum route shares. */
 function valueOf<T>(result: ForumResult<T>): T {
 	if (result.isErr()) throw forumFailure(result.error)
@@ -474,6 +481,27 @@ export class ForumApiPlugin extends BasePlugin {
 					const logout = await this.auth.logoutEverywhere(request)
 					if (logout.isErr()) throw authFailure(logout.error)
 					return loggedOut(logout.value)
+				})
+				// Throwaway test accounts for checking signed-in UI; off unless a token hash is configured.
+				// Off reads as 404 so the route does not advertise itself.
+				.post('/auth/test-login', async ({ request, body }) => {
+					if (!this.auth.testLoginAvailable()) {
+						throw new ApiFailure(404, { code: 'not_found', message: '接口不存在' })
+					}
+					const input = testLoginInputOf(body)
+					if (input === null) {
+						throw new ApiFailure(400, { code: 'invalid', message: 'name is required' })
+					}
+					const login = await this.auth.testLogin(
+						request.headers.get('x-test-login-token'),
+						input,
+						request.headers.get('user-agent'),
+					)
+					if (login.isErr()) throw authFailure(login.error)
+					return Response.json(
+						{ userId: login.value.userId },
+						{ headers: { 'cache-control': 'no-store', 'set-cookie': login.value.setCookie } },
+					)
 				})
 				// Called by the identity provider, not by a browser: the signed token is the credential.
 				.post('/auth/backchannel-logout', async ({ body }) => {

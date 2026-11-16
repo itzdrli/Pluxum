@@ -93,6 +93,21 @@ class FakeAuth extends ForumAuth {
 				: Result.err({ code: 'rejected' as const, message: 'Invalid logout token' }),
 		)
 	}
+
+	/** Toggled by a test to play a configured token hash. */
+	static testLoginOn = false
+
+	override testLoginAvailable(): boolean {
+		return FakeAuth.testLoginOn
+	}
+
+	override testLogin(token: string | null, input: { name: string; admin?: boolean }) {
+		return Promise.resolve(
+			token === 'good'
+				? Result.ok({ userId: `test-${input.name}`, setCookie: 'forum_session=abc; Path=/' })
+				: Result.err({ code: 'rejected' as const, message: 'bad token' }),
+		)
+	}
 }
 
 /** An extension with three actions behind the ext ingress, to observe its contract. */
@@ -541,6 +556,37 @@ describe('ForumApiPlugin', () => {
 			)
 		expect((await backchannel('valid')).status).toBe(200)
 		expect((await backchannel('forged')).status).toBe(400)
+	})
+
+	it('serves test login only while it is configured, and only for the right token', async () => {
+		await using host = await createHost()
+		await startAs(host, [])
+		const testLogin = (token: string | null, body: unknown = { name: 'ada' }) => {
+			const headers = new Headers({ 'content-type': 'application/json' })
+			if (token !== null) headers.set('x-test-login-token', token)
+			return host.http.fetch(
+				new Request(new URL('/api/forum/auth/test-login', host.http.origin), {
+					method: 'POST',
+					headers,
+					body: JSON.stringify(body),
+				}),
+			)
+		}
+		try {
+			FakeAuth.testLoginOn = false
+			expect((await testLogin('good')).status).toBe(404)
+
+			FakeAuth.testLoginOn = true
+			const ok = await testLogin('good')
+			expect(ok.status).toBe(200)
+			expect(ok.headers.get('set-cookie')).toContain('forum_session=abc')
+			expect(await ok.json()).toEqual({ userId: 'test-ada' })
+			expect((await testLogin('wrong')).status).toBe(400)
+			expect((await testLogin(null)).status).toBe(400)
+			expect((await testLogin('good', {})).status).toBe(400)
+		} finally {
+			FakeAuth.testLoginOn = false
+		}
 	})
 
 	it('reports how posts are rendered and previews a body for members', async () => {

@@ -24,3 +24,12 @@ export async function sha256Hex(value: string): Promise<string> {
 export async function pkceChallenge(verifier: string): Promise<string> {
 	return base64url(await sha256(verifier))
 }
+
+/** Whether `value` hashes to `expectedHex`, compared in constant time. */
+export async function matchesSha256(value: string, expectedHex: string): Promise<boolean> {
+	const actual = await sha256Hex(value)
+	if (actual.length !== expectedHex.length) return false
+	let diff = 0
+	for (let i = 0; i < actual.length; i++) diff |= actual.charCodeAt(i) ^ expectedHex.charCodeAt(i)
+	return diff === 0
+}

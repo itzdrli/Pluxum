@@ -9,6 +9,7 @@ import { Vault, vault } from '@pluxel/services/vault'
 import { createTestHost } from '@pluxel/test'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { repairBase64Url } from '../src/base64-repair'
+import { sha256Hex } from '../src/crypto'
 import { CLIENT_ID, createMockIssuer, ISSUER, type MockUser } from './mock-issuer'
 
 const ORIGIN = 'https://forum.test'
@@ -135,6 +136,41 @@ describe('ForumAuthPlugin without a session store', () => {
 		expect(auth.allowsOrigin(new Request(`${ORIGIN}/`))).toBe(true)
 	})
 
+	it('keeps test login off without a token hash and refuses a wrong token', async () => {
+		await using host = await createHost()
+		const hash = await sha256Hex('right-token')
+		await host.commit((change) => {
+			change.start(BrokenRedis)
+			change.start(ForumCorePlugin)
+			change.start(ForumAuthPlugin, { initialConfig: configured() })
+		})
+		const off = host.require(ForumAuthPlugin)
+		expect(off.testLoginAvailable()).toBe(false)
+		const disabled = await off.testLogin('right-token', { name: 'ada' }, null)
+		expect(disabled.isErr() && disabled.error.code).toBe('unavailable')
+
+		await using onHost = await createHost()
+		await onHost.commit((change) => {
+			change.start(BrokenRedis)
+			change.start(ForumCorePlugin)
+			change.start(ForumAuthPlugin, {
+				initialConfig: configured({ testLoginTokenSha256: hash }),
+			})
+		})
+		const on = onHost.require(ForumAuthPlugin)
+		expect(on.testLoginAvailable()).toBe(true)
+		const refused = await Promise.all(
+			[null, 'wrong-token', ''].map((token) => on.testLogin(token, { name: 'ada' }, null)),
+		)
+		expect(refused.map((result) => result.isErr() && result.error.code)).toEqual([
+			'rejected',
+			'rejected',
+			'rejected',
+		])
+		const badName = await on.testLogin('right-token', { name: 'Ada Lovelace' }, null)
+		expect(badName.isErr() && badName.error.code).toBe('rejected')
+	})
+
 	it('refuses a plain HTTP public origin in production', async () => {
 		const previous = process.env.NODE_ENV
 		process.env.NODE_ENV = 'production'
@@ -227,6 +263,19 @@ describe.skipIf(!liveUrl)('ForumAuthPlugin with Redis sessions', () => {
 			new RegExp(`^${COOKIE}=; Max-Age=0; `),
 		)
 		expect(await auth.authenticate(withSession(id))).toEqual({ status: 'guest' })
+	})
+
+	it('opens a session for a test account with the right token', async () => {
+		await using host = await createHost()
+		const name = `t${crypto.randomUUID().slice(0, 8)}`
+		const { auth, core } = await start(host, { testLoginTokenSha256: await sha256Hex('tok') })
+		const login = (await auth.testLogin('tok', { name, admin: true }, 'vitest')).unwrap()
+		const authentication = await auth.authenticate(withSession(sessionIdOf(login.setCookie)))
+		expect(authentication).toEqual({ status: 'authenticated', userId: login.userId })
+		expect((await core.principalOf(login.userId)).roles).toEqual(['member', 'admin'])
+		// The same name logs into the same account.
+		const again = (await auth.testLogin('tok', { name }, null)).unwrap()
+		expect(again.userId).toBe(login.userId)
 	})
 
 	it('takes the name from UserInfo when the ID token has none, also for an existing account', async () => {

@@ -71,6 +71,14 @@ export const ForumAuthConfig = v.object({
 		}),
 		{},
 	),
+	/**
+	 * Hex SHA-256 of the token that unlocks test logins (`testLogin`), which open a session for a
+	 * throwaway `pluxum-test:` account without the provider. Unset, test login is off. Only the hash
+	 * is configuration, so reading the config never hands out the token.
+	 */
+	testLoginTokenSha256: v.optional(
+		v.pipe(v.string(), v.regex(/^[0-9a-f]{64}$/, 'testLoginTokenSha256 must be hex SHA-256')),
+	),
 	/** Provider subjects (`sub`) that receive the admin role when they log in. */
 	adminSubjects: v.optional(v.array(v.pipe(v.string(), v.minLength(1), v.maxLength(255))), []),
 })

@@ -64,6 +64,14 @@ class FakeAuth extends ForumAuth {
 	override backchannelLogout(): never {
 		throw new Error('not used')
 	}
+
+	override testLoginAvailable(): boolean {
+		return false
+	}
+
+	override testLogin(): never {
+		throw new Error('not used')
+	}
 }
 
 const bridgedNotifications: ForumNotification[] = []
