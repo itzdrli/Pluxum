@@ -348,6 +348,11 @@
 		width: 20px;
 		height: 20px;
 	}
+	/* A Dropdown.Trigger styled as a button: HeroUI's `.dropdown__trigger` makes it display:block,
+	 * which pins the icon to the left edge instead of centring it like every other button. */
+	.dropdown__trigger.button {
+		display: inline-flex;
+	}
 	/* HeroUI colours `.button:hover` unconditionally; touch browsers (Firefox on Android) leave
 	 * :hover stuck on the last tapped button, so it keeps the hover fill after its menu closes.
 	 * Pressed feedback (`:active`, data-pressed) is untouched. */
