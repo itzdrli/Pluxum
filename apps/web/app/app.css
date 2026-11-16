@@ -614,22 +614,19 @@
 	 * `.post-body` as well, so what is typed looks like the post it becomes.
 	 */
 	.composer {
-		border: 1px solid var(--c-line);
-		border-radius: 2px;
+		border-radius: 4px;
 		background: var(--c-page);
-	}
-	.composer:hover {
-		border-color: var(--c-text-weak);
+		box-shadow: inset 0 0 0 1px transparent;
+		transition: box-shadow 120ms;
 	}
 	.composer:focus-within {
-		border-color: var(--c-accent);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-accent) 70%, transparent);
 	}
 	.composer-toolbar {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 2px 8px;
-		border-bottom: 1px solid var(--c-line);
-		padding: 4px;
+		padding: 6px 8px 0;
 	}
 	.composer-tool-group {
 		display: flex;
@@ -644,17 +641,16 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 6px;
-		border-bottom: 1px solid var(--c-line);
-		padding: 6px;
+		padding: 6px 8px 0;
 	}
 	.composer-editor {
-		min-height: calc(var(--composer-rows, 6) * 1.75em + 16px);
-		padding: 8px 10px;
+		min-height: calc(var(--composer-rows, 6) * 1.75em + 24px);
+		padding: 12px 14px;
 		outline: none;
 	}
 	.composer-placeholder {
 		position: absolute;
-		inset: 8px 10px auto;
+		inset: 12px 14px auto;
 		font-size: var(--fs-reading);
 		line-height: 1.75;
 		color: color-mix(in srgb, var(--c-text-weak) 60%, transparent);

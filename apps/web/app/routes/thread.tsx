@@ -493,8 +493,8 @@ function ReplyArea({
 		)
 	}
 	return (
-		<Panel as="section" className="mt-6 p-4 max-lg:hidden">
-			<h2 className="section-label mb-2">回复</h2>
+		<Panel as="section" className="mt-6 p-5 max-lg:hidden">
+			<h2 className="section-label mb-3">回复</h2>
 			<Form method="post" className="flex flex-col gap-3">
 				<input type="hidden" name="intent" value="reply" />
 				{locked && (

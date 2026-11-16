@@ -186,11 +186,7 @@ export function Panel({
 	className?: string
 	children: React.ReactNode
 }) {
-	return (
-		<Element className={`border-line bg-panel rounded-[2px] border ${className ?? ''}`}>
-			{children}
-		</Element>
-	)
+	return <Element className={`bg-panel rounded-[4px] ${className ?? ''}`}>{children}</Element>
 }
 
 export function SectionLabel({

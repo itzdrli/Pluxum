@@ -97,7 +97,7 @@ const LIST_WIDE =
 const LIST_NARROW =
 	'border-line-soft bg-page w-[280px] shrink-0 border-r px-4 py-5 [view-transition-name:stage-list-side] max-lg:hidden lg:overflow-y-auto xl:w-[320px] 2xl:w-[380px]'
 const DETAIL =
-	'bg-panel min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-detail] lg:overflow-y-auto lg:px-10 lg:py-7'
+	'bg-page min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-detail] lg:overflow-y-auto lg:px-10 lg:py-7'
 
 /**
  * The list layer's panes: the list on its own at depth 1, and list + detail (the child route) at
@@ -156,11 +156,9 @@ export function StageSplit({
 			</section>
 			{detailOpen && (
 				<div ref={detailRef} data-focus={focus} className={`group/detail ${DETAIL}`}>
-					{/* The detail pane is the brightest surface, so the panels on it (posts, the reply box) sit
-					    half a step into it instead of floating above it. */}
-					<div className="[--c-panel:color-mix(in_srgb,var(--c-page)_50%,var(--c-panel))]">
-						<Outlet />
-					</div>
+					{/* Three surfaces: the pane is the page tone, the posts and the reply box are panels raised
+					    on it, and the editor is a well sunk into its panel. */}
+					<Outlet />
 				</div>
 			)}
 		</div>
