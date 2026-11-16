@@ -98,7 +98,7 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 				<span id="avatar-heading">头像</span>
 			</SectionLabel>
 			<Panel className="flex flex-wrap items-center gap-3 px-4 py-3">
-				<p className="text-ink-weak min-w-0 flex-1 basis-48 text-[12px]">
+				<p className="text-ink-weak min-w-0 flex-1 basis-48 text-meta">
 					PNG、JPEG、WebP 或 GIF，会裁成正方形。没有头像时显示昵称首字。
 				</p>
 				<input
@@ -136,7 +136,7 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 					</Button>
 				</div>
 				{error !== null && (
-					<p role="alert" className="text-danger w-full text-[12px]">
+					<p role="alert" className="text-danger w-full text-meta">
 						{error}
 					</p>
 				)}

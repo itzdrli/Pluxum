@@ -40,7 +40,7 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 			{badge !== null && (
 				<span
 					data-testid="notification-unread-badge"
-					className="bg-accent text-page inline-flex h-4 min-w-4 items-center justify-center rounded-[2px] px-1 text-[11px] leading-none font-bold tabular-nums"
+					className="bg-accent text-page inline-flex h-4 min-w-4 items-center justify-center rounded-[2px] px-1 text-micro leading-none font-bold tabular-nums"
 				>
 					{badge}
 				</span>

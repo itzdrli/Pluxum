@@ -79,11 +79,11 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 								<StageLink
 									to={`/c/${category.slug}`}
 									prefetch="intent"
-									className="text-ink-strong hover:text-accent block truncate text-[15px] font-bold"
+									className="text-ink-strong hover:text-accent block truncate text-heading font-bold"
 								>
 									{category.name}
 								</StageLink>
-								<p className="text-ink-weak text-[12px] tabular-nums">{threads.total} 主题</p>
+								<p className="text-ink-weak text-meta tabular-nums">{threads.total} 主题</p>
 							</div>
 							{can.createThread || loginToPost !== undefined ? (
 								<div className="shrink-0">{action(true)}</div>

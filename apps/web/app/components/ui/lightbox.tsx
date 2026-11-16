@@ -92,7 +92,7 @@ function Viewer({
 				<Modal.Container size="full" className="lightbox">
 					<Modal.Dialog aria-label={current?.alt || '图片'} className="lightbox-dialog">
 						<div className="flex items-center gap-2 px-3 py-2">
-							<p className="min-w-0 flex-1 truncate text-[13px] text-white/85">
+							<p className="min-w-0 flex-1 truncate text-ui text-white/85">
 								{current?.alt}
 								{count > 1 && state !== null && (
 									<span className="ml-2 text-white/60 tabular-nums">

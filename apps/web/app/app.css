@@ -13,6 +13,8 @@
  *   --c-control     control background         --c-text-strong  headings, emphasis
  *   --c-line        borders and dividers       --c-accent       the one accent colour
  *   --c-danger / --c-warning / --c-success     low-saturation status colours
+ *   --c-logo-disc   the brand mark's circle: a quiet control tone on dark themes, the strong
+ *                   text tone on light ones, so the mark never sits on the header as a bright patch
  *
  * Nothing outside user content shows a second hue. Themes are chosen with <html data-theme>, and
  * the blocks match any element, so a swatch can preview a theme with `data-theme` on itself.
@@ -34,6 +36,7 @@
 	--c-warning: #ebcb8b;
 	--c-success: #a3be8c;
 	--c-shadow: rgb(0 0 0 / 0.35);
+	--c-logo-disc: var(--c-control);
 }
 
 /* Dusk: near-black neutral grey with a pale cyan accent. */
@@ -50,6 +53,7 @@
 	--c-warning: #d9c07b;
 	--c-success: #9bd0a5;
 	--c-shadow: rgb(0 0 0 / 0.5);
+	--c-logo-disc: var(--c-control);
 }
 
 /* Frost: light and cool, cyan accent. */
@@ -66,6 +70,7 @@
 	--c-warning: #8f6f1f;
 	--c-success: #3e8e4e;
 	--c-shadow: rgb(15 23 42 / 0.14);
+	--c-logo-disc: var(--c-text-strong);
 }
 
 /* Sand: warm paper tones, umber accent. */
@@ -82,6 +87,7 @@
 	--c-warning: #84661f;
 	--c-success: #5c7a43;
 	--c-shadow: rgb(46 37 24 / 0.16);
+	--c-logo-disc: var(--c-text-strong);
 }
 
 /* Native controls (scrollbars, pickers) follow the theme. */
@@ -102,6 +108,20 @@
 	--c-pressed: color-mix(in srgb, var(--c-text-strong) 12%, transparent);
 	--c-selected: color-mix(in srgb, var(--c-accent) 14%, transparent);
 	--c-overlay-shadow: 0 0 0 1px var(--c-line), 0 8px 24px var(--c-shadow);
+}
+
+/*
+ * Type scale, the same for every theme. CJK glyphs need more pixels than Latin to stay legible,
+ * so the smallest interface text is 13px and long-form reading is 16px. Pages use the Tailwind
+ * names in `@theme inline` (text-meta, text-ui, ...), never raw pixel sizes.
+ */
+:root {
+	--fs-micro: 12px; /* badge counts, tiny avatar initials */
+	--fs-meta: 13px; /* timestamps, counts, labels, captions */
+	--fs-ui: 14px; /* interface default: controls, nav, list text */
+	--fs-title: 15px; /* list item and card titles */
+	--fs-heading: 16px; /* dialog and panel headings */
+	--fs-reading: 16px; /* post bodies and the composer */
 }
 
 /*
@@ -194,6 +214,13 @@
 	 */
 	--font-sans: 'IBM Plex Sans', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+	/* Type scale */
+	--text-micro: var(--fs-micro);
+	--text-meta: var(--fs-meta);
+	--text-ui: var(--fs-ui);
+	--text-title: var(--fs-title);
+	--text-heading: var(--fs-heading);
 }
 
 @layer base {
@@ -201,7 +228,7 @@
 		background-color: var(--c-page);
 		color: var(--c-text);
 		font-family: var(--font-sans);
-		font-size: 13px;
+		font-size: var(--fs-ui);
 		line-height: 1.5;
 		font-variant-numeric: tabular-nums;
 		-webkit-font-smoothing: antialiased;
@@ -219,7 +246,7 @@
 }
 
 /*
- * HeroUI at editor density: controls 28 / 32 / 36 px, 13px type, 2px corners, regular weight,
+ * HeroUI at editor density: controls 28 / 32 / 36 px, 14px type, 2px corners, regular weight,
  * no press-scale. Same layer as HeroUI's component styles and later, so these win at equal
  * specificity while Tailwind utilities on an element still override them.
  */
@@ -229,7 +256,7 @@
 		padding-inline: 12px;
 		gap: 6px;
 		border-radius: 2px;
-		font-size: 13px;
+		font-size: var(--fs-ui);
 		font-weight: 400;
 	}
 	.button--sm {
@@ -239,7 +266,7 @@
 	.button--lg {
 		height: 36px;
 		padding-inline: 14px;
-		font-size: 14px;
+		font-size: var(--fs-title);
 	}
 	.button--icon-only {
 		width: 32px;
@@ -278,7 +305,7 @@
 	.input,
 	.textarea {
 		border-radius: 2px;
-		font-size: 13px;
+		font-size: var(--fs-ui);
 		padding-inline: 10px;
 	}
 	.input {
@@ -297,20 +324,20 @@
 		box-shadow: none;
 	}
 	.label {
-		font-size: 12px;
+		font-size: var(--fs-meta);
 		font-weight: 400;
 		color: var(--c-text-weak);
 	}
 	.field-error,
 	.description {
-		font-size: 12px;
+		font-size: var(--fs-meta);
 	}
 }
 
 @layer utilities {
 	/* Section heading: small, bold, uppercase, tracked. */
 	.section-label {
-		font-size: 12px;
+		font-size: var(--fs-meta);
 		font-weight: 700;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
@@ -319,10 +346,10 @@
 
 	/*
 	 * Long-form reading is the forum's own addition (FantasticFrame has none): post bodies use
-	 * 15px with relaxed leading instead of the 13px interface size.
+	 * the reading size with relaxed leading instead of the interface size.
 	 */
 	.post-body {
-		font-size: 15px;
+		font-size: var(--fs-reading);
 		line-height: 1.75;
 		color: var(--c-text);
 		overflow-wrap: anywhere;
@@ -348,13 +375,13 @@
 		margin-top: 1.4em;
 	}
 	.post-body h2 {
-		font-size: 19px;
+		font-size: 1.25em;
 	}
 	.post-body h3 {
-		font-size: 17px;
+		font-size: 1.125em;
 	}
 	.post-body h4 {
-		font-size: 15px;
+		font-size: 1em;
 	}
 	.post-body strong {
 		color: var(--c-text-strong);
@@ -418,7 +445,7 @@
 	.post-body pre code {
 		background: none;
 		padding: 0;
-		font-size: 13px;
+		font-size: 0.875em;
 	}
 	.post-body hr {
 		border: 0;
@@ -525,7 +552,7 @@
 	.composer-placeholder {
 		position: absolute;
 		inset: 8px 10px auto;
-		font-size: 15px;
+		font-size: var(--fs-reading);
 		line-height: 1.75;
 		color: color-mix(in srgb, var(--c-text-weak) 60%, transparent);
 		pointer-events: none;

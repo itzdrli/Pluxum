@@ -16,7 +16,7 @@ export function UserMenu({ meta, here }: { meta: MetaDto | null; here: string })
 	if (!user) {
 		if (!meta?.auth.loginAvailable) {
 			return (
-				<span data-testid="viewer" className="text-ink-weak text-[12px]">
+				<span data-testid="viewer" className="text-ink-weak text-meta">
 					未登录
 				</span>
 			)
@@ -77,7 +77,7 @@ function AccountMenu({
 				<Dropdown.Popover placement="bottom end" className="min-w-48">
 					<div className="border-line border-b px-3 py-2">
 						<p className="text-ink-strong truncate font-bold">{name}</p>
-						{role !== undefined && <p className="text-ink-weak text-[12px]">{ROLE_LABELS[role]}</p>}
+						{role !== undefined && <p className="text-ink-weak text-meta">{ROLE_LABELS[role]}</p>}
 					</div>
 					<Dropdown.Menu
 						aria-label="账号"

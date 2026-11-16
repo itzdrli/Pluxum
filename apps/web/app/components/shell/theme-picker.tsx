@@ -79,7 +79,7 @@ export function ThemePicker() {
 								>
 									<Swatch theme={theme.id} />
 									<span className="flex-1">{theme.label}</span>
-									<span className="text-ink-weak text-[12px]">{theme.dark ? '暗' : '亮'}</span>
+									<span className="text-ink-weak text-meta">{theme.dark ? '暗' : '亮'}</span>
 									<Check aria-hidden size={14} className={selected ? 'text-accent' : 'invisible'} />
 								</button>
 							)

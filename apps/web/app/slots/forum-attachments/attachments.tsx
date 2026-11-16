@@ -52,7 +52,7 @@ export function AttachmentsFooter({ post }: { post: PostDto }) {
 							>
 								<FileText aria-hidden size={16} className="text-ink-weak shrink-0" />
 								<span className="text-ink-strong min-w-0 flex-1 truncate">{file.filename}</span>
-								<span className="text-ink-weak shrink-0 text-[12px] tabular-nums">
+								<span className="text-ink-weak shrink-0 text-meta tabular-nums">
 									{formatSize(file.size)}
 								</span>
 								<Download aria-hidden size={14} className="text-ink-weak shrink-0" />

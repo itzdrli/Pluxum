@@ -37,7 +37,7 @@ export function BottomSheet({
 							<div className="border-line flex shrink-0 items-center justify-between gap-2 border-b px-4 py-2.5">
 								<Heading
 									slot="title"
-									className="text-ink-strong min-w-0 truncate text-[15px] font-bold"
+									className="text-ink-strong min-w-0 truncate text-heading font-bold"
 								>
 									{title}
 								</Heading>

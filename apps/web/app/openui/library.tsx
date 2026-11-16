@@ -125,7 +125,7 @@ const ThreadCard = defineComponent({
 			</span>
 			{props.excerpt !== undefined && <span className="text-ink break-words">{props.excerpt}</span>}
 			{(props.category !== undefined || props.replies !== undefined) && (
-				<span className="text-ink-weak flex items-center gap-2 text-[12px]">
+				<span className="text-ink-weak flex items-center gap-2 text-meta">
 					{props.category !== undefined && <Tag>{props.category}</Tag>}
 					{props.replies !== undefined && (
 						<span className="flex items-center gap-1 tabular-nums">
@@ -153,7 +153,7 @@ const PostQuote = defineComponent({
 				<Quote aria-hidden size={14} className="text-ink-weak mt-1 shrink-0" />
 				<span>{props.excerpt}</span>
 			</blockquote>
-			<figcaption className="text-ink-weak mt-2 flex items-center gap-2 text-[12px]">
+			<figcaption className="text-ink-weak mt-2 flex items-center gap-2 text-meta">
 				<Avatar name={props.author ?? '?'} size="sm" />
 				<span className="text-ink">{props.author}</span>
 				<SafeLink href={props.href} className="hover:text-accent ml-auto">

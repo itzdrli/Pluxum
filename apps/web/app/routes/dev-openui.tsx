@@ -101,7 +101,7 @@ export default function DevOpenUI({ loaderData }: Route.ComponentProps) {
 				<aside className="flex min-w-0 flex-col gap-4">
 					<section>
 						<SectionLabel>动作</SectionLabel>
-						<Panel className="text-ink-weak min-h-16 p-3 font-mono text-[12px]">
+						<Panel className="text-ink-weak min-h-16 p-3 font-mono text-meta">
 							{events.length === 0
 								? '按下生成的按钮后在这里显示。'
 								: events.map((line, index) => (
@@ -114,7 +114,7 @@ export default function DevOpenUI({ loaderData }: Route.ComponentProps) {
 					</section>
 					<section>
 						<SectionLabel>OpenUI Lang</SectionLabel>
-						<pre className="border-line bg-panel text-ink max-h-80 overflow-auto rounded-[2px] border p-3 font-mono text-[12px] whitespace-pre-wrap">
+						<pre className="border-line bg-panel text-ink max-h-80 overflow-auto rounded-[2px] border p-3 font-mono text-meta whitespace-pre-wrap">
 							{FORUM_SAMPLE}
 						</pre>
 					</section>
@@ -122,7 +122,7 @@ export default function DevOpenUI({ loaderData }: Route.ComponentProps) {
 			</div>
 			<details className="mt-6">
 				<summary className="section-label cursor-pointer">系统提示词（library.prompt()）</summary>
-				<pre className="border-line bg-panel text-ink mt-2 max-h-[480px] overflow-auto rounded-[2px] border p-3 font-mono text-[12px] whitespace-pre-wrap">
+				<pre className="border-line bg-panel text-ink mt-2 max-h-[480px] overflow-auto rounded-[2px] border p-3 font-mono text-meta whitespace-pre-wrap">
 					{loaderData.prompt}
 				</pre>
 			</details>

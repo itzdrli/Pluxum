@@ -93,7 +93,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 					role="tab"
 					aria-selected={mobileTab === 'categories'}
 					onClick={() => setMobileTab('categories')}
-					className={`h-8 cursor-pointer truncate rounded-[2px] px-2 text-[13px] transition-colors ${
+					className={`h-8 cursor-pointer truncate rounded-[2px] px-2 text-ui transition-colors ${
 						mobileTab === 'categories'
 							? 'bg-selected text-ink-strong font-bold'
 							: 'text-ink-weak hover:bg-hover hover:text-ink-strong'
@@ -106,7 +106,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 					role="tab"
 					aria-selected={mobileTab === 'recent'}
 					onClick={() => setMobileTab('recent')}
-					className={`h-8 cursor-pointer truncate rounded-[2px] px-2 text-[13px] transition-colors ${
+					className={`h-8 cursor-pointer truncate rounded-[2px] px-2 text-ui transition-colors ${
 						mobileTab === 'recent'
 							? 'bg-selected text-ink-strong font-bold'
 							: 'text-ink-weak hover:bg-hover hover:text-ink-strong'
@@ -209,17 +209,17 @@ function CategoryCard({ category }: { category: CategoryDto }) {
 							>
 								<Hash size={15} />
 							</span>
-							<span className="text-ink-strong min-w-0 flex-1 truncate text-[14px] font-bold">
+							<span className="text-ink-strong min-w-0 flex-1 truncate text-title font-bold">
 								{category.name}
 							</span>
 						</div>
 						{category.description !== '' ? (
 							<p className="text-ink-weak line-clamp-2 break-words">{category.description}</p>
 						) : (
-							<p className="text-ink-weak text-[12px]">进入版块浏览讨论与发布新主题</p>
+							<p className="text-ink-weak text-meta">进入版块浏览讨论与发布新主题</p>
 						)}
 					</div>
-					<div className="border-line text-ink-weak flex items-center justify-between border-t pt-2.5 text-[12px] tabular-nums">
+					<div className="border-line text-ink-weak flex items-center justify-between border-t pt-2.5 text-meta tabular-nums">
 						<span>
 							{category.threadCount} 主题 · {category.postCount} 帖子
 						</span>
@@ -238,7 +238,7 @@ function RecentThreadItem({ item }: { item: RecentThreadDto }) {
 				<StageLink
 					to={`/c/${item.category.slug}`}
 					prefetch="intent"
-					className="bg-control text-ink-weak hover:text-ink-strong relative z-10 inline-flex h-5 shrink-0 items-center gap-1 rounded-[2px] px-1.5 text-[12px] leading-none whitespace-nowrap"
+					className="bg-control text-ink-weak hover:text-ink-strong relative z-10 inline-flex h-5 shrink-0 items-center gap-1 rounded-[2px] px-1.5 text-meta leading-none whitespace-nowrap"
 				>
 					<Hash aria-hidden size={11} />
 					{item.category.name}
@@ -248,11 +248,11 @@ function RecentThreadItem({ item }: { item: RecentThreadDto }) {
 			<StageLink
 				to={`/c/${item.category.slug}/t/${item.id}`}
 				prefetch="intent"
-				className="text-ink-strong text-[13px] font-bold break-words after:absolute after:inset-0"
+				className="text-ink-strong text-ui font-bold break-words after:absolute after:inset-0"
 			>
 				{item.title}
 			</StageLink>
-			<div className="text-ink-weak flex items-center justify-between gap-2 text-[12px]">
+			<div className="text-ink-weak flex items-center justify-between gap-2 text-meta">
 				<span className="flex min-w-0 items-center gap-1.5">
 					<StageLink
 						to={`/u/${item.author.id}`}

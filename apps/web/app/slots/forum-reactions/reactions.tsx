@@ -58,7 +58,7 @@ export function ReactionsFooter({ post }: { post: PostDto }) {
 				<span className="tabular-nums">{shown.count > 0 ? shown.count : '赞'}</span>
 			</Button>
 			{error !== undefined && (
-				<span role="alert" className="text-danger text-[12px]">
+				<span role="alert" className="text-danger text-meta">
 					{error}
 				</span>
 			)}

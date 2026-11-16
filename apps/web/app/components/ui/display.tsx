@@ -27,7 +27,7 @@ export function Tag({
 }) {
 	return (
 		<span
-			className={`inline-flex h-5 shrink-0 items-center gap-1 rounded-[2px] px-1.5 text-[12px] leading-none whitespace-nowrap ${TAG_TONES[tone]}`}
+			className={`inline-flex h-5 shrink-0 items-center gap-1 rounded-[2px] px-1.5 text-meta leading-none whitespace-nowrap ${TAG_TONES[tone]}`}
 		>
 			{Icon !== undefined && <Icon aria-hidden size={12} strokeWidth={2} />}
 			{children}
@@ -36,9 +36,9 @@ export function Tag({
 }
 
 const AVATAR_SIZES = {
-	sm: 'size-5 text-[11px]',
-	md: 'size-7 text-[13px]',
-	lg: 'size-9 text-[15px]',
+	sm: 'size-5 text-micro',
+	md: 'size-7 text-ui',
+	lg: 'size-9 text-heading',
 	xl: 'size-16 text-[26px]',
 }
 
@@ -93,10 +93,7 @@ export function Timestamp({ iso, className }: { iso: string; className?: string 
 
 export function Crumbs({ items }: { items: ReadonlyArray<{ label: string; to?: string }> }) {
 	return (
-		<nav
-			aria-label="位置"
-			className="text-ink-weak mb-3 flex min-w-0 items-center gap-1 text-[12px]"
-		>
+		<nav aria-label="位置" className="text-ink-weak mb-3 flex min-w-0 items-center gap-1 text-meta">
 			{items.map((item, index) => (
 				<span key={item.to ?? item.label} className="flex min-w-0 items-center gap-1">
 					{index > 0 && <ChevronRight aria-hidden size={12} className="shrink-0" />}
@@ -135,7 +132,7 @@ export function PageHeader({
 					<p className="text-ink-weak mt-1 break-words">{description}</p>
 				)}
 				{meta !== undefined && (
-					<div className="text-ink-weak mt-2 flex flex-wrap items-center gap-2 text-[12px]">
+					<div className="text-ink-weak mt-2 flex flex-wrap items-center gap-2 text-meta">
 						{meta}
 					</div>
 				)}

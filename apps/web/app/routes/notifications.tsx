@@ -200,7 +200,7 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 						<div
 							role="group"
 							aria-label="通知筛选"
-							className="border-line bg-panel inline-flex rounded-[2px] border p-0.5 text-[12px]"
+							className="border-line bg-panel inline-flex rounded-[2px] border p-0.5 text-meta"
 						>
 							<StageLink
 								to="/notifications"
@@ -328,7 +328,7 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 							<StageLink
 								to={href}
 								onClick={markReadOnJump}
-								className={`hover:text-accent text-[14px] leading-snug break-words ${
+								className={`hover:text-accent text-title leading-snug break-words ${
 									isRead ? 'text-ink' : 'text-ink-strong font-bold'
 								}`}
 							>
@@ -336,7 +336,7 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 							</StageLink>
 						) : (
 							<span
-								className={`text-[14px] leading-snug break-words ${
+								className={`text-title leading-snug break-words ${
 									isRead ? 'text-ink' : 'text-ink-strong font-bold'
 								}`}
 							>
@@ -346,12 +346,12 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 					</div>
 
 					{item.body !== null && item.body !== '' && (
-						<p className="text-ink-weak mt-1 line-clamp-2 text-[13px] leading-relaxed break-words">
+						<p className="text-ink-weak mt-1 line-clamp-2 text-ui leading-relaxed break-words">
 							{item.body}
 						</p>
 					)}
 
-					<div className="text-ink-weak mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
+					<div className="text-ink-weak mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta">
 						{item.actor !== null && (
 							<>
 								<StageLink to={`/u/${item.actor.id}`} className="hover:text-ink-strong">

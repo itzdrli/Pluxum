@@ -7,8 +7,8 @@ import { UserAvatar } from './user-avatar'
 function Stat({ value, label }: { value: number; label: string }) {
 	return (
 		<div className="flex min-w-12 flex-col items-end">
-			<span className="text-ink-strong text-[14px] tabular-nums">{value}</span>
-			<span className="text-ink-weak text-[12px]">{label}</span>
+			<span className="text-ink-strong text-title tabular-nums">{value}</span>
+			<span className="text-ink-weak text-meta">{label}</span>
 		</div>
 	)
 }
@@ -29,12 +29,12 @@ export function CategoryRow({ category }: { category: CategoryDto }) {
 					<Hash size={16} />
 				</span>
 				<div className="min-w-0 flex-1">
-					<p className="text-ink-strong text-[14px] font-bold break-words">{category.name}</p>
+					<p className="text-ink-strong text-title font-bold break-words">{category.name}</p>
 					{category.description !== '' && (
 						<p className="text-ink-weak mt-0.5 break-words">{category.description}</p>
 					)}
 					{/* Narrow screens: counts move under the description. */}
-					<p className="text-ink-weak mt-1 text-[12px] tabular-nums sm:hidden">
+					<p className="text-ink-weak mt-1 text-meta tabular-nums sm:hidden">
 						{category.threadCount} 主题 · {category.postCount} 帖子
 					</p>
 				</div>
@@ -91,12 +91,12 @@ export function ThreadRow({
 						to={href}
 						prefetch="intent"
 						aria-current={isActive ? 'page' : undefined}
-						className="text-ink-strong line-clamp-2 text-[13px] font-bold break-words after:absolute after:inset-0 @lg/threads:line-clamp-none @lg/threads:text-[14px]"
+						className="text-ink-strong line-clamp-2 text-ui font-bold break-words after:absolute after:inset-0 @lg/threads:line-clamp-none @lg/threads:text-title"
 					>
 						{thread.title}
 					</StageLink>
 				</div>
-				<div className="text-ink-weak mt-1 flex items-center justify-between gap-2 text-[12px]">
+				<div className="text-ink-weak mt-1 flex items-center justify-between gap-2 text-meta">
 					<p className="flex min-w-0 flex-wrap items-center gap-x-1.5">
 						{/* Above the row link's box, so the name opens the profile instead. */}
 						<StageLink
@@ -115,7 +115,7 @@ export function ThreadRow({
 					</span>
 				</div>
 			</div>
-			<div className="hidden shrink-0 flex-col items-end gap-1 text-[12px] @lg/threads:flex">
+			<div className="hidden shrink-0 flex-col items-end gap-1 text-meta @lg/threads:flex">
 				<span className="text-ink-strong flex items-center gap-1 tabular-nums">
 					<MessageSquare aria-hidden size={13} className="text-ink-weak" />
 					{thread.replyCount}

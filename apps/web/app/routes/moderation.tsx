@@ -340,7 +340,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 					<div
 						role="tablist"
 						aria-label="审核视图"
-						className="border-line bg-panel inline-flex rounded-[2px] border p-0.5 text-[12px]"
+						className="border-line bg-panel inline-flex rounded-[2px] border p-0.5 text-meta"
 					>
 						<StageLink
 							role="tab"
@@ -387,7 +387,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 						<div
 							role="group"
 							aria-label="举报状态筛选"
-							className="border-line bg-panel inline-flex flex-wrap rounded-[2px] border p-0.5 text-[12px]"
+							className="border-line bg-panel inline-flex flex-wrap rounded-[2px] border p-0.5 text-meta"
 						>
 							{QUEUE_STATUS_TABS.map((entry) => {
 								const active = status === entry.status
@@ -409,7 +409,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 								)
 							})}
 						</div>
-						<span className="text-ink-weak text-[12px] tabular-nums">共 {queue.total} 条记录</span>
+						<span className="text-ink-weak text-meta tabular-nums">共 {queue.total} 条记录</span>
 					</div>
 
 					{queue.items.length === 0 ? (
@@ -470,7 +470,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 				<div className="flex flex-wrap items-center gap-2">
 					<Tag tone={statusMeta.tone}>{statusMeta.label}</Tag>
 					<Tag>{report.targetType === 'thread' ? '主题举报' : '帖子举报'}</Tag>
-					<span className="text-ink-weak flex items-center gap-1.5 text-[12px]">
+					<span className="text-ink-weak flex items-center gap-1.5 text-meta">
 						<span>举报人：</span>
 						<StageLink
 							to={`/u/${report.reporter.id}`}
@@ -481,7 +481,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 						</StageLink>
 					</span>
 					{report.targetAuthor !== null && (
-						<span className="text-ink-weak flex items-center gap-1.5 text-[12px]">
+						<span className="text-ink-weak flex items-center gap-1.5 text-meta">
 							<span>· 被举报作者：</span>
 							<StageLink
 								to={`/u/${report.targetAuthor.id}`}
@@ -493,7 +493,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 					)}
 				</div>
 
-				<div className="flex items-center gap-3 text-[12px]">
+				<div className="flex items-center gap-3 text-meta">
 					<Timestamp iso={report.createdAt} className="text-ink-weak" />
 					<StageLink
 						to={targetHref}
@@ -510,7 +510,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 			</div>
 
 			{report.status !== 'open' && (
-				<div className="text-ink-weak flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
+				<div className="text-ink-weak flex flex-wrap items-center gap-x-2 gap-y-1 text-meta">
 					<span>
 						由{' '}
 						{report.resolvedBy !== null ? (
@@ -549,7 +549,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 							maxLength={500}
 							placeholder="处理备注（可选，记入审核日志）…"
 							aria-label="处理备注"
-							className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-8 min-w-0 flex-1 basis-48 rounded-[2px] border px-2.5 text-[13px] outline-none"
+							className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-8 min-w-0 flex-1 basis-48 rounded-[2px] border px-2.5 text-ui outline-none"
 						/>
 						<div className="flex flex-wrap items-center gap-2">
 							<Button
@@ -611,7 +611,7 @@ function LogRow({ entry }: { entry: ModerationLogDto }) {
 						<span>{entry.actor.displayName}</span>
 					</StageLink>
 					{entry.targetUser !== null ? (
-						<span className="text-ink-weak text-[12px]">
+						<span className="text-ink-weak text-meta">
 							目标用户：
 							<StageLink
 								to={`/u/${entry.targetUser.id}`}
@@ -623,21 +623,19 @@ function LogRow({ entry }: { entry: ModerationLogDto }) {
 					) : entry.targetType === 'thread' ? (
 						<StageLink
 							to={`/t/${entry.targetId}`}
-							className="text-accent text-[12px] hover:underline"
+							className="text-accent text-meta hover:underline"
 						>
 							主题 #{entry.targetId.slice(0, 8)}
 						</StageLink>
 					) : (
-						<span className="text-ink-weak font-mono text-[12px]">
+						<span className="text-ink-weak font-mono text-meta">
 							{entry.targetType}:{entry.targetId.slice(0, 8)}
 						</span>
 					)}
 				</div>
-				{entry.detail !== null && (
-					<p className="text-ink text-[12px] break-words">{entry.detail}</p>
-				)}
+				{entry.detail !== null && <p className="text-ink text-meta break-words">{entry.detail}</p>}
 			</div>
-			<Timestamp iso={entry.createdAt} className="text-ink-weak shrink-0 text-[12px]" />
+			<Timestamp iso={entry.createdAt} className="text-ink-weak shrink-0 text-meta" />
 		</li>
 	)
 }

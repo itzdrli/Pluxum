@@ -64,7 +64,7 @@ export function UserBanTab({ profile }: { profile: UserProfileDto }) {
 								<Tag tone="danger" icon={Ban}>
 									已封禁
 								</Tag>
-								<span className="text-ink-weak text-[12px]">
+								<span className="text-ink-weak text-meta">
 									{banStatus.expiresAt != null ? (
 										<>
 											封禁至 <Timestamp iso={banStatus.expiresAt} />
@@ -79,7 +79,7 @@ export function UserBanTab({ profile }: { profile: UserProfileDto }) {
 								<Tag tone="success" icon={ShieldCheck}>
 									正常
 								</Tag>
-								<span className="text-ink-weak text-[12px]">
+								<span className="text-ink-weak text-meta">
 									{isTargetAdmin
 										? '管理员账号受保护，不可封禁。'
 										: '该账号当前状态正常，可正常发帖与互动。'}
@@ -90,7 +90,7 @@ export function UserBanTab({ profile }: { profile: UserProfileDto }) {
 				</div>
 
 				{banStatus.banned && banStatus.reason !== undefined && (
-					<p className="border-line bg-control text-ink rounded-[2px] border px-3 py-2 text-[13px] break-words">
+					<p className="border-line bg-control text-ink rounded-[2px] border px-3 py-2 text-ui break-words">
 						<span className="text-ink-weak">封禁原因：</span>
 						{banStatus.reason}
 					</p>
@@ -142,7 +142,7 @@ function BanForm({ userId }: { userId: string }) {
 			<FormError message={error} />
 			<div className="flex flex-wrap items-end gap-2">
 				<label className="flex min-w-0 flex-1 basis-52 flex-col gap-1">
-					<span className="text-ink-weak text-[12px]">封禁原因</span>
+					<span className="text-ink-weak text-meta">封禁原因</span>
 					<input
 						type="text"
 						value={reason}
@@ -150,16 +150,16 @@ function BanForm({ userId }: { userId: string }) {
 						maxLength={REASON_MAX}
 						required
 						placeholder="填写封禁原因（将记入审核日志）…"
-						className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-8 w-full rounded-[2px] border px-2.5 text-[13px] outline-none"
+						className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-8 w-full rounded-[2px] border px-2.5 text-ui outline-none"
 					/>
 				</label>
 				<label className="flex flex-col gap-1">
-					<span className="text-ink-weak text-[12px]">封禁时长</span>
+					<span className="text-ink-weak text-meta">封禁时长</span>
 					<select
 						value={duration}
 						onChange={(event) => setDuration(event.currentTarget.value)}
 						aria-label="封禁时长"
-						className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-8 rounded-[2px] border px-2.5 text-[13px] outline-none"
+						className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-8 rounded-[2px] border px-2.5 text-ui outline-none"
 					>
 						{DURATION_OPTIONS.map((option) => (
 							<option key={option.value} value={option.value}>
@@ -212,14 +212,14 @@ function UnbanForm({ userId }: { userId: string }) {
 			<FormError message={error} />
 			<div className="flex flex-wrap items-end gap-2">
 				<label className="flex min-w-0 flex-1 basis-52 flex-col gap-1">
-					<span className="text-ink-weak text-[12px]">解封备注（可选）</span>
+					<span className="text-ink-weak text-meta">解封备注（可选）</span>
 					<input
 						type="text"
 						value={note}
 						onChange={(event) => setNote(event.currentTarget.value)}
 						maxLength={REASON_MAX}
 						placeholder="填写解除封禁说明…"
-						className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-8 w-full rounded-[2px] border px-2.5 text-[13px] outline-none"
+						className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-8 w-full rounded-[2px] border px-2.5 text-ui outline-none"
 					/>
 				</label>
 				<Button tone="secondary" size="md" type="submit" isPending={submitting}>

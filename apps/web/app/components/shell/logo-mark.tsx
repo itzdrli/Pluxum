@@ -1,40 +1,21 @@
 import { useId } from 'react'
 
 // The Pluxum mark from the brand file (Figma "Pluxum" › Brand Assets › Logo Mark): three bars, a
-// thread and its replies, on a circle. `dark` is the primary mark for light backgrounds; `light`
-// goes on dark backgrounds.
-const TONES = {
-	dark: {
-		circle: '#2E3440',
-		bars: [
-			['#ECEFF4', '#8FBCBB', 1],
-			['#8FBCBB', '#81A1C1', 0.9],
-			['#81A1C1', '#5E81AC', 0.85],
-		],
-	},
-	light: {
-		circle: '#ECEFF4',
-		bars: [
-			['#3B4252', '#5E81AC', 1],
-			['#5E81AC', '#81A1C1', 0.95],
-			['#81A1C1', '#88C0D0', 0.9],
-		],
-	},
-} as const
-
+// thread and its replies, on a circle. The bars keep the brand gradients; the circle is the
+// theme's `--c-logo-disc`, so the mark belongs to whichever theme it sits in. The bars were drawn
+// for the dark primary disc and stay legible on every theme's disc.
 const BARS = [
-	{ x: 123.5, y: 151, width: 265 },
-	{ x: 181, y: 233.5, width: 170 },
-	{ x: 181, y: 316, width: 110 },
+	{ x: 123.5, y: 151, width: 265, from: '#ECEFF4', to: '#8FBCBB', opacity: 1 },
+	{ x: 181, y: 233.5, width: 170, from: '#8FBCBB', to: '#81A1C1', opacity: 0.9 },
+	{ x: 181, y: 316, width: 110, from: '#81A1C1', to: '#5E81AC', opacity: 0.85 },
 ] as const
 
-export function LogoMark({ tone, className }: { tone: keyof typeof TONES; className?: string }) {
+export function LogoMark({ className }: { className?: string }) {
 	// Gradient ids are document-wide, so each mark on the page needs its own.
 	const id = `logo${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
-	const { circle, bars } = TONES[tone]
 	return (
 		<svg viewBox="0 0 512 512" fill="none" aria-hidden className={className}>
-			<rect width="512" height="512" rx="256" fill={circle} />
+			<rect width="512" height="512" rx="256" fill="var(--c-logo-disc, #2E3440)" />
 			{BARS.map((bar, i) => (
 				<rect
 					key={bar.x + bar.y}
@@ -44,7 +25,7 @@ export function LogoMark({ tone, className }: { tone: keyof typeof TONES; classN
 					height="45"
 					rx="22.5"
 					fill={`url(#${id}-${i})`}
-					fillOpacity={bars[i][2]}
+					fillOpacity={bar.opacity}
 				/>
 			))}
 			<defs>
@@ -58,8 +39,8 @@ export function LogoMark({ tone, className }: { tone: keyof typeof TONES; classN
 						y2="0"
 						gradientUnits="userSpaceOnUse"
 					>
-						<stop stopColor={bars[i][0]} />
-						<stop offset="1" stopColor={bars[i][1]} />
+						<stop stopColor={bar.from} />
+						<stop offset="1" stopColor={bar.to} />
 					</linearGradient>
 				))}
 			</defs>

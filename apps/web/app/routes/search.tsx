@@ -196,7 +196,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 											name="categoryId"
 											defaultValue={categoryId}
 											aria-label="按版块筛选"
-											className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-8 max-w-full rounded-[2px] border px-2.5 text-[13px] outline-none"
+											className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-8 max-w-full rounded-[2px] border px-2.5 text-ui outline-none"
 										>
 											<option value="">全部版块</option>
 											{categories.map((category) => (
@@ -206,7 +206,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 											))}
 										</select>
 
-										<label className="border-line bg-page text-ink hover:border-ink-weak flex h-8 cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-[13px] select-none">
+										<label className="border-line bg-page text-ink hover:border-ink-weak flex h-8 cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-ui select-none">
 											<input
 												key={String(threadsOnly)}
 												type="checkbox"
@@ -296,7 +296,7 @@ function SearchInput({
 				placeholder="输入关键词搜索主题或帖子…"
 				aria-label="搜索关键词"
 				autoFocus={autoFocus}
-				className={`border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border pr-3 pl-8 text-[13px] outline-none ${size === 'sm' ? 'h-7' : 'h-8'}`}
+				className={`border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border pr-3 pl-8 text-ui outline-none ${size === 'sm' ? 'h-7' : 'h-8'}`}
 			/>
 		</div>
 	)
@@ -336,7 +336,7 @@ function SearchHitRow({
 						to={href}
 						prefetch="intent"
 						aria-current={isActive ? 'page' : undefined}
-						className="text-ink-strong text-[13px] font-bold break-words after:absolute after:inset-0 hover:underline @lg/threads:text-[14px]"
+						className="text-ink-strong text-ui font-bold break-words after:absolute after:inset-0 hover:underline @lg/threads:text-title"
 					>
 						{hit.title}
 					</StageLink>
@@ -345,12 +345,12 @@ function SearchHitRow({
 				{hit.snippetHtml !== '' && (
 					// Sanitized by forum-core (`sanitizeSearchSnippet` allows `<mark>` with no attributes).
 					<p
-						className="search-snippet text-ink mt-1.5 line-clamp-2 @lg/threads:line-clamp-3 text-[13px] leading-relaxed break-words"
+						className="search-snippet text-ink mt-1.5 line-clamp-2 @lg/threads:line-clamp-3 text-ui leading-relaxed break-words"
 						dangerouslySetInnerHTML={{ __html: hit.snippetHtml }}
 					/>
 				)}
 
-				<div className="text-ink-weak mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12px]">
+				<div className="text-ink-weak mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta">
 					<StageLink
 						to={`/u/${hit.author.id}`}
 						className="text-ink relative z-10 truncate hover:underline"

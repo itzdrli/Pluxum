@@ -73,12 +73,12 @@ export function ReportButton({ post }: { post: PostDto }) {
 					<Modal.Container size="sm">
 						<Modal.Dialog>
 							<Modal.Header>
-								<Modal.Heading className="text-ink-strong text-[15px] font-bold">
+								<Modal.Heading className="text-ink-strong text-heading font-bold">
 									举报内容
 								</Modal.Heading>
 							</Modal.Header>
 							<Modal.Body className="flex flex-col gap-3">
-								<p className="text-ink-weak text-[12px]">
+								<p className="text-ink-weak text-meta">
 									请说明举报 {post.author.displayName} 的原因，版主和管理员会尽快核实处理。
 								</p>
 								<FormError message={error} />
@@ -90,7 +90,7 @@ export function ReportButton({ post }: { post: PostDto }) {
 												key={preset}
 												type="button"
 												onClick={() => setReason(preset)}
-												className={`rounded-[2px] border px-2 py-1 text-[12px] transition-colors ${
+												className={`rounded-[2px] border px-2 py-1 text-meta transition-colors ${
 													selected
 														? 'border-accent bg-selected text-ink-strong font-bold'
 														: 'border-line bg-control text-ink hover:border-ink-weak'
@@ -102,7 +102,7 @@ export function ReportButton({ post }: { post: PostDto }) {
 									})}
 								</div>
 								<label className="flex flex-col gap-1">
-									<span className="text-ink-weak text-[12px]">详细说明</span>
+									<span className="text-ink-weak text-meta">详细说明</span>
 									<textarea
 										value={reason}
 										onChange={(event) => setReason(event.currentTarget.value)}
@@ -110,7 +110,7 @@ export function ReportButton({ post }: { post: PostDto }) {
 										rows={3}
 										required
 										placeholder="补充违规细节或选择上方常见原因…"
-										className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border px-2.5 py-2 text-[13px] leading-relaxed outline-none"
+										className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border px-2.5 py-2 text-ui leading-relaxed outline-none"
 									/>
 								</label>
 							</Modal.Body>

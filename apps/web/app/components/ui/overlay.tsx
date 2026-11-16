@@ -81,7 +81,7 @@ export function ConfirmDialog({
 				<AlertDialog.Container size="sm">
 					<AlertDialog.Dialog>
 						<AlertDialog.Header>
-							<AlertDialog.Heading className="text-ink-strong text-[15px] font-bold">
+							<AlertDialog.Heading className="text-ink-strong text-heading font-bold">
 								{title}
 							</AlertDialog.Heading>
 						</AlertDialog.Header>

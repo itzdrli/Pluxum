@@ -94,7 +94,7 @@ export function MobileCategoryBar({
 					type="button"
 					onClick={() => setSwitcherOpen(true)}
 					aria-label="切换版块"
-					className="border-line bg-control text-ink-strong hover:bg-hover active:bg-pressed flex h-8 min-w-0 flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-[2px] border px-2.5 text-[13px] font-bold"
+					className="border-line bg-control text-ink-strong hover:bg-hover active:bg-pressed flex h-8 min-w-0 flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-[2px] border px-2.5 text-ui font-bold"
 				>
 					<span className="flex min-w-0 items-center gap-1.5">
 						<Hash aria-hidden size={14} className="text-accent shrink-0" />
@@ -153,7 +153,7 @@ export function MobileCategoryBar({
 											className={isActive ? 'text-accent shrink-0' : 'text-ink-weak shrink-0'}
 										/>
 										<span className="min-w-0 flex-1 truncate">{cat.name}</span>
-										<span className="text-ink-weak shrink-0 text-[12px] tabular-nums">
+										<span className="text-ink-weak shrink-0 text-meta tabular-nums">
 											{cat.threadCount} 主题
 										</span>
 										{isActive && <Check aria-hidden size={14} className="text-accent shrink-0" />}
@@ -266,13 +266,13 @@ export function MobileThreadBar({
 					<button
 						type="button"
 						onClick={() => setReplyOpen(true)}
-						className="border-line bg-page text-ink-weak hover:border-ink-weak hover:text-ink flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-[13px]"
+						className="border-line bg-page text-ink-weak hover:border-ink-weak hover:text-ink flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-ui"
 					>
 						<MessageSquarePlus aria-hidden size={14} className="text-accent shrink-0" />
 						<span className="truncate">写回复…</span>
 					</button>
 				) : locked ? (
-					<span className="text-ink-weak flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 text-[12px]">
+					<span className="text-ink-weak flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 text-meta">
 						<Lock aria-hidden size={13} className="shrink-0" />
 						<span className="truncate">主题已锁定</span>
 					</span>

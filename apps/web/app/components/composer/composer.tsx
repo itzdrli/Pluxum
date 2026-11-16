@@ -348,7 +348,7 @@ export function Composer({
 				</TextField>
 			)}
 			{(hint !== undefined || showCount) && (
-				<div className="text-ink-weak flex items-start justify-between gap-3 text-[12px]">
+				<div className="text-ink-weak flex items-start justify-between gap-3 text-meta">
 					<span>{hint}</span>
 					{showCount && (
 						<span className="tabular-nums" aria-live="polite">

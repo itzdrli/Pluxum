@@ -128,7 +128,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 				</ButtonLink>
 			</div>
 			{stack !== undefined && (
-				<pre className="border-line bg-panel text-ink-weak mt-4 overflow-x-auto rounded-[2px] border p-4 font-mono text-[12px]">
+				<pre className="border-line bg-panel text-ink-weak mt-4 overflow-x-auto rounded-[2px] border p-4 font-mono text-meta">
 					<code>{stack}</code>
 				</pre>
 			)}

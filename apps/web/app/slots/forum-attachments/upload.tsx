@@ -76,7 +76,7 @@ export function UploadButton({ insert }: { insert: InsertAttachment }) {
 				{busy ? '上传中…' : '附件'}
 			</button>
 			{error !== null && (
-				<span role="alert" className="text-danger truncate text-[12px]">
+				<span role="alert" className="text-danger truncate text-meta">
 					{error}
 				</span>
 			)}

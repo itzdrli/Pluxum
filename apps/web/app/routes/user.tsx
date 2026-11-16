@@ -83,8 +83,10 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 						<header className="mb-3 flex items-center gap-2.5">
 							<UserAvatar user={user} />
 							<div className="min-w-0">
-								<p className="text-ink-strong truncate text-[15px] font-bold">{user.displayName}</p>
-								<p className="text-ink-weak text-[12px] tabular-nums">
+								<p className="text-ink-strong truncate text-heading font-bold">
+									{user.displayName}
+								</p>
+								<p className="text-ink-weak text-meta tabular-nums">
 									{threadCount} 主题 · {postCount} 回复
 								</p>
 							</div>
@@ -116,7 +118,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 											))}
 											{isSelf && <Tag>我</Tag>}
 										</div>
-										<p className="text-ink-weak mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
+										<p className="text-ink-weak mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta">
 											<span className="flex items-center gap-1">
 												<CalendarDays aria-hidden size={12} />
 												加入于 <Timestamp iso={createdAt} />

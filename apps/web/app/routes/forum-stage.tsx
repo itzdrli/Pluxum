@@ -78,7 +78,7 @@ function CategoryNavPanel({
 			</div>
 			<ul className="flex-1 overflow-y-auto py-1.5">
 				{categories.length === 0 ? (
-					<li className="text-ink-weak px-3 py-4 text-[12px]">还没有版块</li>
+					<li className="text-ink-weak px-3 py-4 text-meta">还没有版块</li>
 				) : (
 					categories.map((cat) => {
 						const isActive = cat.slug === activeSlug
@@ -100,7 +100,7 @@ function CategoryNavPanel({
 										className={isActive ? 'text-accent shrink-0' : 'text-ink-weak shrink-0'}
 									/>
 									<span className="min-w-0 flex-1 truncate">{cat.name}</span>
-									<span className="text-ink-weak shrink-0 text-[12px] tabular-nums">
+									<span className="text-ink-weak shrink-0 text-meta tabular-nums">
 										{cat.threadCount}
 									</span>
 								</StageLink>

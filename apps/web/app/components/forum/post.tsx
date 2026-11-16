@@ -74,7 +74,7 @@ export function PostCard({
 						{post.author.displayName}
 					</Link>
 					{byThreadAuthor && <Tag>楼主</Tag>}
-					<span className="text-ink-weak flex items-center gap-1.5 text-[12px]">
+					<span className="text-ink-weak flex items-center gap-1.5 text-meta">
 						<Timestamp iso={post.createdAt} />
 						{post.editedAt !== null && !post.deleted && (
 							<span title={`编辑于 ${post.editedAt}`}>· 已编辑</span>
@@ -84,7 +84,7 @@ export function PostCard({
 				<div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-60 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
 					<a
 						href={`#post-${post.id}`}
-						className="text-ink-weak hover:text-ink-strong px-1 text-[12px] tabular-nums"
+						className="text-ink-weak hover:text-ink-strong px-1 text-meta tabular-nums"
 						aria-label={`第 ${number} 楼的链接`}
 					>
 						#{number}
