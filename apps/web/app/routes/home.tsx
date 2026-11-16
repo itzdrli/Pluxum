@@ -113,12 +113,22 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 				)}
 			</div>
 
-			{/* The discussions are what grows, so they are the main column; the categories are a short,
-			    fixed-size aside that stays in view beside them. */}
-			<div className="grid items-start gap-6 sm:max-lg:mt-4 lg:grid-cols-12">
+			{showForm && (
+				<div className="lg:mx-auto lg:max-w-[880px]">
+					<NewCategory
+						error={actionData?.error}
+						nameMax={root?.meta?.limits.categoryNameMax}
+						onCancel={closeForm}
+					/>
+				</div>
+			)}
+
+			{/* Wide screens: one feed; the categories are the column beside it. Phones have no such
+			    column, so the categories are the second tab. */}
+			<div className="sm:max-lg:mt-4 lg:mx-auto lg:max-w-[880px]">
 				<section
 					aria-label="最新活跃讨论"
-					className={`min-w-0 lg:col-span-8 ${mobileTab === 'recent' ? '' : 'max-lg:hidden'}`}
+					className={mobileTab === 'recent' ? '' : 'max-lg:hidden'}
 				>
 					<div className="max-lg:hidden">
 						<SectionLabel
@@ -149,31 +159,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 					)}
 				</section>
 
-				<aside
-					aria-label="版块"
-					className={`min-w-0 lg:sticky lg:top-0 lg:col-span-4 ${mobileTab === 'categories' ? '' : 'max-lg:hidden'}`}
-				>
-					<div className="max-lg:hidden">
-						<SectionLabel
-							actions={
-								canManage && !showForm ? (
-									<Button size="sm" tone="ghost" onPress={() => setCreating(true)}>
-										<Plus aria-hidden />
-										新建
-									</Button>
-								) : undefined
-							}
-						>
-							版块 · {categories.length}
-						</SectionLabel>
-					</div>
-					{showForm && (
-						<NewCategory
-							error={actionData?.error}
-							nameMax={root?.meta?.limits.categoryNameMax}
-							onCancel={closeForm}
-						/>
-					)}
+				<section aria-label="版块" className={mobileTab === 'categories' ? 'lg:hidden' : 'hidden'}>
 					{categories.length === 0 ? (
 						<EmptyState
 							icon={LayoutList}
@@ -194,7 +180,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 							))}
 						</Panel>
 					)}
-				</aside>
+				</section>
 			</div>
 		</>
 	)
@@ -226,7 +212,7 @@ function HomeTab({
 	)
 }
 
-/** A category in the aside: tile, name with its one-line description, and its thread count. */
+/** A category in the phone tab: tile, name with its one-line description, and its thread count. */
 function CategoryItem({ category }: { category: CategoryDto }) {
 	return (
 		<li>
