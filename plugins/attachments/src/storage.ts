@@ -208,7 +208,8 @@ type OwnerState = {
  * catalog contract, Vault-backed S3 credentials and s3mini client surface for `rustfs` and local
  * storage.
  */
-@Plugin(S3, { displayName: 'Forum Storage' })
+// Start checks the remote bucket (and may create it) over the network, which can exceed the default timeout.
+@Plugin(S3, { displayName: 'Forum Storage', startTimeoutMs: 30_000 })
 export class ForumStoragePlugin extends S3 {
 	private readonly config = this.configs.use(ForumStorageConfig)
 	private ids: readonly string[] = Object.freeze([])
