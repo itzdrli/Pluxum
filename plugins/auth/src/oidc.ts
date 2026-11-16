@@ -239,6 +239,20 @@ export class OidcClient {
 		return this.jwks
 	}
 
+	/**
+	 * Fetches discovery and the signing keys again, bypassing the caches, and reports how long that
+	 * took. For an operator checking the connection; a failure throws like a login would.
+	 */
+	async probe(): Promise<number> {
+		const started = Date.now()
+		this.discovery = undefined
+		const { jwksUri } = await this.discover()
+		// Checked but not cached: the keys in use stay as they are.
+		const body = await this.json(await this.request(jwksUri, { method: 'GET' }))
+		if (!isJwks(body)) throw new OidcUnavailableError('Provider JWKS is malformed')
+		return Date.now() - started
+	}
+
 	private async discover(): Promise<Discovery> {
 		if (this.discovery && Date.now() < this.discovery.expiresAt) return this.discovery.value
 		const issuer = this.settings.issuer

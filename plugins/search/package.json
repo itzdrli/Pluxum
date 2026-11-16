@@ -22,24 +22,26 @@
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "catalog:prod",
-		"@pluxum/domain": "workspace:*",
-		"@pluxum/api": "workspace:*",
-		"@pluxum/auth": "workspace:*",
-		"@pluxum/core": "workspace:*",
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/test": "catalog:pluxel",
+		"@pluxel/workbench": "catalog:pluxel",
+		"@pluxum/api": "workspace:*",
+		"@pluxum/auth": "workspace:*",
+		"@pluxum/core": "workspace:*",
+		"@pluxum/domain": "workspace:*",
 		"@types/node": "catalog:tooling",
 		"typescript": "catalog:tooling",
 		"vite-plus": "catalog:tooling",
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
-		"@pluxum/core": "*",
 		"@pluxel/core": "catalog:pluxel",
-		"@pluxel/services": "catalog:pluxel"
+		"@pluxel/services": "catalog:pluxel",
+		"@pluxel/workbench": "catalog:pluxel",
+		"@pluxum/core": "*"
 	},
 	"pluxel": {
 		"artifactRoot": "dist",

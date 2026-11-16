@@ -10,6 +10,7 @@ import { ForumAuthConfig } from './config'
 import { matchesSha256, pkceChallenge, randomToken } from './crypto'
 import { OidcClient, OidcRejectedError, OidcUnavailableError, type OidcSettings } from './oidc'
 import { SessionStore } from './sessions'
+import { AuthWorkbench, type AuthStatus } from './workbench'
 
 export { ForumAuthConfig } from './config'
 
@@ -174,6 +175,64 @@ export class ForumAuthPlugin extends ForumAuth {
 				JSON.stringify(applied.oidc) !== JSON.stringify(desired.oidc)
 			this.oidc = this.prepare(desired, oidcChanged ? undefined : this.oidc)
 		})
+		this.ctx.workbench?.publish(AuthWorkbench, { login: () => this.loginContent() })
+	}
+
+	/** The Workbench "登录" tab: what login runs on, a provider check and the client secret. */
+	private loginContent() {
+		return {
+			load: async () => ({ status: await this.loginStatus() }),
+			actions: {
+				probe: async () => {
+					const oidc = this.oidc
+					if (!oidc)
+						return { ok: false, message: '登录尚未配置：需要论坛公开地址和 OpenID Connect 设置' }
+					try {
+						const ms = await oidc.probe()
+						return { ok: true, message: `登录服务正常，用时 ${ms} ms` }
+					} catch (error) {
+						this.ctx.logger.warn('login provider check failed', { error })
+						return {
+							ok: false,
+							message: `连不上登录服务：${error instanceof Error ? error.message : String(error)}`,
+						}
+					}
+				},
+				setSecret: async ({ secret }: { secret: string }) => {
+					const kv = this.ctx.require(Vault).kv()
+					const current = await kv.get(CLIENT_SECRET_KEY)
+					if (current.exists && !current.writable) {
+						return { ok: false, message: '密钥由部署环境提供，不能在这里修改' }
+					}
+					await kv.set(CLIENT_SECRET_KEY, secret)
+					return { ok: true, message: '客户端密钥已保存，下次登录起使用' }
+				},
+				clearSecret: async () => {
+					const kv = this.ctx.require(Vault).kv()
+					const current = await kv.get(CLIENT_SECRET_KEY)
+					if (!current.exists) return { ok: true, message: '没有保存客户端密钥' }
+					if (!current.writable) {
+						return { ok: false, message: '密钥由部署环境提供，不能在这里删除' }
+					}
+					await kv.delete(CLIENT_SECRET_KEY)
+					return { ok: true, message: '客户端密钥已删除' }
+				},
+			},
+		}
+	}
+
+	private async loginStatus(): Promise<AuthStatus> {
+		const { oidc, publicOrigin, adminSubjects, testLoginTokenSha256 } = this.config
+		const secret = await this.ctx.require(Vault).kv().get(CLIENT_SECRET_KEY)
+		return {
+			login: this.oidc ? 'available' : 'unconfigured',
+			publicOrigin: publicOrigin ?? null,
+			issuer: oidc?.issuer ?? null,
+			clientId: oidc?.clientId ?? null,
+			clientSecret: !secret.exists ? 'none' : secret.source === 'kv' ? 'vault' : 'deployment',
+			admins: adminSubjects.length,
+			testLogin: testLoginTokenSha256 === undefined ? 'off' : 'on',
+		}
 	}
 
 	/**

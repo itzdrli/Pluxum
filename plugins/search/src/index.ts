@@ -12,6 +12,7 @@ import { and, count, desc, eq, gt, inArray, lte, notInArray, sql, type SQL } fro
 import * as v from 'valibot'
 import * as f from 'valibot-form'
 import { SearchDatabase, searchDocuments } from './database'
+import { SearchWorkbench, type SearchIndexStatus } from './workbench'
 import {
 	buildSnippetHtml,
 	createSearchTokenizer,
@@ -103,6 +104,7 @@ export class ForumSearchPlugin extends BasePlugin {
 	private tokenizer!: SearchTokenizer
 	private activeBackfill: ActiveBackfillState | null = null
 	private rebuildInFlight: Promise<number> | null = null
+	private lastRebuild: SearchIndexStatus['lastRebuild'] = null
 
 	constructor(private readonly core: ForumCorePlugin) {
 		super()
@@ -141,6 +143,11 @@ export class ForumSearchPlugin extends BasePlugin {
 			}
 		})
 
+		// A rebuild started from Workbench runs to the end even if the tab closes; stopping the plugin aborts it.
+		this.ctx.workbench?.publish(SearchWorkbench, {
+			index: () => this.indexContent(stopController.signal),
+		})
+
 		// Register the incremental hook before backfilling so concurrent writes are never missed.
 		this.ctx.effects.defer(
 			this.core.registerPostHook({
@@ -177,6 +184,27 @@ export class ForumSearchPlugin extends BasePlugin {
 	}
 
 	private async runBackfill(signal?: AbortSignal): Promise<number> {
+		const started = Date.now()
+		try {
+			const indexed = await this.backfill(signal)
+			this.recordRebuild(started, 'succeeded', indexed)
+			return indexed
+		} catch (error) {
+			this.recordRebuild(started, 'failed', null)
+			throw error
+		}
+	}
+
+	private recordRebuild(started: number, outcome: 'succeeded' | 'failed', indexed: number | null) {
+		this.lastRebuild = {
+			finishedAt: new Date().toISOString(),
+			outcome,
+			indexed,
+			durationMs: Date.now() - started,
+		}
+	}
+
+	private async backfill(signal?: AbortSignal): Promise<number> {
 		const state: ActiveBackfillState = {
 			touchedPosts: new Set(),
 			deletedPosts: new Set(),
@@ -248,6 +276,37 @@ export class ForumSearchPlugin extends BasePlugin {
 
 		if (isLastBatch || lastPostId === undefined) return toUpsert.length
 		return toUpsert.length + (await this.backfillBatch(lastPostId, state, signal))
+	}
+
+	/** The Workbench "索引" tab: index status, a rebuild button and a segmentation tester. */
+	private indexContent(stopSignal: AbortSignal) {
+		return {
+			load: () => this.indexStatus(),
+			actions: {
+				rebuild: async () => {
+					const indexed = await this.rebuildIndex(stopSignal)
+					return { ok: true, message: `索引已重建，写入 ${indexed} 条` }
+				},
+				segment: ({ text }: { text: string }) => {
+					const terms = this.tokenizer.tokenizeForQuery(text)
+					return { ok: true, message: terms.length > 0 ? terms.join(' / ') : '没有可搜索的词' }
+				},
+			},
+		}
+	}
+
+	private async indexStatus(): Promise<{ status: SearchIndexStatus }> {
+		const [row] = await this.database.read((db) =>
+			db.select({ value: count() }).from(searchDocuments),
+		)
+		return {
+			status: {
+				documents: row?.value ?? 0,
+				customWords: this.config.customWords.length,
+				rebuild: this.rebuildInFlight === null ? 'idle' : 'running',
+				lastRebuild: this.lastRebuild,
+			},
+		}
 	}
 
 	private prepareDocument(input: {

@@ -643,6 +643,9 @@ importers:
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      '@pluxel/workbench':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
       '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -983,6 +986,9 @@ importers:
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      '@pluxel/workbench':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
       drizzle-orm:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
