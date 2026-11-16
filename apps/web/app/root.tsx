@@ -24,6 +24,7 @@ import './app.css'
 import { Shell } from './components/shell/shell'
 import { useTheme } from './components/shell/theme-picker'
 import { DockProvider } from './components/dock/composer-dock'
+import { HoverCards } from './components/hover/hover-cards'
 import { GlobalShortcuts } from './components/shell/shortcuts'
 import { PaletteProvider } from './components/palette/command-palette'
 import { LightboxProvider } from './components/ui/lightbox'
@@ -98,6 +99,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
 			<DockProvider>
 				<PaletteProvider>
 					<GlobalShortcuts />
+					<HoverCards />
 					<Shell meta={loaderData.meta}>
 						<Outlet />
 					</Shell>
