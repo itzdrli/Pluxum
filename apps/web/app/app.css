@@ -103,7 +103,8 @@
  * State and shape, the same for every theme. Hover overlays the strong text colour at 7%, a press
  * at 12%; selection is the accent at 14%. On a dark theme that reads lighter, on a light one darker.
  */
-:root {
+:root,
+[data-theme] {
 	--c-hover: color-mix(in srgb, var(--c-text-strong) 7%, transparent);
 	--c-pressed: color-mix(in srgb, var(--c-text-strong) 12%, transparent);
 	--c-selected: color-mix(in srgb, var(--c-accent) 14%, transparent);
@@ -151,10 +152,13 @@
 /*
  * HeroUI reads its own variables; map them onto the roles. `.dark` / `.light` on <html> only tells
  * HeroUI which of its defaults to start from; these declarations replace the colours either way.
+ * `[data-theme]` repeats the mapping on a theme swatch: a variable built from `var()` resolves
+ * where it is declared, so without it `bg-accent` inside a swatch would show the page's accent.
  */
 :root,
 :root.dark,
-:root.light {
+:root.light,
+[data-theme] {
 	--background: var(--c-page);
 	--foreground: var(--c-text-strong);
 	--surface: var(--c-panel);
