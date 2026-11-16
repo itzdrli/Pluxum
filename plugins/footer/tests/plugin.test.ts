@@ -26,6 +26,16 @@ describe('forum footer plugin', () => {
 		expect(footer.icons.map((icon) => icon.href)).toContain('https://example.com/contact')
 		expect(footer.notes).toEqual(['© 2026 Pluxum'])
 
+		// A saved change replaces what the footer shows right away.
+		const saved = await host.config.patch(ForumFooterPlugin, {
+			groups: [],
+			icons: [],
+			notes: ['新的附注'],
+		})
+		expect(saved).toMatchObject({ ok: true, saved: true, application: 'applied' })
+		expect(core.footer().groups).toEqual([])
+		expect(core.footer().notes).toEqual(['新的附注'])
+
 		await host.stop(ForumFooterPlugin)
 		expect(core.footer().groups).toEqual([])
 		expect(core.footer().notes).toEqual([])

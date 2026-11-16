@@ -106,6 +106,12 @@ export const ForumFooterConfig = v.object({
 })
 export type ForumFooterConfig = v.InferOutput<typeof ForumFooterConfig>
 
+type DeepReadonly<T> = T extends readonly (infer U)[]
+	? readonly DeepReadonly<U>[]
+	: T extends object
+		? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+		: T
+
 /**
  * Customises the site footer from its own settings: columns of text links, icon links and plain
  * notes. It hands them to Forum Core's footer registry as plain data, so no frontend code is
@@ -121,8 +127,11 @@ export class ForumFooterPlugin extends BasePlugin {
 	}
 
 	protected override init(): void {
-		this.publish()
-		this.configs.onUpdate(this.config, () => this.publish())
+		this.publish(this.config)
+		// The listener runs before `this.config` is replaced, so it publishes what was saved.
+		this.configs.onUpdate(this.config, ({ desired }) =>
+			this.publish(v.parse(ForumFooterConfig, desired)),
+		)
 		this.ctx.effects.defer(() => {
 			this.withdraw?.()
 			this.withdraw = undefined
@@ -130,8 +139,7 @@ export class ForumFooterPlugin extends BasePlugin {
 	}
 
 	/** (Re-)registers what the config holds now. An empty config registers nothing. */
-	private publish(): void {
-		const { groups, icons, notes } = this.config
+	private publish({ groups, icons, notes }: DeepReadonly<ForumFooterConfig>): void {
 		this.withdraw?.()
 		this.withdraw = undefined
 		if (groups.length + icons.length + notes.length === 0) return
