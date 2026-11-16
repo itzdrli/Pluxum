@@ -203,6 +203,12 @@ export const paging = t.Object({
 	pageSize: t.Optional(t.String({ maxLength: 10 })),
 })
 
+export const recentThreadsQuery = t.Object({
+	page: t.Optional(t.String({ maxLength: 10 })),
+	pageSize: t.Optional(t.String({ maxLength: 10 })),
+	sort: t.Optional(t.Union([t.Literal('active'), t.Literal('new'), t.Literal('hot')])),
+})
+
 export const searchQuery = t.Object({
 	q: t.Optional(text(LIMITS.searchQueryMax)),
 	categoryId: t.Optional(t.String({ maxLength: 64 })),

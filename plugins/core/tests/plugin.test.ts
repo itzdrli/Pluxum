@@ -476,6 +476,12 @@ describe('ForumCorePlugin', () => {
 		expect(page2.pageSize).toBe(2)
 		expect(page2.items.map((item) => item.title)).toEqual(['News 1'])
 
+		// Sorting: `new` orders by start time; `hot` ranks by replies among recently active threads.
+		const byNew = await core.listRecentThreads(GUEST, {}, { sort: 'new' })
+		expect(byNew.items.map((item) => item.id)).toEqual([tSecret.id, t2.id, t1.id])
+		const byHot = await core.listRecentThreads(GUEST, {}, { sort: 'hot' })
+		expect(byHot.items[0]?.id).toBe(t1.id)
+
 		// Custom permission policy hides restricted categories for non-admins.
 		const disposeHideSecret = core.registerPermissionPolicy({
 			id: 'test.hide-secret',

@@ -377,9 +377,11 @@ export class ForumApiPlugin extends BasePlugin {
 			app
 				.get(
 					'/threads',
-					{ query: schema.paging, response: schema.recentThreads },
+					{ query: schema.recentThreadsQuery, response: schema.recentThreads },
 					async ({ request, query }) =>
-						await this.core.listRecentThreads(await this.viewer(request), pageOf(query)),
+						await this.core.listRecentThreads(await this.viewer(request), pageOf(query), {
+							sort: query.sort,
+						}),
 				)
 				.post(
 					'/threads',

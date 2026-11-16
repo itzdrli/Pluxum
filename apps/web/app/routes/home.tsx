@@ -1,4 +1,5 @@
 import type { CategoryDto, RecentThreadDto } from '@pluxum/domain'
+import { Dropdown } from '@heroui/react'
 import { LayoutList, MessageSquare, MessagesSquare, Plus } from 'lucide-react'
 import { useState } from 'react'
 import {
@@ -13,18 +14,13 @@ import {
 import type { Route } from './+types/home'
 import { ThreadFlags } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
-import { StageLink } from '../components/stage/stage'
-import { Button, IconButton } from '../components/ui/button'
-import {
-	EmptyState,
-	FormError,
-	Panel,
-	SectionLabel,
-	Tag,
-	Timestamp,
-} from '../components/ui/display'
+import { StageLink, useStageNavigate } from '../components/stage/stage'
+import { Button, ButtonAnchor, IconButton } from '../components/ui/button'
+import { EmptyState, FormError, Panel, Tag, Timestamp } from '../components/ui/display'
+import { Pager } from '../components/ui/pager'
 import { TextInputField } from '../components/ui/field'
-import { forumApi, orThrow, textField } from '../lib/forum-api.server'
+import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
+import { HOME_PAGE_SIZE, HOME_SORTS, homeSortOf, type HomeSort } from '../lib/home'
 import { defineStage } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
 import { siteOf } from '../lib/site'
@@ -37,13 +33,15 @@ export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
+	const sort = homeSortOf(new URL(request.url))
 	const [categoriesResult, recentResult] = await Promise.all([
 		forumApi.categories(request),
-		forumApi.recentThreads(request, 1, 12),
+		forumApi.recentThreads(request, pageParam(request), HOME_PAGE_SIZE, sort),
 	])
 	return {
 		categories: orThrow(categoriesResult).items,
 		recentThreads: orThrow(recentResult),
+		sort,
 	}
 }
 
@@ -62,9 +60,14 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
-	const { categories, recentThreads } = loaderData
+	const { categories, recentThreads, sort } = loaderData
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const canManage = root?.meta?.viewer.can.manageCategories === true
+	const signedIn = root?.meta?.viewer.user != null
+	const loginHref =
+		root?.meta?.viewer.user === null && root.meta.auth.loginAvailable
+			? '/api/forum/auth/login?returnTo=%2F'
+			: undefined
 	const [searchParams, setSearchParams] = useSearchParams()
 	const requestedNew = searchParams.get('new') === '1'
 	// Open while creating, via `?new=1`, or when the API rejected the last attempt.
@@ -130,16 +133,15 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 					aria-label="最新活跃讨论"
 					className={mobileTab === 'recent' ? '' : 'max-lg:hidden'}
 				>
-					<div className="max-lg:hidden">
-						<SectionLabel
-							actions={
-								<span className="text-ink-weak text-meta tabular-nums">
-									{categories.length} 版块 · {totalThreads} 主题 · {totalPosts} 帖子
-								</span>
-							}
-						>
-							最新活跃讨论
-						</SectionLabel>
+					{!signedIn && <GuestWelcome root={root} loginHref={loginHref} />}
+					<div className="mb-2 flex items-center justify-between gap-3">
+						<SortTabs sort={sort} />
+						<div className="flex items-center gap-3">
+							<span className="text-ink-weak text-meta tabular-nums max-lg:hidden">
+								{categories.length} 版块 · {totalThreads} 主题 · {totalPosts} 帖子
+							</span>
+							{signedIn && <NewThreadMenu categories={categories} />}
+						</div>
 					</div>
 					{recentThreads.items.length === 0 ? (
 						<EmptyState
@@ -153,10 +155,15 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 							className="divide-line divide-y max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0"
 						>
 							{recentThreads.items.map((item) => (
-								<RecentThreadItem key={item.id} item={item} />
+								<RecentThreadItem key={item.id} item={item} sort={sort} />
 							))}
 						</Panel>
 					)}
+					<Pager
+						page={recentThreads.page}
+						pageSize={recentThreads.pageSize}
+						total={recentThreads.total}
+					/>
 				</section>
 
 				<section aria-label="版块" className={mobileTab === 'categories' ? 'lg:hidden' : 'hidden'}>
@@ -183,6 +190,83 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 				</section>
 			</div>
 		</>
+	)
+}
+
+/** The feed's orderings: links, so each is a URL of its own. `active` is the bare page. */
+function SortTabs({ sort }: { sort: HomeSort }) {
+	return (
+		<nav aria-label="排序" className="flex items-center gap-4">
+			{HOME_SORTS.map((item) => (
+				<StageLink
+					key={item.id}
+					to={item.id === 'active' ? '/' : `/?sort=${item.id}`}
+					replace
+					aria-current={item.id === sort ? 'page' : undefined}
+					className={`h-control -mb-px inline-flex items-center border-b-2 text-ui transition-colors ${
+						item.id === sort
+							? 'border-accent text-ink-strong font-bold'
+							: 'text-ink-weak hover:text-ink-strong border-transparent'
+					}`}
+				>
+					{item.label}
+				</StageLink>
+			))}
+		</nav>
+	)
+}
+
+/** "发布主题" from the overview: pick the category, then write in its new-thread pane. */
+function NewThreadMenu({ categories }: { categories: readonly CategoryDto[] }) {
+	const navigate = useStageNavigate()
+	if (categories.length === 0) return null
+	return (
+		<Dropdown>
+			<Dropdown.Trigger className="button button--primary button--sm">
+				<Plus aria-hidden />
+				发布主题
+			</Dropdown.Trigger>
+			<Dropdown.Popover placement="bottom end" className="min-w-40">
+				<Dropdown.Menu
+					aria-label="选择版块"
+					onAction={(key) => {
+						const slug = categories.find((category) => category.id === key)?.slug
+						if (slug !== undefined) void navigate(`/c/${slug}/new`)
+					}}
+				>
+					{categories.map((category) => (
+						<Dropdown.Item key={category.id} id={category.id} textValue={category.name}>
+							{category.name}
+						</Dropdown.Item>
+					))}
+				</Dropdown.Menu>
+			</Dropdown.Popover>
+		</Dropdown>
+	)
+}
+
+/** What a visitor who has not signed in sees first: the site's one-line pitch and the way in. */
+function GuestWelcome({
+	root,
+	loginHref,
+}: {
+	root: ReturnType<typeof useRouteLoaderData<typeof rootLoader>>
+	loginHref: string | undefined
+}) {
+	const site = siteOf(root)
+	if (site.tagline === '' && loginHref === undefined) return null
+	return (
+		<Panel as="section" className="mb-4 flex items-center justify-between gap-4 p-4">
+			<div className="min-w-0">
+				<p className="text-ink-strong text-title font-bold">欢迎来到 {site.name}</p>
+				{site.tagline !== '' && <p className="text-ink-weak mt-0.5 break-words">{site.tagline}</p>}
+			</div>
+			{loginHref !== undefined && (
+				<ButtonAnchor href={loginHref} tone="primary" className="shrink-0">
+					登录
+				</ButtonAnchor>
+			)}
+		</Panel>
 	)
 }
 
@@ -245,7 +329,7 @@ function CategoryItem({ category }: { category: CategoryDto }) {
 	)
 }
 
-function RecentThreadItem({ item }: { item: RecentThreadDto }) {
+function RecentThreadItem({ item, sort }: { item: RecentThreadDto; sort: HomeSort }) {
 	return (
 		<li className="hover:bg-hover relative flex items-start gap-3 px-4 py-3 transition-colors">
 			<span className="mt-0.5 shrink-0">
@@ -270,7 +354,8 @@ function RecentThreadItem({ item }: { item: RecentThreadDto }) {
 						{item.author.displayName}
 					</StageLink>
 					<span aria-hidden>·</span>
-					<Timestamp iso={item.lastPostAt} />
+					{/* The newest sort is about when it started; the others about its latest activity. */}
+					<Timestamp iso={sort === 'new' ? item.createdAt : item.lastPostAt} />
 				</div>
 			</div>
 			{/* Chips: the category (its own link, above the row's) and the reply count. */}

@@ -21,6 +21,8 @@ import type {
 } from '@pluxum/domain'
 import { data } from 'react-router'
 
+import type { HomeSort } from './home'
+
 const DEFAULT_API_INTERNAL = 'http://127.0.0.1:5173'
 
 export function forumApiUrl(path: string): URL {
@@ -396,8 +398,8 @@ export const forumApi = {
 		if (result.ok) categoriesCache.clear()
 		return result
 	},
-	recentThreads: (request: Request, page = 1, pageSize = 12) =>
-		call<RecentThreadsDto>(request, `/threads?page=${page}&pageSize=${pageSize}`),
+	recentThreads: (request: Request, page = 1, pageSize = 12, sort: HomeSort = 'active') =>
+		call<RecentThreadsDto>(request, `/threads?page=${page}&pageSize=${pageSize}&sort=${sort}`),
 	categoryThreads: (request: Request, slug: string, page = 1) =>
 		call<CategoryThreadsDto>(
 			request,

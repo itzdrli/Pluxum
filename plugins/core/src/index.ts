@@ -55,7 +55,7 @@ import {
 	type PluginDatabaseClient,
 	type PluginDatabaseHandle,
 } from '@pluxel/services/database'
-import { and, asc, count, desc, eq, gt, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gt, gte, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
 import {
 	categories,
 	ForumDatabase,
@@ -142,6 +142,13 @@ export type {
 
 /** Every forum operation resolves to its value or an expected, user-presentable failure. */
 export type ForumResult<T> = Result<T, ForumError>
+
+/** How the cross-category thread list is ordered; see `listRecentThreads`. */
+export type RecentSort = 'active' | 'new' | 'hot'
+export type RecentThreadsFilter = Readonly<{ sort?: RecentSort }>
+
+/** `hot` only ranks threads with activity this recently, so old long threads do not stay on top. */
+const HOT_WINDOW_DAYS = 30
 
 export type CreateCategoryInput = Readonly<{
 	name: string
@@ -1076,12 +1083,18 @@ export class ForumCorePlugin extends BasePlugin {
 
 	// ── Threads ─────────────────────────────────────────────────────────────────────────────
 
-	/** One page of the most recently active threads across every category the viewer may see. */
+	/**
+	 * One page of threads across every category the viewer may see. `sort` is `active` (latest
+	 * activity, the default), `new` (latest started) or `hot` (most replies among threads active in
+	 * the last `HOT_WINDOW_DAYS` days).
+	 */
 	async listRecentThreads(
 		principal: Principal,
 		paging: PageRequest = {},
+		filter: RecentThreadsFilter = {},
 	): Promise<RecentThreadsDto> {
 		const { page, pageSize } = normalizePage(paging)
+		const sort = filter.sort ?? 'active'
 		const read = await this.database.read(async (db) => {
 			const allCategories = await db
 				.select({
@@ -1100,14 +1113,26 @@ export class ForumCorePlugin extends BasePlugin {
 			const categoriesById = new Map<string, CategorySummaryDto>(
 				visibleCategories.map((category) => [category.id, category]),
 			)
-			const visible = and(inArray(threads.categoryId, visibleIds), isNull(threads.deletedAt))
+			const visible = and(
+				inArray(threads.categoryId, visibleIds),
+				isNull(threads.deletedAt),
+				sort === 'hot'
+					? gte(threads.lastPostAt, new Date(Date.now() - HOT_WINDOW_DAYS * 86_400_000))
+					: undefined,
+			)
+			const order =
+				sort === 'new'
+					? [desc(threads.createdAt), desc(threads.id)]
+					: sort === 'hot'
+						? [desc(threads.replyCount), desc(threads.lastPostAt), desc(threads.id)]
+						: [desc(threads.lastPostAt), desc(threads.id)]
 			const [total] = await db.select({ value: count() }).from(threads).where(visible)
 			const rows = await db
 				.select({ thread: threads, author })
 				.from(threads)
 				.innerJoin(users, eq(users.id, threads.authorId))
 				.where(visible)
-				.orderBy(desc(threads.lastPostAt), desc(threads.id))
+				.orderBy(...order)
 				.limit(pageSize)
 				.offset((page - 1) * pageSize)
 			return {
