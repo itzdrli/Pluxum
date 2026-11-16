@@ -23,24 +23,39 @@
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "catalog:prod",
+		"@mantine/core": "catalog:frontend",
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/test": "catalog:pluxel",
+		"@pluxel/workbench": "catalog:pluxel",
+		"@tabler/icons-react": "catalog:frontend",
+		"@types/react": "catalog:frontend",
+		"@types/react-dom": "catalog:frontend",
+		"@types/sanitize-html": "catalog:tooling",
+		"capnweb": "catalog:prod",
+		"react": "catalog:frontend",
+		"react-dom": "catalog:frontend",
 		"typescript": "catalog:tooling",
 		"vite-plus": "catalog:tooling",
-		"vitest": "catalog:test",
-		"@types/sanitize-html": "catalog:tooling"
+		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
+		"@mantine/core": "catalog:frontend",
 		"@pluxel/core": "catalog:pluxel",
-		"@pluxel/services": "catalog:pluxel"
+		"@pluxel/services": "catalog:pluxel",
+		"@pluxel/workbench": "catalog:pluxel",
+		"@tabler/icons-react": "catalog:frontend",
+		"capnweb": "catalog:prod",
+		"react": "catalog:frontend",
+		"react-dom": "catalog:frontend"
 	},
 	"pluxel": {
 		"artifactRoot": "dist",
 		"nodeArtifacts": true,
-		"workbenchArtifacts": true
+		"workbenchArtifacts": true,
+		"workbenchCapnweb": "0.12.0"
 	},
 	"publishConfig": {
 		"exports": {

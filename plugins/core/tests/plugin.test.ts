@@ -264,6 +264,27 @@ describe('ForumCorePlugin', () => {
 		expect((await core.ensureUser({ subject: ' ', displayName: 'x' })).isErr()).toBe(true)
 	})
 
+	it('lists accounts for admin tooling, newest first, with roles and a name filter', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const ada = (await core.ensureUser({ subject: 'idp|a', displayName: 'Ada' })).unwrap()
+		const bob = (await core.ensureUser({ subject: 'idp|b', displayName: 'Bob 100%' })).unwrap()
+		;(await core.grantRole(ada.id, 'admin')).unwrap()
+
+		const all = await core.listUsers()
+		expect(all.total).toBe(2)
+		expect(all.items.map((user) => [user.id, user.roles])).toEqual([
+			[bob.id, []],
+			[ada.id, ['admin']],
+		])
+		expect((await core.listUsers({ query: 'ADA' })).items.map((user) => user.id)).toEqual([ada.id])
+		// LIKE wildcards in the query match literally.
+		expect((await core.listUsers({ query: '%' })).items.map((user) => user.id)).toEqual([bob.id])
+		expect(await core.listUsers({ query: 'nobody' })).toMatchObject({ items: [], total: 0 })
+		const second = await core.listUsers({ page: 2, pageSize: 1 })
+		expect(second.items.map((user) => user.id)).toEqual([ada.id])
+	})
+
 	it('reads user profiles and lets members or admins update display names', async () => {
 		await using host = await createHost()
 		const core = await host.start(ForumCorePlugin)

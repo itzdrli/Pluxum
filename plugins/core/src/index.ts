@@ -55,7 +55,7 @@ import {
 	type PluginDatabaseClient,
 	type PluginDatabaseHandle,
 } from '@pluxel/services/database'
-import { and, asc, count, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gt, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
 import {
 	categories,
 	ForumDatabase,
@@ -79,8 +79,10 @@ import {
 	type PostBeforeWriteEvent,
 	type PostHookContribution,
 } from './hooks'
+import { ForumAdminTarget } from './admin-target'
 import { ForumCoreConfig } from './config'
 import { FooterLinkRegistry, type FooterLinkContribution } from './footer'
+import { ForumCoreWorkbench } from './workbench'
 import { NotificationChannelRegistry, type NotificationChannelContribution } from './notifications'
 import { PolicyRegistry, type PermissionPolicyContribution } from './policies'
 import {
@@ -91,6 +93,23 @@ import {
 
 export type { ContentRendererContribution } from './content'
 export { ForumCoreConfig } from './config'
+
+/** A page of accounts for admin tooling (`listUsers`). */
+export type UserListDto = Readonly<{
+	items: ReadonlyArray<
+		Readonly<{
+			id: string
+			handle: string
+			displayName: string
+			number: number
+			createdAt: string
+			roles: AssignableRole[]
+		}>
+	>
+	total: number
+	page: number
+	pageSize: number
+}>
 export type { FooterLinkContribution } from './footer'
 export type {
 	EntityExtensionContribution,
@@ -251,6 +270,8 @@ export class ForumCorePlugin extends BasePlugin {
 		this.permissionPolicies.register({ id: BUILT_IN_POLICY_ID, evaluate: defaultRolePolicy })
 		// Site and footer settings are read per request; a saved change applies as is.
 		this.configs.onUpdate(this.config, () => {})
+		// Workbench "论坛管理": categories and account roles, acting as a forum admin.
+		this.ctx.workbench?.publish(ForumCoreWorkbench, { admin: () => new ForumAdminTarget(this) })
 	}
 
 	// ── Permissions ─────────────────────────────────────────────────────────────────────────
@@ -861,6 +882,60 @@ export class ForumCorePlugin extends BasePlugin {
 		const roles = new Set<Role>(['member'])
 		for (const { role } of rows) if (isAssignableRole(role)) roles.add(role)
 		return { userId, roles: [...roles] }
+	}
+
+	/**
+	 * Privileged, for admin tooling: one page of accounts, newest first, with their assigned roles.
+	 * `query` matches a handle or display name (case-insensitive substring).
+	 */
+	async listUsers(
+		input: Readonly<{ query?: string; page?: number; pageSize?: number }> = {},
+	): Promise<UserListDto> {
+		const { page, pageSize } = normalizePage(input)
+		const query = input.query?.trim().slice(0, 64) ?? ''
+		const pattern = `%${query.replaceAll(/[\\%_]/g, (char) => `\\${char}`)}%`
+		const where =
+			query === '' ? undefined : or(ilike(users.handle, pattern), ilike(users.displayName, pattern))
+		return this.database.read(async (db) => {
+			const [totalRow] = await db.select({ value: count() }).from(users).where(where)
+			const rows = await db
+				.select({ ...author, number: users.number, createdAt: users.createdAt })
+				.from(users)
+				.where(where)
+				.orderBy(desc(users.number))
+				.limit(pageSize)
+				.offset((page - 1) * pageSize)
+			const roleRows =
+				rows.length === 0
+					? []
+					: await db
+							.select({ userId: userRoles.userId, role: userRoles.role })
+							.from(userRoles)
+							.where(
+								inArray(
+									userRoles.userId,
+									rows.map((row) => row.id),
+								),
+							)
+			const rolesOf = new Map<string, AssignableRole[]>()
+			for (const { userId, role } of roleRows) {
+				if (!isAssignableRole(role)) continue
+				rolesOf.set(userId, [...(rolesOf.get(userId) ?? []), role])
+			}
+			return {
+				items: rows.map((row) => ({
+					id: row.id,
+					handle: row.handle,
+					displayName: row.displayName,
+					number: row.number,
+					createdAt: row.createdAt.toISOString(),
+					roles: rolesOf.get(row.id) ?? [],
+				})),
+				total: totalRow?.value ?? 0,
+				page,
+				pageSize,
+			}
+		})
 	}
 
 	/** Privileged: callers (identity setup, admin tooling) decide who may grant roles. */

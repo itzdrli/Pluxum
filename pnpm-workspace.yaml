@@ -89,6 +89,7 @@ catalogs:
   prod:
     '@electric-sql/pglite': ^0.5.10
     jose: ^6.2.12
+    capnweb: 0.12.0
 overrides:
   'vite@*': npm:@voidzero-dev/vite-plus-core@1.4.0
   typebox: catalog:backend
