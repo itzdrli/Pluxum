@@ -56,7 +56,11 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 			</aside>
 			{stage.depth === 0 ? (
 				// A page beside the column: one scrolling pane with a reading width.
-				<div className="min-w-0 flex-1 px-4 py-5 lg:overflow-y-auto lg:px-10 lg:pt-3 lg:pb-8">
+				// The overview starts with a row of its own, level with the first rail row under the bar; the
+				// other pages open with a title that keeps a little air above it.
+				<div
+					className={`min-w-0 flex-1 px-4 py-5 lg:overflow-y-auto lg:px-10 lg:pb-8 ${pathname === '/' ? 'lg:pt-0' : 'lg:pt-3'}`}
+				>
 					<div className={`mx-auto w-full ${stage.wide ? WIDE_PAGE : 'max-w-[1040px]'}`}>
 						<Outlet />
 					</div>
@@ -127,7 +131,7 @@ function CategoryNavPanel({
 		)
 	return (
 		<>
-			<ul className="border-line-soft border-b pt-3 pb-2">
+			<ul className="border-line-soft border-b pb-2">
 				<RailLink to="/" icon={LayoutGrid} label="概览" active={pathname === '/'} />
 				{meta?.search.available === true && (
 					<RailLink

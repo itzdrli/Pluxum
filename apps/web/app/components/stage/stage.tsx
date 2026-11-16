@@ -89,8 +89,8 @@ export function StageMotionSync() {
 	return null
 }
 
-// The category column and every pane share one top inset (12px, `pt-3`) and a 44px row (`h-11`), so
-// the first rail row and the first row of a page sit on one line.
+// The first rail row sits right under the bar and is 44px high (`h-11`); the overview starts at the
+// same line with a row of the same height, the other panes keep a 12px inset.
 /** Width of the category column; the top bar's brand cell uses it too, so the two line up. */
 export const RAIL_WIDTH = 'lg:w-[220px] xl:w-[260px] 2xl:w-[288px]'
 
