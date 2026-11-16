@@ -1,25 +1,41 @@
 import { Popover } from '@heroui/react'
 import { Check, Palette } from 'lucide-react'
-import { useFetcher, useRouteLoaderData } from 'react-router'
+import { useState, useSyncExternalStore } from 'react'
+import { useRouteLoaderData } from 'react-router'
 
-import { DEFAULT_THEME, isThemeId, THEMES, type ThemeId } from '../../lib/theme'
+import { DEFAULT_THEME, THEMES, themeCookie, type ThemeId } from '../../lib/theme'
 import type { loader as rootLoader } from '../../root'
 import { IconButton } from '../ui/button'
 
-/** Every theme change goes through this one fetcher, so the shell can read it from anywhere. */
-export const THEME_FETCHER_KEY = 'theme'
-
-/**
- * The theme to render: one being saved right now, else the one just saved, else the cookie's.
- * Lets the page switch instantly without reloading any route data.
+/*
+ * The theme chosen in this tab. Choosing one writes the cookie in the browser (the server reads
+ * it on the next request, so server-rendered pages come out right) and switches the page at once.
+ * No request is involved, so a refused or failed request can never leave the picker stuck.
  */
+let chosenTheme: ThemeId | null = null
+const listeners = new Set<() => void>()
+
+function subscribe(listener: () => void) {
+	listeners.add(listener)
+	return () => listeners.delete(listener)
+}
+
+function chooseTheme(theme: ThemeId) {
+	// oxlint-disable-next-line unicorn/no-document-cookie -- the theme cookie is meant to be readable and writable here.
+	document.cookie = themeCookie(theme)
+	chosenTheme = theme
+	for (const listener of listeners) listener()
+}
+
+/** The theme to render: the one chosen in this tab, else the cookie's. */
 export function useTheme(): ThemeId {
-	const fetcher = useFetcher<{ theme: ThemeId | null }>({ key: THEME_FETCHER_KEY })
 	const fromCookie = useRouteLoaderData<typeof rootLoader>('root')?.theme ?? DEFAULT_THEME
-	const pending = fetcher.formData?.get('theme')
-	if (isThemeId(pending)) return pending
-	// Route data is not reloaded for a theme change, so the saved value comes from the fetcher.
-	return fetcher.data?.theme ?? fromCookie
+	const chosen = useSyncExternalStore(
+		subscribe,
+		() => chosenTheme,
+		() => null,
+	)
+	return chosen ?? fromCookie
 }
 
 /** A small preview of a theme: page, panel and accent, drawn by the theme's own variables. */
@@ -37,26 +53,28 @@ function Swatch({ theme }: { theme: ThemeId }) {
 }
 
 export function ThemePicker() {
-	const fetcher = useFetcher({ key: THEME_FETCHER_KEY })
 	const current = useTheme()
+	const [open, setOpen] = useState(false)
 	return (
-		<Popover>
+		<Popover isOpen={open} onOpenChange={setOpen}>
 			<IconButton label="切换主题">
 				<Palette aria-hidden />
 			</IconButton>
 			<Popover.Content placement="bottom end" className="w-52 p-1">
 				<Popover.Dialog aria-label="主题" className="outline-none">
 					<p className="section-label px-2 pt-1.5 pb-1">主题</p>
-					<fetcher.Form method="post" action="/theme" className="flex flex-col">
+					<div role="group" aria-label="主题" className="flex flex-col">
 						{THEMES.map((theme) => {
 							const selected = theme.id === current
 							return (
 								<button
 									key={theme.id}
-									type="submit"
-									name="theme"
-									value={theme.id}
+									type="button"
 									aria-pressed={selected}
+									onClick={() => {
+										chooseTheme(theme.id)
+										setOpen(false)
+									}}
 									className={`flex h-9 items-center gap-2.5 rounded-[2px] px-2 text-left ${selected ? 'bg-selected text-ink-strong' : 'text-ink hover:bg-hover active:bg-pressed'}`}
 								>
 									<Swatch theme={theme.id} />
@@ -66,7 +84,7 @@ export function ThemePicker() {
 								</button>
 							)
 						})}
-					</fetcher.Form>
+					</div>
 				</Popover.Dialog>
 			</Popover.Content>
 		</Popover>

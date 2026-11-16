@@ -1,7 +1,6 @@
 import type { CategoryDto, ThreadDto } from '@pluxum/domain'
 import { Hash, Lock, MessageSquare, Pin } from 'lucide-react'
-import { Link } from 'react-router'
-
+import { StageLink } from '../stage/stage'
 import { Tag, Timestamp } from '../ui/display'
 import { UserAvatar } from './user-avatar'
 
@@ -18,7 +17,7 @@ function Stat({ value, label }: { value: number; label: string }) {
 export function CategoryRow({ category }: { category: CategoryDto }) {
 	return (
 		<li>
-			<Link
+			<StageLink
 				to={`/c/${category.slug}`}
 				prefetch="intent"
 				className="hover:bg-hover active:bg-pressed flex items-center gap-3 px-4 py-3"
@@ -43,7 +42,7 @@ export function CategoryRow({ category }: { category: CategoryDto }) {
 					<Stat value={category.threadCount} label="主题" />
 					<Stat value={category.postCount} label="帖子" />
 				</div>
-			</Link>
+			</StageLink>
 		</li>
 	)
 }
@@ -62,23 +61,19 @@ export function ThreadFlags({ thread }: { thread: Pick<ThreadDto, 'pinned' | 'lo
 	)
 }
 
-/** One thread in a category's list; adapts via `@container/threads` between wide and split-pane widths. */
+/**
+ * One thread in a list; adapts via `@container/threads` between wide and split-pane widths.
+ * `href` comes from the list's stage (`useStageLinks().detail`), so the thread opens beside it.
+ */
 export function ThreadRow({
 	thread,
-	categorySlug,
-	categoryPage = 1,
+	href,
 	isActive = false,
 }: {
 	thread: ThreadDto
-	categorySlug?: string
-	categoryPage?: number
+	href: string
 	isActive?: boolean
 }) {
-	const cpageQuery = categoryPage > 1 ? `?cpage=${categoryPage}` : ''
-	const href =
-		categorySlug !== undefined
-			? `/c/${categorySlug}/t/${thread.id}${cpageQuery}`
-			: `/t/${thread.id}`
 	return (
 		<li
 			className={`hover:bg-hover relative flex items-start gap-3 border-l-2 px-3 py-2.5 transition-colors @lg/threads:px-4 @lg/threads:py-3 ${
@@ -92,24 +87,24 @@ export function ThreadRow({
 				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
 					<ThreadFlags thread={thread} />
 					{/* The link's box covers the row, so the whole row is clickable. */}
-					<Link
+					<StageLink
 						to={href}
 						prefetch="intent"
 						aria-current={isActive ? 'page' : undefined}
 						className="text-ink-strong line-clamp-2 text-[13px] font-bold break-words after:absolute after:inset-0 @lg/threads:line-clamp-none @lg/threads:text-[14px]"
 					>
 						{thread.title}
-					</Link>
+					</StageLink>
 				</div>
 				<div className="text-ink-weak mt-1 flex items-center justify-between gap-2 text-[12px]">
 					<p className="flex min-w-0 flex-wrap items-center gap-x-1.5">
 						{/* Above the row link's box, so the name opens the profile instead. */}
-						<Link
+						<StageLink
 							to={`/u/${thread.author.id}`}
 							className="text-ink relative z-10 truncate hover:underline"
 						>
 							{thread.author.displayName}
-						</Link>
+						</StageLink>
 						<span aria-hidden>·</span>
 						<Timestamp iso={thread.lastPostAt} className="@lg/threads:hidden" />
 						<Timestamp iso={thread.createdAt} className="hidden @lg/threads:inline" />

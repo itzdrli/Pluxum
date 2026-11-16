@@ -15,7 +15,7 @@ export const DEFAULT_THEME: ThemeId = 'nord'
 /** Cookie that remembers the visitor's theme, so server-rendered pages come out right first time. */
 export const THEME_COOKIE = 'forum_theme'
 
-export function isThemeId(value: unknown): value is ThemeId {
+function isThemeId(value: unknown): value is ThemeId {
 	return THEMES.some((theme) => theme.id === value)
 }
 

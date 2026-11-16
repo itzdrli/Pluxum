@@ -44,16 +44,20 @@ describe('search route & API helpers', () => {
 		})
 	})
 
-	it('builds direct stage links for opening posts and anchored links for replies', () => {
-		expect(buildSearchHitHref({ postId: 'p1', threadId: 't1', opening: true }, 'general')).toBe(
-			'/c/general/t/t1',
+	it('opens hits beside the results, carrying the query, and anchors replies on their post', () => {
+		const stage = { listPath: '/search', listHref: '/search?q=PostgreSQL&cpage=2' }
+		expect(buildSearchHitHref({ postId: 'p1', threadId: 't1', opening: true }, stage)).toBe(
+			'/search/t/t1?q=PostgreSQL&cpage=2',
 		)
-		expect(buildSearchHitHref({ postId: 'p2', threadId: 't1', opening: false }, 'general')).toBe(
-			'/c/general/t/t1#post-p2',
+		expect(buildSearchHitHref({ postId: 'p2', threadId: 't1', opening: false }, stage)).toBe(
+			'/search/t/t1?q=PostgreSQL&cpage=2#post-p2',
 		)
-		expect(buildSearchHitHref({ postId: 'p2', threadId: 't1', opening: false }, undefined)).toBe(
-			'/t/t1#post-p2',
-		)
+		expect(
+			buildSearchHitHref(
+				{ postId: 'p2', threadId: 't1', opening: false },
+				{ listPath: null, listHref: null },
+			),
+		).toBe('/t/t1#post-p2')
 	})
 
 	it('preserves search filters across pagination links', () => {

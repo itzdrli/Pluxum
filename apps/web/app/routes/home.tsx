@@ -4,7 +4,6 @@ import { useState } from 'react'
 import {
 	data,
 	Form,
-	Link,
 	redirect,
 	useNavigation,
 	useRouteLoaderData,
@@ -13,6 +12,7 @@ import {
 
 import type { Route } from './+types/home'
 import { ThreadFlags } from '../components/forum/rows'
+import { StageLink } from '../components/stage/stage'
 import { Button } from '../components/ui/button'
 import {
 	EmptyState,
@@ -24,8 +24,10 @@ import {
 } from '../components/ui/display'
 import { TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, textField } from '../lib/forum-api.server'
-import { keepOnThemeChange } from '../lib/revalidate'
+import { defineStage } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
+
+export const handle = defineStage({ layer: 'page', wide: true })
 
 export function meta(): Route.MetaDescriptors {
 	return [{ title: 'Pluxum' }, { name: 'description', content: '万物皆插件的论坛' }]
@@ -41,8 +43,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 		recentThreads: orThrow(recentResult),
 	}
 }
-
-export const shouldRevalidate = keepOnThemeChange
 
 // Creates a category; the API decides whether the visitor may.
 export async function action({ request }: Route.ActionArgs) {
@@ -196,7 +196,7 @@ function CategoryCard({ category }: { category: CategoryDto }) {
 	return (
 		<li className="flex">
 			<Panel className="hover:bg-hover active:bg-pressed flex w-full flex-col transition-colors">
-				<Link
+				<StageLink
 					to={`/c/${category.slug}`}
 					prefetch="intent"
 					className="flex flex-1 flex-col justify-between gap-3 p-4"
@@ -225,7 +225,7 @@ function CategoryCard({ category }: { category: CategoryDto }) {
 						</span>
 						<span className="text-ink">进入 →</span>
 					</div>
-				</Link>
+				</StageLink>
 			</Panel>
 		</li>
 	)
@@ -235,31 +235,31 @@ function RecentThreadItem({ item }: { item: RecentThreadDto }) {
 	return (
 		<li className="hover:bg-hover relative flex flex-col gap-1.5 px-4 py-3 transition-colors">
 			<div className="flex flex-wrap items-center gap-1.5">
-				<Link
+				<StageLink
 					to={`/c/${item.category.slug}`}
 					prefetch="intent"
 					className="bg-control text-ink-weak hover:text-ink-strong relative z-10 inline-flex h-5 shrink-0 items-center gap-1 rounded-[2px] px-1.5 text-[12px] leading-none whitespace-nowrap"
 				>
 					<Hash aria-hidden size={11} />
 					{item.category.name}
-				</Link>
+				</StageLink>
 				<ThreadFlags thread={item} />
 			</div>
-			<Link
+			<StageLink
 				to={`/c/${item.category.slug}/t/${item.id}`}
 				prefetch="intent"
 				className="text-ink-strong text-[13px] font-bold break-words after:absolute after:inset-0"
 			>
 				{item.title}
-			</Link>
+			</StageLink>
 			<div className="text-ink-weak flex items-center justify-between gap-2 text-[12px]">
 				<span className="flex min-w-0 items-center gap-1.5">
-					<Link
+					<StageLink
 						to={`/u/${item.author.id}`}
 						className="text-ink relative z-10 truncate hover:underline"
 					>
 						{item.author.displayName}
-					</Link>
+					</StageLink>
 					<span aria-hidden>·</span>
 					<Timestamp iso={item.lastPostAt} />
 				</span>

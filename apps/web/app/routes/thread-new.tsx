@@ -7,8 +7,10 @@ import { Button, ButtonLink } from '../components/ui/button'
 import { Crumbs, FormError, PageHeader, Panel } from '../components/ui/display'
 import { TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, textField } from '../lib/forum-api.server'
-import { keepOnThemeChange } from '../lib/revalidate'
+import { defineStage } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
+
+export const handle = defineStage({ layer: 'detail' })
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
 	return [{ title: `发布主题${loaderData ? ` · ${loaderData.category.name}` : ''} · Pluxum` }]
@@ -19,8 +21,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	if (!can.createThread) throw data('你没有在这个版块发布主题的权限。', { status: 403 })
 	return { category }
 }
-
-export const shouldRevalidate = keepOnThemeChange
 
 export async function action({ request, params }: Route.ActionArgs) {
 	const form = await request.formData()

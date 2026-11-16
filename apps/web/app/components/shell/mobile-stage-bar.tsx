@@ -15,17 +15,19 @@ import {
 	Send,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Form, Link, useNavigation, useRouteLoaderData } from 'react-router'
+import { Form, useNavigation, useRouteLoaderData } from 'react-router'
 
 import type { loader as forumStageLoader } from '../../routes/forum-stage'
 import { Composer } from '../composer/composer'
+import { MobileBarSpacer, StageLink, useStage } from '../stage/stage'
 import { BottomSheet } from '../ui/bottom-sheet'
 import { Button, ButtonAnchor, ButtonLink, IconButton } from '../ui/button'
 import { FormError, Notice } from '../ui/display'
 import { ActionMenu, type MenuItem } from '../ui/overlay'
 
+// Every bar shares one view-transition name, so switching bars cross-fades in place.
 const BAR_CLASS =
-	'border-line bg-panel fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] lg:hidden'
+	'border-line bg-panel fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] [view-transition-name:stage-bar] lg:hidden'
 
 /** Decides whether the mobile floor-jump control scrolls back to top or down to the latest post. */
 export function resolveFloorJumpDirection(scrollY: number): 'top' | 'bottom' {
@@ -77,15 +79,16 @@ export function MobileCategoryBar({
 
 	return (
 		<>
+			<MobileBarSpacer />
 			<nav aria-label="版块快捷栏" className={BAR_CLASS}>
-				<Link
+				<StageLink
 					to="/"
 					prefetch="intent"
 					className={buttonVariants({ variant: 'ghost', size: 'sm', className: 'shrink-0' })}
 				>
 					<LayoutGrid aria-hidden />
 					<span>首页</span>
-				</Link>
+				</StageLink>
 
 				<button
 					type="button"
@@ -133,7 +136,7 @@ export function MobileCategoryBar({
 							const isActive = cat.slug === category.slug
 							return (
 								<li key={cat.id}>
-									<Link
+									<StageLink
 										to={`/c/${cat.slug}`}
 										prefetch="intent"
 										onClick={close}
@@ -154,7 +157,7 @@ export function MobileCategoryBar({
 											{cat.threadCount} 主题
 										</span>
 										{isActive && <Check aria-hidden size={14} className="text-accent shrink-0" />}
-									</Link>
+									</StageLink>
 								</li>
 							)
 						})}
@@ -165,9 +168,11 @@ export function MobileCategoryBar({
 	)
 }
 
-/** Depth 2 (`/c/:slug/t/:id`) mobile thumb-zone bar with back link, reply sheet trigger, floor jump, and thread menu. */
+/**
+ * Depth 2 mobile thumb-zone bar of a thread, whichever list opened it: back to that list, reply
+ * sheet trigger, floor jump, and thread menu.
+ */
 export function MobileThreadBar({
-	category,
 	threadId,
 	postsTotal,
 	canReply,
@@ -177,7 +182,6 @@ export function MobileThreadBar({
 	bodyMax,
 	menu,
 }: {
-	category: Pick<CategoryDto, 'slug' | 'name'>
 	threadId: string
 	postsTotal: number
 	canReply: boolean
@@ -187,6 +191,7 @@ export function MobileThreadBar({
 	bodyMax: number | undefined
 	menu: readonly MenuItem[]
 }) {
+	const stage = useStage()
 	const submitting = useNavigation().formData?.get('intent') === 'reply'
 	const [replyOpen, setReplyOpen] = useState(false)
 	const [trackedThreadId, setTrackedThreadId] = useState(threadId)
@@ -246,15 +251,16 @@ export function MobileThreadBar({
 
 	return (
 		<>
+			<MobileBarSpacer />
 			<nav aria-label="主题快捷栏" className={BAR_CLASS}>
-				<Link
-					to={`/c/${category.slug}`}
+				<StageLink
+					to={stage.listHref ?? '/'}
 					prefetch="intent"
 					className={buttonVariants({ variant: 'ghost', size: 'sm', className: 'shrink-0' })}
 				>
 					<ArrowLeft aria-hidden />
-					<span>列表</span>
-				</Link>
+					<span>{stage.backLabel}</span>
+				</StageLink>
 
 				{canReply ? (
 					<button

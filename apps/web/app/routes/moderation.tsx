@@ -16,10 +16,11 @@ import {
 	Trash2,
 	X,
 } from 'lucide-react'
-import { data, Form, Link, useNavigation } from 'react-router'
+import { data, Form, useNavigation } from 'react-router'
 
 import type { Route } from './+types/moderation'
 import { UserAvatar } from '../components/forum/user-avatar'
+import { StageLink } from '../components/stage/stage'
 import { Button, ButtonAnchor } from '../components/ui/button'
 import {
 	EmptyState,
@@ -32,7 +33,7 @@ import {
 } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
-import { keepOnThemeChange } from '../lib/revalidate'
+import { defineStage } from '../lib/stage'
 
 export type ModerationTab = 'queue' | 'logs'
 
@@ -113,6 +114,8 @@ export function formatModerationLogAction(
 ): Readonly<{ label: string; tone: TagTone }> {
 	return LOG_ACTION_META[actionCode] ?? { label: actionCode, tone: 'neutral' }
 }
+
+export const handle = defineStage({ layer: 'page' })
 
 export function meta(): Route.MetaDescriptors {
 	return [{ title: '审核队列 · Pluxum' }]
@@ -271,8 +274,6 @@ export async function action({ request }: Route.ActionArgs) {
 	return data(failure, { status: 400 })
 }
 
-export const shouldRevalidate = keepOnThemeChange
-
 export default function ModerationRoute({ loaderData, actionData }: Route.ComponentProps) {
 	const { available, loggedIn, authorized, loginAvailable, tab, status, queue, logs } = loaderData
 
@@ -341,7 +342,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 						aria-label="审核视图"
 						className="border-line bg-panel inline-flex rounded-[2px] border p-0.5 text-[12px]"
 					>
-						<Link
+						<StageLink
 							role="tab"
 							aria-selected={tab === 'queue'}
 							to={buildModerationHref('queue', status)}
@@ -356,8 +357,8 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 							{queue !== null && queue.openCount > 0 && (
 								<span className="tabular-nums">({queue.openCount})</span>
 							)}
-						</Link>
-						<Link
+						</StageLink>
+						<StageLink
 							role="tab"
 							aria-selected={tab === 'logs'}
 							to={buildModerationHref('logs')}
@@ -369,7 +370,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 						>
 							<History aria-hidden size={13} />
 							<span>审核日志</span>
-						</Link>
+						</StageLink>
 					</div>
 				}
 			/>
@@ -391,7 +392,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 							{QUEUE_STATUS_TABS.map((entry) => {
 								const active = status === entry.status
 								return (
-									<Link
+									<StageLink
 										key={entry.status}
 										to={buildModerationHref('queue', entry.status)}
 										className={`flex items-center gap-1 rounded-[2px] px-2.5 py-1 ${
@@ -404,7 +405,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 										{entry.status === 'open' && queue.openCount > 0 && (
 											<span className="tabular-nums">({queue.openCount})</span>
 										)}
-									</Link>
+									</StageLink>
 								)
 							})}
 						</div>
@@ -471,36 +472,36 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 					<Tag>{report.targetType === 'thread' ? '主题举报' : '帖子举报'}</Tag>
 					<span className="text-ink-weak flex items-center gap-1.5 text-[12px]">
 						<span>举报人：</span>
-						<Link
+						<StageLink
 							to={`/u/${report.reporter.id}`}
 							className="text-ink-strong inline-flex items-center gap-1 font-bold hover:underline"
 						>
 							<UserAvatar user={report.reporter} size="sm" />
 							<span>{report.reporter.displayName}</span>
-						</Link>
+						</StageLink>
 					</span>
 					{report.targetAuthor !== null && (
 						<span className="text-ink-weak flex items-center gap-1.5 text-[12px]">
 							<span>· 被举报作者：</span>
-							<Link
+							<StageLink
 								to={`/u/${report.targetAuthor.id}`}
 								className="text-ink-strong font-bold hover:underline"
 							>
 								{report.targetAuthor.displayName}
-							</Link>
+							</StageLink>
 						</span>
 					)}
 				</div>
 
 				<div className="flex items-center gap-3 text-[12px]">
 					<Timestamp iso={report.createdAt} className="text-ink-weak" />
-					<Link
+					<StageLink
 						to={targetHref}
 						className="text-accent inline-flex items-center gap-1 hover:underline"
 					>
 						<span>查看目标</span>
 						<ExternalLink aria-hidden size={12} />
-					</Link>
+					</StageLink>
 				</div>
 			</div>
 
@@ -513,12 +514,12 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 					<span>
 						由{' '}
 						{report.resolvedBy !== null ? (
-							<Link
+							<StageLink
 								to={`/u/${report.resolvedBy.id}`}
 								className="text-ink-strong font-bold hover:underline"
 							>
 								{report.resolvedBy.displayName}
-							</Link>
+							</StageLink>
 						) : (
 							'管理人员'
 						)}{' '}
@@ -602,27 +603,30 @@ function LogRow({ entry }: { entry: ModerationLogDto }) {
 			<div className="flex min-w-0 flex-1 basis-64 flex-col gap-1">
 				<div className="flex flex-wrap items-center gap-2">
 					<Tag tone={actionMeta.tone}>{actionMeta.label}</Tag>
-					<Link
+					<StageLink
 						to={`/u/${entry.actor.id}`}
 						className="text-ink-strong inline-flex items-center gap-1.5 font-bold hover:underline"
 					>
 						<UserAvatar user={entry.actor} size="sm" />
 						<span>{entry.actor.displayName}</span>
-					</Link>
+					</StageLink>
 					{entry.targetUser !== null ? (
 						<span className="text-ink-weak text-[12px]">
 							目标用户：
-							<Link
+							<StageLink
 								to={`/u/${entry.targetUser.id}`}
 								className="text-ink-strong font-bold hover:underline"
 							>
 								{entry.targetUser.displayName}
-							</Link>
+							</StageLink>
 						</span>
 					) : entry.targetType === 'thread' ? (
-						<Link to={`/t/${entry.targetId}`} className="text-accent text-[12px] hover:underline">
+						<StageLink
+							to={`/t/${entry.targetId}`}
+							className="text-accent text-[12px] hover:underline"
+						>
 							主题 #{entry.targetId.slice(0, 8)}
-						</Link>
+						</StageLink>
 					) : (
 						<span className="text-ink-weak font-mono text-[12px]">
 							{entry.targetType}:{entry.targetId.slice(0, 8)}

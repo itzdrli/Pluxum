@@ -44,7 +44,7 @@ export function IconButton({
 	)
 }
 
-/** A client-side navigation link that looks like a button. */
+/** A client-side navigation link that looks like a button; moves the stage like `StageLink`. */
 export function ButtonLink({
 	to,
 	tone = 'secondary',
@@ -60,7 +60,12 @@ export function ButtonLink({
 	children: React.ReactNode
 } & Omit<ComponentProps<typeof Link>, 'to' | 'className' | 'children'>) {
 	return (
-		<Link to={to} className={buttonVariants({ variant: tone, size, className })} {...rest}>
+		<Link
+			to={to}
+			viewTransition
+			className={buttonVariants({ variant: tone, size, className })}
+			{...rest}
+		>
 			{children}
 		</Link>
 	)

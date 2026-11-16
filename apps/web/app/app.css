@@ -583,16 +583,16 @@
 		}
 	}
 	.bottom-sheet-overlay[data-entering] {
-		animation: sheet-fade-in 200ms ease-out forwards;
+		animation: sheet-fade-in 220ms var(--stage-ease) forwards;
 	}
 	.bottom-sheet-overlay[data-exiting] {
 		animation: sheet-fade-out 180ms ease-in forwards;
 	}
 	.bottom-sheet-modal[data-entering] {
-		animation: sheet-slide-up 200ms ease-out forwards;
+		animation: sheet-slide-up var(--stage-duration) var(--stage-ease) forwards;
 	}
 	.bottom-sheet-modal[data-exiting] {
-		animation: sheet-slide-down 180ms ease-in forwards;
+		animation: sheet-slide-down 200ms var(--stage-ease-in) forwards;
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.bottom-sheet-overlay[data-entering],
@@ -601,6 +601,251 @@
 		.bottom-sheet-modal[data-exiting] {
 			animation-duration: 0.01ms;
 		}
+	}
+}
+
+/*
+ * Stage motion. Every in-forum navigation runs as a view transition (StageLink / ButtonLink /
+ * useStageNavigate), and the panes carry fixed names:
+ *
+ *   site-header   the top bar: never animates, so the frame feels anchored
+ *   stage-nav     category column (depth 1) ⇄ peek strip / drawer (depth 2)
+ *   stage-list    the list pane, wide (depth 1) ⇄ narrow column (depth 2)
+ *   stage-detail  the detail pane
+ *   stage-bar     the mobile thumb-zone bar
+ *
+ * <html data-stage-motion> (StageMotionSync) says which way the stage moves: push (deeper), pop
+ * (back out), detail (another detail in place) or list (another list in place).
+ */
+:root {
+	--stage-ease: cubic-bezier(0.22, 1, 0.36, 1);
+	--stage-ease-in: cubic-bezier(0.55, 0, 0.75, 0.2);
+	--stage-duration: 300ms;
+	--stage-duration-out: 160ms;
+	/* How far an entering detail travels. Phones push a whole screen. */
+	--stage-shift: 40px;
+	--stage-shift-back: -16px;
+}
+@media (max-width: 1023px) {
+	:root {
+		--stage-shift: 100%;
+		--stage-shift-back: -24%;
+	}
+}
+
+@keyframes stage-fade-in {
+	from {
+		opacity: 0;
+	}
+}
+@keyframes stage-fade-out {
+	to {
+		opacity: 0;
+	}
+}
+@keyframes stage-enter-from-right {
+	from {
+		opacity: 0;
+		transform: translate3d(var(--stage-shift), 0, 0);
+	}
+}
+@keyframes stage-exit-to-right {
+	to {
+		opacity: 0;
+		transform: translate3d(var(--stage-shift), 0, 0);
+	}
+}
+@keyframes stage-enter-from-left {
+	from {
+		opacity: 0;
+		transform: translate3d(var(--stage-shift-back), 0, 0);
+	}
+}
+@keyframes stage-exit-to-left {
+	to {
+		opacity: 0;
+		transform: translate3d(var(--stage-shift-back), 0, 0);
+	}
+}
+@keyframes stage-rise-in {
+	from {
+		opacity: 0;
+		transform: translate3d(0, 10px, 0);
+	}
+}
+@keyframes stage-sink-out {
+	to {
+		opacity: 0;
+		transform: translate3d(0, -6px, 0);
+	}
+}
+
+::view-transition-group(*) {
+	animation-duration: var(--stage-duration);
+	animation-timing-function: var(--stage-ease);
+}
+/* Whatever has no name of its own just cross-fades, quickly. */
+::view-transition-old(root) {
+	animation: stage-fade-out 120ms linear both;
+}
+::view-transition-new(root) {
+	animation: stage-fade-in 200ms linear both;
+}
+::view-transition-old(site-header) {
+	display: none;
+}
+::view-transition-new(site-header) {
+	animation: none;
+}
+
+/*
+ * Panes that change size reveal their content instead of stretching a picture of it: both
+ * snapshots keep their natural size, pinned top-left, and the box clips them while it resizes.
+ */
+::view-transition-group(stage-nav),
+::view-transition-group(stage-list) {
+	overflow: clip;
+}
+::view-transition-old(stage-nav),
+::view-transition-new(stage-nav),
+::view-transition-old(stage-list),
+::view-transition-new(stage-list) {
+	inline-size: auto;
+	block-size: auto;
+	object-fit: none;
+	object-position: left top;
+}
+/* The two layouts of a resizing pane barely overlap: the old one is gone before the new one shows. */
+::view-transition-old(stage-nav),
+::view-transition-old(stage-list) {
+	animation: stage-fade-out 110ms linear both;
+}
+::view-transition-new(stage-nav),
+::view-transition-new(stage-list) {
+	animation: stage-fade-in 200ms linear 90ms both;
+}
+
+/* Deeper: the detail slides in from the right; on phones the list is pushed aside. */
+:root[data-stage-motion='push']::view-transition-new(stage-detail):only-child {
+	animation: stage-enter-from-right var(--stage-duration) var(--stage-ease) both;
+}
+:root[data-stage-motion='push']::view-transition-old(stage-list):only-child {
+	animation: stage-exit-to-left var(--stage-duration) var(--stage-ease) both;
+}
+:root[data-stage-motion='push']::view-transition-new(stage-nav):only-child {
+	animation: stage-enter-from-left var(--stage-duration) var(--stage-ease) both;
+}
+:root[data-stage-motion='push']::view-transition-new(stage-list):only-child {
+	animation: stage-rise-in var(--stage-duration) var(--stage-ease) 40ms both;
+}
+
+/* Back out: the reverse. */
+:root[data-stage-motion='pop']::view-transition-old(stage-detail):only-child {
+	animation: stage-exit-to-right 220ms var(--stage-ease-in) both;
+}
+:root[data-stage-motion='pop']::view-transition-new(stage-list):only-child {
+	animation: stage-enter-from-left var(--stage-duration) var(--stage-ease) both;
+}
+:root[data-stage-motion='pop']::view-transition-old(stage-nav):only-child {
+	animation: stage-exit-to-left 220ms var(--stage-ease-in) both;
+}
+
+/* In place: the old content sinks away, the new one rises into the same pane. */
+:root[data-stage-motion='detail']::view-transition-old(stage-detail),
+:root[data-stage-motion='list']::view-transition-old(stage-list) {
+	animation: stage-sink-out var(--stage-duration-out) var(--stage-ease-in) both;
+}
+:root[data-stage-motion='detail']::view-transition-new(stage-detail),
+:root[data-stage-motion='list']::view-transition-new(stage-list) {
+	animation: stage-rise-in var(--stage-duration) var(--stage-ease) 60ms both;
+}
+
+/*
+ * Depth 2 category drawer: one panel, three states (folded strip, hover peek, open), so every
+ * change between them is one continuous transition. The fade of the folded strip is a mask whose
+ * stop is a registered number, which lets it animate with the rest.
+ */
+@property --stage-peek-veil {
+	syntax: '<number>';
+	inherits: false;
+	initial-value: 1;
+}
+.stage-peek {
+	--stage-peek-veil: 0.4;
+	--stage-peek-x: -73%;
+	transform-origin: left center;
+	transform: translate3d(var(--stage-peek-x), 0, 0) scale(0.95);
+	opacity: 0.45;
+	pointer-events: none;
+	mask-image: linear-gradient(to right, rgb(0 0 0 / var(--stage-peek-veil)), #000 55%);
+	transition:
+		transform var(--stage-duration) var(--stage-ease),
+		opacity 220ms var(--stage-ease),
+		--stage-peek-veil var(--stage-duration) var(--stage-ease),
+		box-shadow var(--stage-duration) var(--stage-ease);
+}
+@media (min-width: 80rem) {
+	.stage-peek {
+		--stage-peek-x: -71%;
+	}
+}
+.stage-peek-slot:is(:hover, :focus-within) .stage-peek:not([data-open]) {
+	transform: translate3d(-50%, 0, 0) scale(0.97);
+	opacity: 0.8;
+	--stage-peek-veil: 0.6;
+}
+.stage-peek[data-open] {
+	transform: none;
+	opacity: 1;
+	pointer-events: auto;
+	--stage-peek-veil: 1;
+	box-shadow: var(--c-overlay-shadow);
+}
+.stage-peek-backdrop {
+	z-index: 20;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 240ms var(--stage-ease);
+}
+.stage-peek-backdrop[data-open] {
+	opacity: 1;
+	pointer-events: auto;
+}
+.stage-peek-trigger[data-open] {
+	pointer-events: none;
+}
+.stage-peek-handle {
+	transition:
+		border-color 150ms ease,
+		color 150ms ease,
+		opacity 200ms ease,
+		transform var(--stage-duration) var(--stage-ease);
+}
+.stage-peek-grip {
+	transition: background-color 150ms ease;
+}
+.stage-peek-slot:is(:hover, :focus-within) .stage-peek-handle {
+	border-color: var(--c-accent);
+	color: var(--c-text-strong);
+}
+.stage-peek-slot:is(:hover, :focus-within) .stage-peek-grip {
+	background-color: var(--c-accent);
+}
+.stage-peek-trigger[data-open] .stage-peek-handle {
+	opacity: 0;
+	transform: translate3d(-8px, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+	.stage-peek,
+	.stage-peek-backdrop,
+	.stage-peek-handle {
+		transition-duration: 0.01ms;
 	}
 }
 

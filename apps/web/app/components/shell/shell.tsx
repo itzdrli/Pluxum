@@ -2,6 +2,7 @@ import { LIMITS, type MetaDto } from '@pluxum/domain'
 import { Search } from 'lucide-react'
 import { Form, Link, NavLink, useLocation } from 'react-router'
 
+import { StageMotionSync, useStage } from '../stage/stage'
 import { Notice } from '../ui/display'
 import { ShellSlots } from '../../slots/slots'
 import { ThemePicker } from './theme-picker'
@@ -26,31 +27,33 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 	const here = location.pathname + location.search
 	const searchParams = new URLSearchParams(location.search)
 	const loginError = LOGIN_ERRORS[searchParams.get('login') ?? '']
-	const isHome = location.pathname === '/'
-	const isSplitStage = location.pathname.startsWith('/c/')
-	const isSearchPage = location.pathname === '/search'
+	// Which columns and how tall: every page declares its part through `handle.stage`.
+	const stage = useStage()
+	const isSplitStage = stage.split
+	const isSearchPage = location.pathname === '/search' || location.pathname.startsWith('/search/')
 	const searchAvailable = meta?.search.available === true
 	const headerQuery = isSearchPage ? (searchParams.get('q') ?? '') : ''
-	// "版块" stays highlighted while reading inside a category or thread.
-	const inForum = isHome || isSplitStage || location.pathname.startsWith('/t/')
+	// "版块" stays highlighted on the home page and while reading inside a category.
+	const inForum = location.pathname === '/' || stage.nav || location.pathname.startsWith('/t/')
 	const mainClass = isSplitStage
 		? 'flex min-h-0 w-full flex-1 flex-col'
-		: isHome
+		: stage.wide
 			? 'mx-auto w-full max-w-[1520px] flex-1 px-4 py-6 lg:px-6'
 			: `${CONTENT_WIDTH} flex-1 py-6`
 	return (
 		<div
 			className={`flex min-h-screen flex-col${isSplitStage ? ' lg:h-dvh lg:overflow-hidden' : ''}`}
 		>
+			<StageMotionSync />
 			<a
 				href="#main"
 				className="bg-accent text-page sr-only z-50 px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
 			>
 				跳到正文
 			</a>
-			<header className="border-line bg-panel sticky top-0 z-30 shrink-0 border-b">
+			<header className="border-line bg-panel sticky top-0 z-30 shrink-0 border-b [view-transition-name:site-header]">
 				<div className="mx-auto flex h-12 w-full max-w-[1760px] items-center gap-3 px-4 lg:px-6">
-					<Link to="/" className="text-ink-strong flex items-center gap-2 font-bold">
+					<Link to="/" viewTransition className="text-ink-strong flex items-center gap-2 font-bold">
 						<span
 							aria-hidden
 							className="bg-accent text-page flex size-6 items-center justify-center rounded-[2px] text-[13px]"
@@ -60,11 +63,11 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 						<span className="hidden text-[14px] min-[400px]:inline">Pluxum</span>
 					</Link>
 					<nav aria-label="主导航" className="ml-2 flex items-center gap-1">
-						<NavLink to="/" className={() => navClass({ isActive: inForum })} end>
+						<NavLink to="/" viewTransition className={() => navClass({ isActive: inForum })} end>
 							版块
 						</NavLink>
 						{searchAvailable && (
-							<NavLink to="/search" className={navClass}>
+							<NavLink to="/search" viewTransition className={navClass}>
 								搜索
 							</NavLink>
 						)}

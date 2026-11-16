@@ -24,7 +24,6 @@ import { useTheme } from './components/shell/theme-picker'
 import { LightboxProvider } from './components/ui/lightbox'
 import { ButtonLink } from './components/ui/button'
 import { forumApi } from './lib/forum-api.server'
-import { keepOnThemeChange } from './lib/revalidate'
 import { isDarkTheme, themeFromRequest } from './lib/theme'
 
 // Who is browsing, what the forum allows, and the visitor's theme. Child routes read it through
@@ -45,8 +44,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 	// The shell still renders when the API is down; the page below reports the failure itself.
 	return { meta: forumMeta, unreadNotifications, theme: themeFromRequest(request) }
 }
-
-export const shouldRevalidate = keepOnThemeChange
 
 export function Layout({ children }: { children: React.ReactNode }) {
 	const theme = useTheme()

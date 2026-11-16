@@ -1,8 +1,10 @@
 import { buttonVariants } from '@heroui/react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Link, useLocation } from 'react-router'
+import { useLocation } from 'react-router'
 
 import { pageCount } from '../../lib/format'
+import { isDetailPath, LIST_PAGE_PARAM } from '../../lib/stage'
+import { StageLink } from '../stage/stage'
 
 /** Builds a pagination href preserving `pathname` and orthogonal query parameters. */
 export function buildPageHref(
@@ -12,7 +14,8 @@ export function buildPageHref(
 	paramName = 'page',
 ): string {
 	const params = new URLSearchParams(search)
-	if (paramName === 'cpage' && /^\/c\/[^/]+\/?$/.test(pathname)) {
+	// A list on its own may still carry the legacy `?page=`; its own pager replaces it.
+	if (paramName === LIST_PAGE_PARAM && !isDetailPath(pathname)) {
 		params.delete('page')
 	}
 	if (targetPage > 1) {
@@ -62,9 +65,9 @@ export function Pager({
 	return (
 		<nav aria-label="分页" className="mt-4 flex items-center justify-center gap-1">
 			{page > 1 ? (
-				<Link to={pageHref(page - 1)} className={STEP} aria-label="上一页" rel="prev">
+				<StageLink to={pageHref(page - 1)} className={STEP} aria-label="上一页" rel="prev">
 					<ChevronLeft aria-hidden />
-				</Link>
+				</StageLink>
 			) : (
 				<span className={`${STEP} opacity-40`} aria-hidden>
 					<ChevronLeft />
@@ -81,20 +84,20 @@ export function Pager({
 						…
 					</span>
 				) : (
-					<Link
+					<StageLink
 						key={item}
 						to={pageHref(item)}
 						aria-current={item === page ? 'page' : undefined}
 						className={`${STEP} hidden min-w-7 tabular-nums sm:inline-flex ${item === page ? 'bg-selected! text-accent!' : ''}`}
 					>
 						{item}
-					</Link>
+					</StageLink>
 				),
 			)}
 			{page < pages ? (
-				<Link to={pageHref(page + 1)} className={STEP} aria-label="下一页" rel="next">
+				<StageLink to={pageHref(page + 1)} className={STEP} aria-label="下一页" rel="next">
 					<ChevronRight aria-hidden />
-				</Link>
+				</StageLink>
 			) : (
 				<span className={`${STEP} opacity-40`} aria-hidden>
 					<ChevronRight />

@@ -1,9 +1,9 @@
 import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router'
 
 import { formatDateTime } from '../../lib/format'
+import { StageLink } from '../stage/stage'
 
 /** Small inline label. `accent` marks the one thing worth noticing (pinned, own role). */
 export type TagTone = 'neutral' | 'accent' | 'warning' | 'danger' | 'success'
@@ -105,9 +105,9 @@ export function Crumbs({ items }: { items: ReadonlyArray<{ label: string; to?: s
 							{item.label}
 						</span>
 					) : (
-						<Link to={item.to} className="hover:text-ink-strong shrink-0">
+						<StageLink to={item.to} className="hover:text-ink-strong shrink-0">
 							{item.label}
-						</Link>
+						</StageLink>
 					)}
 				</span>
 			))}

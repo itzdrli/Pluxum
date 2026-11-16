@@ -15,7 +15,7 @@ import {
 	data,
 	Form,
 	redirect,
-	useNavigate,
+	useLocation,
 	useNavigation,
 	useRouteLoaderData,
 	useSubmit,
@@ -26,6 +26,7 @@ import { Composer } from '../components/composer/composer'
 import { PostCard } from '../components/forum/post'
 import { ThreadFlags } from '../components/forum/rows'
 import { MobileThreadBar } from '../components/shell/mobile-stage-bar'
+import { useStage, useStageNavigate } from '../components/stage/stage'
 import { Button, ButtonAnchor, ButtonLink } from '../components/ui/button'
 import { Crumbs, EmptyState, FormError, Notice, PageHeader, Panel } from '../components/ui/display'
 import { TextInputField } from '../components/ui/field'
@@ -33,9 +34,12 @@ import { ActionMenu, ConfirmDialog, type MenuItem } from '../components/ui/overl
 import { Pager } from '../components/ui/pager'
 import { pageCount } from '../lib/format'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
-import { keepOnThemeChange } from '../lib/revalidate'
+import { defineStage, listPathOf } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
 import { ThreadSidebarSlots, useHasFilledSlot } from '../slots/slots'
+
+// Mounted under every list route (category, search, profile); the list decides where closing goes.
+export const handle = defineStage({ layer: 'detail' })
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
 	return [{ title: `${loaderData ? `${loaderData.thread.title} · ` : ''}Pluxum` }]
@@ -49,8 +53,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	}
 	return detail
 }
-
-export const shouldRevalidate = keepOnThemeChange
 
 type ActionFailure = Readonly<{ intent: string; error: string; postId?: string }>
 
@@ -72,19 +74,13 @@ export async function action({ request, params }: Route.ActionArgs) {
 		case 'reply': {
 			const result = await forumApi.createPost(request, params.id, textField(form, 'body'))
 			if (!result.ok) return failed(intent, result)
-			// Land on the page that now holds the reply, preserving the active category page (`?cpage=`).
-			const { category, posts } = orThrow(await forumApi.thread(request, params.id))
+			// Land on the page that now holds the reply, in the same list (`?cpage=`, search filters).
+			const { posts } = orThrow(await forumApi.thread(request, params.id))
 			const last = pageCount(posts.total, posts.pageSize)
-			const search = new URLSearchParams()
-			const cpage = new URL(request.url).searchParams.get('cpage')
-			if (cpage !== null && /^[1-9]\d{0,5}$/.test(cpage) && Number(cpage) > 1) {
-				search.set('cpage', cpage)
-			}
-			if (last > 1) search.set('page', String(last))
-			const query = search.toString()
-			return redirect(
-				`/c/${category.slug}/t/${params.id}${query === '' ? '' : `?${query}`}#post-${result.value.id}`,
-			)
+			const url = new URL(request.url)
+			if (last > 1) url.searchParams.set('page', String(last))
+			else url.searchParams.delete('page')
+			return redirect(`${url.pathname}${url.search}#post-${result.value.id}`)
 		}
 		case 'edit-post': {
 			const result = await forumApi.updatePost(request, postId, textField(form, 'body'))
@@ -112,9 +108,12 @@ export async function action({ request, params }: Route.ActionArgs) {
 			return result.ok ? null : failed(intent, result)
 		}
 		case 'delete-thread': {
-			const { category } = orThrow(await forumApi.thread(request, params.id))
 			const result = await forumApi.deleteThread(request, params.id)
-			return result.ok ? redirect(`/c/${category.slug}`) : failed(intent, result)
+			if (!result.ok) return failed(intent, result)
+			// Back to the list the thread was opened from, on the same list page and filters.
+			const url = new URL(request.url)
+			url.searchParams.delete('page')
+			return redirect(`${listPathOf(url.pathname)}${url.search}`)
 		}
 		default:
 			return failed(intent, { status: 400, error: { message: '未知的操作。' } })
@@ -125,7 +124,10 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const { thread, category, posts, can } = loaderData
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const submit = useSubmit()
-	const navigate = useNavigate()
+	const stage = useStage()
+	const navigate = useStageNavigate()
+	const closeHref = stage.listHref ?? `/c/${category.slug}`
+	const location = useLocation()
 	const hasSidebar = useHasFilledSlot('thread.sidebar')
 	// The title the rename form was opened for. A saved title differs from it, which closes the form.
 	const [renamingFrom, setRenamingFrom] = useState<string | undefined>(undefined)
@@ -165,11 +167,11 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			) {
 				return
 			}
-			void navigate(`/c/${category.slug}`)
+			void navigate(closeHref)
 		}
 		window.addEventListener('keydown', onKeyDown)
 		return () => window.removeEventListener('keydown', onKeyDown)
-	}, [category.slug, confirmingDelete, navigate, renaming])
+	}, [closeHref, confirmingDelete, navigate, renaming])
 
 	const menu: MenuItem[] = []
 	if (can.edit) {
@@ -218,7 +220,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const replyError = actionData?.intent === 'reply' ? actionData.error : undefined
 	const loginHref =
 		forum?.viewer.user === null && forum.auth.loginAvailable
-			? `/api/forum/auth/login?returnTo=${encodeURIComponent(`/c/${category.slug}/t/${thread.id}`)}`
+			? `/api/forum/auth/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`
 			: undefined
 
 	const mainContent = (
@@ -253,7 +255,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 						<>
 							{menu.length > 0 && <ActionMenu label="主题操作" items={menu} size="md" />}
 							<ButtonLink
-								to={`/c/${category.slug}`}
+								to={closeHref}
 								tone="ghost"
 								size="sm"
 								aria-label="关闭主题"
@@ -295,7 +297,6 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 				bodyMax={forum?.limits.postBodyMax}
 			/>
 			<MobileThreadBar
-				category={category}
 				threadId={thread.id}
 				postsTotal={posts.total}
 				canReply={can.reply}

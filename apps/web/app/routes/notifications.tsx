@@ -1,9 +1,10 @@
 import type { NotificationDto } from '@pluxum/domain'
 import { Bell, BellOff, Check, CheckCheck, ExternalLink, LogIn } from 'lucide-react'
-import { data, Form, Link, useFetcher, useNavigation } from 'react-router'
+import { data, Form, useFetcher, useNavigation } from 'react-router'
 
 import type { Route } from './+types/notifications'
 import { UserAvatar } from '../components/forum/user-avatar'
+import { StageLink } from '../components/stage/stage'
 import { Button, ButtonAnchor, ButtonLink } from '../components/ui/button'
 import {
 	EmptyState,
@@ -16,7 +17,7 @@ import {
 } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
-import { keepOnThemeChange } from '../lib/revalidate'
+import { defineStage } from '../lib/stage'
 
 export type ParsedNotificationsUrl = Readonly<{
 	unreadOnly: boolean
@@ -45,6 +46,8 @@ export function resolveNotificationHref(
 	}
 	return null
 }
+
+export const handle = defineStage({ layer: 'page' })
 
 export function meta(): Route.MetaDescriptors {
 	return [{ title: '通知 · Pluxum' }]
@@ -143,8 +146,6 @@ export async function action({ request }: Route.ActionArgs) {
 	return data(failure, { status: 400 })
 }
 
-export const shouldRevalidate = keepOnThemeChange
-
 export default function NotificationsRoute({ loaderData, actionData }: Route.ComponentProps) {
 	const { available, loggedIn, loginAvailable, unreadOnly, notifications } = loaderData
 	const navigation = useNavigation()
@@ -201,7 +202,7 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 							aria-label="通知筛选"
 							className="border-line bg-panel inline-flex rounded-[2px] border p-0.5 text-[12px]"
 						>
-							<Link
+							<StageLink
 								to="/notifications"
 								className={`rounded-[2px] px-2.5 py-1 ${
 									!unreadOnly
@@ -210,8 +211,8 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 								}`}
 							>
 								全部
-							</Link>
-							<Link
+							</StageLink>
+							<StageLink
 								to="/notifications?unread=1"
 								className={`flex items-center gap-1 rounded-[2px] px-2.5 py-1 ${
 									unreadOnly
@@ -223,7 +224,7 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 								{notifications.unreadCount > 0 && (
 									<span className="tabular-nums">({notifications.unreadCount})</span>
 								)}
-							</Link>
+							</StageLink>
 						</div>
 
 						{notifications.unreadCount > 0 && (
@@ -308,9 +309,9 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 		>
 			<div className=" flex min-w-0 flex-1 items-start gap-3">
 				{item.actor !== null ? (
-					<Link to={`/u/${item.actor.id}`} className="mt-0.5 shrink-0">
+					<StageLink to={`/u/${item.actor.id}`} className="mt-0.5 shrink-0">
 						<UserAvatar user={item.actor} size="md" />
-					</Link>
+					</StageLink>
 				) : (
 					<span
 						aria-hidden
@@ -324,7 +325,7 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 					<div className="flex flex-wrap items-center gap-2">
 						{!isRead && <Tag tone="accent">未读</Tag>}
 						{href !== null ? (
-							<Link
+							<StageLink
 								to={href}
 								onClick={markReadOnJump}
 								className={`hover:text-accent text-[14px] leading-snug break-words ${
@@ -332,7 +333,7 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 								}`}
 							>
 								{item.title}
-							</Link>
+							</StageLink>
 						) : (
 							<span
 								className={`text-[14px] leading-snug break-words ${
@@ -353,9 +354,9 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 					<div className="text-ink-weak mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
 						{item.actor !== null && (
 							<>
-								<Link to={`/u/${item.actor.id}`} className="hover:text-ink-strong">
+								<StageLink to={`/u/${item.actor.id}`} className="hover:text-ink-strong">
 									{item.actor.displayName}
-								</Link>
+								</StageLink>
 								<span aria-hidden>·</span>
 							</>
 						)}

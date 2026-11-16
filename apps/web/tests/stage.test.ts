@@ -8,13 +8,42 @@ import {
 } from '../app/components/shell/mobile-stage-bar'
 import { buildPageHref } from '../app/components/ui/pager'
 import { pageParam } from '../app/lib/forum-api.server'
+import { stageShouldRevalidate } from '../app/lib/revalidate'
 import {
-	categoryPageOf,
-	categoryStageShouldRevalidate,
-	keepOnThemeChange,
-	stageShouldRevalidate,
-} from '../app/lib/revalidate'
-import { computeStageDepth } from '../app/routes/forum-stage'
+	defineStage,
+	listPageOf,
+	listPathOf,
+	listShouldRevalidate,
+	resolveStage,
+	stageDetailHref,
+	stageMotion,
+	type StageMatch,
+} from '../app/lib/stage'
+
+const categoryList = defineStage({ layer: 'list', nav: true, backLabel: '列表' })
+const searchList = defineStage({
+	layer: 'list',
+	carry: ['q', 'categoryId', 'authorId', 'threadsOnly'],
+	backLabel: '结果',
+})
+const userList = defineStage({ layer: 'list', backLabel: '主页' })
+const detail = defineStage({ layer: 'detail' })
+
+function stageAt(href: string, chain: ReadonlyArray<[string, string, unknown]>) {
+	const matches: StageMatch[] = [
+		{ id: 'root', pathname: '/', handle: undefined },
+		{ id: 'routes/forum-stage', pathname: '/', handle: undefined },
+		...chain.map(([id, pathname, handle]) => ({ id, pathname, handle })),
+	]
+	return resolveStage(matches, new URL(href, 'http://localhost'))
+}
+
+function args(current: string, next: string): ShouldRevalidateFunctionArgs {
+	return revalidateArgs({
+		currentUrl: new URL(current, 'http://localhost'),
+		nextUrl: new URL(next, 'http://localhost'),
+	})
+}
 
 function revalidateArgs(
 	overrides: Partial<ShouldRevalidateFunctionArgs> = {},
@@ -30,24 +59,82 @@ function revalidateArgs(
 }
 
 describe('3-Depth Stage Manager routing & revalidation', () => {
-	it('computes stage depth 0, 1, and 2 from params and pathname', () => {
-		expect(computeStageDepth({}, '/')).toBe(0)
-		expect(computeStageDepth({ slug: 'general' }, '/c/general')).toBe(1)
-		expect(computeStageDepth({ slug: 'general', id: '42' }, '/c/general/t/42')).toBe(2)
-		expect(computeStageDepth({ slug: 'general' }, '/c/general/new')).toBe(2)
+	it('resolves depth, panes and links from the route handles', () => {
+		const home = stageAt('/', [['routes/home', '/', defineStage({ layer: 'page', wide: true })]])
+		expect(home).toMatchObject({ depth: 0, split: false, wide: true, listHref: null })
+		expect(
+			stageAt('/notifications', [['routes/notifications', '/notifications', undefined]]).depth,
+		).toBe(0)
+
+		const category = stageAt('/c/general?page=2', [['routes/category', '/c/general', categoryList]])
+		expect(category).toMatchObject({
+			depth: 1,
+			nav: true,
+			split: true,
+			listHref: '/c/general?cpage=2',
+		})
+		expect(stageDetailHref(category, '42')).toBe('/c/general/t/42?cpage=2')
+
+		const thread = stageAt('/c/general/t/42?cpage=2&page=3', [
+			['routes/category', '/c/general', categoryList],
+			['routes/thread', '/c/general/t/42', detail],
+		])
+		expect(thread).toMatchObject({
+			depth: 2,
+			listHref: '/c/general?cpage=2',
+			detailKey: '/c/general/t/42',
+			backLabel: '列表',
+		})
+		expect(
+			stageAt('/c/general/new', [
+				['routes/category', '/c/general', categoryList],
+				['routes/thread-new', '/c/general/new', detail],
+			]).depth,
+		).toBe(2)
+
+		const search = stageAt('/search/t/7?q=pg&threadsOnly=1&page=2&cpage=3', [
+			['routes/search', '/search', searchList],
+			['routes/search-thread', '/search/t/7', detail],
+		])
+		expect(search).toMatchObject({
+			depth: 2,
+			nav: false,
+			listHref: '/search?q=pg&threadsOnly=1&cpage=3',
+			backLabel: '结果',
+		})
+		expect(stageDetailHref(search, '9', 'p1')).toBe(
+			'/search/t/9?q=pg&threadsOnly=1&cpage=3#post-p1',
+		)
+
+		const profile = stageAt('/u/5', [['routes/user', '/u/5', userList]])
+		expect(stageDetailHref(profile, '9')).toBe('/u/5/t/9')
 	})
 
-	it('keepOnThemeChange skips revalidation only on /theme action', () => {
-		expect(keepOnThemeChange(revalidateArgs({ formAction: '/theme' }))).toBe(false)
-		expect(keepOnThemeChange(revalidateArgs({ formAction: '/c/general/new' }))).toBe(true)
+	it('derives the motion of a transition from the two stages', () => {
+		const list = { depth: 1 as const, listKey: '/c/a', detailKey: null }
+		const open = { depth: 2 as const, listKey: '/c/a', detailKey: '/c/a/t/1' }
+		expect(stageMotion({ depth: 0, listKey: null, detailKey: null }, list)).toBe('push')
+		expect(stageMotion(list, open)).toBe('push')
+		expect(stageMotion(open, list)).toBe('pop')
+		expect(stageMotion(open, { ...open, detailKey: '/c/a/t/2' })).toBe('detail')
+		expect(stageMotion(list, { ...list, listKey: '/c/b' })).toBe('list')
+		expect(stageMotion(open, open)).toBe('none')
+	})
+
+	it('listShouldRevalidate keeps a search list while threads beside it change', () => {
+		const shouldRevalidate = listShouldRevalidate(['q', 'threadsOnly'])
+		expect(shouldRevalidate(args('/search?q=pg', '/search/t/1?q=pg'))).toBe(false)
+		expect(shouldRevalidate(args('/search/t/1?q=pg', '/search/t/2?q=pg&page=2'))).toBe(false)
+		expect(shouldRevalidate(args('/search?q=pg&page=2', '/search/t/1?q=pg&cpage=2'))).toBe(false)
+		expect(shouldRevalidate(args('/search/t/1?q=pg', '/search?q=mysql'))).toBe(true)
+		expect(shouldRevalidate(args('/search/t/1?q=pg', '/search/t/1?q=pg&threadsOnly=1'))).toBe(true)
+		expect(listPathOf('/u/5/t/9')).toBe('/u/5')
+		expect(listPathOf('/c/general/new/')).toBe('/c/general')
 	})
 
 	it('stageShouldRevalidate skips pure GET navigations and revalidates after mutations', () => {
 		expect(stageShouldRevalidate(revalidateArgs())).toBe(false)
 		expect(stageShouldRevalidate(revalidateArgs({ formMethod: 'GET' }))).toBe(false)
-		expect(
-			stageShouldRevalidate(revalidateArgs({ formAction: '/theme', formMethod: 'POST' })),
-		).toBe(false)
 		expect(
 			stageShouldRevalidate(
 				revalidateArgs({ formAction: '/ext/reactions/toggle', formMethod: 'POST' }),
@@ -70,7 +157,8 @@ describe('3-Depth Stage Manager routing & revalidation', () => {
 		).toBe(true)
 	})
 
-	it('categoryStageShouldRevalidate keeps category thread list when switching threads or paginating thread posts', () => {
+	it('a category list keeps its thread list when switching threads or paginating thread posts', () => {
+		const categoryStageShouldRevalidate = listShouldRevalidate()
 		// Navigating /c/general/t/1 -> /c/general/t/2 keeps Pane 2 without refetching
 		expect(categoryStageShouldRevalidate(revalidateArgs())).toBe(false)
 
@@ -188,9 +276,9 @@ describe('3-Depth Stage Manager routing & revalidation', () => {
 		expect(pageParam(new Request('http://localhost/c/general/t/1?cpage=4&page=2'), 'cpage')).toBe(4)
 		expect(pageParam(new Request('http://localhost/c/general/t/1?page=2'), 'cpage')).toBe(1)
 
-		expect(categoryPageOf(new URL('http://localhost/c/general/t/1?page=3'))).toBe(1)
-		expect(categoryPageOf(new URL('http://localhost/c/general/t/1?cpage=2&page=3'))).toBe(2)
-		expect(categoryPageOf(new URL('http://localhost/c/general?page=2'))).toBe(2)
+		expect(listPageOf(new URL('http://localhost/c/general/t/1?page=3'), true)).toBe(1)
+		expect(listPageOf(new URL('http://localhost/c/general/t/1?cpage=2&page=3'), true)).toBe(2)
+		expect(listPageOf(new URL('http://localhost/c/general?page=2'), false)).toBe(2)
 
 		expect(buildPageHref('/c/general/t/1', '?cpage=2', 3, 'page')).toBe(
 			'/c/general/t/1?cpage=2&page=3',
@@ -202,6 +290,7 @@ describe('3-Depth Stage Manager routing & revalidation', () => {
 			'/c/general/t/1?cpage=4&page=3',
 		)
 		expect(buildPageHref('/c/general', '?page=2', 3, 'cpage')).toBe('/c/general?cpage=3')
+		expect(buildPageHref('/search', '?q=pg&page=2', 3, 'cpage')).toBe('/search?q=pg&cpage=3')
 	})
 })
 

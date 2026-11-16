@@ -1,9 +1,11 @@
 import { LIMITS, type CategoryDto, type SearchHitDto } from '@pluxum/domain'
 import { Search, SearchX } from 'lucide-react'
-import { Form, Link, useNavigation } from 'react-router'
+import { Form, useNavigation, useParams, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/search'
+import type { loader as stageLoader } from './forum-stage'
 import { UserAvatar } from '../components/forum/user-avatar'
+import { StageLink, StageSplit, useStageLinks } from '../components/stage/stage'
 import { Button } from '../components/ui/button'
 import {
 	EmptyState,
@@ -15,8 +17,21 @@ import {
 	Timestamp,
 } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
-import { forumApi, orThrow, pageParam } from '../lib/forum-api.server'
-import { keepOnThemeChange } from '../lib/revalidate'
+import { forumApi, orThrow } from '../lib/forum-api.server'
+import {
+	defineStage,
+	isDetailPath,
+	LIST_PAGE_PARAM,
+	listPageOf,
+	listShouldRevalidate,
+	type ResolvedStage,
+	stageDetailHref,
+} from '../lib/stage'
+
+// The query and filters define the list, so they travel with every thread opened from it.
+const SEARCH_CARRY = ['q', 'categoryId', 'authorId', 'threadsOnly'] as const
+
+export const handle = defineStage({ layer: 'list', carry: SEARCH_CARRY, backLabel: '结果' })
 
 export type ParsedSearchUrl = Readonly<{
 	query: string
@@ -39,13 +54,12 @@ export function parseSearchUrl(url: URL): ParsedSearchUrl {
 	}
 }
 
+/** Opens a hit beside the results; a reply hit lands on its post. */
 export function buildSearchHitHref(
 	hit: Pick<SearchHitDto, 'postId' | 'threadId' | 'opening'>,
-	categorySlug: string | undefined,
+	stage: Pick<ResolvedStage, 'listPath' | 'listHref'>,
 ): string {
-	const base =
-		categorySlug !== undefined ? `/c/${categorySlug}/t/${hit.threadId}` : `/t/${hit.threadId}`
-	return hit.opening ? base : `${base}#post-${hit.postId}`
+	return stageDetailHref(stage, hit.threadId, hit.opening ? undefined : hit.postId)
 }
 
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
@@ -54,20 +68,15 @@ export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-	const [metaResult, categoriesResult] = await Promise.all([
-		forumApi.meta(request),
-		forumApi.categories(request),
-	])
-	const forumMeta = orThrow(metaResult)
-	const categories = orThrow(categoriesResult).items
-	const parsed = parseSearchUrl(new URL(request.url))
-	const page = pageParam(request)
+	const forumMeta = orThrow(await forumApi.meta(request))
+	const url = new URL(request.url)
+	const parsed = parseSearchUrl(url)
+	const page = listPageOf(url, isDetailPath(url.pathname))
 
 	if (!forumMeta.search.available) {
 		return {
 			available: false as const,
 			...parsed,
-			categories,
 			results: null,
 			error: undefined,
 		}
@@ -77,7 +86,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 		return {
 			available: true as const,
 			...parsed,
-			categories,
 			results: null,
 			error: undefined,
 		}
@@ -96,7 +104,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 			return {
 				available: false as const,
 				...parsed,
-				categories,
 				results: null,
 				error: undefined,
 			}
@@ -105,7 +112,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 			return {
 				available: true as const,
 				...parsed,
-				categories,
 				results: null,
 				error: searchResult.error.message,
 			}
@@ -116,175 +122,241 @@ export async function loader({ request }: Route.LoaderArgs) {
 	return {
 		available: true as const,
 		...parsed,
-		categories,
 		results: searchResult.ok ? searchResult.value : null,
 		error: undefined,
 	}
 }
 
-export const shouldRevalidate = keepOnThemeChange
+export const shouldRevalidate = listShouldRevalidate(SEARCH_CARRY)
 
 export default function SearchRoute({ loaderData }: Route.ComponentProps) {
-	const { available, query, categoryId, authorId, threadsOnly, categories, results, error } =
-		loaderData
+	const { available, query, categoryId, authorId, threadsOnly, results, error } = loaderData
+	const categories = useRouteLoaderData<typeof stageLoader>('routes/forum-stage')?.categories ?? []
 	const navigation = useNavigation()
-	const isSearching = navigation.state === 'loading' && navigation.location?.pathname === '/search'
+	const isSearching =
+		navigation.state === 'loading' && navigation.location?.pathname.startsWith('/search')
+	const params = useParams()
+	const { stage } = useStageLinks()
 
 	if (!available) {
 		return (
-			<>
-				<PageHeader title="搜索" description="检索论坛中的主题与回复。" />
-				<EmptyState
-					icon={SearchX}
-					title="搜索功能未启用"
-					hint="全文检索插件当前处于停用状态，请稍后再试。"
-				/>
-			</>
+			<StageSplit label="搜索">
+				{() => (
+					<>
+						<PageHeader title="搜索" description="检索论坛中的主题与回复。" />
+						<EmptyState
+							icon={SearchX}
+							title="搜索功能未启用"
+							hint="全文检索插件当前处于停用状态，请稍后再试。"
+						/>
+					</>
+				)}
+			</StageSplit>
 		)
 	}
 
 	const categoriesById = new Map<string, CategoryDto>(
 		categories.map((category) => [category.id, category]),
 	)
+	const hiddenFilters = (
+		<>
+			{authorId !== undefined && <input type="hidden" name="authorId" value={authorId} />}
+			{categoryId !== '' && <input type="hidden" name="categoryId" value={categoryId} />}
+			{threadsOnly && <input type="hidden" name="threadsOnly" value="1" />}
+		</>
+	)
 
 	return (
-		<>
-			<PageHeader title="搜索" description="支持中英文分词检索，可按版块或主题范围筛选。" />
+		<StageSplit label="搜索结果">
+			{(detailOpen) => (
+				<>
+					{detailOpen ? (
+						<Form method="get" action="/search" role="search" className="mb-3">
+							{hiddenFilters}
+							<SearchInput query={query} size="sm" />
+						</Form>
+					) : (
+						<>
+							<PageHeader title="搜索" description="支持中英文分词检索，可按版块或主题范围筛选。" />
+							<Panel className="mb-6 p-3 sm:p-4">
+								<Form method="get" action="/search" role="search" className="flex flex-col gap-3">
+									{authorId !== undefined && (
+										<input type="hidden" name="authorId" value={authorId} />
+									)}
+									<div className="flex items-center gap-2">
+										<SearchInput query={query} size="md" autoFocus={query === ''} />
+										<Button tone="primary" size="md" type="submit" isPending={isSearching}>
+											搜索
+										</Button>
+									</div>
 
-			<Panel className="mb-6 p-3 sm:p-4">
-				<Form method="get" action="/search" role="search" className="flex flex-col gap-3">
-					{authorId !== undefined && <input type="hidden" name="authorId" value={authorId} />}
-					<div className="flex items-center gap-2">
-						<div className="relative flex min-w-0 flex-1 items-center">
-							<Search
-								aria-hidden
-								size={14}
-								className="text-ink-weak pointer-events-none absolute left-2.5"
-							/>
-							<input
-								key={query}
-								type="search"
-								name="q"
-								defaultValue={query}
-								maxLength={LIMITS.searchQueryMax}
-								placeholder="输入关键词搜索主题或帖子…"
-								aria-label="搜索关键词"
-								autoFocus={query === ''}
-								className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-8 w-full rounded-[2px] border pr-3 pl-8 text-[13px] outline-none"
-							/>
+									<div className="flex flex-wrap items-center gap-2">
+										<select
+											key={categoryId}
+											name="categoryId"
+											defaultValue={categoryId}
+											aria-label="按版块筛选"
+											className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-8 max-w-full rounded-[2px] border px-2.5 text-[13px] outline-none"
+										>
+											<option value="">全部版块</option>
+											{categories.map((category) => (
+												<option key={category.id} value={category.id}>
+													{category.name}
+												</option>
+											))}
+										</select>
+
+										<label className="border-line bg-page text-ink hover:border-ink-weak flex h-8 cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-[13px] select-none">
+											<input
+												key={String(threadsOnly)}
+												type="checkbox"
+												name="threadsOnly"
+												value="1"
+												defaultChecked={threadsOnly}
+												className="size-3.5 accent-[var(--c-accent)]"
+											/>
+											<span>仅看主题</span>
+										</label>
+									</div>
+								</Form>
+							</Panel>
+						</>
+					)}
+
+					{error !== undefined && (
+						<div className="mb-6">
+							<FormError message={error} />
 						</div>
-						<Button tone="primary" size="md" type="submit" isPending={isSearching}>
-							搜索
-						</Button>
-					</div>
+					)}
 
-					<div className="flex flex-wrap items-center gap-2">
-						<select
-							key={categoryId}
-							name="categoryId"
-							defaultValue={categoryId}
-							aria-label="按版块筛选"
-							className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-8 max-w-full rounded-[2px] border px-2.5 text-[13px] outline-none"
-						>
-							<option value="">全部版块</option>
-							{categories.map((category) => (
-								<option key={category.id} value={category.id}>
-									{category.name}
-								</option>
-							))}
-						</select>
-
-						<label className="border-line bg-page text-ink hover:border-ink-weak flex h-8 cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-[13px] select-none">
-							<input
-								key={String(threadsOnly)}
-								type="checkbox"
-								name="threadsOnly"
-								value="1"
-								defaultChecked={threadsOnly}
-								className="size-3.5 accent-[var(--c-accent)]"
+					{results === null ? (
+						error === undefined && (
+							<EmptyState
+								icon={Search}
+								title="输入关键词开始搜索"
+								hint="支持中文词语切分与英文搜索，结果按相关度与发布时间排序。"
 							/>
-							<span>仅看主题</span>
-						</label>
-					</div>
-				</Form>
-			</Panel>
-
-			{error !== undefined && (
-				<div className="mb-6">
-					<FormError message={error} />
-				</div>
-			)}
-
-			{results === null ? (
-				error === undefined && (
-					<EmptyState
-						icon={Search}
-						title="输入关键词开始搜索"
-						hint="支持中文词语切分与英文搜索，结果按相关度与发布时间排序。"
-					/>
-				)
-			) : results.items.length === 0 ? (
-				<EmptyState
-					icon={SearchX}
-					title="没有找到匹配的内容"
-					hint="试试缩短关键词、换个说法，或放宽版块与主题筛选条件。"
-				/>
-			) : (
-				<section>
-					<SectionLabel>搜索结果 · {results.total}</SectionLabel>
-					<Panel as="ol" className="divide-line divide-y">
-						{results.items.map((hit) => (
-							<SearchHitRow
-								key={hit.postId}
-								hit={hit}
-								category={categoriesById.get(hit.categoryId)}
+						)
+					) : results.items.length === 0 ? (
+						<EmptyState
+							icon={SearchX}
+							title="没有找到匹配的内容"
+							hint="试试缩短关键词、换个说法，或放宽版块与主题筛选条件。"
+						/>
+					) : (
+						<section>
+							<SectionLabel>搜索结果 · {results.total}</SectionLabel>
+							<Panel as="ol" className="divide-line divide-y">
+								{results.items.map((hit) => (
+									<SearchHitRow
+										key={hit.postId}
+										hit={hit}
+										href={buildSearchHitHref(hit, stage)}
+										isActive={hit.threadId === params.id}
+										category={categoriesById.get(hit.categoryId)}
+									/>
+								))}
+							</Panel>
+							<Pager
+								page={results.page}
+								pageSize={results.pageSize}
+								total={results.total}
+								paramName={LIST_PAGE_PARAM}
 							/>
-						))}
-					</Panel>
-					<Pager page={results.page} pageSize={results.pageSize} total={results.total} />
-				</section>
+						</section>
+					)}
+				</>
 			)}
-		</>
+		</StageSplit>
 	)
 }
 
-function SearchHitRow({ hit, category }: { hit: SearchHitDto; category: CategoryDto | undefined }) {
-	const href = buildSearchHitHref(hit, category?.slug)
+function SearchInput({
+	query,
+	size,
+	autoFocus,
+}: {
+	query: string
+	size: 'sm' | 'md'
+	autoFocus?: boolean
+}) {
 	return (
-		<li className="hover:bg-hover flex items-start gap-3 px-4 py-3 transition-colors">
-			<Link
+		<div className="relative flex min-w-0 flex-1 items-center">
+			<Search
+				aria-hidden
+				size={14}
+				className="text-ink-weak pointer-events-none absolute left-2.5"
+			/>
+			<input
+				key={query}
+				type="search"
+				name="q"
+				defaultValue={query}
+				maxLength={LIMITS.searchQueryMax}
+				placeholder="输入关键词搜索主题或帖子…"
+				aria-label="搜索关键词"
+				autoFocus={autoFocus}
+				className={`border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border pr-3 pl-8 text-[13px] outline-none ${size === 'sm' ? 'h-7' : 'h-8'}`}
+			/>
+		</div>
+	)
+}
+
+function SearchHitRow({
+	hit,
+	href,
+	isActive,
+	category,
+}: {
+	hit: SearchHitDto
+	href: string
+	isActive: boolean
+	category: CategoryDto | undefined
+}) {
+	return (
+		<li
+			className={`hover:bg-hover relative flex items-start gap-3 border-l-2 px-3 py-2.5 transition-colors @lg/threads:px-4 @lg/threads:py-3 ${
+				isActive ? 'border-l-accent bg-selected' : 'border-l-transparent'
+			}`}
+		>
+			<StageLink
 				to={`/u/${hit.author.id}`}
 				tabIndex={-1}
 				aria-hidden
-				className="hidden shrink-0 sm:block"
+				className="relative z-10 hidden shrink-0 @lg/threads:block"
 			>
 				<UserAvatar user={hit.author} />
-			</Link>
+			</StageLink>
 			<div className="min-w-0 flex-1">
 				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
 					<Tag tone={hit.opening ? 'accent' : 'neutral'}>{hit.opening ? '主题' : '回复'}</Tag>
 					{category !== undefined && <Tag>{category.name}</Tag>}
-					<Link
+					{/* The link's box covers the row, so the whole row opens the hit. */}
+					<StageLink
 						to={href}
 						prefetch="intent"
-						className="text-ink-strong text-[14px] font-bold break-words hover:underline"
+						aria-current={isActive ? 'page' : undefined}
+						className="text-ink-strong text-[13px] font-bold break-words after:absolute after:inset-0 hover:underline @lg/threads:text-[14px]"
 					>
 						{hit.title}
-					</Link>
+					</StageLink>
 				</div>
 
 				{hit.snippetHtml !== '' && (
 					// Sanitized by forum-core (`sanitizeSearchSnippet` allows `<mark>` with no attributes).
 					<p
-						className="search-snippet text-ink mt-1.5 line-clamp-3 text-[13px] leading-relaxed break-words"
+						className="search-snippet text-ink mt-1.5 line-clamp-2 @lg/threads:line-clamp-3 text-[13px] leading-relaxed break-words"
 						dangerouslySetInnerHTML={{ __html: hit.snippetHtml }}
 					/>
 				)}
 
 				<div className="text-ink-weak mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12px]">
-					<Link to={`/u/${hit.author.id}`} className="text-ink truncate hover:underline">
+					<StageLink
+						to={`/u/${hit.author.id}`}
+						className="text-ink relative z-10 truncate hover:underline"
+					>
 						{hit.author.displayName}
-					</Link>
+					</StageLink>
 					<span aria-hidden>·</span>
 					<Timestamp iso={hit.createdAt} />
 				</div>

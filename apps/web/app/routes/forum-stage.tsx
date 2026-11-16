@@ -1,135 +1,141 @@
 import type { CategoryDto } from '@pluxum/domain'
 import { Hash, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { Link, Outlet, useLocation, useParams, useRouteLoaderData } from 'react-router'
+import { useEffect, useRef, useState } from 'react'
+import { Outlet, useLocation, useParams, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/forum-stage'
+import { StageLink, useStage } from '../components/stage/stage'
 import { forumApi, orThrow } from '../lib/forum-api.server'
 import { stageShouldRevalidate } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
 
-export type StageDepth = 0 | 1 | 2
-
+/**
+ * The stage frame around every list and detail route. It owns the category navigation: a column
+ * beside a list that asks for it (depth 1), and the peek strip / drawer next to a detail (depth 2).
+ * Pages (depth 0) render as they are.
+ */
 export async function loader({ request }: Route.LoaderArgs) {
 	return { categories: orThrow(await forumApi.categories(request)).items }
 }
 
 export const shouldRevalidate = stageShouldRevalidate
 
-export function computeStageDepth(
-	params: Readonly<{ slug?: string; id?: string }>,
-	pathname: string,
-): StageDepth {
-	if (params.slug === undefined) return 0
-	if (params.id !== undefined || /\/new\/?$/.test(pathname)) return 2
-	return 1
-}
-
 export default function ForumStage({ loaderData }: Route.ComponentProps) {
 	const { categories } = loaderData
+	const stage = useStage()
 	const params = useParams()
-	const location = useLocation()
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const canManageCategories = root?.meta?.viewer.can.manageCategories === true
 
-	const depth = computeStageDepth(params, location.pathname)
+	if (stage.depth === 0) return <Outlet />
 
-	const [drawerOpen, setDrawerOpen] = useState(false)
+	const navProps = { categories, activeSlug: params.slug, canManageCategories }
+	return (
+		<div
+			data-stage-depth={stage.depth}
+			className="relative mx-auto flex min-h-0 w-full max-w-[1760px] flex-1 lg:overflow-hidden"
+		>
+			{stage.nav &&
+				(stage.depth === 1 ? (
+					<aside
+						aria-label="版块导航"
+						className="border-line bg-panel flex min-h-0 w-[260px] shrink-0 flex-col border-r [view-transition-name:stage-nav] max-lg:hidden xl:w-[288px]"
+					>
+						<CategoryNavPanel {...navProps} />
+					</aside>
+				) : (
+					<CategoryPeekDrawer {...navProps} />
+				))}
+			<Outlet />
+		</div>
+	)
+}
+
+type NavProps = {
+	categories: readonly CategoryDto[]
+	activeSlug: string | undefined
+	canManageCategories: boolean
+}
+
+/**
+ * Depth 2: the category column folds into a strip at the left edge that peeks out on hover and
+ * opens as a drawer. The panel stays mounted in all three states so every change between them is
+ * one continuous transition (see `.stage-peek` in app.css) instead of a remount.
+ */
+function CategoryPeekDrawer(props: NavProps) {
+	const location = useLocation()
+	const [open, setOpen] = useState(false)
 	const [lastPath, setLastPath] = useState(location.pathname)
 	if (lastPath !== location.pathname) {
 		setLastPath(location.pathname)
-		if (drawerOpen) setDrawerOpen(false)
+		if (open) setOpen(false)
 	}
 
+	const triggerRef = useRef<HTMLButtonElement>(null)
+	const panelRef = useRef<HTMLElement>(null)
+	const wasOpen = useRef(false)
 	useEffect(() => {
-		if (!drawerOpen) return undefined
+		if (open) {
+			panelRef.current
+				?.querySelector<HTMLElement>('[aria-current="page"], a, button')
+				?.focus({ preventScroll: true })
+		} else if (wasOpen.current && panelRef.current?.contains(document.activeElement)) {
+			triggerRef.current?.focus({ preventScroll: true })
+		}
+		wasOpen.current = open
+	}, [open])
+
+	useEffect(() => {
+		if (!open) return undefined
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.key === 'Escape' && !event.defaultPrevented) {
 				event.preventDefault()
-				setDrawerOpen(false)
+				setOpen(false)
 			}
 		}
 		window.addEventListener('keydown', onKeyDown, { capture: true })
 		return () => window.removeEventListener('keydown', onKeyDown, { capture: true })
-	}, [drawerOpen])
+	}, [open])
 
-	if (depth === 0) {
-		return <Outlet />
-	}
-
+	const state = open ? { 'data-open': '' } : {}
 	return (
-		<div
-			data-stage-depth={depth}
-			className="relative mx-auto flex min-h-0 w-full max-w-[1760px] flex-1 max-lg:pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:overflow-hidden"
-		>
-			{depth === 1 ? (
-				<aside
-					aria-label="版块导航"
-					className="border-line bg-panel flex min-h-0 w-[260px] shrink-0 flex-col border-r max-lg:hidden xl:w-[288px]"
-				>
-					<CategoryNavPanel
-						categories={categories}
-						activeSlug={params.slug}
-						canManageCategories={canManageCategories}
-					/>
-				</aside>
-			) : (
-				<div
-					className={`relative z-30 w-[76px] shrink-0 select-none max-lg:hidden xl:w-[92px]${drawerOpen ? '' : ' group/peek'}`}
-				>
-					{!drawerOpen ? (
-						<>
-							<div
-								aria-hidden
-								style={{
-									maskImage: 'linear-gradient(to right, rgb(0 0 0 / 0.45), #000 55%)',
-								}}
-								className="border-line bg-panel pointer-events-none absolute inset-y-2 left-0 flex w-[260px] origin-left translate-x-[-73%] scale-[0.95] flex-col overflow-hidden rounded-[2px] border opacity-45 transition-[transform,opacity] duration-200 ease-out group-focus-within/peek:translate-x-[-50%] group-focus-within/peek:scale-[0.97] group-focus-within/peek:opacity-80 group-hover/peek:translate-x-[-50%] group-hover/peek:scale-[0.97] group-hover/peek:opacity-80 xl:w-[288px] xl:translate-x-[-70%] xl:group-focus-within/peek:translate-x-[-50%] xl:group-hover/peek:translate-x-[-50%]"
-							>
-								<CategoryNavPanel
-									categories={categories}
-									activeSlug={params.slug}
-									canManageCategories={canManageCategories}
-									inert
-								/>
-							</div>
-							<button
-								type="button"
-								onClick={() => setDrawerOpen(true)}
-								aria-label="展开版块列表快速切换"
-								title="展开版块列表"
-								className="absolute inset-0 z-20 flex cursor-pointer items-center justify-end pr-2"
-							>
-								<span className="border-line bg-panel text-ink-weak group-focus-visible/peek:border-accent group-focus-visible/peek:text-ink-strong group-focus-within/peek:border-accent group-focus-within/peek:text-ink-strong group-hover/peek:border-accent group-hover/peek:text-ink-strong flex flex-col items-center gap-1.5 rounded-[2px] border px-1.5 py-2.5 transition-colors">
-									<PanelLeftOpen aria-hidden size={14} />
-									<span className="bg-line group-focus-visible/peek:bg-accent group-focus-within/peek:bg-accent group-hover/peek:bg-accent h-5 w-0.5 rounded-[2px] transition-colors" />
-								</span>
-							</button>
-						</>
-					) : (
-						<>
-							<div
-								aria-hidden
-								onClick={() => setDrawerOpen(false)}
-								className="bg-page/55 fixed inset-0 z-20"
-							/>
-							<aside
-								aria-label="版块切换抽屉"
-								className="border-line bg-panel shadow-overlay absolute inset-y-2 left-2 z-30 flex w-[272px] translate-x-0 scale-100 flex-col overflow-hidden rounded-[2px] border opacity-100 xl:w-[296px]"
-							>
-								<CategoryNavPanel
-									categories={categories}
-									activeSlug={params.slug}
-									canManageCategories={canManageCategories}
-									onSelectCategory={() => setDrawerOpen(false)}
-									onCloseDrawer={() => setDrawerOpen(false)}
-								/>
-							</aside>
-						</>
-					)}
-				</div>
-			)}
-			<Outlet />
+		<div className="stage-peek-slot relative z-30 w-[76px] shrink-0 select-none max-lg:hidden xl:w-[92px]">
+			<div
+				aria-hidden
+				onClick={() => setOpen(false)}
+				className="stage-peek-backdrop bg-page/55 fixed inset-0"
+				{...state}
+			/>
+			<button
+				ref={triggerRef}
+				type="button"
+				onClick={() => setOpen(true)}
+				aria-label="展开版块列表快速切换"
+				aria-expanded={open}
+				title="展开版块列表"
+				tabIndex={open ? -1 : undefined}
+				className="stage-peek-trigger absolute inset-0 z-20 flex cursor-pointer items-center justify-end pr-2"
+				{...state}
+			>
+				<span className="stage-peek-handle border-line bg-panel text-ink-weak flex flex-col items-center gap-1.5 rounded-[2px] border px-1.5 py-2.5">
+					<PanelLeftOpen aria-hidden size={14} />
+					<span className="stage-peek-grip bg-line h-5 w-0.5 rounded-[2px]" />
+				</span>
+			</button>
+			<aside
+				ref={panelRef}
+				aria-label="版块切换抽屉"
+				aria-hidden={!open}
+				inert={!open}
+				className="stage-peek border-line bg-panel absolute inset-y-2 left-2 z-30 flex w-[272px] flex-col overflow-hidden rounded-[2px] border [view-transition-name:stage-nav] xl:w-[296px]"
+				{...state}
+			>
+				<CategoryNavPanel
+					{...props}
+					onSelectCategory={() => setOpen(false)}
+					onCloseDrawer={() => setOpen(false)}
+				/>
+			</aside>
 		</div>
 	)
 }
@@ -138,14 +144,9 @@ function CategoryNavPanel({
 	categories,
 	activeSlug,
 	canManageCategories,
-	inert,
 	onSelectCategory,
 	onCloseDrawer,
-}: {
-	categories: readonly CategoryDto[]
-	activeSlug: string | undefined
-	canManageCategories: boolean
-	inert?: boolean
+}: NavProps & {
 	onSelectCategory?: () => void
 	onCloseDrawer?: () => void
 }) {
@@ -155,16 +156,15 @@ function CategoryNavPanel({
 				<span className="section-label">版块 · {categories.length}</span>
 				<div className="flex items-center gap-1">
 					{canManageCategories && (
-						<Link
+						<StageLink
 							to="/?new=1"
-							tabIndex={inert ? -1 : undefined}
 							onClick={onSelectCategory}
 							aria-label="新建版块"
 							title="新建版块"
 							className="text-ink-weak hover:bg-hover hover:text-ink-strong inline-flex size-7 items-center justify-center rounded-[2px]"
 						>
 							<Plus aria-hidden size={14} />
-						</Link>
+						</StageLink>
 					)}
 					{onCloseDrawer !== undefined && (
 						<button
@@ -187,10 +187,9 @@ function CategoryNavPanel({
 						const isActive = cat.slug === activeSlug
 						return (
 							<li key={cat.id}>
-								<Link
+								<StageLink
 									to={`/c/${cat.slug}`}
 									prefetch="intent"
-									tabIndex={inert ? -1 : undefined}
 									onClick={onSelectCategory}
 									aria-current={isActive ? 'page' : undefined}
 									className={`flex items-center gap-2.5 border-l-2 px-3 py-2 transition-colors ${
@@ -208,7 +207,7 @@ function CategoryNavPanel({
 									<span className="text-ink-weak shrink-0 text-[12px] tabular-nums">
 										{cat.threadCount}
 									</span>
-								</Link>
+								</StageLink>
 							</li>
 						)
 					})
