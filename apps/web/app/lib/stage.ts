@@ -106,6 +106,16 @@ export function isDetailPath(pathname: string): boolean {
 	return /\/(?:t\/[^/]+|new)\/?$/.test(pathname)
 }
 
+/**
+ * The page path a loader or action request stands for. Client navigations fetch `<path>.data`
+ * (and `/_root.data` for `/`), and `request.url` keeps that suffix, so a redirect built from it
+ * would send the browser to a `.data` URL that matches no thread.
+ */
+export function pagePathOf(url: URL): string {
+	if (url.pathname === '/_root.data') return '/'
+	return url.pathname.replace(/\.data$/, '')
+}
+
 /** The list a detail pathname belongs to: `/search/t/7` → `/search`, `/c/a/new` → `/c/a`. */
 export function listPathOf(pathname: string): string {
 	return trimSlash(pathname).replace(/\/(?:t\/[^/]+|new)$/, '') || '/'

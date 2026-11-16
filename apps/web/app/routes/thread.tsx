@@ -32,7 +32,7 @@ import { ActionMenu, ConfirmDialog, type MenuItem } from '../components/ui/overl
 import { Pager } from '../components/ui/pager'
 import { pageCount } from '../lib/format'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
-import { defineStage, listPathOf } from '../lib/stage'
+import { defineStage, listPathOf, pagePathOf } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
 import { ThreadSidebarSlots, useHasFilledSlot } from '../slots/slots'
 import { pageTitle } from '../lib/site'
@@ -91,7 +91,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 			const url = new URL(request.url)
 			if (last > 1) url.searchParams.set('page', String(last))
 			else url.searchParams.delete('page')
-			return redirect(`${url.pathname}${url.search}#post-${result.value.number}`)
+			return redirect(`${pagePathOf(url)}${url.search}#post-${result.value.number}`)
 		}
 		case 'edit-post': {
 			const result = await forumApi.updatePost(request, postId, textField(form, 'body'))

@@ -13,6 +13,7 @@ import {
 	defineStage,
 	listPageOf,
 	listPathOf,
+	pagePathOf,
 	listShouldRevalidate,
 	resolveStage,
 	stageDetailHref,
@@ -129,6 +130,11 @@ describe('3-Depth Stage Manager routing & revalidation', () => {
 		expect(shouldRevalidate(args('/search/t/1?q=pg', '/search?q=mysql'))).toBe(true)
 		expect(shouldRevalidate(args('/search/t/1?q=pg', '/search/t/1?q=pg&threadsOnly=1'))).toBe(true)
 		expect(listPathOf('/u/5/t/9')).toBe('/u/5')
+		expect(pagePathOf(new URL('https://f.test/c/general/t/1002.data?page=2'))).toBe(
+			'/c/general/t/1002',
+		)
+		expect(pagePathOf(new URL('https://f.test/_root.data'))).toBe('/')
+		expect(pagePathOf(new URL('https://f.test/c/general/t/1002'))).toBe('/c/general/t/1002')
 		expect(listPathOf('/c/general/new/')).toBe('/c/general')
 	})
 
