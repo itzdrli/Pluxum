@@ -14,7 +14,8 @@ import {
 import type { Route } from './+types/home'
 import { ThreadFlags, UnreadDot } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
-import { StageLink, useStageNavigate } from '../components/stage/stage'
+import { useDock } from '../components/dock/composer-dock'
+import { StageLink } from '../components/stage/stage'
 import { Button, ButtonAnchor, IconButton } from '../components/ui/button'
 import { EmptyState, FormError, Panel, Tag, Timestamp } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
@@ -304,7 +305,7 @@ function SortTabs({ sort }: { sort: HomeSort }) {
 
 /** "发布主题" from the overview: pick the category, then write in its new-thread pane. */
 function NewThreadMenu({ categories }: { categories: readonly CategoryDto[] }) {
-	const navigate = useStageNavigate()
+	const dock = useDock()
 	if (categories.length === 0) return null
 	return (
 		<Dropdown>
@@ -317,7 +318,7 @@ function NewThreadMenu({ categories }: { categories: readonly CategoryDto[] }) {
 					aria-label="选择版块"
 					onAction={(key) => {
 						const slug = categories.find((category) => category.id === key)?.slug
-						if (slug !== undefined) void navigate(`/c/${slug}/new`)
+						if (slug !== undefined) dock.openThread(slug)
 					}}
 				>
 					{categories.map((category) => (

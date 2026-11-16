@@ -134,6 +134,7 @@ export function Composer({
 	placeholder,
 	autoFocus = false,
 	deferRich = false,
+	insertRef,
 }: {
 	name?: string
 	label: string
@@ -149,6 +150,8 @@ export function Composer({
 	autoFocus?: boolean
 	/** Defer Tiptap instantiation to idle / focus so rapid route switches stay instant. */
 	deferRich?: boolean
+	/** Receives the box's insert function, so something outside it (a drop) can put a link in. */
+	insertRef?: React.RefObject<InsertAttachment | null>
 }) {
 	const format = useRouteLoaderData<typeof rootLoader>('root')?.meta?.content.format ?? 'plain'
 	const [value, setValue] = useState(defaultValue)
@@ -254,6 +257,13 @@ export function Composer({
 			area?.setSelectionRange(caret, caret)
 		})
 	}
+
+	useEffect(() => {
+		if (insertRef) insertRef.current = insert
+		return () => {
+			if (insertRef) insertRef.current = null
+		}
+	})
 
 	const tools = <ComposerToolbarSlots insert={insert} />
 

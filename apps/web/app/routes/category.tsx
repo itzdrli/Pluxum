@@ -5,7 +5,8 @@ import type { Route } from './+types/category'
 import { ThreadRow } from '../components/forum/rows'
 import { MobileCategoryBar } from '../components/shell/mobile-stage-bar'
 import { StageLink, StageSplit, useStageLinks } from '../components/stage/stage'
-import { ButtonAnchor, ButtonLink } from '../components/ui/button'
+import { useDock } from '../components/dock/composer-dock'
+import { Button, ButtonAnchor } from '../components/ui/button'
 import { Crumbs, EmptyState, PageHeader, Panel, SectionLabel } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
 import { forumApi, orThrow } from '../lib/forum-api.server'
@@ -52,6 +53,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 	const params = useParams()
 	const { detail } = useStageLinks()
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
+	const dock = useDock()
 	const newThread = `/c/${category.slug}/new`
 
 	// Guests who could log in are offered that instead of a missing button.
@@ -61,10 +63,14 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 			: undefined
 	const action = (compact: boolean) =>
 		can.createThread ? (
-			<ButtonLink to={newThread} prefetch="intent" tone="primary" size={compact ? 'sm' : 'md'}>
+			<Button
+				tone="primary"
+				size={compact ? 'sm' : 'md'}
+				onPress={() => dock.openThread(category.slug)}
+			>
 				<Plus aria-hidden />
 				发布主题
-			</ButtonLink>
+			</Button>
 		) : loginToPost !== undefined ? (
 			<ButtonAnchor href={loginToPost} size={compact ? 'sm' : 'md'}>
 				登录后发布

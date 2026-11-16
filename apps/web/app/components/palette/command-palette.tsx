@@ -23,6 +23,7 @@ import { useRouteLoaderData } from 'react-router'
 import type { loader as rootLoader } from '../../root'
 import { parsePaletteQuery, rank } from '../../lib/palette'
 import { THEMES } from '../../lib/theme'
+import { useDock } from '../dock/composer-dock'
 import { useStageNavigate } from '../stage/stage'
 import { chooseTheme } from '../shell/theme-picker'
 
@@ -124,6 +125,7 @@ export function PaletteProvider({ children }: { children: React.ReactNode }) {
 function CommandPalette({ initial, onClose }: { initial: string; onClose: () => void }) {
 	const meta: MetaDto | null | undefined = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const navigate = useStageNavigate()
+	const dock = useDock()
 	const [query, setQuery] = useState(initial)
 	const [active, setActive] = useState(0)
 	const [loaded, setLoaded] = useState<Loaded | null>(null)
@@ -209,7 +211,10 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 						label: `发布新主题 · ${category.name}`,
 						keywords: ['新主题', '发帖', 'new thread', category.name],
 						icon: FilePlus2,
-						run: () => go(`/c/${category.slug}/new`),
+						run: () => {
+							onClose()
+							dock.openThread(category.slug)
+						},
 					}))
 				: meta?.auth.loginAvailable === true
 					? [
@@ -273,7 +278,7 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 			result.push({ title: '主题', items: threadItems })
 		}
 		return result.filter((section) => section.items.length > 0)
-	}, [loaded, meta, hits, searching, parsed.mode, parsed.text, go, onClose])
+	}, [loaded, meta, hits, searching, parsed.mode, parsed.text, go, onClose, dock])
 
 	const flat = useMemo(() => sections.flatMap((section) => section.items), [sections])
 	const activeId = flat[Math.min(active, flat.length - 1)]?.id

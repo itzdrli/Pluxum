@@ -1,4 +1,4 @@
-import { Lock, MessageSquare, Trash2, X } from 'lucide-react'
+import { Lock, MessageSquare, Reply, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
 	data,
@@ -13,6 +13,7 @@ import {
 
 import type { Route } from './+types/thread'
 import { Composer } from '../components/composer/composer'
+import { useDock } from '../components/dock/composer-dock'
 import { PostCard } from '../components/forum/post'
 import { ThreadFlags } from '../components/forum/rows'
 import { MobileThreadBar } from '../components/shell/mobile-stage-bar'
@@ -134,6 +135,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function Thread({ loaderData, actionData }: Route.ComponentProps) {
 	const { thread, category, posts, can } = loaderData
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
+	const dock = useDock()
 	const submit = useSubmit()
 	const stage = useStage()
 	const navigate = useStageNavigate()
@@ -307,6 +309,22 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 					actions={
 						// Phones reach these through the bottom bar's menu.
 						<div className="flex items-center gap-1 max-lg:hidden">
+							{can.reply && (
+								<Button
+									tone="ghost"
+									size="sm"
+									onPress={() =>
+										dock.openReply({
+											threadId: thread.id,
+											title: thread.title,
+											action: `${location.pathname}${location.search}`,
+										})
+									}
+								>
+									<Reply aria-hidden />
+									回复
+								</Button>
+							)}
 							<ActionMenu label="主题操作" items={menu} size="md" />
 							<ButtonLink
 								to={closeHref}

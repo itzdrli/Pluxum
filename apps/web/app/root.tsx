@@ -23,6 +23,7 @@ import type { Route } from './+types/root'
 import './app.css'
 import { Shell } from './components/shell/shell'
 import { useTheme } from './components/shell/theme-picker'
+import { DockProvider } from './components/dock/composer-dock'
 import { PaletteProvider } from './components/palette/command-palette'
 import { LightboxProvider } from './components/ui/lightbox'
 import { ButtonLink } from './components/ui/button'
@@ -93,11 +94,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App({ loaderData }: Route.ComponentProps) {
 	return (
 		<LightboxProvider>
-			<PaletteProvider>
-				<Shell meta={loaderData.meta}>
-					<Outlet />
-				</Shell>
-			</PaletteProvider>
+			<DockProvider>
+				<PaletteProvider>
+					<Shell meta={loaderData.meta}>
+						<Outlet />
+					</Shell>
+				</PaletteProvider>
+			</DockProvider>
 		</LightboxProvider>
 	)
 }
