@@ -383,14 +383,9 @@ export class ForumCorePlugin extends BasePlugin {
 		return { ...this.config.site }
 	}
 
-	/** The configured footer with the links of running plugins merged in after it. */
+	/** The footer: what running plugins registered (see `registerFooterLinks`). */
 	footer(): FooterDto {
-		const { groups, icons, notes } = this.config.footer
-		const merged = this.footerLinks.list({
-			groups: groups.map((group) => ({ title: group.title, links: [...group.links] })),
-			icons: [...icons],
-		})
-		return { ...merged, notes: this.footerLinks.notes(notes) }
+		return { ...this.footerLinks.list(), notes: this.footerLinks.notes() }
 	}
 
 	/**

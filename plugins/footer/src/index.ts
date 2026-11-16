@@ -58,14 +58,14 @@ const FooterGroup = v.object({
 	),
 })
 
-/** What the footer shows beyond Forum Core's own page-footer settings. All of it is optional. */
+/** What the site footer shows. All of it is optional. */
 export const ForumFooterConfig = v.object({
 	groups: v.optional(
 		v.pipe(
 			v.array(FooterGroup),
 			f.formMeta({
 				title: '链接栏目',
-				description: '页脚的文字链接栏，每栏一个标题。同名栏目会与论坛核心设置的栏目合并。',
+				description: '页脚的文字链接栏，每栏一个标题。没有栏目时页脚保持一行。',
 			}),
 			f.arrayMeta({
 				itemLabel: '栏目',
@@ -89,7 +89,7 @@ export const ForumFooterConfig = v.object({
 			}),
 			v.maxLength(FOOTER_LINKS_MAX),
 		),
-		[],
+		[{ icon: 'github', label: 'GitHub', href: 'https://github.com/itzdrli/Pluxum' }],
 	),
 	notes: v.optional(
 		v.pipe(

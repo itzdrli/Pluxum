@@ -598,12 +598,8 @@ describe('ForumApiPlugin', () => {
 		expect(meta.search).toEqual({ available: false })
 		expect(meta.uiSlots).toEqual([])
 		expect(meta.site.name).toBe('Pluxum')
-		// Forum Core's default footer: no columns, the repository icon, no notes.
-		expect(meta.footer).toEqual({
-			groups: [],
-			icons: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/itzdrli/Pluxum' }],
-			notes: [],
-		})
+		// The footer is empty until a plugin (Forum Footer) fills it.
+		expect(meta.footer).toEqual({ groups: [], icons: [], notes: [] })
 
 		expect(await api.ok<PreviewDto>('POST', '/preview', { body: 'a < b' })).toEqual({
 			bodyHtml: 'a &lt; b',
