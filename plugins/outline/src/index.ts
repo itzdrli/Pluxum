@@ -5,10 +5,10 @@ import { BasePlugin, Plugin } from '@pluxel/core'
 export const OUTLINE_EXT_ID = 'forum-outline'
 
 /**
- * A table of contents beside long threads, as an extension of the forum: it only fills the
- * `thread.sidebar` slot, and the frontend component builds the outline from the headings of the
- * posts on screen. Short threads without headings show nothing and the column folds away. Stopping
- * the plugin removes the outline; nothing is stored.
+ * A floor timeline beside threads, as an extension of the forum: it only fills the `thread.sidebar`
+ * slot, and the frontend component lists the floors on screen along a vertical line, lights the
+ * one being read and jumps to the one clicked. A thread with a single floor shows nothing and the
+ * column folds away. Stopping the plugin removes the timeline; nothing is stored.
  */
 @Plugin({ displayName: 'Forum Outline' })
 export class ForumOutlinePlugin extends BasePlugin {

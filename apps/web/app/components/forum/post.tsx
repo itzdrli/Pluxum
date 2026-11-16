@@ -72,6 +72,10 @@ export function PostCard({
 	return (
 		<li
 			id={`post-${post.number}`}
+			// What the thread's floor timeline reads off the page.
+			data-floor={number}
+			data-floor-author={post.author.displayName}
+			data-floor-time={post.createdAt}
 			// Phones: an edge-to-edge list divided by lines; wide screens: one panel per post.
 			className={`border-line-soft bg-panel group scroll-mt-16 border-b lg:rounded-[4px] lg:border-b-0${!opening && !editing ? ' post-card-cv' : ''}`}
 			// Images in the body and the attachment strip open in the viewer, all of this post's in turn.
