@@ -1,5 +1,5 @@
 import type { UserProfileDto } from '@pluxum/domain'
-import { ImageUp, Trash2 } from 'lucide-react'
+import { ImageUp } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useRevalidator } from 'react-router'
 
@@ -121,7 +121,6 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 							isDisabled={busy !== null}
 							onPress={remove}
 						>
-							<Trash2 aria-hidden />
 							移除
 						</Button>
 					)}

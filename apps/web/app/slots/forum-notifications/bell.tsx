@@ -1,6 +1,6 @@
 import type { MetaDto, NotificationDto } from '@pluxum/domain'
 import { Popover } from '@heroui/react'
-import { Bell, CheckCheck } from 'lucide-react'
+import { Bell } from 'lucide-react'
 import { useState } from 'react'
 import { useFetcher, useLocation, useRouteLoaderData } from 'react-router'
 
@@ -116,7 +116,6 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 						</p>
 						{showMarkAll && (
 							<Button tone="ghost" size="sm" onPress={markAllRead}>
-								<CheckCheck aria-hidden />
 								全部已读
 							</Button>
 						)}

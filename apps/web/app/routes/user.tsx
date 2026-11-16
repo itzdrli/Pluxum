@@ -1,5 +1,5 @@
 import { parseThreadRef, type Role } from '@pluxum/domain'
-import { CalendarDays, MessagesSquare, Pencil } from 'lucide-react'
+import { CalendarDays, MessagesSquare } from 'lucide-react'
 import { useState } from 'react'
 import { data, Form, redirect, useNavigation, useParams, useRouteLoaderData } from 'react-router'
 
@@ -155,7 +155,6 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 							</div>
 							{can.edit && !renaming && (
 								<Button tone="ghost" size="sm" onPress={() => setRenamingFrom(profileIdentity)}>
-									<Pencil aria-hidden />
 									编辑资料
 								</Button>
 							)}
@@ -254,10 +253,10 @@ function RenameUser({
 				/>
 			</div>
 			<div className="flex justify-end gap-2">
-				<Button tone="ghost" size="sm" onPress={onCancel}>
+				<Button tone="ghost" onPress={onCancel}>
 					取消
 				</Button>
-				<Button tone="primary" size="sm" type="submit" isPending={submitting}>
+				<Button tone="primary" type="submit" isPending={submitting}>
 					保存资料
 				</Button>
 			</div>

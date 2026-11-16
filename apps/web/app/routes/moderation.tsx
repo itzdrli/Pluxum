@@ -5,7 +5,6 @@ import type {
 	ModerationReportStatus,
 } from '@pluxum/domain'
 import {
-	Check,
 	ClipboardList,
 	ExternalLink,
 	History,
@@ -14,7 +13,6 @@ import {
 	ShieldCheck,
 	ShieldOff,
 	Trash2,
-	X,
 } from 'lucide-react'
 import { data, Form, useNavigation } from 'react-router'
 
@@ -304,7 +302,6 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 								tone="primary"
 								size="sm"
 							>
-								<LogIn aria-hidden />
 								登录
 							</ButtonAnchor>
 						) : undefined
@@ -548,36 +545,31 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 							maxLength={500}
 							placeholder="处理备注（可选，记入审核日志）…"
 							aria-label="处理备注"
-							className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-8 min-w-0 flex-1 basis-48 rounded-[2px] border px-2.5 text-ui outline-none"
+							className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control min-w-0 flex-1 basis-48 rounded-[2px] border px-2.5 text-ui outline-none"
 						/>
 						<div className="flex flex-wrap items-center gap-2">
 							<Button
 								tone="ghost"
-								size="sm"
 								type="submit"
 								name="mode"
 								value="dismiss"
 								isPending={submittingMode === 'dismiss'}
 								isDisabled={isSubmittingThis}
 							>
-								<X aria-hidden />
 								驳回
 							</Button>
 							<Button
 								tone="secondary"
-								size="sm"
 								type="submit"
 								name="mode"
 								value="resolve"
 								isPending={submittingMode === 'resolve'}
 								isDisabled={isSubmittingThis}
 							>
-								<Check aria-hidden />
 								标记已处理
 							</Button>
 							<Button
 								tone="danger"
-								size="sm"
 								type="submit"
 								name="mode"
 								value="resolve-delete"

@@ -1,4 +1,4 @@
-import { Send, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { data, Form, redirect, useNavigation, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/thread-new'
@@ -39,13 +39,15 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 	const submitting = useNavigation().state === 'submitting'
 	return (
 		<div className="mx-auto max-w-[860px]">
-			<Crumbs
-				items={[
-					{ label: '版块', to: '/' },
-					{ label: category.name, to: `/c/${category.slug}` },
-					{ label: '发布主题' },
-				]}
-			/>
+			<div className="max-lg:hidden">
+				<Crumbs
+					items={[
+						{ label: '版块', to: '/' },
+						{ label: category.name, to: `/c/${category.slug}` },
+						{ label: '发布主题' },
+					]}
+				/>
+			</div>
 			<PageHeader
 				title="发布主题"
 				description={`发布到「${category.name}」`}
@@ -53,7 +55,6 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 					<ButtonLink
 						to={`/c/${category.slug}`}
 						tone="ghost"
-						size="sm"
 						aria-label="关闭发布主题"
 						title="关闭发布主题"
 						className="button--icon-only"
@@ -79,7 +80,6 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 							取消
 						</ButtonLink>
 						<Button type="submit" tone="primary" isPending={submitting}>
-							<Send aria-hidden />
 							发布
 						</Button>
 					</div>

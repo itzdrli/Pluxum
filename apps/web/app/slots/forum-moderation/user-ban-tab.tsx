@@ -1,5 +1,5 @@
 import type { UserBanStatusDto, UserProfileDto } from '@pluxum/domain'
-import { Ban, ShieldCheck, Unlock } from 'lucide-react'
+import { Ban, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useFetcher, useRouteLoaderData } from 'react-router'
 
@@ -150,7 +150,7 @@ function BanForm({ userId }: { userId: string }) {
 						maxLength={REASON_MAX}
 						required
 						placeholder="填写封禁原因（将记入审核日志）…"
-						className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-8 w-full rounded-[2px] border px-2.5 text-ui outline-none"
+						className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control w-full rounded-[2px] border px-2.5 text-ui outline-none"
 					/>
 				</label>
 				<label className="flex flex-col gap-1">
@@ -159,7 +159,7 @@ function BanForm({ userId }: { userId: string }) {
 						value={duration}
 						onChange={(event) => setDuration(event.currentTarget.value)}
 						aria-label="封禁时长"
-						className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-8 rounded-[2px] border px-2.5 text-ui outline-none"
+						className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-control rounded-[2px] border px-2.5 text-ui outline-none"
 					>
 						{DURATION_OPTIONS.map((option) => (
 							<option key={option.value} value={option.value}>
@@ -175,7 +175,6 @@ function BanForm({ userId }: { userId: string }) {
 					isPending={submitting}
 					isDisabled={reason.trim().length === 0 || submitting}
 				>
-					<Ban aria-hidden />
 					封禁账号
 				</Button>
 			</div>
@@ -219,11 +218,10 @@ function UnbanForm({ userId }: { userId: string }) {
 						onChange={(event) => setNote(event.currentTarget.value)}
 						maxLength={REASON_MAX}
 						placeholder="填写解除封禁说明…"
-						className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-8 w-full rounded-[2px] border px-2.5 text-ui outline-none"
+						className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control w-full rounded-[2px] border px-2.5 text-ui outline-none"
 					/>
 				</label>
 				<Button tone="secondary" size="md" type="submit" isPending={submitting}>
-					<Unlock aria-hidden />
 					解除封禁
 				</Button>
 			</div>

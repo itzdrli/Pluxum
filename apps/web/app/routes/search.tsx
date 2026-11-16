@@ -200,7 +200,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 											name="categoryId"
 											defaultValue={categoryId}
 											aria-label="按版块筛选"
-											className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-8 max-w-full rounded-[2px] border px-2.5 text-ui outline-none"
+											className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-control max-w-full rounded-[2px] border px-2.5 text-ui outline-none"
 										>
 											<option value="">全部版块</option>
 											{categories.map((category) => (
@@ -210,7 +210,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 											))}
 										</select>
 
-										<label className="border-line bg-page text-ink hover:border-ink-weak flex h-8 cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-ui select-none">
+										<label className="border-line bg-page text-ink hover:border-ink-weak flex h-control cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-ui select-none">
 											<input
 												key={String(threadsOnly)}
 												type="checkbox"
@@ -300,7 +300,7 @@ function SearchInput({
 				placeholder="输入关键词搜索主题或帖子…"
 				aria-label="搜索关键词"
 				autoFocus={autoFocus}
-				className={`border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border pr-3 pl-8 text-ui outline-none ${size === 'sm' ? 'h-7' : 'h-8'}`}
+				className={`border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border pr-3 pl-8 text-ui outline-none ${size === 'sm' ? 'h-control-sm' : 'h-control'}`}
 			/>
 		</div>
 	)

@@ -1,5 +1,5 @@
 import type { NotificationDto } from '@pluxum/domain'
-import { Bell, BellOff, Check, CheckCheck, ExternalLink, LogIn } from 'lucide-react'
+import { Bell, BellOff, LogIn } from 'lucide-react'
 import { data, Form, useFetcher, useNavigation } from 'react-router'
 
 import type { Route } from './+types/notifications'
@@ -170,7 +170,6 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 								tone="primary"
 								size="sm"
 							>
-								<LogIn aria-hidden />
 								登录
 							</ButtonAnchor>
 						) : undefined
@@ -221,7 +220,6 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 							<Form method="post">
 								<input type="hidden" name="intent" value="mark-all-read" />
 								<Button tone="secondary" size="sm" type="submit" isPending={isMarkingAll}>
-									<CheckCheck aria-hidden />
 									全部标为已读
 								</Button>
 							</Form>
@@ -358,7 +356,6 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 			<div className="flex shrink-0 items-center gap-1.5 self-end sm:self-center">
 				{href !== null && (
 					<ButtonLink to={href} tone="ghost" size="sm" onClick={markReadOnJump}>
-						<ExternalLink aria-hidden />
 						查看帖子
 					</ButtonLink>
 				)}
@@ -367,7 +364,6 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 						<input type="hidden" name="intent" value="mark-read" />
 						<input type="hidden" name="id" value={item.id} />
 						<Button tone="ghost" size="sm" type="submit" isPending={isMarking}>
-							<Check aria-hidden />
 							标为已读
 						</Button>
 					</fetcher.Form>

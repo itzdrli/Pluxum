@@ -69,7 +69,7 @@ function CategoryNavPanel({
 							to="/?new=1"
 							aria-label="新建版块"
 							title="新建版块"
-							className="text-ink-weak hover:bg-hover hover:text-ink-strong inline-flex size-7 items-center justify-center rounded-[2px]"
+							className="text-ink-weak hover:bg-hover hover:text-ink-strong inline-flex size-control-sm items-center justify-center rounded-[2px]"
 						>
 							<Plus aria-hidden size={14} />
 						</StageLink>

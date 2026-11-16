@@ -1,4 +1,3 @@
-import type { PostDto } from '@pluxum/domain'
 import { Modal } from '@heroui/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useFetcher, useRouteLoaderData } from 'react-router'
