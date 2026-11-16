@@ -103,7 +103,7 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 			>
 				<Popover.Dialog
 					aria-label="通知"
-					className="flex max-h-[min(32rem,70dvh)] flex-col outline-none"
+					className="flex max-h-[min(32rem,70dvh)] flex-col p-0 outline-none"
 				>
 					<div className="border-line flex h-11 shrink-0 items-center justify-between gap-2 border-b pr-1.5 pl-3">
 						<p className="text-ink-strong text-ui font-bold">
