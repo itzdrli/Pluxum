@@ -18,7 +18,6 @@ import { Button, IconButton } from '../components/ui/button'
 import {
 	EmptyState,
 	FormError,
-	PageHeader,
 	Panel,
 	SectionLabel,
 	Tag,
@@ -69,7 +68,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 	const [searchParams, setSearchParams] = useSearchParams()
 	const requestedNew = searchParams.get('new') === '1'
 	// Open while creating, via `?new=1`, or when the API rejected the last attempt.
-	const [mobileTab, setMobileTab] = useState<'categories' | 'recent'>('categories')
+	const [mobileTab, setMobileTab] = useState<'categories' | 'recent'>('recent')
 	const [creating, setCreating] = useState(false)
 	const showForm = canManage && (creating || requestedNew || actionData?.error !== undefined)
 
@@ -90,14 +89,14 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 			{/* Phones: two tabs instead of two columns; the page title would only repeat them. */}
 			<div className="border-line -mx-4 flex items-center gap-5 border-b px-4 lg:hidden">
 				<div role="tablist" aria-label="首页内容切换" className="flex items-center gap-5">
+					<HomeTab selected={mobileTab === 'recent'} onSelect={() => setMobileTab('recent')}>
+						最新
+					</HomeTab>
 					<HomeTab
 						selected={mobileTab === 'categories'}
 						onSelect={() => setMobileTab('categories')}
 					>
 						版块
-					</HomeTab>
-					<HomeTab selected={mobileTab === 'recent'} onSelect={() => setMobileTab('recent')}>
-						最新
 					</HomeTab>
 				</div>
 				{canManage && !showForm && (
@@ -114,26 +113,59 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 				)}
 			</div>
 
+			{/* The discussions are what grows, so they are the main column; the categories are a short,
+			    fixed-size aside that stays in view beside them. */}
 			<div className="grid items-start gap-6 sm:max-lg:mt-4 lg:grid-cols-12">
-				<div
-					className={`min-w-0 lg:col-span-7 xl:col-span-8${mobileTab === 'categories' ? '' : ' max-lg:hidden'}`}
+				<section
+					aria-label="最新活跃讨论"
+					className={`min-w-0 lg:col-span-8 ${mobileTab === 'recent' ? '' : 'max-lg:hidden'}`}
 				>
 					<div className="max-lg:hidden">
-						<PageHeader
-							title="版块"
-							meta={
-								<span className="tabular-nums">
+						<SectionLabel
+							actions={
+								<span className="text-ink-weak text-meta tabular-nums">
 									{categories.length} 版块 · {totalThreads} 主题 · {totalPosts} 帖子
 								</span>
 							}
+						>
+							最新活跃讨论
+						</SectionLabel>
+					</div>
+					{recentThreads.items.length === 0 ? (
+						<EmptyState
+							icon={MessagesSquare}
+							title="还没有讨论"
+							hint="版块内发布的主题与最新回复会在这里实时汇总。"
+						/>
+					) : (
+						<Panel
+							as="ul"
+							className="divide-line divide-y max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0"
+						>
+							{recentThreads.items.map((item) => (
+								<RecentThreadItem key={item.id} item={item} />
+							))}
+						</Panel>
+					)}
+				</section>
+
+				<aside
+					aria-label="版块"
+					className={`min-w-0 lg:sticky lg:top-0 lg:col-span-4 ${mobileTab === 'categories' ? '' : 'max-lg:hidden'}`}
+				>
+					<div className="max-lg:hidden">
+						<SectionLabel
 							actions={
 								canManage && !showForm ? (
-									<Button size="sm" onPress={() => setCreating(true)}>
-										新建版块
+									<Button size="sm" tone="ghost" onPress={() => setCreating(true)}>
+										<Plus aria-hidden />
+										新建
 									</Button>
 								) : undefined
 							}
-						/>
+						>
+							版块 · {categories.length}
+						</SectionLabel>
 					</div>
 					{showForm && (
 						<NewCategory
@@ -153,34 +185,12 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 							}
 						/>
 					) : (
-						<ul className="max-sm:border-line max-sm:bg-panel max-sm:divide-line grid gap-3 max-sm:-mx-4 max-sm:gap-0 max-sm:divide-y max-sm:border-b sm:grid-cols-2">
-							{categories.map((category) => (
-								<CategoryCard key={category.id} category={category} />
-							))}
-						</ul>
-					)}
-				</div>
-
-				<aside
-					aria-label="最新活跃讨论"
-					className={`min-w-0 lg:col-span-5 xl:col-span-4${mobileTab === 'recent' ? '' : ' max-lg:hidden'}`}
-				>
-					<div className="max-lg:hidden">
-						<SectionLabel>最新活跃讨论</SectionLabel>
-					</div>
-					{recentThreads.items.length === 0 ? (
-						<EmptyState
-							icon={MessagesSquare}
-							title="还没有讨论"
-							hint="版块内发布的主题与最新回复会在这里实时汇总。"
-						/>
-					) : (
 						<Panel
 							as="ul"
 							className="divide-line divide-y max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0"
 						>
-							{recentThreads.items.map((item) => (
-								<RecentThreadItem key={item.id} item={item} />
+							{categories.map((category) => (
+								<CategoryItem key={category.id} category={category} />
 							))}
 						</Panel>
 					)}
@@ -216,37 +226,33 @@ function HomeTab({
 	)
 }
 
-/** A category: a card in the grid, a plain row of the edge-to-edge list on phones. */
-function CategoryCard({ category }: { category: CategoryDto }) {
+/** A category in the aside: tile, name with its one-line description, and its thread count. */
+function CategoryItem({ category }: { category: CategoryDto }) {
 	return (
-		<li className="flex">
+		<li>
 			<StageLink
 				to={`/c/${category.slug}`}
 				prefetch="intent"
-				className="sm:border-line sm:bg-panel hover:bg-hover active:bg-pressed flex w-full items-start gap-3 px-4 py-3 transition-colors sm:rounded-[2px] sm:border sm:py-3.5"
+				title={`${category.threadCount} 主题 · ${category.postCount} 帖子`}
+				className="hover:bg-hover active:bg-pressed flex items-center gap-3 px-3 py-2.5 transition-colors"
 			>
 				{/* The name's first character on the control tone: told apart at a glance, no extra hue. */}
 				<span
 					aria-hidden
-					className="bg-control text-ink-strong flex size-9 shrink-0 items-center justify-center rounded-[2px] text-heading font-bold select-none"
+					className="bg-control text-ink-strong flex size-8 shrink-0 items-center justify-center rounded-[2px] font-bold select-none"
 				>
 					{Array.from(category.name)[0] ?? '#'}
 				</span>
-				<span className="flex min-w-0 flex-1 flex-col gap-1">
-					<span className="text-ink-strong min-w-0 truncate text-title font-bold">
-						{category.name}
-					</span>
+				<span className="flex min-w-0 flex-1 flex-col">
+					<span className="text-ink-strong truncate font-bold">{category.name}</span>
 					{category.description !== '' && (
-						<span className="text-ink-weak line-clamp-1 break-words sm:line-clamp-2">
-							{category.description}
-						</span>
+						<span className="text-ink-weak truncate text-meta">{category.description}</span>
 					)}
-					<span className="text-ink-weak flex items-center gap-1 text-meta tabular-nums">
-						<MessagesSquare aria-hidden size={12} />
-						{category.threadCount} 主题
-						<span aria-hidden>·</span>
-						{category.postCount} 帖子
-					</span>
+				</span>
+				<span className="text-ink-weak flex shrink-0 items-center gap-1 text-meta tabular-nums">
+					<MessagesSquare aria-hidden size={12} />
+					{category.threadCount}
+					<span className="sr-only"> 主题</span>
 				</span>
 			</StageLink>
 		</li>
@@ -316,7 +322,7 @@ function NewCategory({
 			<h3 className="text-ink-strong mb-3 font-bold">新建版块</h3>
 			<Form method="post" className="flex flex-col gap-3">
 				<FormError message={error} />
-				<div className="grid gap-3 sm:grid-cols-2">
+				<div className="grid gap-3">
 					<TextInputField
 						name="name"
 						label="名称"
