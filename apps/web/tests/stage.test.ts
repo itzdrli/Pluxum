@@ -61,7 +61,9 @@ function revalidateArgs(
 
 describe('3-Depth Stage Manager routing & revalidation', () => {
 	it('resolves depth, panes and links from the route handles', () => {
-		const home = stageAt('/', [['routes/home', '/', defineStage({ layer: 'page', nav: true })]])
+		const home = stageAt('/', [
+			['routes/home', '/', defineStage({ layer: 'page', nav: true, wide: true })],
+		])
 		expect(home).toMatchObject({ depth: 0, nav: true, split: true, listHref: null })
 		expect(
 			stageAt('/notifications', [['routes/notifications', '/notifications', undefined]]).depth,

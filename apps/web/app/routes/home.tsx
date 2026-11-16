@@ -25,7 +25,7 @@ import { defineStage } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
 import { siteOf } from '../lib/site'
 
-export const handle = defineStage({ layer: 'page', nav: true })
+export const handle = defineStage({ layer: 'page', nav: true, wide: true })
 
 export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
 	const site = siteOf(matches[0].loaderData)
@@ -131,7 +131,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
 			{/* Wide screens: one feed; the categories are the column beside it. Phones have no such
 			    column, so the categories are the second tab. */}
-			<div className="sm:max-lg:mt-4 lg:mx-auto lg:max-w-[880px] xl:grid xl:max-w-[1180px] xl:grid-cols-[minmax(0,1fr)_272px] xl:items-start xl:gap-6">
+			<div className="sm:max-lg:mt-4 lg:mx-auto lg:max-w-[880px] xl:grid xl:max-w-none xl:grid-cols-[minmax(0,1fr)_280px] xl:items-start xl:gap-6 2xl:grid-cols-[minmax(0,1fr)_320px] 2xl:gap-8">
 				<div className="min-w-0">
 					<section
 						aria-label="最新活跃讨论"

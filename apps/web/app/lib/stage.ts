@@ -27,6 +27,8 @@ export type StagePageSpec = Readonly<{
 	layer: 'page'
 	/** Shows the category column beside the page, so the page is a pane of the same frame. */
 	nav?: boolean
+	/** With `nav`: fills the pane (up to a generous cap) instead of the reading column. */
+	wide?: boolean
 }>
 
 export type StageListSpec = Readonly<{
@@ -58,6 +60,8 @@ export type ResolvedStage = Readonly<{
 	depth: StageDepth
 	/** Whether the category navigation shows. */
 	nav: boolean
+	/** The page fills its pane instead of the reading column (page layer only). */
+	wide: boolean
 	/** Desktop renders full height with panes that scroll on their own. */
 	split: boolean
 	/** The list without any detail: where closing a detail goes. */
@@ -154,6 +158,7 @@ export function resolveStage(matches: readonly StageMatch[], url: URL): Resolved
 		return {
 			depth: 0,
 			nav: page?.nav === true,
+			wide: page?.wide === true,
 			split: page?.nav === true,
 			listHref: null,
 			listPath: null,
@@ -170,6 +175,7 @@ export function resolveStage(matches: readonly StageMatch[], url: URL): Resolved
 	return {
 		depth,
 		nav: list.spec.nav === true,
+		wide: false,
 		split: true,
 		listHref: `${listPath}${query}`,
 		listPath,

@@ -18,6 +18,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 	return { categories: orThrow(await forumApi.categories(request)).items }
 }
 
+/** A page that fills its pane grows with the window: reading width on laptops, more on big screens. */
+const WIDE_PAGE = 'max-w-[1180px] 2xl:max-w-[1400px] min-[1920px]:max-w-[1600px]'
 const RAIL_ITEM = 'flex items-center gap-2.5 border-l-2 px-3 py-2 transition-colors'
 const RAIL_ITEM_ACTIVE = 'border-l-accent bg-selected text-ink-strong font-bold'
 const RAIL_ITEM_IDLE = 'text-ink hover:bg-hover hover:text-ink-strong border-l-transparent'
@@ -55,7 +57,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 			{stage.depth === 0 ? (
 				// A page beside the column: one scrolling pane with a reading width.
 				<div className="min-w-0 flex-1 px-4 py-4 lg:overflow-y-auto lg:px-8 lg:py-6">
-					<div className="mx-auto w-full max-w-[1040px]">
+					<div className={`mx-auto w-full ${stage.wide ? WIDE_PAGE : 'max-w-[1040px]'}`}>
 						<Outlet />
 					</div>
 				</div>
