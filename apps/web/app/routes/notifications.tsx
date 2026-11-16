@@ -18,6 +18,9 @@ import {
 import { Pager } from '../components/ui/pager'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { defineStage } from '../lib/stage'
+import { resolveNotificationHref } from '../slots/forum-notifications/href'
+
+export { resolveNotificationHref }
 
 export type ParsedNotificationsUrl = Readonly<{
 	unreadOnly: boolean
@@ -32,19 +35,6 @@ export function parseNotificationsUrl(url: URL): ParsedNotificationsUrl {
 		unreadOnly: rawUnread === '1' || rawUnread === 'true',
 		page: /^[1-9]\d{0,5}$/.test(rawPage) ? Number(rawPage) : 1,
 	}
-}
-
-/** Resolves a safe internal destination link for a notification item. */
-export function resolveNotificationHref(
-	item: Pick<NotificationDto, 'path' | 'threadId' | 'postId'>,
-): string | null {
-	if (item.path !== null && item.path.startsWith('/') && !item.path.startsWith('//')) {
-		return item.path
-	}
-	if (item.threadId !== null) {
-		return item.postId !== null ? `/t/${item.threadId}/${item.postId}` : `/t/${item.threadId}`
-	}
-	return null
 }
 
 export const handle = defineStage({ layer: 'page' })
