@@ -31,7 +31,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 	const siteName = siteOf({ meta }).name
 	const mainClass = isSplitStage
 		? 'flex min-h-0 w-full flex-1 flex-col'
-		: `${CONTENT_WIDTH} flex-1 py-4 lg:py-6`
+		: `${CONTENT_WIDTH} flex-1 py-5 lg:py-8`
 	return (
 		<div
 			className={`flex min-h-screen flex-col${isSplitStage ? ' lg:h-dvh lg:overflow-hidden' : ''}`}

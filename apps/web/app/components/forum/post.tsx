@@ -83,7 +83,7 @@ export function PostCard({
 				}
 			}}
 		>
-			<div className="flex items-center gap-2.5 pt-3 pr-2 pl-4">
+			<div className="flex items-center gap-3 pt-4 pr-3 pl-4 lg:pl-5">
 				<Link to={`/u/${post.author.handle}`} tabIndex={-1} aria-hidden>
 					<UserAvatar user={post.author} />
 				</Link>
@@ -117,13 +117,13 @@ export function PostCard({
 				{ext.slots}
 			</div>
 			{post.deleted ? (
-				<p className="text-ink-weak px-4 pt-2 pb-4 italic">这条回复已被删除。</p>
+				<p className="text-ink-weak px-4 pt-3 pb-5 italic lg:px-5">这条回复已被删除。</p>
 			) : editing ? (
 				<EditPost post={post} bodyMax={bodyMax} onDone={() => setEditing(false)} />
 			) : (
 				// The forum core has already filtered this HTML against its allowlist.
 				<div
-					className={`post-body px-4 pt-2 pb-4${post.bodyFormat === 'plain' ? ' post-body--plain' : ''}`}
+					className={`post-body px-4 pt-3 pb-5 lg:px-5${post.bodyFormat === 'plain' ? ' post-body--plain' : ''}`}
 					dangerouslySetInnerHTML={{
 						__html: opening ? withoutLeadingTitle(post.bodyHtml, threadTitle) : post.bodyHtml,
 					}}
@@ -157,7 +157,7 @@ function EditPost({
 	const result = useActionData<{ error?: string; postId?: string }>()
 	const error = result?.postId === post.id ? result.error : undefined
 	return (
-		<Form method="post" className="flex flex-col gap-2 px-4 pt-2 pb-4">
+		<Form method="post" className="flex flex-col gap-3 px-4 pt-3 pb-5 lg:px-5">
 			<FormError message={error} />
 			<input type="hidden" name="intent" value="edit-post" />
 			<input type="hidden" name="postId" value={post.id} />

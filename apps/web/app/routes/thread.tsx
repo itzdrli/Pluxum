@@ -354,7 +354,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			{posts.items.length === 0 ? (
 				<EmptyState icon={MessageSquare} title="这一页没有内容" />
 			) : (
-				<ol className="border-line mt-4 flex flex-col gap-3 max-lg:-mx-4 max-lg:gap-0 max-lg:border-t">
+				<ol className="border-line mt-5 flex flex-col gap-4 max-lg:-mx-4 max-lg:gap-0 max-lg:border-t">
 					{posts.items.map((post, index) => (
 						<PostCard
 							key={post.id}
@@ -408,7 +408,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 				<div className="min-w-0">{mainContent}</div>
 				<aside
 					aria-label="主题侧栏"
-					className="hidden w-[240px] min-w-0 flex-col gap-4 self-start empty:hidden! 2xl:ml-6 2xl:flex group-data-[focus=true]/detail:xl:ml-6 group-data-[focus=true]/detail:xl:flex"
+					className="hidden w-[240px] min-w-0 flex-col gap-4 self-start empty:hidden! lg:sticky lg:top-7 2xl:ml-6 2xl:flex group-data-[focus=true]/detail:xl:ml-6 group-data-[focus=true]/detail:xl:flex"
 				>
 					<ThreadSidebarSlots thread={thread} />
 				</aside>
@@ -436,7 +436,7 @@ function RenameThread({
 }) {
 	const submitting = useNavigation().formData?.get('intent') === 'rename'
 	return (
-		<Form method="post" className="mb-4 flex flex-col gap-2">
+		<Form method="post" className="mb-5 flex flex-col gap-3">
 			<input type="hidden" name="intent" value="rename" />
 			<FormError message={error} />
 			<TextInputField
@@ -482,7 +482,7 @@ function ReplyArea({
 			)
 		}
 		return (
-			<Panel className="mt-6 flex flex-wrap items-center justify-between gap-3 px-4 py-3 max-lg:hidden">
+			<Panel className="mt-8 flex flex-wrap items-center justify-between gap-4 px-5 py-4 max-lg:hidden">
 				<span className="text-ink">登录后参与讨论。</span>
 				{loginHref !== undefined && (
 					<ButtonAnchor href={loginHref} tone="primary">

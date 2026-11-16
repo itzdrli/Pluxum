@@ -1,8 +1,8 @@
 import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 
-import { formatDateTime } from '../../lib/format'
+import { formatDateTime, formatHumanTime } from '../../lib/format'
 import { StageLink } from '../stage/stage'
 
 /** Small inline label. `accent` marks the one thing worth noticing (pinned, own role). */
@@ -83,17 +83,51 @@ export function Avatar({
 	)
 }
 
+// One clock for every timestamp on the page: a single interval re-renders them together, and only
+// while some timestamp is mounted.
+let clock = Date.now()
+const clockListeners = new Set<() => void>()
+let clockTimer: ReturnType<typeof setInterval> | undefined
+
+function subscribeToClock(listener: () => void) {
+	if (clockListeners.size === 0) {
+		clock = Date.now()
+		clockTimer = setInterval(() => {
+			clock = Date.now()
+			for (const notify of clockListeners) notify()
+		}, 10_000)
+	}
+	clockListeners.add(listener)
+	// The first listener of a page was rendered from the server's clock: catch up at once.
+	listener()
+	return () => {
+		clockListeners.delete(listener)
+		if (clockListeners.size === 0) clearInterval(clockTimer)
+	}
+}
+
+/** A moment as people say it (`3分钟前`, `3月2日`); hover for the exact minute. */
 export function Timestamp({ iso, className }: { iso: string; className?: string }) {
+	const now = useSyncExternalStore(subscribeToClock, () => clock, Date.now)
 	return (
-		<time dateTime={iso} className={`tabular-nums ${className ?? ''}`}>
-			{formatDateTime(iso)}
+		// The server and the browser read the clock at different moments, so their words may differ.
+		<time
+			dateTime={iso}
+			title={formatDateTime(iso)}
+			suppressHydrationWarning
+			className={`tabular-nums ${className ?? ''}`}
+		>
+			{formatHumanTime(iso, now)}
 		</time>
 	)
 }
 
 export function Crumbs({ items }: { items: ReadonlyArray<{ label: string; to?: string }> }) {
 	return (
-		<nav aria-label="位置" className="text-ink-weak mb-3 flex min-w-0 items-center gap-1 text-meta">
+		<nav
+			aria-label="位置"
+			className="text-ink-weak mb-4 flex min-w-0 items-center gap-1.5 text-meta"
+		>
 			{items.map((item, index) => (
 				<span key={item.to ?? item.label} className="flex min-w-0 items-center gap-1">
 					{index > 0 && <ChevronRight aria-hidden size={12} className="shrink-0" />}
@@ -125,14 +159,14 @@ export function PageHeader({
 	actions?: React.ReactNode
 }) {
 	return (
-		<header className="mb-4 flex flex-wrap items-start justify-between gap-3">
+		<header className="mb-6 flex flex-wrap items-start justify-between gap-4">
 			<div className="min-w-0 flex-1 basis-64">
 				<h1 className="text-ink-strong text-[20px] leading-snug font-bold break-words">{title}</h1>
 				{description !== undefined && description !== '' && (
 					<p className="text-ink-weak mt-1 break-words">{description}</p>
 				)}
 				{meta !== undefined && (
-					<div className="text-ink-weak mt-2 flex flex-wrap items-center gap-2 text-meta">
+					<div className="text-ink-weak mt-2.5 flex flex-wrap items-center gap-2.5 text-meta">
 						{meta}
 					</div>
 				)}
@@ -167,7 +201,7 @@ export function SectionLabel({
 	actions?: React.ReactNode
 }) {
 	return (
-		<div className="mb-2 flex min-h-7 items-center justify-between gap-3">
+		<div className="mb-3 flex min-h-7 items-center justify-between gap-3">
 			<h2 className="section-label">{children}</h2>
 			{actions}
 		</div>
@@ -186,7 +220,7 @@ export function EmptyState({
 	action?: React.ReactNode
 }) {
 	return (
-		<div className="border-line flex flex-col items-center gap-2 rounded-[2px] border border-dashed px-6 py-12 text-center">
+		<div className="border-line flex flex-col items-center gap-2 rounded-[2px] border border-dashed px-6 py-14 text-center">
 			<Icon aria-hidden size={20} className="text-ink-weak" strokeWidth={1.75} />
 			<p className="text-ink-strong font-bold">{title}</p>
 			{hint !== undefined && <p className="text-ink-weak max-w-sm">{hint}</p>}
@@ -222,7 +256,7 @@ export function Notice({
 	return (
 		<div
 			role={tone === 'danger' || tone === 'warning' ? 'alert' : 'status'}
-			className={`flex items-start gap-2 rounded-[2px] border px-3 py-2 ${toneClass} ${className ?? ''}`}
+			className={`flex items-start gap-2.5 rounded-[2px] border px-4 py-3 ${toneClass} ${className ?? ''}`}
 		>
 			<Icon aria-hidden size={16} className="mt-px shrink-0" />
 			<div className="min-w-0 flex-1">{children}</div>

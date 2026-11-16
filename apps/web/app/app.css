@@ -411,7 +411,7 @@
 	 */
 	.post-body {
 		font-size: var(--fs-reading);
-		line-height: 1.75;
+		line-height: 1.8;
 		color: var(--c-text);
 		overflow-wrap: anywhere;
 	}
@@ -425,7 +425,7 @@
 	 * forum core's allowlist, so only these elements can appear.
 	 */
 	.post-body > * + * {
-		margin-top: 0.75em;
+		margin-top: 0.95em;
 	}
 	.post-body :is(h2, h3, h4) {
 		color: var(--c-text-strong);
@@ -433,7 +433,7 @@
 		line-height: 1.4;
 	}
 	.post-body > :is(h2, h3, h4):not(:first-child) {
-		margin-top: 1.4em;
+		margin-top: 1.7em;
 	}
 	.post-body h2 {
 		font-size: 1.25em;
@@ -485,7 +485,7 @@
 		color: var(--c-text-weak);
 	}
 	.post-body blockquote > * + * {
-		margin-top: 0.75em;
+		margin-top: 0.95em;
 	}
 	.post-body code {
 		border-radius: 2px;

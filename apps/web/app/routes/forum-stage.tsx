@@ -20,7 +20,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 /** A page that fills its pane grows with the window: reading width on laptops, more on big screens. */
 const WIDE_PAGE = 'max-w-[1180px] 2xl:max-w-[1400px] min-[1920px]:max-w-[1600px]'
-const RAIL_ITEM = 'flex items-center gap-2.5 border-l-2 px-3 py-2 transition-colors'
+const RAIL_ITEM = 'flex items-center gap-3 border-l-2 px-4 py-2.5 transition-colors'
 const RAIL_ITEM_ACTIVE = 'border-l-accent bg-selected text-ink-strong font-bold'
 const RAIL_ITEM_IDLE = 'text-ink hover:bg-hover hover:text-ink-strong border-l-transparent'
 
@@ -56,7 +56,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 			</aside>
 			{stage.depth === 0 ? (
 				// A page beside the column: one scrolling pane with a reading width.
-				<div className="min-w-0 flex-1 px-4 py-4 lg:overflow-y-auto lg:px-8 lg:py-6">
+				<div className="min-w-0 flex-1 px-4 py-5 lg:overflow-y-auto lg:px-10 lg:py-8">
 					<div className={`mx-auto w-full ${stage.wide ? WIDE_PAGE : 'max-w-[1040px]'}`}>
 						<Outlet />
 					</div>
@@ -127,7 +127,7 @@ function CategoryNavPanel({
 		)
 	return (
 		<>
-			<ul className="border-line-soft border-b py-1.5">
+			<ul className="border-line-soft border-b py-2">
 				<RailLink to="/" icon={LayoutGrid} label="概览" active={pathname === '/'} />
 				{meta?.search.available === true && (
 					<RailLink
@@ -147,7 +147,7 @@ function CategoryNavPanel({
 					/>
 				)}
 			</ul>
-			<div className="border-line-soft flex h-11 shrink-0 items-center justify-between gap-2 border-b px-3">
+			<div className="border-line-soft flex h-12 shrink-0 items-center justify-between gap-2 border-b px-4">
 				<span className="section-label">版块 · {categories.length}</span>
 				<div className="flex items-center gap-1">
 					{canManageCategories && (
@@ -162,9 +162,9 @@ function CategoryNavPanel({
 					)}
 				</div>
 			</div>
-			<ul className="flex-1 overflow-y-auto py-1.5">
+			<ul className="flex-1 overflow-y-auto py-2">
 				{categories.length === 0 ? (
-					<li className="text-ink-weak px-3 py-4 text-meta">还没有版块</li>
+					<li className="text-ink-weak px-4 py-5 text-meta">还没有版块</li>
 				) : (
 					categories.map((cat) => {
 						const isActive = cat.slug === activeSlug

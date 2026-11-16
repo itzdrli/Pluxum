@@ -222,7 +222,7 @@ function CommunityPanel({
 		<aside aria-label="社区" className="min-w-0 max-xl:hidden xl:sticky xl:top-0">
 			<h2 className="section-label mb-2 flex min-h-7 items-center">社区</h2>
 			<Panel className="flex flex-col divide-y divide-line">
-				<dl className="grid grid-cols-3 gap-2 px-4 py-3 text-center">
+				<dl className="grid grid-cols-3 gap-2 px-4 py-4 text-center">
 					{[
 						['成员', community.members],
 						['主题', threads],
@@ -255,7 +255,7 @@ function CommunityPanel({
 
 function MemberList({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
-		<section className="px-2 py-2">
+		<section className="px-3 py-3">
 			<h3 className="text-ink-weak px-2 pb-1 text-meta">{title}</h3>
 			<ul>{children}</ul>
 		</section>
@@ -268,7 +268,7 @@ function MemberRow({ user, note }: { user: UserDto; note?: string }) {
 			<StageLink
 				to={`/u/${user.handle}`}
 				prefetch="intent"
-				className="hover:bg-hover flex items-center gap-2.5 rounded-[2px] px-2 py-1.5"
+				className="hover:bg-hover flex items-center gap-3 rounded-[2px] px-2 py-2"
 			>
 				<UserAvatar user={user} size="sm" />
 				<span className="text-ink min-w-0 flex-1 truncate">{user.displayName}</span>
@@ -418,12 +418,12 @@ function CategoryItem({ category }: { category: CategoryDto }) {
 
 function RecentThreadItem({ item, sort }: { item: RecentThreadDto; sort: HomeSort }) {
 	return (
-		<li className="hover:bg-hover relative flex items-start gap-3 px-4 py-3 transition-colors">
+		<li className="hover:bg-hover relative flex items-start gap-4 px-5 py-4 transition-colors">
 			<span className="mt-0.5 shrink-0">
 				<UserAvatar user={item.author} />
 			</span>
-			<div className="flex min-w-0 flex-1 flex-col gap-1">
-				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+			<div className="flex min-w-0 flex-1 flex-col gap-1.5">
+				<div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
 					<UnreadDot thread={item} />
 					<ThreadFlags thread={item} />
 					<StageLink
@@ -434,7 +434,7 @@ function RecentThreadItem({ item, sort }: { item: RecentThreadDto; sort: HomeSor
 						{item.title}
 					</StageLink>
 				</div>
-				<div className="text-ink-weak flex min-w-0 items-center gap-1.5 text-meta">
+				<div className="text-ink-weak flex min-w-0 items-center gap-2 text-meta">
 					<StageLink
 						to={`/u/${item.author.handle}`}
 						className="text-ink relative z-10 truncate hover:underline"

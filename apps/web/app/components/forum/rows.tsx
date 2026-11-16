@@ -96,7 +96,7 @@ export function ThreadRow({
 }) {
 	return (
 		<li
-			className={`hover:bg-hover relative flex items-start gap-3 border-l-2 px-4 py-3 transition-colors ${
+			className={`hover:bg-hover relative flex items-start gap-4 border-l-2 px-5 py-4 transition-colors ${
 				isActive ? 'border-l-accent bg-selected' : 'border-l-transparent'
 			}`}
 		>
@@ -104,7 +104,7 @@ export function ThreadRow({
 				<UserAvatar user={thread.author} />
 			</div>
 			<div className="min-w-0 flex-1">
-				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+				<div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
 					<UnreadDot thread={thread} hidden={isActive} />
 					<ThreadFlags thread={thread} />
 					{/* The link's box covers the row, so the whole row is clickable. */}
@@ -118,8 +118,8 @@ export function ThreadRow({
 						{thread.title}
 					</StageLink>
 				</div>
-				<div className="text-ink-weak mt-1 flex items-center justify-between gap-2 text-meta">
-					<p className="flex min-w-0 flex-wrap items-center gap-x-1.5">
+				<div className="text-ink-weak mt-1.5 flex items-center justify-between gap-2 text-meta">
+					<p className="flex min-w-0 flex-wrap items-center gap-x-2">
 						{/* Above the row link's box, so the name opens the profile instead. */}
 						<StageLink
 							to={`/u/${thread.author.handle}`}

@@ -60,7 +60,7 @@ function Outline() {
 	if (headings.length < 2) return null
 	const base = Math.min(...headings.map((heading) => heading.level))
 	return (
-		<nav aria-label="文章目录" className="sticky top-0 flex flex-col gap-1.5">
+		<nav aria-label="文章目录" className="flex flex-col gap-1.5">
 			<p className="section-label">目录</p>
 			<ul className="border-line-soft flex flex-col border-l">
 				{headings.map((heading) => (

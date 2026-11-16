@@ -93,11 +93,11 @@ export function StageMotionSync() {
 export const RAIL_WIDTH = 'lg:w-[220px] xl:w-[260px] 2xl:w-[288px]'
 
 const LIST_WIDE =
-	'min-w-0 flex-1 px-4 py-4 [view-transition-name:stage-list] lg:overflow-y-auto lg:px-8 lg:py-5'
+	'min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-list] lg:overflow-y-auto lg:px-10 lg:py-7'
 const LIST_NARROW =
-	'border-line-soft bg-page w-[280px] shrink-0 border-r px-3 py-4 [view-transition-name:stage-list-side] max-lg:hidden lg:overflow-y-auto xl:w-[320px] 2xl:w-[380px]'
+	'border-line-soft bg-page w-[280px] shrink-0 border-r px-4 py-5 [view-transition-name:stage-list-side] max-lg:hidden lg:overflow-y-auto xl:w-[320px] 2xl:w-[380px]'
 const DETAIL =
-	'bg-panel min-w-0 flex-1 px-4 py-4 [view-transition-name:stage-detail] lg:overflow-y-auto lg:px-8 lg:py-5'
+	'bg-panel min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-detail] lg:overflow-y-auto lg:px-10 lg:py-7'
 
 /**
  * The list layer's panes: the list on its own at depth 1, and list + detail (the child route) at
