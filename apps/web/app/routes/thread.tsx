@@ -34,7 +34,7 @@ import { pageCount } from '../lib/format'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { defineStage, listPathOf, pagePathOf } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
-import { ThreadSidebarSlots, useHasFilledSlot } from '../slots/slots'
+import { ThreadSidebarSlots, ThreadViewSlots, useHasFilledSlot } from '../slots/slots'
 import { pageTitle } from '../lib/site'
 
 // Mounted under every list route (category, search, profile); the list decides where closing goes.
@@ -260,6 +260,10 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 
 	const mainContent = (
 		<>
+			<ThreadViewSlots
+				thread={thread}
+				atEnd={posts.page >= pageCount(posts.total, posts.pageSize)}
+			/>
 			{/* Phones go back through the bottom bar, so the breadcrumb is for wide screens. */}
 			<div className="max-lg:hidden">
 				<Crumbs

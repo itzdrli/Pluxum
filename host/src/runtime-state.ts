@@ -10,6 +10,7 @@ import { ForumMarkdownPlugin } from '@pluxum/markdown'
 import { ForumModerationPlugin } from '@pluxum/moderation'
 import { ForumNotificationsPlugin } from '@pluxum/notifications'
 import { ForumReactionsPlugin } from '@pluxum/reactions'
+import { ForumReadsPlugin } from '@pluxum/reads'
 import { ForumRedisConfig, ForumRedisPlugin } from '@pluxum/redis'
 import { ForumSearchPlugin } from '@pluxum/search'
 
@@ -21,6 +22,7 @@ export const appPlugins = [
 	ForumApiPlugin,
 	ForumMarkdownPlugin,
 	ForumReactionsPlugin,
+	ForumReadsPlugin,
 	ForumAttachmentsPlugin,
 	ForumNotificationsPlugin,
 	ForumSearchPlugin,

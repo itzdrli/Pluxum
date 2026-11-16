@@ -11,6 +11,7 @@ import { ForumModerationPlugin } from '@pluxum/moderation'
 import { ForumFooterPlugin } from '@pluxum/footer'
 import { ForumNotificationsPlugin } from '@pluxum/notifications'
 import { ForumReactionsPlugin } from '@pluxum/reactions'
+import { ForumReadsPlugin } from '@pluxum/reads'
 import { ForumSearchPlugin } from '@pluxum/search'
 
 // Forum plugins that run in every dev session by default.
@@ -22,6 +23,7 @@ const forumPlugins = [
 	ForumApiPlugin,
 	ForumMarkdownPlugin,
 	ForumReactionsPlugin,
+	ForumReadsPlugin,
 	ForumAttachmentsPlugin,
 	ForumNotificationsPlugin,
 	ForumSearchPlugin,

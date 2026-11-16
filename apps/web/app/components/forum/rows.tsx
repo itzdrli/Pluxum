@@ -1,6 +1,7 @@
 import type { CategoryDto, ThreadDto } from '@pluxum/domain'
 import { Hash, Lock, MessageSquare, Pin } from 'lucide-react'
 import { StageLink } from '../stage/stage'
+import { isUnread } from '../../slots/forum-reads/state'
 import { Tag, Timestamp } from '../ui/display'
 import { UserAvatar } from './user-avatar'
 
@@ -47,6 +48,25 @@ export function CategoryRow({ category }: { category: CategoryDto }) {
 	)
 }
 
+/** A dot before the title of a thread with activity the viewer has not read. */
+export function UnreadDot({
+	thread,
+	hidden = false,
+}: {
+	thread: Pick<ThreadDto, 'ext' | 'lastPostAt'>
+	hidden?: boolean
+}) {
+	if (hidden || !isUnread(thread)) return null
+	return (
+		<span
+			role="img"
+			aria-label="有未读内容"
+			title="有未读内容"
+			className="bg-accent size-2 shrink-0 rounded-full"
+		/>
+	)
+}
+
 /** Pinned / locked markers of a thread. */
 export function ThreadFlags({ thread }: { thread: Pick<ThreadDto, 'pinned' | 'locked'> }) {
 	return (
@@ -85,6 +105,7 @@ export function ThreadRow({
 			</div>
 			<div className="min-w-0 flex-1">
 				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+					<UnreadDot thread={thread} hidden={isActive} />
 					<ThreadFlags thread={thread} />
 					{/* The link's box covers the row, so the whole row is clickable. */}
 					<StageLink

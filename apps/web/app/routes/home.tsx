@@ -12,7 +12,7 @@ import {
 } from 'react-router'
 
 import type { Route } from './+types/home'
-import { ThreadFlags } from '../components/forum/rows'
+import { ThreadFlags, UnreadDot } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
 import { StageLink, useStageNavigate } from '../components/stage/stage'
 import { Button, ButtonAnchor, IconButton } from '../components/ui/button'
@@ -337,6 +337,7 @@ function RecentThreadItem({ item, sort }: { item: RecentThreadDto; sort: HomeSor
 			</span>
 			<div className="flex min-w-0 flex-1 flex-col gap-1">
 				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+					<UnreadDot thread={item} />
 					<ThreadFlags thread={item} />
 					<StageLink
 						to={`/c/${item.category.slug}/t/${item.ref}`}

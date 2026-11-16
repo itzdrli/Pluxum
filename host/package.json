@@ -29,6 +29,7 @@
 		"@pluxum/moderation": "workspace:*",
 		"@pluxum/notifications": "workspace:*",
 		"@pluxum/reactions": "workspace:*",
+		"@pluxum/reads": "workspace:*",
 		"@pluxum/redis": "workspace:*",
 		"@pluxum/search": "workspace:*",
 		"@sinclair/typebox": "catalog:backend",

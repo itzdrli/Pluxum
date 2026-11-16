@@ -155,6 +155,7 @@ export const meta = t.Object({
 				t.Literal('post.footer'),
 				t.Literal('post.actions'),
 				t.Literal('thread.sidebar'),
+				t.Literal('thread.view'),
 				t.Literal('user.profile.tabs'),
 				t.Literal('composer.toolbar'),
 				t.Literal('shell.actions'),

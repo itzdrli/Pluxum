@@ -14,6 +14,7 @@
 		"@pluxum/core": "workspace:*",
 		"@pluxum/markdown": "workspace:*",
 		"@pluxum/reactions": "workspace:*",
+		"@pluxum/reads": "workspace:*",
 		"@pluxum/redis": "workspace:*",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host-vite": "catalog:pluxel",

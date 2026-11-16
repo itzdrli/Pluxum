@@ -10,6 +10,7 @@ import { UploadButton } from './forum-attachments/upload'
 import { ReportAction } from './forum-moderation/report-button'
 import { UserBanTab } from './forum-moderation/user-ban-tab'
 import { NotificationBell } from './forum-notifications/bell'
+import { MarkThreadRead } from './forum-reads/mark-read'
 import { ReactionsFooter } from './forum-reactions/reactions'
 
 /** Puts an uploaded file where the visitor is writing: an image in place, or a link. */
@@ -27,6 +28,8 @@ export type SlotProps = {
 	 */
 	'post.actions': { post: PostDto; setMenuItems: (items: readonly MenuItem[]) => void }
 	'thread.sidebar': { thread: ThreadDto }
+	/** Mounted while a thread is on screen; `atEnd` is true on its last page. Draws nothing, usually. */
+	'thread.view': { thread: ThreadDto; atEnd: boolean }
 	'composer.toolbar': { insert: InsertAttachment }
 	'user.profile.tabs': { profile: UserProfileDto }
 	'shell.actions': { meta: MetaDto | null }
@@ -51,6 +54,7 @@ const EXTENSIONS: Readonly<Record<string, SlotComponents>> = {
 	'forum-notifications': {
 		'shell.actions': NotificationBell,
 	},
+	'forum-reads': { 'thread.view': MarkThreadRead },
 	'forum-moderation': {
 		'post.actions': ReportAction,
 		'user.profile.tabs': UserBanTab,
@@ -140,5 +144,12 @@ export function ThreadSidebarSlots({ thread }: { thread: ThreadDto }) {
 export function ShellSlots({ meta }: { meta: MetaDto | null }) {
 	return useFilled('shell.actions').map(([extId, Component]) => (
 		<Component key={extId} meta={meta} />
+	))
+}
+
+/** Things running extensions do while a thread is on screen (they usually draw nothing). */
+export function ThreadViewSlots({ thread, atEnd }: { thread: ThreadDto; atEnd: boolean }) {
+	return useFilled('thread.view').map(([extId, Component]) => (
+		<Component key={extId} thread={thread} atEnd={atEnd} />
 	))
 }

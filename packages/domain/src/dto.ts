@@ -238,6 +238,7 @@ export const UI_SLOTS = [
 	'post.footer',
 	'post.actions',
 	'thread.sidebar',
+	'thread.view',
 	'user.profile.tabs',
 	'composer.toolbar',
 	'shell.actions',

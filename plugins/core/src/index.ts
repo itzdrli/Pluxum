@@ -189,6 +189,13 @@ export type PostLocation = Readonly<{
 	resource: ForumResource
 }>
 
+/** A thread an extension may act on: its stable ID and URL segment, and what permission checks take. */
+export type ThreadLocation = Readonly<{
+	threadId: string
+	threadRef: string
+	resource: ForumResource
+}>
+
 /** A visible post and its thread facts, for search index backfill. */
 export type IndexablePost = Readonly<{
 	postId: string
@@ -618,6 +625,23 @@ export class ForumCorePlugin extends BasePlugin {
 			threadRef: formatThreadRef(found.thread.number, found.thread.slug),
 			postNumber: found.post.number,
 			resource: this.postResource(found.post, found.thread),
+		})
+	}
+
+	/**
+	 * For extension plugins: confirms that a thread exists, is not deleted and is visible to the
+	 * principal, and returns what a permission check on it needs.
+	 */
+	async locateThread(principal: Principal, threadId: string): Promise<ForumResult<ThreadLocation>> {
+		if (!isEntityId(threadId)) return notFound('主题')
+		const found = await this.database.read((db) => this.findThread(db, threadId))
+		if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
+			return notFound('主题')
+		}
+		return Result.ok({
+			threadId: found.thread.id,
+			threadRef: formatThreadRef(found.thread.number, found.thread.slug),
+			resource: this.threadResource(found.thread),
 		})
 	}
 
