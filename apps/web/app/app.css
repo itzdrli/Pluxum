@@ -333,12 +333,20 @@
 		font-size: var(--fs-meta);
 	}
 
-	/* The mobile thumb-zone bar is tapped with a thumb, so its controls get 40px touch targets. */
+	/* The mobile thumb-zone bar is tapped with a thumb, so its controls get 40px touch targets.
+	 * Icon-only ones get 44px, a 20px glyph and an outline, or a bare 16px glyph reads as tiny. */
 	.stage-bar .button {
 		height: 40px;
 	}
-	.stage-bar .button--icon-only {
-		width: 40px;
+	.stage-bar .button.button--icon-only {
+		width: 44px;
+		height: 44px;
+		border: 1px solid var(--c-line);
+		--button-bg: var(--c-control);
+	}
+	.stage-bar .button.button--icon-only svg {
+		width: 20px;
+		height: 20px;
 	}
 }
 

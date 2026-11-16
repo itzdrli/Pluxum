@@ -285,7 +285,7 @@ export function MobileThreadBar({
 					<div className="flex-1" />
 				)}
 
-				<div className="flex shrink-0 items-center gap-1">
+				<div className="flex shrink-0 items-center gap-2">
 					<IconButton
 						label={jumpDirection === 'top' ? '回到顶部' : '跳到底部'}
 						tone="ghost"
