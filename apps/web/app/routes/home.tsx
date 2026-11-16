@@ -139,7 +139,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 						className={mobileTab === 'recent' ? '' : 'max-lg:hidden'}
 					>
 						{!signedIn && <GuestWelcome root={root} loginHref={loginHref} />}
-						<div className="mb-2 flex items-center justify-between gap-3">
+						<div className="mb-5 flex items-center justify-between gap-3">
 							<SortTabs sort={sort} />
 							<div className="flex items-center gap-3">
 								<span className="text-ink-weak text-meta tabular-nums max-lg:hidden xl:hidden">
@@ -220,7 +220,7 @@ function CommunityPanel({
 }) {
 	return (
 		<aside aria-label="社区" className="min-w-0 max-xl:hidden xl:sticky xl:top-0">
-			<h2 className="section-label mb-2 flex min-h-7 items-center">社区</h2>
+			<h2 className="section-label mb-5 flex h-11 items-center">社区</h2>
 			<Panel className="flex flex-col divide-y divide-line">
 				<dl className="grid grid-cols-3 gap-2 px-4 py-4 text-center">
 					{[
@@ -290,7 +290,7 @@ function SortTabs({ sort }: { sort: HomeSort }) {
 					to={item.id === 'active' ? '/' : `/?sort=${item.id}`}
 					replace
 					aria-current={item.id === sort ? 'page' : undefined}
-					className={`h-control -mb-px inline-flex items-center border-b-2 text-ui transition-colors ${
+					className={`-mb-px inline-flex h-11 items-center border-b-2 text-ui transition-colors ${
 						item.id === sort
 							? 'border-accent text-ink-strong font-bold'
 							: 'text-ink-weak hover:text-ink-strong border-transparent'
