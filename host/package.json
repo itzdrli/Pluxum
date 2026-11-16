@@ -24,6 +24,7 @@
 		"@pluxum/attachments": "workspace:*",
 		"@pluxum/auth": "workspace:*",
 		"@pluxum/core": "workspace:*",
+		"@pluxum/footer": "workspace:*",
 		"@pluxum/markdown": "workspace:*",
 		"@pluxum/moderation": "workspace:*",
 		"@pluxum/notifications": "workspace:*",

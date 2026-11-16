@@ -27,6 +27,7 @@ export default defineConfig({
 					'@pluxum/notifications#check-tests',
 					'@pluxum/search#check-tests',
 					'@pluxum/moderation#check-tests',
+					'@pluxum/footer#check-tests',
 					'@pluxum/web#typecheck',
 					'@pluxum/web#test',
 				],

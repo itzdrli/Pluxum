@@ -93,6 +93,14 @@ import {
 
 export type { ContentRendererContribution } from './content'
 export { ForumCoreConfig } from './config'
+export {
+	FOOTER_GROUP_MAX,
+	FOOTER_LABEL_MAX,
+	FOOTER_LINKS_MAX,
+	FOOTER_NOTE_MAX,
+	FOOTER_NOTES_MAX,
+	isFooterHref,
+} from './footer'
 
 /** A page of accounts for admin tooling (`listUsers`). */
 export type UserListDto = Readonly<{
@@ -382,7 +390,7 @@ export class ForumCorePlugin extends BasePlugin {
 			groups: groups.map((group) => ({ title: group.title, links: [...group.links] })),
 			icons: [...icons],
 		})
-		return { ...merged, notes: [...notes] }
+		return { ...merged, notes: this.footerLinks.notes(notes) }
 	}
 
 	/**

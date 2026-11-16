@@ -19,11 +19,15 @@ export type FooterLinkContribution = Readonly<{
 	links?: readonly FooterLinkDto[]
 	/** Icon-only links in the footer's bottom row. */
 	icons?: ReadonlyArray<FooterLinkDto & Readonly<{ icon: FooterIcon }>>
+	/** Short plain-text lines for the footer's bottom row (licence, filing number, ...). */
+	notes?: readonly string[]
 }>
 
 export const FOOTER_LABEL_MAX = 40
 export const FOOTER_GROUP_MAX = 20
 export const FOOTER_LINKS_MAX = 20
+export const FOOTER_NOTE_MAX = 120
+export const FOOTER_NOTES_MAX = 6
 
 /** A forum path or an http(s) URL; anything else (javascript:, data:, //host) is refused. */
 export function isFooterHref(href: unknown): href is string {
@@ -58,13 +62,17 @@ export class FooterLinkRegistry {
 	private readonly entries = new Map<string, FooterLinkContribution>()
 
 	register(contribution: FooterLinkContribution): () => void {
-		const { id, group, links = [], icons = [] } = contribution
+		const { id, group, links = [], icons = [], notes = [] } = contribution
 		if (typeof id !== 'string' || !CONTRIBUTION_ID.test(id)) {
 			throw new TypeError(`Invalid footer contributor ID: ${id}`)
 		}
-		if (links.length + icons.length === 0) {
-			throw new TypeError(`Footer contributor "${id}" must give at least one link`)
+		if (links.length + icons.length + notes.length === 0) {
+			throw new TypeError(`Footer contributor "${id}" must give at least one link or note`)
 		}
+		if (notes.length > FOOTER_NOTES_MAX) {
+			throw new TypeError(`Footer contributor "${id}" gives more than ${FOOTER_NOTES_MAX} notes`)
+		}
+		for (const note of notes) checkText(id, 'note', note, FOOTER_NOTE_MAX)
 		if (links.length + icons.length > FOOTER_LINKS_MAX) {
 			throw new TypeError(`Footer contributor "${id}" gives more than ${FOOTER_LINKS_MAX} links`)
 		}
@@ -85,6 +93,7 @@ export class FooterLinkRegistry {
 			group: group?.trim(),
 			links: links.map(({ label, href }) => ({ label: label.trim(), href })),
 			icons: icons.map(({ label, href, icon }) => ({ label: label.trim(), href, icon })),
+			notes: notes.map((note) => note.trim()),
 		}
 		this.entries.set(id, stored)
 		return () => {
@@ -116,5 +125,14 @@ export class FooterLinkRegistry {
 			}
 		}
 		return { groups, icons }
+	}
+
+	/** `base` (the configured notes) followed by the registered ones, without repeats. */
+	notes(base: readonly string[] = []): string[] {
+		const notes = [...base]
+		for (const entry of this.entries.values()) {
+			for (const note of entry.notes ?? []) if (!notes.includes(note)) notes.push(note)
+		}
+		return notes
 	}
 }

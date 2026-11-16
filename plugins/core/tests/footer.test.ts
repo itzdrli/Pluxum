@@ -124,4 +124,14 @@ describe('footer link registry', () => {
 		expect(isFooterHref('/\\evil.example')).toBe(false)
 		expect(isFooterHref('mailto:a@b.c')).toBe(false)
 	})
+
+	it('lists notes after the configured ones without repeats and limits their number', () => {
+		const registry = new FooterLinkRegistry()
+		registry.register({ id: 'a', notes: ['© 2026', '备案号'] })
+		registry.register({ id: 'b', notes: ['备案号', '联系我们'] })
+		expect(registry.notes(['许可证'])).toEqual(['许可证', '© 2026', '备案号', '联系我们'])
+		const tooMany = Array.from({ length: 7 }, (_, i) => `n${i}`)
+		expect(() => registry.register({ id: 'c', notes: tooMany })).toThrow(/more than 6 notes/)
+		expect(() => registry.register({ id: 'd', notes: [' '] })).toThrow(/invalid note/)
+	})
 })

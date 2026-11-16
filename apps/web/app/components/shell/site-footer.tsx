@@ -69,7 +69,10 @@ export function SiteFooter() {
 	)
 	const tools = (
 		<div className="flex items-center gap-4">
-			<ThemeSwatches />
+			{/* Phones switch theme from the user menu; the footer stays quiet. */}
+			<div className="hidden md:block">
+				<ThemeSwatches />
+			</div>
 			{icons.length > 0 && (
 				<ul className="flex items-center gap-1">
 					{icons.map((link) => {

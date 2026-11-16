@@ -5,6 +5,7 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAttachmentsPlugin, ForumStorageConfig, ForumStoragePlugin } from '@pluxum/attachments'
 import { ForumAuthConfig, ForumAuthPlugin } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
+import { ForumFooterPlugin } from '@pluxum/footer'
 import { ForumMarkdownPlugin } from '@pluxum/markdown'
 import { ForumModerationPlugin } from '@pluxum/moderation'
 import { ForumNotificationsPlugin } from '@pluxum/notifications'
@@ -24,6 +25,7 @@ export const appPlugins = [
 	ForumNotificationsPlugin,
 	ForumSearchPlugin,
 	ForumModerationPlugin,
+	ForumFooterPlugin,
 	VaultAdminPlugin,
 ] as const
 
