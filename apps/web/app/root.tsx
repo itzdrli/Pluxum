@@ -42,17 +42,37 @@ export async function loader({ request }: Route.LoaderArgs) {
 		if (unread.ok) unreadNotifications = unread.value.count
 	}
 	// The shell still renders when the API is down; the page below reports the failure itself.
-	return { meta: forumMeta, unreadNotifications, theme: themeFromRequest(request) }
+	return {
+		meta: forumMeta,
+		unreadNotifications,
+		theme: themeFromRequest(request),
+		// Social cards need an absolute image URL; behind the TLS proxy request.url says http://.
+		origin: process.env.FORUM_WEB_PUBLIC_ORIGIN || new URL(request.url).origin,
+	}
 }
+
+// Brand icons from the Figma brand file, served from public/. The SVG favicon switches between the
+// dark and light mark with the browser's colour scheme.
+export const links: Route.LinksFunction = () => [
+	{ rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+	{ rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+]
 
 export function Layout({ children }: { children: React.ReactNode }) {
 	const theme = useTheme()
+	// Routes' own meta() replaces the root's, so the site-wide social card is written here.
+	const origin = useRouteLoaderData<typeof loader>('root')?.origin
 	return (
 		// HeroUI picks its light or dark base from the class; app.css maps every colour from data-theme.
 		<html lang="zh-CN" data-theme={theme} className={isDarkTheme(theme) ? 'dark' : 'light'}>
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
+				<meta property="og:site_name" content="Pluxum" />
+				{origin !== undefined && <meta property="og:image" content={`${origin}/og.png`} />}
+				<meta property="og:image:width" content="1200" />
+				<meta property="og:image:height" content="630" />
+				<meta name="twitter:card" content="summary_large_image" />
 				<Meta />
 				<Links />
 			</head>

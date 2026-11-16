@@ -1,4 +1,9 @@
-# Pluxum
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/lockup-on-dark.svg">
+    <img src="docs/brand/lockup-on-light.svg" alt="Pluxum" height="64">
+  </picture>
+</h1>
 
 A plugin-first forum on [Pluxel](https://github.com/PluxelJS/pluxel): a small, stable core with every feature
 delivered as a plugin that can be started, stopped and configured from Workbench. The roadmap and decisions

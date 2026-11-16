@@ -4,8 +4,10 @@ import { Form, Link, NavLink, useLocation } from 'react-router'
 
 import { StageMotionSync, useStage } from '../stage/stage'
 import { Notice } from '../ui/display'
+import { isDarkTheme } from '../../lib/theme'
 import { ShellSlots } from '../../slots/slots'
-import { ThemePicker } from './theme-picker'
+import { LogoMark } from './logo-mark'
+import { ThemePicker, useTheme } from './theme-picker'
 import { UserMenu } from './user-menu'
 
 // Reasons forum-api appends to `/?login=` when a login could not be completed.
@@ -24,6 +26,7 @@ function navClass({ isActive }: { isActive: boolean }): string {
 /** Top bar, page column and footer around every page, error pages included. */
 export function Shell({ meta, children }: { meta: MetaDto | null; children: React.ReactNode }) {
 	const location = useLocation()
+	const theme = useTheme()
 	const here = location.pathname + location.search
 	const searchParams = new URLSearchParams(location.search)
 	const loginError = LOGIN_ERRORS[searchParams.get('login') ?? '']
@@ -54,12 +57,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 			<header className="border-line bg-panel sticky top-0 z-30 shrink-0 border-b [view-transition-name:site-header]">
 				<div className="mx-auto flex h-12 w-full max-w-[1760px] items-center gap-3 px-4 lg:px-6">
 					<Link to="/" viewTransition className="text-ink-strong flex items-center gap-2 font-bold">
-						<span
-							aria-hidden
-							className="bg-accent text-page flex size-6 items-center justify-center rounded-[2px] text-[13px]"
-						>
-							P
-						</span>
+						<LogoMark tone={isDarkTheme(theme) ? 'light' : 'dark'} className="size-6 shrink-0" />
 						<span className="hidden text-[14px] min-[400px]:inline">Pluxum</span>
 					</Link>
 					<nav aria-label="主导航" className="ml-2 flex items-center gap-1">
