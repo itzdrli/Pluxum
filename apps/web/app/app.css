@@ -125,6 +125,30 @@
 }
 
 /*
+ * Control sizes. Every button, field, tab and bar item uses one of two heights, and touch screens
+ * get bigger ones; nothing sets its own pixel height. Use the `h-control` / `size-control-sm`
+ * utilities (below) or the Button `size` prop, never h-7 / h-8 / h-10 by hand.
+ *
+ *   --h-control      md: bars, forms, main actions     32px, 40px on touch
+ *   --h-control-sm   sm: small actions inside content  28px, 36px on touch
+ *   --icon           glyph in a control                16px, 18px on touch
+ *   --h-bar          top bar                           48px
+ */
+:root {
+	--h-control: 32px;
+	--h-control-sm: 28px;
+	--icon: 16px;
+	--h-bar: 48px;
+}
+@media (pointer: coarse) {
+	:root {
+		--h-control: 40px;
+		--h-control-sm: 36px;
+		--icon: 18px;
+	}
+}
+
+/*
  * HeroUI reads its own variables; map them onto the roles. `.dark` / `.light` on <html> only tells
  * HeroUI which of its defaults to start from; these declarations replace the colours either way.
  */
@@ -252,7 +276,7 @@
  */
 @layer components {
 	.button {
-		height: 32px;
+		height: var(--h-control);
 		padding-inline: 12px;
 		gap: 6px;
 		border-radius: 2px;
@@ -260,31 +284,23 @@
 		font-weight: 400;
 	}
 	.button--sm {
-		height: 28px;
+		height: var(--h-control-sm);
 		padding-inline: 10px;
 	}
-	.button--lg {
-		height: 36px;
-		padding-inline: 14px;
-		font-size: var(--fs-title);
-	}
 	.button--icon-only {
-		width: 32px;
+		width: var(--h-control);
 		padding: 0;
 	}
 	.button--icon-only.button--sm {
-		width: 28px;
-	}
-	.button--icon-only.button--lg {
-		width: 36px;
+		width: var(--h-control-sm);
 	}
 	.button:active,
 	.button[data-pressed='true'] {
 		transform: none;
 	}
 	.button svg:not([data-slot='spinner'] svg, [data-slot='link-icon'] svg) {
-		width: 16px;
-		height: 16px;
+		width: var(--icon);
+		height: var(--icon);
 		margin: 0;
 	}
 	.button--secondary {
@@ -309,7 +325,7 @@
 		padding-inline: 10px;
 	}
 	.input {
-		height: 32px;
+		height: var(--h-control);
 		padding-block: 0;
 	}
 	.textarea {
@@ -333,21 +349,6 @@
 		font-size: var(--fs-meta);
 	}
 
-	/* The mobile thumb-zone bar is tapped with a thumb, so its controls get 40px touch targets.
-	 * Icon-only ones get 44px, a 20px glyph and an outline, or a bare 16px glyph reads as tiny. */
-	.stage-bar .button {
-		height: 40px;
-	}
-	.stage-bar .button.button--icon-only {
-		width: 44px;
-		height: 44px;
-		border: 1px solid var(--c-line);
-		--button-bg: var(--c-control);
-	}
-	.stage-bar .button.button--icon-only svg {
-		width: 20px;
-		height: 20px;
-	}
 	/* A Dropdown.Trigger styled as a button: HeroUI's `.dropdown__trigger` makes it display:block,
 	 * which pins the icon to the left edge instead of centring it like every other button. */
 	.dropdown__trigger.button {
@@ -361,6 +362,24 @@
 			background-color: var(--button-bg);
 		}
 	}
+}
+
+@utility h-control {
+	height: var(--h-control);
+}
+@utility h-control-sm {
+	height: var(--h-control-sm);
+}
+@utility size-control {
+	width: var(--h-control);
+	height: var(--h-control);
+}
+@utility size-control-sm {
+	width: var(--h-control-sm);
+	height: var(--h-control-sm);
+}
+@utility h-bar {
+	height: var(--h-bar);
 }
 
 @layer utilities {

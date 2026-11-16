@@ -14,7 +14,10 @@ export type MenuItem = Readonly<{
 	onAction: () => void
 }>
 
-/** An overflow menu ("…") of actions on one thing. Renders nothing when there are no actions. */
+/**
+ * An overflow menu ("…") of actions on one thing. Renders nothing when there are no actions.
+ * Items are text only; `icon` shows on `danger` items alone.
+ */
 export function ActionMenu({
 	label,
 	items,
@@ -45,7 +48,10 @@ export function ActionMenu({
 							textValue={item.label}
 							variant={item.danger ? 'danger' : 'default'}
 						>
-							{item.icon !== undefined && <item.icon aria-hidden size={14} />}
+							{/* Menus are text; only a destructive item keeps its icon as a warning. */}
+							{item.danger === true && item.icon !== undefined && (
+								<item.icon aria-hidden size={14} />
+							)}
 							{item.label}
 						</Dropdown.Item>
 					))}

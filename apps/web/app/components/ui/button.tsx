@@ -7,8 +7,8 @@ import { Link } from 'react-router'
  * menus that should not compete with content. danger: destructive confirmations.
  */
 export type ButtonTone = 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger'
-/** sm 28px, md 32px, lg 36px. */
-export type ButtonSize = 'sm' | 'md' | 'lg'
+/** md 32px (40px on touch): bars, forms, main actions. sm 28px (36px on touch): small actions inside content. */
+export type ButtonSize = 'sm' | 'md'
 
 type HeroButtonProps = ComponentProps<typeof HeroButton>
 
