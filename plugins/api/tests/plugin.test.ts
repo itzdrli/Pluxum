@@ -599,7 +599,7 @@ describe('ForumApiPlugin', () => {
 		expect(meta.uiSlots).toEqual([])
 		expect(meta.site.name).toBe('Pluxum')
 		// The footer is empty until a plugin (Forum Footer) fills it.
-		expect(meta.footer).toEqual({ groups: [], icons: [], notes: [] })
+		expect(meta.footer).toEqual({ groups: [], icons: [], notes: [], siteLinks: false })
 
 		expect(await api.ok<PreviewDto>('POST', '/preview', { body: 'a < b' })).toEqual({
 			bodyHtml: 'a &lt; b',

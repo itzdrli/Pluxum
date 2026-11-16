@@ -13,6 +13,7 @@ export const DEFAULT_FOOTER: FooterDto = {
 	groups: [],
 	icons: [{ label: 'GitHub', href: 'https://github.com/itzdrli/Pluxum', icon: 'github' }],
 	notes: [],
+	siteLinks: false,
 }
 
 /** The root loader's data, or the part of it these helpers read. */

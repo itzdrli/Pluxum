@@ -25,7 +25,7 @@ export const ForumCoreConfig = v.object({
 						v.string(),
 						v.trim(),
 						v.maxLength(80),
-						f.formMeta({ title: '标语', description: '页脚中站点名称旁的一行字，可留空。' }),
+						f.formMeta({ title: '标语', description: '页脚中站点名称下方的一行字，可留空。' }),
 					),
 					'万物皆插件 · 基于 Pluxel',
 				),

@@ -60,12 +60,22 @@ const FooterGroup = v.object({
 
 /** What the site footer shows. All of it is optional. */
 export const ForumFooterConfig = v.object({
+	siteLinks: v.optional(
+		v.pipe(
+			v.boolean(),
+			f.formMeta({
+				title: '显示「站内」栏',
+				description: '在页脚最前面加一栏站内入口（版块，搜索可用时还有搜索）。',
+			}),
+		),
+		false,
+	),
 	groups: v.optional(
 		v.pipe(
 			v.array(FooterGroup),
 			f.formMeta({
 				title: '链接栏目',
-				description: '页脚的文字链接栏，每栏一个标题。没有栏目时页脚保持一行。',
+				description: '页脚的文字链接栏，每栏一个标题。',
 			}),
 			f.arrayMeta({
 				itemLabel: '栏目',
@@ -139,10 +149,10 @@ export class ForumFooterPlugin extends BasePlugin {
 	}
 
 	/** (Re-)registers what the config holds now. An empty config registers nothing. */
-	private publish({ groups, icons, notes }: DeepReadonly<ForumFooterConfig>): void {
+	private publish({ siteLinks, groups, icons, notes }: DeepReadonly<ForumFooterConfig>): void {
 		this.withdraw?.()
 		this.withdraw = undefined
-		if (groups.length + icons.length + notes.length === 0) return
+		if (!siteLinks && groups.length + icons.length + notes.length === 0) return
 		// One registry entry per column: a contribution has a single `group` title.
 		const disposers = [
 			...groups.map((group, index) =>
@@ -152,12 +162,13 @@ export class ForumFooterPlugin extends BasePlugin {
 					links: group.links,
 				}),
 			),
-			...(icons.length + notes.length > 0
+			...(siteLinks || icons.length + notes.length > 0
 				? [
 						this.core.registerFooterLinks({
 							id: `${FOOTER_CONTRIBUTOR_ID}-extras`,
 							icons,
 							notes,
+							siteLinks,
 						}),
 					]
 				: []),

@@ -184,6 +184,7 @@ export const meta = t.Object({
 			}),
 		),
 		notes: t.Array(t.String()),
+		siteLinks: t.Boolean(),
 	}),
 })
 

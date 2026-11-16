@@ -35,6 +35,12 @@ describe('forum footer plugin', () => {
 		expect(saved).toMatchObject({ ok: true, saved: true, application: 'applied' })
 		expect(core.footer().groups).toEqual([])
 		expect(core.footer().notes).toEqual(['新的附注'])
+		expect(core.footer().siteLinks).toBe(false)
+
+		// The site links column is an option of its own.
+		await host.config.patch(ForumFooterPlugin, { siteLinks: true, notes: [] })
+		expect(core.footer().siteLinks).toBe(true)
+		await host.config.patch(ForumFooterPlugin, { siteLinks: false })
 
 		await host.stop(ForumFooterPlugin)
 		expect(core.footer().groups).toEqual([])

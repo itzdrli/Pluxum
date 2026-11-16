@@ -385,7 +385,11 @@ export class ForumCorePlugin extends BasePlugin {
 
 	/** The footer: what running plugins registered (see `registerFooterLinks`). */
 	footer(): FooterDto {
-		return { ...this.footerLinks.list(), notes: this.footerLinks.notes() }
+		return {
+			...this.footerLinks.list(),
+			notes: this.footerLinks.notes(),
+			siteLinks: this.footerLinks.siteLinks(),
+		}
 	}
 
 	/**

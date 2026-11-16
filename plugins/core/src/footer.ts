@@ -21,6 +21,8 @@ export type FooterLinkContribution = Readonly<{
 	icons?: ReadonlyArray<FooterLinkDto & Readonly<{ icon: FooterIcon }>>
 	/** Short plain-text lines for the footer's bottom row (licence, filing number, ...). */
 	notes?: readonly string[]
+	/** Asks for the built-in "站内" column of forum pages. */
+	siteLinks?: boolean
 }>
 
 export const FOOTER_LABEL_MAX = 40
@@ -62,12 +64,14 @@ export class FooterLinkRegistry {
 	private readonly entries = new Map<string, FooterLinkContribution>()
 
 	register(contribution: FooterLinkContribution): () => void {
-		const { id, group, links = [], icons = [], notes = [] } = contribution
+		const { id, group, links = [], icons = [], notes = [], siteLinks = false } = contribution
 		if (typeof id !== 'string' || !CONTRIBUTION_ID.test(id)) {
 			throw new TypeError(`Invalid footer contributor ID: ${id}`)
 		}
-		if (links.length + icons.length + notes.length === 0) {
-			throw new TypeError(`Footer contributor "${id}" must give at least one link or note`)
+		if (links.length + icons.length + notes.length === 0 && !siteLinks) {
+			throw new TypeError(
+				`Footer contributor "${id}" must give at least one link, note or the site links`,
+			)
 		}
 		if (notes.length > FOOTER_NOTES_MAX) {
 			throw new TypeError(`Footer contributor "${id}" gives more than ${FOOTER_NOTES_MAX} notes`)
@@ -94,6 +98,7 @@ export class FooterLinkRegistry {
 			links: links.map(({ label, href }) => ({ label: label.trim(), href })),
 			icons: icons.map(({ label, href, icon }) => ({ label: label.trim(), href, icon })),
 			notes: notes.map((note) => note.trim()),
+			siteLinks,
 		}
 		this.entries.set(id, stored)
 		return () => {
@@ -125,6 +130,11 @@ export class FooterLinkRegistry {
 			}
 		}
 		return { groups, icons }
+	}
+
+	/** Whether any contributor asked for the built-in "站内" column. */
+	siteLinks(): boolean {
+		return [...this.entries.values()].some((entry) => entry.siteLinks === true)
 	}
 
 	/** `base` (the configured notes) followed by the registered ones, without repeats. */

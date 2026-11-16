@@ -278,13 +278,15 @@ export type FooterDto = FooterLinksDto &
 	Readonly<{
 		/** Short lines in the bottom row: licence, filing number, copyright, ... */
 		notes: string[]
+		/** Whether to show the built-in "站内" column (forum pages) before the link columns. */
+		siteLinks: boolean
 	}>
 
 /** The forum's name and blurbs, set in Forum Core's config. */
 export type SiteDto = Readonly<{
 	/** Shown in the header, page titles and social cards. */
 	name: string
-	/** One line beside the name in the footer. */
+	/** One line under the name in the footer. */
 	tagline: string
 	/** The home page's meta description. */
 	description: string

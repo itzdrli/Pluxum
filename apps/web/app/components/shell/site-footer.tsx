@@ -53,23 +53,20 @@ function FooterAnchor({
 
 /**
  * Under every page that scrolls. Its content is Forum Core's site and footer config plus the links
- * running plugins add (both in `/meta`). Top: the brand with its blurb on the left, link columns
- * on the right (a built-in "站内" column first, then the configured ones). Bottom bar: copyright
+ * running plugins add (both in `/meta`). Top: the brand with its tagline on the left, link columns
+ * on the right (the optional built-in "站内" column first, then the configured ones). Bottom bar: copyright
  * and notes, then theme swatches and icon links.
  */
 export function SiteFooter() {
 	const root = useRouteLoaderData<typeof rootLoader>('root')
-	const { name, tagline, description } = siteOf(root)
-	const { groups, icons, notes } = footerOf(root)
+	const { name, tagline } = siteOf(root)
+	const { groups, icons, notes, siteLinks: showSiteLinks } = footerOf(root)
 	const searchAvailable = root?.meta?.search.available === true
 	const siteLinks: FooterLink[] = [
 		{ label: '版块', href: '/' },
 		...(searchAvailable ? [{ label: '搜索', href: '/search' }] : []),
 	]
-	const columns = [{ title: '站内', links: siteLinks }, ...groups]
-	const blurb = [tagline, description].filter(
-		(text, i, all) => text !== '' && all.indexOf(text) === i,
-	)
+	const columns = showSiteLinks ? [{ title: '站内', links: siteLinks }, ...groups] : groups
 
 	return (
 		<footer className="border-line bg-panel border-t">
@@ -80,9 +77,7 @@ export function SiteFooter() {
 							<LogoMark className="size-6 shrink-0" />
 							<span className="text-ink-strong text-title font-bold">{name}</span>
 						</div>
-						{blurb.length > 0 && (
-							<p className="text-ink-weak text-ui leading-relaxed">{blurb.join(' · ')}</p>
-						)}
+						{tagline !== '' && <p className="text-ink-weak text-ui leading-relaxed">{tagline}</p>}
 					</div>
 					<nav
 						aria-label="页脚链接"
