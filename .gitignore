@@ -24,3 +24,4 @@ hk.local.pkl
 # React Router
 .react-router/
 apps/web/build/
+apps/web/.build-check/

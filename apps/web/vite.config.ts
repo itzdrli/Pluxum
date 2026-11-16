@@ -10,6 +10,12 @@ const devOrigin = process.env.FORUM_WEB_DEV_ORIGIN ?? process.env.FORUM_WEB_PUBL
 
 export default defineConfig({
 	plugins: [tailwindcss(), reactRouter()],
+	build: {
+		// Tablets and phones often run vendor browsers on an older Chromium. A chunk with syntax the
+		// engine cannot parse stops hydration, and every click becomes a full page load, so lower
+		// the syntax to what module-capable browsers parse. Missing APIs: app/lib/polyfills.ts.
+		target: ['es2020', 'chrome87', 'edge88', 'firefox78', 'safari14'],
+	},
 	server: {
 		host: '127.0.0.1',
 		// Pitchfork assigns PORT; 3000 is the documented default (tailscale serve :8082 points here).

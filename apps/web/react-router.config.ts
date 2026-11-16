@@ -21,5 +21,7 @@ const allowedActionOrigins = [
 export default {
 	// Server-side render every route; the forum needs SEO and first-paint content.
 	ssr: true,
+	// `web-public` serves ./build from memory, so a check build must go elsewhere (FORUM_WEB_BUILD_DIR).
+	buildDirectory: process.env.FORUM_WEB_BUILD_DIR || 'build',
 	allowedActionOrigins: allowedActionOrigins.length > 0 ? allowedActionOrigins : undefined,
 } satisfies Config

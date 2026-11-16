@@ -1,3 +1,5 @@
+// First, so older engines have these APIs before any other module runs.
+import './lib/polyfills'
 // Self-hosted fonts (Fontsource), weights 400 and 700 only. Noto Sans SC is split by unicode
 // range, so a page downloads only the slices for the characters it shows.
 import '@fontsource/ibm-plex-sans/400.css'
