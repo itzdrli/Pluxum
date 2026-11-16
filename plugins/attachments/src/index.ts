@@ -9,6 +9,7 @@ import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
 import { and, asc, eq, inArray } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import * as v from 'valibot'
+import * as f from 'valibot-form'
 import { attachments, AttachmentsDatabase, postAttachments, userAvatars } from './database'
 
 export { ForumStorageConfig, ForumStoragePlugin, type ForumStorageBucketConfig } from './storage'
@@ -16,12 +17,90 @@ export { ForumStorageConfig, ForumStoragePlugin, type ForumStorageBucketConfig }
 /** The extension's ID: key in `ext`, UI slot contributor ID and `/api/forum/ext/:extId` segment. */
 export const ATTACHMENTS_EXT_ID = 'forum-attachments'
 
-export const AVATAR_MAX_BYTES = 2 * 1024 * 1024
-export const ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024
+const MEBIBYTE = 1024 * 1024
+
+/** Document types an admin may allow; raster images are always accepted (and checked by content). */
+export const DOCUMENT_TYPES = [
+	'application/pdf',
+	'application/zip',
+	'application/json',
+	'text/plain',
+	'text/markdown',
+	'text/csv',
+] as const
+export type DocumentType = (typeof DOCUMENT_TYPES)[number]
+
+const DOCUMENT_LABELS: Readonly<Record<DocumentType, string>> = {
+	'application/pdf': 'PDF',
+	'application/zip': 'ZIP',
+	'application/json': 'JSON',
+	'text/plain': 'TXT',
+	'text/markdown': 'Markdown',
+	'text/csv': 'CSV',
+}
+
+/** Hard ceilings: the upload actions accept base64 bodies only this large. */
+const ATTACHMENT_CEILING_MIB = 20
+const AVATAR_CEILING_MIB = 5
+
+const mebibytes = (fallback: number, ceiling: number, meta: Parameters<typeof f.formMeta>[0]) =>
+	v.optional(
+		v.pipe(
+			v.number(),
+			v.minValue(0.1),
+			v.maxValue(ceiling),
+			f.formMeta(meta),
+			f.numberMeta({ step: 0.5 }),
+		),
+		fallback,
+	)
 
 export const ForumAttachmentsConfig = v.object({
-	bucketId: v.optional(v.pipe(v.string(), v.regex(/^[a-z][a-z0-9._-]{0,63}$/)), 'default'),
+	bucketId: v.optional(
+		v.pipe(
+			v.string(),
+			v.regex(/^[a-z][a-z0-9._-]{0,63}$/),
+			f.formMeta({
+				title: '存储桶',
+				description: '附件和头像存放的桶 ID，须在 Forum Storage 中已声明。修改后需重启本插件。',
+			}),
+		),
+		'default',
+	),
+	attachmentMaxMiB: mebibytes(5, ATTACHMENT_CEILING_MIB, {
+		title: '附件大小上限（MiB）',
+		description: `帖子中单个附件的最大体积，最多 ${ATTACHMENT_CEILING_MIB} MiB。保存后立即生效。`,
+	}),
+	avatarMaxMiB: mebibytes(2, AVATAR_CEILING_MIB, {
+		title: '头像大小上限（MiB）',
+		description: `头像图片的最大体积，最多 ${AVATAR_CEILING_MIB} MiB。保存后立即生效。`,
+	}),
+	documentTypes: v.optional(
+		v.pipe(
+			v.array(v.pipe(v.picklist(DOCUMENT_TYPES), f.picklistMeta({ labels: DOCUMENT_LABELS }))),
+			f.formMeta({
+				title: '允许的文档类型',
+				description:
+					'PNG、JPEG、WebP、GIF 图片始终允许；这里决定还能上传哪些文档。保存后立即生效。',
+			}),
+			f.arrayMeta({ layout: 'picker', itemLabel: '类型', addLabel: '添加类型' }),
+		),
+		[...DOCUMENT_TYPES],
+	),
 })
+export type ForumAttachmentsConfig = v.InferOutput<typeof ForumAttachmentsConfig>
+
+/** What the upload UI checks before sending a file; the actions enforce the same values. */
+export const AttachmentLimits = Type.Object({
+	attachmentMaxBytes: Type.Integer({ minimum: 1 }),
+	avatarMaxBytes: Type.Integer({ minimum: 1 }),
+	documentTypes: Type.Array(Type.String()),
+})
+export type AttachmentLimits = Static<typeof AttachmentLimits>
+
+function formatMebibytes(bytes: number): string {
+	return `${Number((bytes / MEBIBYTE).toFixed(1))} MB`
+}
 
 export function attachmentFilePath(id: string): string {
 	return `/api/forum/ext/${ATTACHMENTS_EXT_ID}/files/${id}`
@@ -57,7 +136,7 @@ const UploadAvatarInput = Type.Object({
 	userId: Type.Optional(Type.String({ maxLength: 64 })),
 	filename: Type.Optional(Type.String({ maxLength: 120 })),
 	contentType: Type.Optional(Type.String({ maxLength: 64 })),
-	dataBase64: Type.String({ maxLength: 3_000_000 }),
+	dataBase64: Type.String({ maxLength: Math.ceil((AVATAR_CEILING_MIB * MEBIBYTE * 4) / 3) + 4 }),
 })
 
 const DeleteAvatarInput = Type.Object({
@@ -67,18 +146,12 @@ const DeleteAvatarInput = Type.Object({
 const UploadAttachmentInput = Type.Object({
 	filename: Type.String({ maxLength: 120 }),
 	contentType: Type.String({ maxLength: 64 }),
-	dataBase64: Type.String({ maxLength: 8_000_000 }),
+	dataBase64: Type.String({
+		maxLength: Math.ceil((ATTACHMENT_CEILING_MIB * MEBIBYTE * 4) / 3) + 4,
+	}),
 })
 
 const RASTER_IMAGES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
-const ALLOWED_DOCUMENTS = new Set([
-	'application/pdf',
-	'application/zip',
-	'application/json',
-	'text/plain',
-	'text/markdown',
-	'text/csv',
-])
 
 const IMAGE_EXTENSIONS: Readonly<Record<string, string>> = {
 	'image/png': 'png',
@@ -205,6 +278,12 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 		// Fail fast if the configured bucket is not present in the active S3 catalog.
 		this.s3.bucket(this.config.bucketId)
 		this.database = await this.ctx.require(Database).use(AttachmentsDatabase)
+		// Limits are read on every upload; a new bucket only takes effect on restart.
+		this.configs.onUpdate(this.config, ({ applied, desired }) => {
+			if (desired.bucketId !== applied.bucketId) {
+				throw new Error('bucketId changes apply on restart')
+			}
+		})
 
 		this.ctx.effects.defer(
 			this.core.registerEntityExtension({
@@ -263,6 +342,17 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 		this.ctx.effects.defer(
 			this.api.registerExtAction({
 				extId: ATTACHMENTS_EXT_ID,
+				action: 'limits',
+				method: 'GET',
+				login: false,
+				input: Type.Object({}),
+				output: AttachmentLimits,
+				handle: async () => Result.ok(this.limits()),
+			}),
+		)
+		this.ctx.effects.defer(
+			this.api.registerExtAction({
+				extId: ATTACHMENTS_EXT_ID,
 				action: 'upload',
 				method: 'POST',
 				login: true,
@@ -271,6 +361,15 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 				handle: ({ principal, input }) => this.uploadAttachment(principal, input),
 			}),
 		)
+	}
+
+	/** Current upload limits, in bytes. */
+	limits(): AttachmentLimits {
+		return {
+			attachmentMaxBytes: Math.floor(this.config.attachmentMaxMiB * MEBIBYTE),
+			avatarMaxBytes: Math.floor(this.config.avatarMaxMiB * MEBIBYTE),
+			documentTypes: [...this.config.documentTypes],
+		}
 	}
 
 	/** Batch-loads avatar URLs for the given user IDs in a single query. */
@@ -344,8 +443,12 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 
 		const bytes = decodeBase64Payload(input.dataBase64)
 		if (!bytes) return Result.err({ code: 'invalid', message: '图片数据无法解析' })
-		if (bytes.byteLength > AVATAR_MAX_BYTES) {
-			return Result.err({ code: 'invalid', message: '头像图片不能超过 2 MB' })
+		const { avatarMaxBytes } = this.limits()
+		if (bytes.byteLength > avatarMaxBytes) {
+			return Result.err({
+				code: 'invalid',
+				message: `头像图片不能超过 ${formatMebibytes(avatarMaxBytes)}`,
+			})
 		}
 		const sniffed = sniffRasterImage(bytes)
 		if (!sniffed) {
@@ -463,8 +566,12 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 
 		const bytes = decodeBase64Payload(input.dataBase64)
 		if (!bytes) return Result.err({ code: 'invalid', message: '文件内容无法解析' })
-		if (bytes.byteLength > ATTACHMENT_MAX_BYTES) {
-			return Result.err({ code: 'invalid', message: '附件大小不能超过 5 MB' })
+		const limits = this.limits()
+		if (bytes.byteLength > limits.attachmentMaxBytes) {
+			return Result.err({
+				code: 'invalid',
+				message: `附件大小不能超过 ${formatMebibytes(limits.attachmentMaxBytes)}`,
+			})
 		}
 
 		const requestedType = input.contentType.trim().toLowerCase()
@@ -474,7 +581,7 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 			contentType = sniffedImage
 		} else if (RASTER_IMAGES.has(requestedType)) {
 			return Result.err({ code: 'invalid', message: '图片文件内容与格式不符' })
-		} else if (ALLOWED_DOCUMENTS.has(requestedType)) {
+		} else if (limits.documentTypes.includes(requestedType)) {
 			if (
 				(requestedType.startsWith('text/') || requestedType === 'application/json') &&
 				bytes.includes(0)
@@ -483,9 +590,13 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 			}
 			contentType = requestedType
 		} else {
+			const allowed = [
+				'PNG/JPEG/WebP/GIF',
+				...this.config.documentTypes.map((type) => DOCUMENT_LABELS[type]),
+			]
 			return Result.err({
 				code: 'invalid',
-				message: '不支持的文件类型（支持 PNG/JPEG/WebP/GIF、PDF、ZIP、TXT、MD、CSV、JSON）',
+				message: `不支持的文件类型（支持 ${allowed.join('、')}）`,
 			})
 		}
 

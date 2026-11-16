@@ -26,6 +26,7 @@ import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
 import { and, count, desc, eq, isNull } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import * as v from 'valibot'
+import * as f from 'valibot-form'
 import { bans, ModerationDatabase, moderationLogs, reports } from './database'
 
 /** The extension's ID: key in `user.ext`, UI slot contributor ID and `/api/forum/ext/:extId` segment. */
@@ -39,7 +40,15 @@ const NOTE_MAX_LENGTH = 500
 export const ForumModerationConfig = v.object({
 	/** Words or phrases (matched case-insensitively after NFKC normalization) rejected in titles and post bodies. */
 	blockedWords: v.optional(
-		v.array(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(120))),
+		v.pipe(
+			v.array(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(120))),
+			f.formMeta({
+				title: '屏蔽词',
+				description:
+					'标题或正文含有这些词或短语时拒绝发布，不区分大小写和全半角。保存后立即生效，不影响已发布的内容。',
+			}),
+			f.arrayMeta({ itemLabel: '屏蔽词', addLabel: '添加屏蔽词', emptyHint: '未设置屏蔽词' }),
+		),
 		[],
 	),
 })
@@ -231,6 +240,8 @@ export class ForumModerationPlugin extends BasePlugin {
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(ModerationDatabase)
 		await this.preloadActiveBans()
+		// Blocked words are read on every write, so a new list applies as soon as it is saved.
+		this.configs.onUpdate(this.config, () => {})
 
 		this.ctx.effects.defer(() => {
 			this.activeBans.clear()

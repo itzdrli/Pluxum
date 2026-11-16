@@ -265,12 +265,29 @@ export function isFooterIcon(value: unknown): value is FooterIcon {
 /** A link in the site footer. `href` is a forum path (`/...`) or an http(s) URL. */
 export type FooterLinkDto = Readonly<{ label: string; href: string }>
 
-/** What running plugins add to the site footer, merged across contributors. */
-export type FooterDto = Readonly<{
+/** Footer links, merged across contributors. */
+export type FooterLinksDto = Readonly<{
 	/** Columns of text links; contributors naming the same title share one column. */
 	groups: Array<Readonly<{ title: string; links: FooterLinkDto[] }>>
 	/** Icon-only links in the footer's bottom row. */
 	icons: Array<FooterLinkDto & Readonly<{ icon: FooterIcon }>>
+}>
+
+/** The site footer: the forum's configured links first, then those of running plugins. */
+export type FooterDto = FooterLinksDto &
+	Readonly<{
+		/** Short lines in the bottom row: licence, filing number, copyright, ... */
+		notes: string[]
+	}>
+
+/** The forum's name and blurbs, set in Forum Core's config. */
+export type SiteDto = Readonly<{
+	/** Shown in the header, page titles and social cards. */
+	name: string
+	/** One line beside the name in the footer. */
+	tagline: string
+	/** The home page's meta description. */
+	description: string
 }>
 
 export type MetaDto = Readonly<{
@@ -296,7 +313,8 @@ export type MetaDto = Readonly<{
 	}>
 	/** Slots filled by the extensions that are running, in display order. */
 	uiSlots: UiSlotDto[]
-	/** Links running plugins put in the site footer. */
+	site: SiteDto
+	/** The configured footer plus the links running plugins put in it. */
 	footer: FooterDto
 }>
 

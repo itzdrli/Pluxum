@@ -76,6 +76,7 @@ catalogs:
     '@pluxel/plugin-rates': 0.0.0
   validation:
     valibot: ^1.5.0
+    valibot-form: ^1.1.0
   test:
     happy-dom: 21.0.4
     vitest: 5.0.5

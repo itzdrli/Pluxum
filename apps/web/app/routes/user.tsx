@@ -28,6 +28,7 @@ import {
 } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
 import { ProfileSlots } from '../slots/slots'
+import { pageTitle } from '../lib/site'
 
 const ROLE_LABELS: Readonly<Record<Role, string>> = {
 	guest: '游客',
@@ -38,8 +39,8 @@ const ROLE_LABELS: Readonly<Record<Role, string>> = {
 
 export const handle = defineStage({ layer: 'list', backLabel: '主页' })
 
-export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
-	return [{ title: `${loaderData ? `${loaderData.user.displayName} · ` : ''}Pluxum` }]
+export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
+	return [{ title: pageTitle(matches[0].loaderData, loaderData?.user.displayName) }]
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {

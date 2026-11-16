@@ -5,7 +5,7 @@ import { useRevalidator } from 'react-router'
 
 import { Button } from '../../components/ui/button'
 import { Panel, SectionLabel } from '../../components/ui/display'
-import { AVATAR_MAX_BYTES, avatarUrlOf, base64Of, callAction } from './shared'
+import { avatarUrlOf, base64Of, callAction, formatSize, useUploadLimits } from './shared'
 
 const AVATAR_PIXELS = 256
 
@@ -52,6 +52,7 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 	const revalidator = useRevalidator()
 	const [busy, setBusy] = useState<'upload' | 'remove' | null>(null)
 	const [error, setError] = useState<string | null>(null)
+	const limits = useUploadLimits()
 	if (!profile.can.edit) return null
 	const hasAvatar = avatarUrlOf(profile.user) !== undefined
 	const userId = profile.user.id
@@ -74,7 +75,9 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 		void run('upload', async () => {
 			if (!file.type.startsWith('image/')) return '请选择图片文件。'
 			const image = await squareAvatar(file)
-			if (image.size > AVATAR_MAX_BYTES) return '图片太大了。'
+			if (image.size > limits.avatarMaxBytes) {
+				return `图片太大了，头像不能超过 ${formatSize(limits.avatarMaxBytes)}。`
+			}
 			const result = await callAction('upload-avatar', {
 				userId,
 				filename: `avatar.${image.type === 'image/webp' ? 'webp' : 'png'}`,

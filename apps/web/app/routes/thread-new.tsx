@@ -9,11 +9,12 @@ import { TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, textField } from '../lib/forum-api.server'
 import { defineStage } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
+import { pageTitle } from '../lib/site'
 
 export const handle = defineStage({ layer: 'detail' })
 
-export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
-	return [{ title: `发布主题${loaderData ? ` · ${loaderData.category.name}` : ''} · Pluxum` }]
+export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
+	return [{ title: pageTitle(matches[0].loaderData, '发布主题', loaderData?.category.name) }]
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {

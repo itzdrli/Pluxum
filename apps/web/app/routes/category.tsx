@@ -17,14 +17,16 @@ import {
 	listShouldRevalidate,
 } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
+import { pageTitle } from '../lib/site'
 
 export const handle = defineStage({ layer: 'list', nav: true, backLabel: '列表' })
 
-export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
-	if (!loaderData) return [{ title: 'Pluxum' }]
+export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
+	const root = matches[0].loaderData
+	if (!loaderData) return [{ title: pageTitle(root) }]
 	const { category } = loaderData
 	return [
-		{ title: `${category.name} · Pluxum` },
+		{ title: pageTitle(root, category.name) },
 		...(category.description === ''
 			? []
 			: [{ name: 'description', content: category.description }]),

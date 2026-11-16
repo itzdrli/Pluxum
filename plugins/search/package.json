@@ -17,7 +17,8 @@
 	"dependencies": {
 		"@node-rs/jieba": "catalog:backend",
 		"drizzle-orm": "catalog:backend",
-		"valibot": "catalog:validation"
+		"valibot": "catalog:validation",
+		"valibot-form": "catalog:validation"
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "catalog:prod",

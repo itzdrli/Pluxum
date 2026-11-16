@@ -10,6 +10,7 @@ import { BasePlugin, Plugin } from '@pluxel/core'
 import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
 import { and, count, desc, eq, gt, inArray, lte, notInArray, sql, type SQL } from 'drizzle-orm'
 import * as v from 'valibot'
+import * as f from 'valibot-form'
 import { SearchDatabase, searchDocuments } from './database'
 import {
 	buildSnippetHtml,
@@ -33,8 +34,31 @@ export const SEARCH_POST_HOOK_ID = 'forum-search.indexer'
 const BACKFILL_BATCH_SIZE = 200
 
 export const ForumSearchConfig = v.object({
-	/** Domain or community words added to Jieba's dictionary when the search plugin starts. */
-	customWords: v.optional(v.array(v.pipe(v.string(), v.minLength(1), v.maxLength(64))), []),
+	/** Domain or community words added to Jieba's dictionary; changing them re-indexes every post. */
+	customWords: v.optional(
+		v.pipe(
+			v.array(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(64))),
+			f.formMeta({
+				title: '自定义词',
+				description:
+					'分词时当作一个整体的词，例如社区黑话、产品名。保存后立即生效，并在后台重建全部索引。',
+			}),
+			f.arrayMeta({ itemLabel: '词', addLabel: '添加词', emptyHint: '未添加自定义词' }),
+		),
+		[],
+	),
+	/** Length of the excerpt shown under each search hit, in characters. */
+	snippetChars: v.optional(
+		v.pipe(
+			v.number(),
+			v.integer(),
+			v.minValue(40),
+			v.maxValue(600),
+			f.formMeta({ title: '摘要长度', description: '搜索结果中每条摘要最多显示的字数。' }),
+			f.numberMeta({ step: 20 }),
+		),
+		160,
+	),
 })
 export type ForumSearchConfig = v.InferOutput<typeof ForumSearchConfig>
 
@@ -55,6 +79,10 @@ type ActiveBackfillState = {
 	readonly touchedPosts: Set<string>
 	readonly deletedPosts: Set<string>
 	readonly deletedThreads: Set<string>
+}
+
+function sameWords(a: readonly string[], b: readonly string[]): boolean {
+	return a.length === b.length && a.every((word, index) => word === b[index])
 }
 
 function vectorExpression(titleTokens: string, bodyTokens: string): SQL {
@@ -83,6 +111,25 @@ export class ForumSearchPlugin extends BasePlugin {
 	protected override async init(signal: AbortSignal): Promise<void> {
 		this.tokenizer = createSearchTokenizer(this.config.customWords)
 		this.database = await this.ctx.require(Database).use(SearchDatabase)
+
+		// New custom words change how every post is segmented: swap the tokenizer at once, then
+		// re-index in the background so searches keep answering while it runs.
+		this.configs.onUpdate(this.config, ({ applied, desired, signal: updateSignal }) => {
+			if (sameWords(applied.customWords, desired.customWords)) return
+			this.tokenizer = createSearchTokenizer(desired.customWords)
+			// A rebuild already running may have used the old words for some posts: run another after it.
+			const previous = this.rebuildInFlight ?? Promise.resolve(0)
+			void previous
+				.catch(() => 0)
+				.then(() => this.rebuildIndex(updateSignal))
+				.then(
+					(indexed) =>
+						this.ctx.logger.info('search index rebuilt for new custom words', { indexed }),
+					(error: unknown) => {
+						if (!updateSignal.aborted) this.ctx.logger.error('search re-index failed', { error })
+					},
+				)
+		})
 
 		const stopController = new AbortController()
 		const abortFromStartup = () => stopController.abort()
@@ -433,7 +480,7 @@ export class ForumSearchPlugin extends BasePlugin {
 			authorId: row.authorId,
 			opening: row.opening,
 			title: row.title,
-			snippetHtml: buildSnippetHtml(row.plainBody, queryTerms),
+			snippetHtml: buildSnippetHtml(row.plainBody, queryTerms, this.config.snippetChars),
 			createdAt: row.createdAt.toISOString(),
 		}))
 		return { items, total }

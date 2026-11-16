@@ -7,6 +7,7 @@ import { StageMotionSync, useStage } from '../stage/stage'
 import { ButtonLink } from '../ui/button'
 import { Notice } from '../ui/display'
 import { ShellSlots } from '../../slots/slots'
+import { siteOf } from '../../lib/site'
 import { LogoMark } from './logo-mark'
 import { SiteFooter } from './site-footer'
 import { UserMenu } from './user-menu'
@@ -34,6 +35,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 	const stage = useStage()
 	const isSplitStage = stage.split
 	const isSearchPage = location.pathname === '/search' || location.pathname.startsWith('/search/')
+	const siteName = siteOf({ meta }).name
 	const searchAvailable = meta?.search.available === true
 	const headerQuery = isSearchPage ? (searchParams.get('q') ?? '') : ''
 	// "版块" stays highlighted on the home page and while reading inside a category.
@@ -59,11 +61,11 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 					<Link
 						to="/"
 						viewTransition
-						aria-label="Pluxum 首页"
+						aria-label={`${siteName} 首页`}
 						className="text-ink-strong flex shrink-0 items-center gap-2 font-bold"
 					>
 						<LogoMark className="size-6 shrink-0" />
-						<span className="text-title max-md:hidden">Pluxum</span>
+						<span className="text-title max-md:hidden">{siteName}</span>
 					</Link>
 					{/* Phones reach the forum through the logo; the one nav entry is for wide screens. */}
 					<nav aria-label="主导航" className="ml-3 flex items-center gap-1 max-md:hidden">

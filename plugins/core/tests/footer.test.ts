@@ -37,6 +37,40 @@ describe('footer link registry', () => {
 		})
 	})
 
+	it('puts contributions after the configured footer, joining columns by title', () => {
+		const registry = new FooterLinkRegistry()
+		registry.register({
+			id: 'rules',
+			group: '社区',
+			links: [{ label: '规则', href: '/rules' }],
+			icons: [{ label: 'Repo', href: 'https://github.com/x', icon: 'github' }],
+		})
+		registry.register({
+			id: 'docs',
+			group: '文档',
+			links: [{ label: 'API', href: 'https://e.com' }],
+		})
+		registry.register({ id: 'feed', icons: [{ label: 'RSS', href: '/feed.xml', icon: 'rss' }] })
+		const base = {
+			groups: [{ title: '社区', links: [{ label: '版块', href: '/' }] }],
+			icons: [{ label: 'GitHub', href: 'https://github.com/x', icon: 'github' as const }],
+		}
+		const merged = registry.list(base)
+		expect(merged.groups).toEqual([
+			{
+				title: '社区',
+				links: [
+					{ label: '版块', href: '/' },
+					{ label: '规则', href: '/rules' },
+				],
+			},
+			{ title: '文档', links: [{ label: 'API', href: 'https://e.com' }] },
+		])
+		expect(merged.icons.map((icon) => icon.label)).toEqual(['GitHub', 'RSS'])
+		// The configured footer itself is not changed.
+		expect(base.groups[0]?.links).toHaveLength(1)
+	})
+
 	it('withdraws exactly its own registration', () => {
 		const registry = new FooterLinkRegistry()
 		const dispose = registry.register({

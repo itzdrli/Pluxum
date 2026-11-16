@@ -1,10 +1,67 @@
 import type { UserDto } from '@pluxum/domain'
+import { useEffect, useState } from 'react'
 
 export const EXT_ID = 'forum-attachments'
 
-/** Mirrors the plugin's limits so oversized files are refused before they are read. */
-export const ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024
-export const AVATAR_MAX_BYTES = 2 * 1024 * 1024
+/** The plugin's upload limits (set in Workbench), so oversized files are refused before they are read. */
+export type UploadLimits = Readonly<{
+	attachmentMaxBytes: number
+	avatarMaxBytes: number
+	documentTypes: readonly string[]
+}>
+
+/** Used until the plugin answers; the plugin checks every upload against its own values anyway. */
+const FALLBACK_LIMITS: UploadLimits = {
+	attachmentMaxBytes: 5 * 1024 * 1024,
+	avatarMaxBytes: 2 * 1024 * 1024,
+	documentTypes: [
+		'application/pdf',
+		'application/zip',
+		'application/json',
+		'text/plain',
+		'text/markdown',
+		'text/csv',
+	],
+}
+
+function limitsOf(value: unknown): UploadLimits | null {
+	if (!isRecord(value)) return null
+	const { attachmentMaxBytes, avatarMaxBytes, documentTypes } = value
+	if (
+		typeof attachmentMaxBytes !== 'number' ||
+		typeof avatarMaxBytes !== 'number' ||
+		!Array.isArray(documentTypes)
+	) {
+		return null
+	}
+	return {
+		attachmentMaxBytes,
+		avatarMaxBytes,
+		documentTypes: documentTypes.filter((type): type is string => typeof type === 'string'),
+	}
+}
+
+/** The current limits, fetched once per mount of the component that uploads. */
+export function useUploadLimits(): UploadLimits {
+	const [limits, setLimits] = useState(FALLBACK_LIMITS)
+	useEffect(() => {
+		const controller = new AbortController()
+		void (async () => {
+			try {
+				const response = await fetch(`/api/forum/ext/${EXT_ID}/limits`, {
+					headers: { accept: 'application/json' },
+					signal: controller.signal,
+				})
+				const fetched = response.ok ? limitsOf(await response.json()) : null
+				if (fetched !== null) setLimits(fetched)
+			} catch {
+				// Offline or aborted: keep the fallback; the plugin still checks every upload.
+			}
+		})()
+		return () => controller.abort()
+	}, [])
+	return limits
+}
 
 export type AttachmentItem = Readonly<{
 	id: string
@@ -127,6 +184,23 @@ export function contentTypeOf(file: File): string {
 	return TYPES_BY_EXTENSION[extension] ?? (file.type || 'application/octet-stream')
 }
 
-export const ACCEPTED_FILES = Object.keys(TYPES_BY_EXTENSION)
-	.map((extension) => `.${extension}`)
-	.join(',')
+/** The file picker's `accept`: images and the document types the plugin allows right now. */
+export function acceptedFiles(limits: UploadLimits): string {
+	return Object.entries(TYPES_BY_EXTENSION)
+		.filter(([, type]) => type.startsWith('image/') || limits.documentTypes.includes(type))
+		.map(([extension]) => `.${extension}`)
+		.join(',')
+}
+
+/** "图片、PDF、ZIP" for the allowed document types. */
+export function acceptedLabel(limits: UploadLimits): string {
+	const names: Readonly<Record<string, string>> = {
+		'application/pdf': 'PDF',
+		'application/zip': 'ZIP',
+		'application/json': 'JSON',
+		'text/plain': 'TXT',
+		'text/markdown': 'Markdown',
+		'text/csv': 'CSV',
+	}
+	return ['图片', ...limits.documentTypes.map((type) => names[type] ?? type)].join('、')
+}

@@ -26,11 +26,13 @@ import { TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, textField } from '../lib/forum-api.server'
 import { defineStage } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
+import { siteOf } from '../lib/site'
 
 export const handle = defineStage({ layer: 'page', wide: true })
 
-export function meta(): Route.MetaDescriptors {
-	return [{ title: 'Pluxum' }, { name: 'description', content: '万物皆插件的论坛' }]
+export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
+	const site = siteOf(matches[0].loaderData)
+	return [{ title: site.name }, { name: 'description', content: site.description }]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

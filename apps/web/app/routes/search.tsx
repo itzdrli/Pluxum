@@ -18,6 +18,7 @@ import {
 } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
 import { forumApi, orThrow } from '../lib/forum-api.server'
+import { pageTitle } from '../lib/site'
 import {
 	defineStage,
 	isDetailPath,
@@ -66,9 +67,9 @@ export function buildSearchHitHref(
 	return stageDetailHref(stage, threadTarget, postTarget)
 }
 
-export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
+export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
 	const query = loaderData?.query
-	return [{ title: `${query ? `搜索“${query}” · ` : '搜索 · '}Pluxum` }]
+	return [{ title: pageTitle(matches[0].loaderData, query ? `搜索“${query}”` : '搜索') }]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

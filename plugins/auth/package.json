@@ -17,7 +17,8 @@
 	"dependencies": {
 		"@pluxum/domain": "workspace:*",
 		"jose": "catalog:prod",
-		"valibot": "catalog:validation"
+		"valibot": "catalog:validation",
+		"valibot-form": "catalog:validation"
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "catalog:prod",

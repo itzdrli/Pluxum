@@ -32,6 +32,7 @@ import {
 import { Pager } from '../components/ui/pager'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { defineStage } from '../lib/stage'
+import { pageTitle } from '../lib/site'
 
 export type ModerationTab = 'queue' | 'logs'
 
@@ -114,8 +115,8 @@ export function formatModerationLogAction(
 
 export const handle = defineStage({ layer: 'page' })
 
-export function meta(): Route.MetaDescriptors {
-	return [{ title: '审核队列 · Pluxum' }]
+export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
+	return [{ title: pageTitle(matches[0].loaderData, '审核队列') }]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

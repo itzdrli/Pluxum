@@ -26,6 +26,7 @@ import { useTheme } from './components/shell/theme-picker'
 import { LightboxProvider } from './components/ui/lightbox'
 import { ButtonLink } from './components/ui/button'
 import { forumApi } from './lib/forum-api.server'
+import { siteOf } from './lib/site'
 import { isDarkTheme, themeFromRequest } from './lib/theme'
 
 // Who is browsing, what the forum allows, and the visitor's theme. Child routes read it through
@@ -63,14 +64,15 @@ export const links: Route.LinksFunction = () => [
 export function Layout({ children }: { children: React.ReactNode }) {
 	const theme = useTheme()
 	// Routes' own meta() replaces the root's, so the site-wide social card is written here.
-	const origin = useRouteLoaderData<typeof loader>('root')?.origin
+	const root = useRouteLoaderData<typeof loader>('root')
+	const origin = root?.origin
 	return (
 		// HeroUI picks its light or dark base from the class; app.css maps every colour from data-theme.
 		<html lang="zh-CN" data-theme={theme} className={isDarkTheme(theme) ? 'dark' : 'light'}>
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
-				<meta property="og:site_name" content="Pluxum" />
+				<meta property="og:site_name" content={siteOf(root).name} />
 				{origin !== undefined && <meta property="og:image" content={`${origin}/og.png`} />}
 				<meta property="og:image:width" content="1200" />
 				<meta property="og:image:height" content="630" />

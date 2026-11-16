@@ -162,6 +162,7 @@ export const meta = t.Object({
 			extId: t.String(),
 		}),
 	),
+	site: t.Object({ name: t.String(), tagline: t.String(), description: t.String() }),
 	footer: t.Object({
 		groups: t.Array(
 			t.Object({
@@ -182,6 +183,7 @@ export const meta = t.Object({
 				]),
 			}),
 		),
+		notes: t.Array(t.String()),
 	}),
 })
 

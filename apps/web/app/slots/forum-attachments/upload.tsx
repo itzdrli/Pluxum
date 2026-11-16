@@ -3,12 +3,14 @@ import { useRef, useState } from 'react'
 
 import type { InsertAttachment } from '../slots'
 import {
-	ACCEPTED_FILES,
-	ATTACHMENT_MAX_BYTES,
+	acceptedFiles,
+	acceptedLabel,
 	attachmentOf,
 	base64Of,
 	callAction,
 	contentTypeOf,
+	formatSize,
+	useUploadLimits,
 } from './shared'
 
 /**
@@ -19,16 +21,18 @@ export function UploadButton({ insert }: { insert: InsertAttachment }) {
 	const input = useRef<HTMLInputElement>(null)
 	const [busy, setBusy] = useState(false)
 	const [error, setError] = useState<string | null>(null)
+	const limits = useUploadLimits()
+	const maxSize = formatSize(limits.attachmentMaxBytes)
 
 	async function upload(files: readonly File[]) {
 		setError(null)
 		setBusy(true)
 		try {
-			const tooLarge = files.find((file) => file.size > ATTACHMENT_MAX_BYTES)
-			if (tooLarge !== undefined) setError(`“${tooLarge.name}”超过 5 MB。`)
+			const tooLarge = files.find((file) => file.size > limits.attachmentMaxBytes)
+			if (tooLarge !== undefined) setError(`“${tooLarge.name}”超过 ${maxSize}。`)
 			const results = await Promise.all(
 				files
-					.filter((file) => file.size <= ATTACHMENT_MAX_BYTES)
+					.filter((file) => file.size <= limits.attachmentMaxBytes)
 					.map(async (file) =>
 						callAction('upload', {
 							filename: file.name,
@@ -56,7 +60,7 @@ export function UploadButton({ insert }: { insert: InsertAttachment }) {
 				ref={input}
 				type="file"
 				multiple
-				accept={ACCEPTED_FILES}
+				accept={acceptedFiles(limits)}
 				hidden
 				onChange={(event) => {
 					const files = [...(event.currentTarget.files ?? [])]
@@ -70,7 +74,7 @@ export function UploadButton({ insert }: { insert: InsertAttachment }) {
 				disabled={busy}
 				aria-busy={busy}
 				onClick={() => input.current?.click()}
-				title="图片、PDF、ZIP、文本，单个不超过 5 MB"
+				title={`${acceptedLabel(limits)}，单个不超过 ${maxSize}`}
 			>
 				<Paperclip aria-hidden />
 				{busy ? '上传中…' : '附件'}

@@ -8,7 +8,7 @@ import * as v from 'valibot'
 import { repairBase64Url } from './base64-repair'
 import { ForumAuthConfig } from './config'
 import { matchesSha256, pkceChallenge, randomToken } from './crypto'
-import { OidcClient, OidcRejectedError, OidcUnavailableError } from './oidc'
+import { OidcClient, OidcRejectedError, OidcUnavailableError, type OidcSettings } from './oidc'
 import { SessionStore } from './sessions'
 
 export { ForumAuthConfig } from './config'
@@ -161,23 +161,44 @@ export class ForumAuthPlugin extends ForumAuth {
 	}
 
 	protected override init(): void {
-		const { oidc, publicOrigin, session } = this.config
-		if (session.idleTtlSeconds > session.absoluteTtlSeconds) {
-			throw new Error('Forum Auth session.idleTtlSeconds must not exceed absoluteTtlSeconds')
+		const repaired = repairBase64Url()
+		if (repaired.length > 0) {
+			this.ctx.logger.warn(`replaced base64url-unaware runtime fallbacks: ${repaired.join(', ')}`)
 		}
+		this.oidc = this.prepare(this.config)
+		// Login settings apply without a restart. A value that would fail a start throws here
+		// instead, which leaves it saved but not applied and the running login untouched.
+		this.configs.onUpdate(this.config, ({ applied, desired }) => {
+			const oidcChanged =
+				applied.publicOrigin !== desired.publicOrigin ||
+				JSON.stringify(applied.oidc) !== JSON.stringify(desired.oidc)
+			this.oidc = this.prepare(desired, oidcChanged ? undefined : this.oidc)
+		})
+	}
+
+	/**
+	 * Checks what a start needs from `config` and returns the OIDC client it calls for: `current`
+	 * when given (the provider settings did not change, so discovery and keys stay cached).
+	 */
+	private prepare(
+		config: Readonly<{
+			publicOrigin?: string
+			oidc?: OidcSettings
+			session: Readonly<{ connectionId: string }>
+		}>,
+		current?: OidcClient,
+	): OidcClient | undefined {
+		const { oidc, publicOrigin, session } = config
 		if (publicOrigin?.startsWith('http://') && process.env.NODE_ENV === 'production') {
 			throw new Error('Forum Auth publicOrigin must be https:// when NODE_ENV is "production"')
 		}
 		// Fails the start, and with it every consumer, when the session connection is not declared.
 		this.redis.connection(session.connectionId)
-		const repaired = repairBase64Url()
-		if (repaired.length > 0) {
-			this.ctx.logger.warn(`replaced base64url-unaware runtime fallbacks: ${repaired.join(', ')}`)
-		}
-		this.oidc = oidc && publicOrigin ? new OidcClient(oidc) : undefined
-		if (!this.oidc) {
+		const client = oidc && publicOrigin ? (current ?? new OidcClient(oidc)) : undefined
+		if (!client) {
 			this.ctx.logger.warn('forum login is unavailable: publicOrigin and oidc are not both set')
 		}
+		return client
 	}
 
 	override loginAvailable(): boolean {

@@ -597,6 +597,9 @@ importers:
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
+      valibot-form:
+        specifier: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
+        version: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
@@ -649,6 +652,9 @@ importers:
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
+      valibot-form:
+        specifier: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
+        version: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
@@ -698,6 +704,12 @@ importers:
       sanitize-html:
         specifier: catalog:backend
         version: 2.18.1
+      valibot:
+        specifier: catalog:validation
+        version: 1.5.0(typescript@7.0.2)
+      valibot-form:
+        specifier: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
+        version: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
@@ -784,6 +796,9 @@ importers:
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
+      valibot-form:
+        specifier: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
+        version: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
@@ -833,6 +848,12 @@ importers:
       typebox:
         specifier: ^1.4.3
         version: 1.4.3
+      valibot:
+        specifier: catalog:validation
+        version: 1.5.0(typescript@7.0.2)
+      valibot-form:
+        specifier: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
+        version: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
@@ -928,6 +949,9 @@ importers:
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
+      valibot-form:
+        specifier: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
+        version: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
     devDependencies:
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
@@ -965,6 +989,9 @@ importers:
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
+      valibot-form:
+        specifier: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
+        version: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod

@@ -14,6 +14,8 @@ import { Result } from '@pluxel/core/better-result'
 import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
 import { and, count, desc, eq, isNull } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
+import * as v from 'valibot'
+import * as f from 'valibot-form'
 import { notifications, NotificationsDatabase } from './database'
 
 /** The extension's ID: UI slot contributor ID and `/api/forum/ext/:extId` segment. */
@@ -21,7 +23,24 @@ export const NOTIFICATIONS_EXT_ID = 'forum-notifications'
 export const INBOX_CHANNEL_ID = 'forum-notifications.inbox'
 export const NOTIFICATIONS_POST_HOOK_ID = 'forum-notifications.replies'
 
-const BODY_EXCERPT_MAX = 160
+export const ForumNotificationsConfig = v.object({
+	/** Characters of the reply kept in a reply notification. */
+	excerptChars: v.optional(
+		v.pipe(
+			v.number(),
+			v.integer(),
+			v.minValue(40),
+			v.maxValue(500),
+			f.formMeta({
+				title: '回复摘要长度',
+				description: '回帖通知里保留的回复正文字数。只影响之后产生的通知。',
+			}),
+			f.numberMeta({ step: 20 }),
+		),
+		160,
+	),
+})
+export type ForumNotificationsConfig = v.InferOutput<typeof ForumNotificationsConfig>
 
 export const NotificationActor = Type.Object({
 	id: Type.String(),
@@ -92,12 +111,12 @@ function queryInt(value: string | undefined): number | undefined {
 	return value !== undefined && /^\d+$/.test(value) ? Number(value) : undefined
 }
 
-function summarizeReplyBody(raw: string): string | undefined {
+function summarizeReplyBody(raw: string, maxChars: number): string | undefined {
 	const cleaned = raw.replaceAll(/\s+/gu, ' ').trim()
 	if (!cleaned) return undefined
 	const chars = Array.from(cleaned)
-	if (chars.length <= BODY_EXCERPT_MAX) return cleaned
-	return `${chars.slice(0, BODY_EXCERPT_MAX).join('')}…`
+	if (chars.length <= maxChars) return cleaned
+	return `${chars.slice(0, maxChars).join('')}…`
 }
 
 function optionalEntityId(value: string | undefined): string | null {
@@ -116,6 +135,7 @@ function optionalEntityId(value: string | undefined): string | null {
  */
 @Plugin({ displayName: 'Forum Notifications', startTimeoutMs: 30_000 })
 export class ForumNotificationsPlugin extends BasePlugin {
+	private readonly config = this.configs.use(ForumNotificationsConfig)
 	private database!: PluginDatabaseHandle<typeof NotificationsDatabase>
 
 	constructor(
@@ -127,6 +147,8 @@ export class ForumNotificationsPlugin extends BasePlugin {
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(NotificationsDatabase)
+		// The excerpt length is read per notification, so a new value applies as is.
+		this.configs.onUpdate(this.config, () => {})
 
 		this.ctx.effects.defer(
 			this.core.registerNotificationChannel({
@@ -236,7 +258,7 @@ export class ForumNotificationsPlugin extends BasePlugin {
 		const actor: UserDto = actorResult.isOk()
 			? actorResult.value
 			: { id: event.authorId, handle: event.authorId, displayName: '论坛成员' }
-		const excerpt = summarizeReplyBody(event.body)
+		const excerpt = summarizeReplyBody(event.body, this.config.excerptChars)
 		const notification: ForumNotification = {
 			id: isEntityId(event.postId) ? event.postId : crypto.randomUUID(),
 			recipientId: event.threadAuthorId,

@@ -1,4 +1,9 @@
-import { isFooterIcon, type FooterDto, type FooterIcon, type FooterLinkDto } from '@pluxum/domain'
+import {
+	isFooterIcon,
+	type FooterIcon,
+	type FooterLinkDto,
+	type FooterLinksDto,
+} from '@pluxum/domain'
 import { CONTRIBUTION_ID } from './policies'
 
 /**
@@ -87,9 +92,16 @@ export class FooterLinkRegistry {
 		}
 	}
 
-	list(): FooterDto {
-		const groups: Array<{ title: string; links: FooterLinkDto[] }> = []
-		const icons: Array<FooterLinkDto & { icon: FooterIcon }> = []
+	/**
+	 * The registered links merged after `base` (the forum's configured footer): a contributor
+	 * column whose title matches one already there joins it, and a repeated icon href is dropped.
+	 */
+	list(base: FooterLinksDto = { groups: [], icons: [] }): FooterLinksDto {
+		const groups: Array<{ title: string; links: FooterLinkDto[] }> = base.groups.map((group) => ({
+			title: group.title,
+			links: [...group.links],
+		}))
+		const icons: Array<FooterLinkDto & { icon: FooterIcon }> = [...base.icons]
 		for (const entry of this.entries.values()) {
 			if (entry.group !== undefined && (entry.links?.length ?? 0) > 0) {
 				let column = groups.find((existing) => existing.title === entry.group)

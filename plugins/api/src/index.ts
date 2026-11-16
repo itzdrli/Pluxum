@@ -538,6 +538,7 @@ export class ForumApiPlugin extends BasePlugin {
 			},
 			content: { format: this.core.contentFormat() },
 			uiSlots: this.core.uiSlots(),
+			site: this.core.site(),
 			footer: this.core.footer(),
 		}
 	}

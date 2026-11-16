@@ -19,6 +19,7 @@ import { Pager } from '../components/ui/pager'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { defineStage } from '../lib/stage'
 import { resolveNotificationHref } from '../slots/forum-notifications/href'
+import { pageTitle } from '../lib/site'
 
 export { resolveNotificationHref }
 
@@ -39,8 +40,8 @@ export function parseNotificationsUrl(url: URL): ParsedNotificationsUrl {
 
 export const handle = defineStage({ layer: 'page' })
 
-export function meta(): Route.MetaDescriptors {
-	return [{ title: '通知 · Pluxum' }]
+export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
+	return [{ title: pageTitle(matches[0].loaderData, '通知') }]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

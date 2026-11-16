@@ -44,6 +44,7 @@ import {
 	type ThreadDto,
 	type UiSlotDto,
 	type FooterDto,
+	type SiteDto,
 	type UserDto,
 	type UserProfileDto,
 } from '@pluxum/domain'
@@ -78,6 +79,7 @@ import {
 	type PostBeforeWriteEvent,
 	type PostHookContribution,
 } from './hooks'
+import { ForumCoreConfig } from './config'
 import { FooterLinkRegistry, type FooterLinkContribution } from './footer'
 import { NotificationChannelRegistry, type NotificationChannelContribution } from './notifications'
 import { PolicyRegistry, type PermissionPolicyContribution } from './policies'
@@ -88,6 +90,7 @@ import {
 } from './search'
 
 export type { ContentRendererContribution } from './content'
+export { ForumCoreConfig } from './config'
 export type { FooterLinkContribution } from './footer'
 export type {
 	EntityExtensionContribution,
@@ -232,6 +235,7 @@ function toThreadDto(row: ThreadRow, by: UserDto): ThreadDto {
 // PGlite compiles its WASM module on first use, which can exceed the default start timeout.
 @Plugin({ displayName: 'Forum Core', startTimeoutMs: 30_000 })
 export class ForumCorePlugin extends BasePlugin {
+	private readonly config = this.configs.use(ForumCoreConfig)
 	private database!: PluginDatabaseHandle<typeof ForumDatabase>
 	private readonly permissionPolicies = new PolicyRegistry()
 	private readonly contentRenderers = new ContentRendererRegistry()
@@ -245,6 +249,8 @@ export class ForumCorePlugin extends BasePlugin {
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(ForumDatabase)
 		this.permissionPolicies.register({ id: BUILT_IN_POLICY_ID, evaluate: defaultRolePolicy })
+		// Site and footer settings are read per request; a saved change applies as is.
+		this.configs.onUpdate(this.config, () => {})
 	}
 
 	// ── Permissions ─────────────────────────────────────────────────────────────────────────
@@ -343,9 +349,19 @@ export class ForumCorePlugin extends BasePlugin {
 		return this.footerLinks.register(contribution)
 	}
 
-	/** The footer links of running plugins, merged. */
+	/** The site's name and blurbs from config. */
+	site(): SiteDto {
+		return { ...this.config.site }
+	}
+
+	/** The configured footer with the links of running plugins merged in after it. */
 	footer(): FooterDto {
-		return this.footerLinks.list()
+		const { groups, icons, notes } = this.config.footer
+		const merged = this.footerLinks.list({
+			groups: groups.map((group) => ({ title: group.title, links: [...group.links] })),
+			icons: [...icons],
+		})
+		return { ...merged, notes: [...notes] }
 	}
 
 	/**

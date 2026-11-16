@@ -10,6 +10,7 @@ import {
 } from '@pluxel/plugin-redis'
 import { createClient, type RedisClientType } from 'redis'
 import * as v from 'valibot'
+import * as f from 'valibot-form'
 
 const ConnectionId = v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]{0,63}$/))
 
@@ -17,7 +18,10 @@ const ConnectionId = v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]{0,63}$/))
 // with this workspace's valibot so config inference stays typed. Credentials stay out of config:
 // a Vault-backed URL source is added here for deployment (M5).
 const RedisConnectionConfig = v.object({
-	id: ConnectionId,
+	id: v.pipe(
+		ConnectionId,
+		f.formMeta({ title: '连接 ID', description: '其他插件按这个名字取连接，例如 session。' }),
+	),
 	url: v.optional(
 		v.pipe(
 			v.string(),
@@ -26,20 +30,61 @@ const RedisConnectionConfig = v.object({
 				isCredentialFreeRedisUrl,
 				'Redis URL must be redis:// or rediss:// without credentials',
 			),
+			f.formMeta({ title: '地址', description: 'redis:// 或 rediss://，不能包含用户名和密码。' }),
+			f.stringMeta({ placeholder: 'redis://127.0.0.1:6379' }),
 		),
 		'redis://127.0.0.1:6379',
 	),
-	database: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 0),
-	connectTimeoutMs: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), 10_000),
-	commandQueueMaxLength: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), 10_000),
-	disableOfflineQueue: v.optional(v.boolean(), true),
-	pingIntervalMs: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 0),
+	database: v.optional(
+		v.pipe(v.number(), v.integer(), v.minValue(0), f.formMeta({ title: '数据库编号' })),
+		0,
+	),
+	connectTimeoutMs: v.optional(
+		v.pipe(
+			v.number(),
+			v.integer(),
+			v.minValue(1),
+			f.formMeta({ title: '连接超时（毫秒）' }),
+			f.numberMeta({ step: 1000 }),
+		),
+		10_000,
+	),
+	commandQueueMaxLength: v.optional(
+		v.pipe(v.number(), v.integer(), v.minValue(1), f.formMeta({ title: '命令队列上限' })),
+		10_000,
+	),
+	disableOfflineQueue: v.optional(
+		v.pipe(
+			v.boolean(),
+			f.formMeta({
+				title: '断线时直接报错',
+				description: '开启后，断线期间的命令立即失败而不是排队等待。',
+			}),
+		),
+		true,
+	),
+	pingIntervalMs: v.optional(
+		v.pipe(
+			v.number(),
+			v.integer(),
+			v.minValue(0),
+			f.formMeta({ title: '心跳间隔（毫秒）', description: '0 表示不发送心跳。' }),
+			f.numberMeta({ step: 1000 }),
+		),
+		0,
+	),
 })
 
 export const ForumRedisConfig = v.object({
 	connections: v.optional(
 		v.pipe(
 			v.array(RedisConnectionConfig),
+			f.formMeta({
+				title: '连接',
+				description:
+					'论坛使用的 Redis 连接。修改后需重启本插件；部署时由 REDIS_CONNECTIONS 提供初始值，这里保存的值会覆盖它。',
+			}),
+			f.arrayMeta({ itemLabel: '连接', addLabel: '添加连接', defaultItem: { id: 'default' } }),
 			v.minLength(1),
 			v.maxLength(64),
 			v.check(

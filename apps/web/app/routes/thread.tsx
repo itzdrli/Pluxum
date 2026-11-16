@@ -35,14 +35,16 @@ import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server
 import { defineStage, listPathOf } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
 import { ThreadSidebarSlots, useHasFilledSlot } from '../slots/slots'
+import { pageTitle } from '../lib/site'
 
 // Mounted under every list route (category, search, profile); the list decides where closing goes.
 export const handle = defineStage({ layer: 'detail' })
 
-export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
-	if (!loaderData) return [{ title: 'Pluxum' }]
+export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
+	const root = matches[0].loaderData
+	if (!loaderData) return [{ title: pageTitle(root) }]
 	return [
-		{ title: `${loaderData.thread.title} · Pluxum` },
+		{ title: pageTitle(root, loaderData.thread.title) },
 		{
 			tagName: 'link',
 			rel: 'canonical',

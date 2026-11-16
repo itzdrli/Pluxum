@@ -15,6 +15,7 @@ import {
 } from '@pluxel/plugin-storage'
 import { S3mini, sanitizeETag } from 's3mini'
 import * as v from 'valibot'
+import * as f from 'valibot-form'
 
 const MEBIBYTE = 1024 * 1024
 
@@ -43,19 +44,55 @@ function isCredentialFreeEndpoint(value: string): boolean {
 
 const LocalBackendConfig = v.object({
 	type: v.literal('local'),
-	rootDir: v.optional(v.pipe(v.string(), v.minLength(1)), '.pluxel/s3'),
-	bucketName: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(255))),
-	syncWrites: v.optional(v.boolean(), true),
+	rootDir: v.optional(
+		v.pipe(
+			v.string(),
+			v.minLength(1),
+			f.formMeta({ title: '目录', description: '相对宿主工作目录，保存文件的位置。' }),
+		),
+		'.pluxel/s3',
+	),
+	bucketName: v.optional(
+		v.pipe(v.string(), v.minLength(1), v.maxLength(255), f.formMeta({ title: '子目录名' })),
+	),
+	syncWrites: v.optional(
+		v.pipe(v.boolean(), f.formMeta({ title: '同步写入', description: '写入后立即落盘。' })),
+		true,
+	),
 })
 
-const RemoteCredentialsConfig = v.variant('type', [
-	v.object({ type: v.literal('anonymous') }),
-	v.object({
-		type: v.literal('vault'),
-		key: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(256))),
-		namespace: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(256))),
+const RemoteCredentialsConfig = v.pipe(
+	v.variant('type', [
+		v.object({ type: v.literal('anonymous') }),
+		v.object({
+			type: v.literal('vault'),
+			key: v.optional(
+				v.pipe(
+					v.string(),
+					v.minLength(1),
+					v.maxLength(256),
+					f.formMeta({
+						title: 'Vault 记录名',
+						description: '留空时，default 桶用 s3.credentials，其他桶用 s3.<桶 ID>.credentials。',
+					}),
+				),
+			),
+			namespace: v.optional(
+				v.pipe(
+					v.string(),
+					v.minLength(1),
+					v.maxLength(256),
+					f.formMeta({ title: 'Vault 命名空间', description: '留空时使用本插件自己的命名空间。' }),
+				),
+			),
+		}),
+	]),
+	f.formMeta({ title: '凭据' }),
+	f.unionMeta({
+		control: 'segmented',
+		labels: { anonymous: '匿名', vault: 'Vault' },
 	}),
-])
+)
 
 const RemoteBackendConfig = v.object({
 	type: v.literal('remote'),
@@ -66,20 +103,56 @@ const RemoteBackendConfig = v.object({
 			isCredentialFreeEndpoint,
 			'S3 endpoint must use http:// or https:// without credentials, query, or hash',
 		),
+		f.formMeta({ title: 'Endpoint', description: 'S3 兼容服务地址，不能包含凭据。' }),
+		f.stringMeta({ placeholder: 'https://s3.example.com' }),
 	),
-	region: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(128)), 'auto'),
+	region: v.optional(
+		v.pipe(v.string(), v.minLength(1), v.maxLength(128), f.formMeta({ title: '区域' })),
+		'auto',
+	),
 	credentials: RemoteCredentialsConfig,
-	requestSizeInBytes: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), 8 * MEBIBYTE),
-	requestAbortTimeout: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), 30_000),
+	requestSizeInBytes: v.optional(
+		v.pipe(v.number(), v.integer(), v.minValue(1), f.formMeta({ title: '单次请求大小（字节）' })),
+		8 * MEBIBYTE,
+	),
+	requestAbortTimeout: v.optional(
+		v.pipe(
+			v.number(),
+			v.integer(),
+			v.minValue(1),
+			f.formMeta({ title: '请求超时（毫秒）' }),
+			f.numberMeta({ step: 1000 }),
+		),
+		30_000,
+	),
 	minPartSize: v.optional(
-		v.pipe(v.number(), v.integer(), v.minValue(5 * MEBIBYTE), v.maxValue(5 * 1024 * MEBIBYTE)),
+		v.pipe(
+			v.number(),
+			v.integer(),
+			v.minValue(5 * MEBIBYTE),
+			v.maxValue(5 * 1024 * MEBIBYTE),
+			f.formMeta({
+				title: '分片大小（字节）',
+				description: '分片上传时每片的最小大小，至少 5 MiB。',
+			}),
+		),
 		8 * MEBIBYTE,
 	),
 })
 
 const BucketConfig = v.object({
-	id: BucketId,
-	backend: v.variant('type', [LocalBackendConfig, RemoteBackendConfig]),
+	id: v.pipe(
+		BucketId,
+		f.formMeta({ title: '桶 ID', description: '其他插件按这个名字取桶，例如 default。' }),
+	),
+	backend: v.pipe(
+		v.variant('type', [LocalBackendConfig, RemoteBackendConfig]),
+		f.formMeta({ title: '后端' }),
+		f.unionMeta({
+			control: 'segmented',
+			labels: { local: '本地目录', remote: 'S3 兼容服务' },
+		}),
+	),
 })
 
 export const ForumStorageConfig = v.object({
@@ -92,6 +165,12 @@ export const ForumStorageConfig = v.object({
 				(buckets) => new Set(buckets.map((b) => b.id)).size === buckets.length,
 				'S3 bucket IDs must be unique',
 			),
+			f.formMeta({
+				title: '存储桶',
+				description:
+					'附件和头像所在的存储。修改后需重启本插件；部署时由 S3_BUCKETS 提供初始值，这里保存的值会覆盖它。',
+			}),
+			f.arrayMeta({ itemLabel: '存储桶', addLabel: '添加存储桶' }),
 		),
 		[
 			{

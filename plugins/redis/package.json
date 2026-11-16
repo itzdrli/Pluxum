@@ -41,6 +41,7 @@
 	},
 	"dependencies": {
 		"redis": "catalog:backend",
-		"valibot": "catalog:validation"
+		"valibot": "catalog:validation",
+		"valibot-form": "catalog:validation"
 	}
 }

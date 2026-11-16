@@ -2,13 +2,8 @@ import { Link2, Mail, Rss } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { Link, useRouteLoaderData } from 'react-router'
 
-import {
-	FOOTER,
-	isInternalHref,
-	mergeFooter,
-	type FooterIcon,
-	type FooterLink,
-} from '../../lib/footer'
+import { isInternalHref, type FooterIcon, type FooterLink } from '../../lib/footer'
+import { footerOf, siteOf } from '../../lib/site'
 import type { loader as rootLoader } from '../../root'
 import { LogoMark } from './logo-mark'
 import { ThemeSwatches } from './theme-picker'
@@ -57,18 +52,19 @@ function FooterAnchor({
 }
 
 /**
- * Under every page that scrolls. Its content comes from `FOOTER` (lib/footer.ts) plus the links
- * running plugins add (`/meta` footer): brand and tagline, optional link columns, then a bottom
+ * Under every page that scrolls. Its content is Forum Core's site and footer config plus the links
+ * running plugins add (both in `/meta`): brand and tagline, optional link columns, then a bottom
  * row with notes, theme swatches and icon links.
  */
 export function SiteFooter() {
-	const fromPlugins = useRouteLoaderData<typeof rootLoader>('root')?.meta?.footer
-	const { tagline, groups, icons, notes } = mergeFooter(FOOTER, fromPlugins)
+	const root = useRouteLoaderData<typeof rootLoader>('root')
+	const { name, tagline } = siteOf(root)
+	const { groups, icons, notes } = footerOf(root)
 	const brand = (
 		<div className="flex min-w-0 items-center gap-2.5">
 			<LogoMark className="size-5 shrink-0" />
-			<span className="text-ink-strong font-bold">Pluxum</span>
-			<span className="text-ink-weak text-meta">{tagline}</span>
+			<span className="text-ink-strong font-bold">{name}</span>
+			{tagline !== '' && <span className="text-ink-weak text-meta">{tagline}</span>}
 		</div>
 	)
 	const tools = (
