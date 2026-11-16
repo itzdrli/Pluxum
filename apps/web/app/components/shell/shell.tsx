@@ -8,7 +8,7 @@ import { ButtonLink } from '../ui/button'
 import { Notice } from '../ui/display'
 import { ShellSlots } from '../../slots/slots'
 import { LogoMark } from './logo-mark'
-import { ThemeSwatches } from './theme-picker'
+import { SiteFooter } from './site-footer'
 import { UserMenu } from './user-menu'
 
 // Reasons forum-api appends to `/?login=` when a login could not be completed.
@@ -19,8 +19,6 @@ const LOGIN_ERRORS: Readonly<Record<string, string>> = {
 
 /** Width of the reading column for standard standalone pages. */
 export const CONTENT_WIDTH = 'mx-auto w-full max-w-[1040px] px-4'
-
-const REPO_URL = 'https://github.com/itzdrli/Pluxum'
 
 function navClass({ isActive }: { isActive: boolean }): string {
 	return `h-control flex items-center rounded-[2px] px-2.5 ${isActive ? 'bg-selected text-ink-strong' : 'text-ink-weak hover:bg-hover hover:text-ink-strong'}`
@@ -159,31 +157,5 @@ function HeaderSearch({ query }: { query: string }) {
 				/
 			</kbd>
 		</Form>
-	)
-}
-
-/** Under every page that scrolls: the brand, the theme swatches and where the code lives. */
-function SiteFooter() {
-	return (
-		<footer className="border-line bg-panel border-t">
-			<div className="mx-auto flex w-full max-w-[1760px] flex-wrap items-center justify-between gap-x-6 gap-y-4 px-4 py-5 lg:px-6">
-				<div className="flex min-w-0 items-center gap-2.5">
-					<LogoMark className="size-5 shrink-0" />
-					<span className="text-ink-strong font-bold">Pluxum</span>
-					<span className="text-ink-weak text-meta">万物皆插件 · 基于 Pluxel</span>
-				</div>
-				<div className="flex items-center gap-5">
-					<ThemeSwatches />
-					<a
-						href={REPO_URL}
-						target="_blank"
-						rel="noreferrer"
-						className="text-ink-weak hover:text-ink-strong text-meta"
-					>
-						GitHub
-					</a>
-				</div>
-			</div>
-		</footer>
 	)
 }

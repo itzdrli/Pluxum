@@ -1,9 +1,10 @@
 import type { MetaDto, UserDto } from '@pluxum/domain'
-import { Dropdown } from '@heroui/react'
+import { Dropdown, Popover } from '@heroui/react'
+import { Palette } from 'lucide-react'
 import { useRef } from 'react'
 import { useNavigate } from 'react-router'
 
-import { ButtonAnchor } from '../ui/button'
+import { ButtonAnchor, IconButton } from '../ui/button'
 import { UserAvatar } from '../forum/user-avatar'
 import { ThemeSwatches } from './theme-picker'
 
@@ -13,22 +14,26 @@ const ROLE_LABELS = { guest: '游客', member: '成员', moderator: '版主', ad
 export function UserMenu({ meta, here }: { meta: MetaDto | null; here: string }) {
 	const user = meta?.viewer.user
 	if (!user) {
-		if (!meta?.auth.loginAvailable) {
-			return (
-				<span data-testid="viewer" className="text-ink-weak text-meta">
-					未登录
-				</span>
-			)
-		}
-		// A document navigation, not a client-side one: the API redirects to the identity provider.
+		// Guests have no account menu, and list and thread pages have no footer, so the theme
+		// swatches get their own small button here.
 		return (
-			<ButtonAnchor
-				data-testid="viewer"
-				href={`/api/forum/auth/login?returnTo=${encodeURIComponent(here)}`}
-				tone="primary"
-			>
-				登录
-			</ButtonAnchor>
+			<>
+				<GuestThemeButton />
+				{meta?.auth.loginAvailable ? (
+					// A document navigation, not a client-side one: the API redirects to the identity provider.
+					<ButtonAnchor
+						data-testid="viewer"
+						href={`/api/forum/auth/login?returnTo=${encodeURIComponent(here)}`}
+						tone="primary"
+					>
+						登录
+					</ButtonAnchor>
+				) : (
+					<span data-testid="viewer" className="text-ink-weak text-meta">
+						未登录
+					</span>
+				)}
+			</>
 		)
 	}
 	// Roles are listed weakest first; the strongest one is shown.
@@ -105,5 +110,24 @@ function AccountMenu({
 				</Dropdown.Popover>
 			</Dropdown>
 		</>
+	)
+}
+
+function GuestThemeButton() {
+	return (
+		<Popover>
+			<IconButton label="切换主题" className="text-ink-weak hover:text-ink-strong">
+				<Palette aria-hidden />
+			</IconButton>
+			<Popover.Content placement="bottom end" className="p-0">
+				<Popover.Dialog
+					aria-label="主题"
+					className="flex items-center gap-3 px-3 py-2.5 outline-none"
+				>
+					<span className="text-ink-weak text-meta">主题</span>
+					<ThemeSwatches />
+				</Popover.Dialog>
+			</Popover.Content>
+		</Popover>
 	)
 }

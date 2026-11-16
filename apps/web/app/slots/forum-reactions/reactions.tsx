@@ -38,6 +38,17 @@ export function ReactionsFooter({ post }: { post: PostDto }) {
 		fetcher.state === 'idle' && fetcher.data?.ok === false ? fetcher.data.error : undefined
 	const loggedIn = viewer?.user != null
 	if (post.deleted) return null
+	// Guests cannot like: show how many did, as text, and nothing at all for none.
+	if (!loggedIn) {
+		if (shown.count === 0) return null
+		return (
+			<p className="text-ink-weak flex items-center gap-1.5 px-4 pb-3 text-meta tabular-nums">
+				<ThumbsUp aria-hidden size={14} />
+				{shown.count}
+				<span className="sr-only">人点赞</span>
+			</p>
+		)
+	}
 	return (
 		<div className="flex items-center gap-2 px-2.5 pb-2">
 			<Button
@@ -46,7 +57,6 @@ export function ReactionsFooter({ post }: { post: PostDto }) {
 				aria-pressed={shown.reacted}
 				aria-label={shown.reacted ? '取消点赞' : '点赞'}
 				{...{ title: shown.reacted ? '取消点赞' : '点赞' }}
-				isDisabled={!loggedIn}
 				className={`${shown.count > 0 ? 'px-2' : 'button--icon-only'} ${shown.reacted ? 'text-accent' : 'text-ink-weak'}`}
 				onPress={() =>
 					fetcher.submit(
