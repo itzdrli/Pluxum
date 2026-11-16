@@ -28,7 +28,7 @@ export type StagePageSpec = Readonly<{
 
 export type StageListSpec = Readonly<{
 	layer: 'list'
-	/** Shows the category navigation beside the list (and as the peek strip at depth 2). */
+	/** Shows the category column beside the list, at depth 1 and 2 alike. */
 	nav?: boolean
 	/**
 	 * Query parameters that define the list (filters, the search query). They are carried into

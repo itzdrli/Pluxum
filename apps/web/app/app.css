@@ -609,8 +609,9 @@
  * useStageNavigate), and the panes carry fixed names:
  *
  *   site-header   the top bar: never animates, so the frame feels anchored
- *   stage-nav     category column (depth 1) ⇄ peek strip / drawer (depth 2)
- *   stage-list    the list pane, wide (depth 1) ⇄ narrow column (depth 2)
+ *   stage-nav     the category column beside a list (stays put between depth 1 and 2)
+ *   stage-list    the list pane on its own (depth 1)
+ *   stage-list-side  the list as the narrow column beside a detail (depth 2)
  *   stage-detail  the detail pane
  *   stage-bar     the mobile thumb-zone bar
  *
@@ -618,13 +619,13 @@
  * (back out), detail (another detail in place) or list (another list in place).
  */
 :root {
-	--stage-ease: cubic-bezier(0.22, 1, 0.36, 1);
+	--stage-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 	--stage-ease-in: cubic-bezier(0.55, 0, 0.75, 0.2);
-	--stage-duration: 300ms;
+	--stage-duration: 360ms;
 	--stage-duration-out: 160ms;
 	/* How far an entering detail travels. Phones push a whole screen. */
 	--stage-shift: 40px;
-	--stage-shift-back: -16px;
+	--stage-shift-back: -32px;
 }
 @media (max-width: 1023px) {
 	:root {
@@ -698,39 +699,24 @@
 	animation: none;
 }
 
-/*
- * Panes that change size reveal their content instead of stretching a picture of it: both
- * snapshots keep their natural size, pinned top-left, and the box clips them while it resizes.
- */
-::view-transition-group(stage-nav),
-::view-transition-group(stage-list) {
-	overflow: clip;
-}
-::view-transition-old(stage-nav),
-::view-transition-new(stage-nav),
-::view-transition-old(stage-list),
-::view-transition-new(stage-list) {
-	inline-size: auto;
-	block-size: auto;
-	object-fit: none;
-	object-position: left top;
-}
-/* The two layouts of a resizing pane barely overlap: the old one is gone before the new one shows. */
-::view-transition-old(stage-nav),
-::view-transition-old(stage-list) {
-	animation: stage-fade-out 110ms linear both;
-}
-::view-transition-new(stage-nav),
-::view-transition-new(stage-list) {
-	animation: stage-fade-in 200ms linear 90ms both;
+/* Pages never cover the category column while it comes or goes. */
+::view-transition-group(stage-nav) {
+	z-index: 2;
 }
 
-/* Deeper: the detail slides in from the right; on phones the list is pushed aside. */
-:root[data-stage-motion='push']::view-transition-new(stage-detail):only-child {
-	animation: stage-enter-from-right var(--stage-duration) var(--stage-ease) both;
-}
+/*
+ * Deeper. Desktop: the list on its own fades where it is, the narrow list comes out from under
+ * the category column, the detail slides in from the right. Phones: the detail pushes the list
+ * aside.
+ */
 :root[data-stage-motion='push']::view-transition-old(stage-list):only-child {
-	animation: stage-exit-to-left var(--stage-duration) var(--stage-ease) both;
+	animation: stage-fade-out 180ms linear both;
+}
+:root[data-stage-motion='push']::view-transition-new(stage-list-side):only-child {
+	animation: stage-enter-from-left var(--stage-duration) var(--stage-ease) 60ms both;
+}
+:root[data-stage-motion='push']::view-transition-new(stage-detail):only-child {
+	animation: stage-enter-from-right var(--stage-duration) var(--stage-ease) 40ms both;
 }
 :root[data-stage-motion='push']::view-transition-new(stage-nav):only-child {
 	animation: stage-enter-from-left var(--stage-duration) var(--stage-ease) both;
@@ -738,102 +724,41 @@
 :root[data-stage-motion='push']::view-transition-new(stage-list):only-child {
 	animation: stage-rise-in var(--stage-duration) var(--stage-ease) 40ms both;
 }
+@media (max-width: 1023px) {
+	:root[data-stage-motion='push']::view-transition-old(stage-list):only-child {
+		animation: stage-exit-to-left var(--stage-duration) var(--stage-ease) both;
+	}
+}
 
 /* Back out: the reverse. */
 :root[data-stage-motion='pop']::view-transition-old(stage-detail):only-child {
-	animation: stage-exit-to-right 220ms var(--stage-ease-in) both;
+	animation: stage-exit-to-right 240ms var(--stage-ease-in) both;
+}
+:root[data-stage-motion='pop']::view-transition-old(stage-list-side):only-child {
+	animation: stage-exit-to-left 200ms var(--stage-ease-in) both;
 }
 :root[data-stage-motion='pop']::view-transition-new(stage-list):only-child {
-	animation: stage-enter-from-left var(--stage-duration) var(--stage-ease) both;
+	animation: stage-rise-in var(--stage-duration) var(--stage-ease) 80ms both;
 }
 :root[data-stage-motion='pop']::view-transition-old(stage-nav):only-child {
 	animation: stage-exit-to-left 220ms var(--stage-ease-in) both;
 }
+@media (max-width: 1023px) {
+	:root[data-stage-motion='pop']::view-transition-new(stage-list):only-child {
+		animation: stage-enter-from-left var(--stage-duration) var(--stage-ease) both;
+	}
+}
 
 /* In place: the old content sinks away, the new one rises into the same pane. */
 :root[data-stage-motion='detail']::view-transition-old(stage-detail),
-:root[data-stage-motion='list']::view-transition-old(stage-list) {
+:root[data-stage-motion='list']::view-transition-old(stage-list),
+:root[data-stage-motion='list']::view-transition-old(stage-list-side) {
 	animation: stage-sink-out var(--stage-duration-out) var(--stage-ease-in) both;
 }
 :root[data-stage-motion='detail']::view-transition-new(stage-detail),
-:root[data-stage-motion='list']::view-transition-new(stage-list) {
+:root[data-stage-motion='list']::view-transition-new(stage-list),
+:root[data-stage-motion='list']::view-transition-new(stage-list-side) {
 	animation: stage-rise-in var(--stage-duration) var(--stage-ease) 60ms both;
-}
-
-/*
- * Depth 2 category drawer: one panel, three states (folded strip, hover peek, open), so every
- * change between them is one continuous transition. The fade of the folded strip is a mask whose
- * stop is a registered number, which lets it animate with the rest.
- */
-@property --stage-peek-veil {
-	syntax: '<number>';
-	inherits: false;
-	initial-value: 1;
-}
-.stage-peek {
-	--stage-peek-veil: 0.4;
-	--stage-peek-x: -73%;
-	transform-origin: left center;
-	transform: translate3d(var(--stage-peek-x), 0, 0) scale(0.95);
-	opacity: 0.45;
-	pointer-events: none;
-	mask-image: linear-gradient(to right, rgb(0 0 0 / var(--stage-peek-veil)), #000 55%);
-	transition:
-		transform var(--stage-duration) var(--stage-ease),
-		opacity 220ms var(--stage-ease),
-		--stage-peek-veil var(--stage-duration) var(--stage-ease),
-		box-shadow var(--stage-duration) var(--stage-ease);
-}
-@media (min-width: 80rem) {
-	.stage-peek {
-		--stage-peek-x: -71%;
-	}
-}
-.stage-peek-slot:is(:hover, :focus-within) .stage-peek:not([data-open]) {
-	transform: translate3d(-50%, 0, 0) scale(0.97);
-	opacity: 0.8;
-	--stage-peek-veil: 0.6;
-}
-.stage-peek[data-open] {
-	transform: none;
-	opacity: 1;
-	pointer-events: auto;
-	--stage-peek-veil: 1;
-	box-shadow: var(--c-overlay-shadow);
-}
-.stage-peek-backdrop {
-	z-index: 20;
-	opacity: 0;
-	pointer-events: none;
-	transition: opacity 240ms var(--stage-ease);
-}
-.stage-peek-backdrop[data-open] {
-	opacity: 1;
-	pointer-events: auto;
-}
-.stage-peek-trigger[data-open] {
-	pointer-events: none;
-}
-.stage-peek-handle {
-	transition:
-		border-color 150ms ease,
-		color 150ms ease,
-		opacity 200ms ease,
-		transform var(--stage-duration) var(--stage-ease);
-}
-.stage-peek-grip {
-	transition: background-color 150ms ease;
-}
-.stage-peek-slot:is(:hover, :focus-within) .stage-peek-handle {
-	border-color: var(--c-accent);
-	color: var(--c-text-strong);
-}
-.stage-peek-slot:is(:hover, :focus-within) .stage-peek-grip {
-	background-color: var(--c-accent);
-}
-.stage-peek-trigger[data-open] .stage-peek-handle {
-	opacity: 0;
-	transform: translate3d(-8px, 0, 0);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -841,11 +766,6 @@
 	::view-transition-old(*),
 	::view-transition-new(*) {
 		animation: none !important;
-	}
-	.stage-peek,
-	.stage-peek-backdrop,
-	.stage-peek-handle {
-		transition-duration: 0.01ms;
 	}
 }
 

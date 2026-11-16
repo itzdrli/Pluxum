@@ -70,14 +70,15 @@ export function StageMotionSync() {
 const LIST_WIDE =
 	'min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-list] lg:overflow-y-auto lg:px-8'
 const LIST_NARROW =
-	'border-line bg-panel/35 w-[310px] shrink-0 border-r px-3 py-4 [view-transition-name:stage-list] max-lg:hidden lg:overflow-y-auto xl:w-[360px] 2xl:w-[400px]'
+	'border-line bg-panel/35 w-[280px] shrink-0 border-r px-3 py-4 [view-transition-name:stage-list-side] max-lg:hidden lg:overflow-y-auto xl:w-[320px] 2xl:w-[380px]'
 const DETAIL =
 	'bg-page min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-detail] lg:overflow-y-auto lg:px-8'
 
 /**
  * The list layer's panes: the list on its own at depth 1, and list + detail (the child route) at
  * depth 2. The list pane is the same element at both depths, so its scroll position survives
- * opening and closing details. `children` renders the list and learns whether a detail is open.
+ * opening and closing details. Its two layouts carry different view-transition names: they are
+ * too different to morph into each other, so one leaves while the other comes in. `children` renders the list and learns whether a detail is open.
  */
 export function StageSplit({
 	label,
