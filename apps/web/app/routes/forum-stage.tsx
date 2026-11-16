@@ -1,6 +1,6 @@
 import type { CategoryDto } from '@pluxum/domain'
-import { Hash, LayoutGrid, Plus } from 'lucide-react'
-import { Outlet, useParams, useRouteLoaderData } from 'react-router'
+import { Bell, Hash, LayoutGrid, Plus, Search, type LucideIcon } from 'lucide-react'
+import { Outlet, useLocation, useParams, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/forum-stage'
 import { SiteFooterCompact } from '../components/shell/site-footer'
@@ -28,6 +28,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 	const { categories } = loaderData
 	const stage = useStage()
 	const params = useParams()
+	const pathname = useLocation().pathname
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const canManageCategories = root?.meta?.viewer.can.manageCategories === true
 
@@ -46,14 +47,15 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 					categories={categories}
 					activeSlug={params.slug}
 					canManageCategories={canManageCategories}
-					atHome={stage.depth === 0}
+					pathname={pathname}
+					root={root}
 				/>
 				<SiteFooterCompact />
 			</aside>
 			{stage.depth === 0 ? (
 				// A page beside the column: one scrolling pane with a reading width.
 				<div className="min-w-0 flex-1 px-4 py-4 lg:overflow-y-auto lg:px-8 lg:py-6">
-					<div className="mx-auto w-full max-w-[1200px]">
+					<div className="mx-auto w-full max-w-[1040px]">
 						<Outlet />
 					</div>
 				</div>
@@ -64,19 +66,85 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 	)
 }
 
+/** A destination of the frame: the overview, search, notifications. */
+function RailLink({
+	to,
+	icon: Icon,
+	label,
+	active,
+	badge,
+}: {
+	to: string
+	icon: LucideIcon
+	label: string
+	active: boolean
+	badge?: number
+}) {
+	return (
+		<li>
+			<StageLink
+				to={to}
+				prefetch="intent"
+				aria-current={active ? 'page' : undefined}
+				className={`${RAIL_ITEM} ${active ? RAIL_ITEM_ACTIVE : RAIL_ITEM_IDLE}`}
+			>
+				<Icon
+					aria-hidden
+					size={14}
+					className={active ? 'text-accent shrink-0' : 'text-ink-weak shrink-0'}
+				/>
+				<span className="min-w-0 flex-1 truncate">{label}</span>
+				{badge !== undefined && badge > 0 && (
+					<span className="bg-accent text-page min-w-5 shrink-0 rounded-[2px] px-1 text-center text-micro leading-5 font-bold tabular-nums">
+						{badge > 99 ? '99+' : badge}
+					</span>
+				)}
+			</StageLink>
+		</li>
+	)
+}
+
 function CategoryNavPanel({
 	categories,
 	activeSlug,
 	canManageCategories,
-	atHome,
+	pathname,
+	root,
 }: {
 	categories: readonly CategoryDto[]
 	activeSlug: string | undefined
 	canManageCategories: boolean
-	atHome: boolean
+	pathname: string
+	root: ReturnType<typeof useRouteLoaderData<typeof rootLoader>>
 }) {
+	const meta = root?.meta
+	const notificationsOn =
+		meta?.viewer.user != null &&
+		meta.uiSlots.some(
+			(slot) => slot.slot === 'shell.actions' && slot.extId === 'forum-notifications',
+		)
 	return (
 		<>
+			<ul className="border-line-soft border-b py-1.5">
+				<RailLink to="/" icon={LayoutGrid} label="概览" active={pathname === '/'} />
+				{meta?.search.available === true && (
+					<RailLink
+						to="/search"
+						icon={Search}
+						label="搜索"
+						active={pathname === '/search' || pathname.startsWith('/search/')}
+					/>
+				)}
+				{notificationsOn && (
+					<RailLink
+						to="/notifications"
+						icon={Bell}
+						label="通知"
+						active={pathname === '/notifications'}
+						badge={root?.unreadNotifications}
+					/>
+				)}
+			</ul>
 			<div className="border-line-soft flex h-11 shrink-0 items-center justify-between gap-2 border-b px-3">
 				<span className="section-label">版块 · {categories.length}</span>
 				<div className="flex items-center gap-1">
@@ -93,21 +161,6 @@ function CategoryNavPanel({
 				</div>
 			</div>
 			<ul className="flex-1 overflow-y-auto py-1.5">
-				<li>
-					<StageLink
-						to="/"
-						prefetch="intent"
-						aria-current={atHome ? 'page' : undefined}
-						className={`${RAIL_ITEM} ${atHome ? RAIL_ITEM_ACTIVE : RAIL_ITEM_IDLE}`}
-					>
-						<LayoutGrid
-							aria-hidden
-							size={14}
-							className={atHome ? 'text-accent shrink-0' : 'text-ink-weak shrink-0'}
-						/>
-						<span className="min-w-0 flex-1 truncate">概览</span>
-					</StageLink>
-				</li>
 				{categories.length === 0 ? (
 					<li className="text-ink-weak px-3 py-4 text-meta">还没有版块</li>
 				) : (

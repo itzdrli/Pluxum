@@ -1,7 +1,7 @@
 import { LIMITS, type MetaDto } from '@pluxum/domain'
 import { Search } from 'lucide-react'
 import { useEffect, useRef } from 'react'
-import { Form, Link, NavLink, useLocation } from 'react-router'
+import { Form, Link, useLocation } from 'react-router'
 
 import { RAIL_WIDTH, StageMotionSync, useStage } from '../stage/stage'
 import { ButtonLink } from '../ui/button'
@@ -21,10 +21,6 @@ const LOGIN_ERRORS: Readonly<Record<string, string>> = {
 /** Width of the reading column for standard standalone pages. */
 export const CONTENT_WIDTH = 'mx-auto w-full max-w-[1040px] px-4'
 
-function navClass({ isActive }: { isActive: boolean }): string {
-	return `h-control flex items-center rounded-[2px] px-2.5 ${isActive ? 'bg-selected text-ink-strong' : 'text-ink-weak hover:bg-hover hover:text-ink-strong'}`
-}
-
 /** Top bar, page column and footer around every page, error pages included. */
 export function Shell({ meta, children }: { meta: MetaDto | null; children: React.ReactNode }) {
 	const location = useLocation()
@@ -38,8 +34,6 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 	const siteName = siteOf({ meta }).name
 	const searchAvailable = meta?.search.available === true
 	const headerQuery = isSearchPage ? (searchParams.get('q') ?? '') : ''
-	// "版块" stays highlighted on the home page and while reading inside a category.
-	const inForum = location.pathname === '/' || stage.nav || location.pathname.startsWith('/t/')
 	const mainClass = isSplitStage
 		? 'flex min-h-0 w-full flex-1 flex-col'
 		: `${CONTENT_WIDTH} flex-1 py-4 lg:py-6`
@@ -74,12 +68,6 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 							<span className="text-title max-md:hidden">{siteName}</span>
 						</Link>
 					</div>
-					{/* Phones reach the forum through the logo; the one nav entry is for wide screens. */}
-					<nav aria-label="主导航" className="flex items-center gap-1 px-3 max-md:hidden">
-						<NavLink to="/" viewTransition className={() => navClass({ isActive: inForum })} end>
-							版块
-						</NavLink>
-					</nav>
 					<div className="ml-auto flex items-center gap-1">
 						{searchAvailable && !isSearchPage && (
 							<>

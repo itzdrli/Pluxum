@@ -113,7 +113,7 @@ export function formatModerationLogAction(
 	return LOG_ACTION_META[actionCode] ?? { label: actionCode, tone: 'neutral' }
 }
 
-export const handle = defineStage({ layer: 'page' })
+export const handle = defineStage({ layer: 'page', nav: true })
 
 export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
 	return [{ title: pageTitle(matches[0].loaderData, '审核队列') }]

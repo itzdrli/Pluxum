@@ -37,7 +37,7 @@ const ROLE_LABELS: Readonly<Record<Role, string>> = {
 	admin: '管理员',
 }
 
-export const handle = defineStage({ layer: 'list', backLabel: '主页' })
+export const handle = defineStage({ layer: 'list', nav: true, backLabel: '主页' })
 
 export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
 	return [{ title: pageTitle(matches[0].loaderData, loaderData?.user.displayName) }]

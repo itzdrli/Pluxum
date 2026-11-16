@@ -32,7 +32,12 @@ import {
 // The query and filters define the list, so they travel with every thread opened from it.
 const SEARCH_CARRY = ['q', 'categoryId', 'authorId', 'threadsOnly'] as const
 
-export const handle = defineStage({ layer: 'list', carry: SEARCH_CARRY, backLabel: '结果' })
+export const handle = defineStage({
+	layer: 'list',
+	nav: true,
+	carry: SEARCH_CARRY,
+	backLabel: '结果',
+})
 
 export type ParsedSearchUrl = Readonly<{
 	query: string

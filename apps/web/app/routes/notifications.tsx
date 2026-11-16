@@ -38,7 +38,7 @@ export function parseNotificationsUrl(url: URL): ParsedNotificationsUrl {
 	}
 }
 
-export const handle = defineStage({ layer: 'page' })
+export const handle = defineStage({ layer: 'page', nav: true })
 
 export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
 	return [{ title: pageTitle(matches[0].loaderData, '通知') }]

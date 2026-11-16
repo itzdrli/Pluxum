@@ -1,8 +1,9 @@
 import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
 
-// Every list route (`handle.stage.layer === 'list'`) opens threads beside it through a nested
-// `t/:id` detail, so a thread reached from a category, a search or a profile keeps that list in
-// view. See app/lib/stage.ts.
+// Every page sits inside the stage layout, which owns the category column, so the frame is the
+// same from the overview to a thread. Every list route (`handle.stage.layer === 'list'`) opens
+// threads beside it through a nested `t/:id` detail, so a thread reached from a category, a search
+// or a profile keeps that list in view. See app/lib/stage.ts.
 export default [
 	layout('routes/forum-stage.tsx', [
 		index('routes/home.tsx'),
@@ -16,10 +17,10 @@ export default [
 		route('u/:userId', 'routes/user.tsx', [
 			route('t/:id', 'routes/thread.tsx', { id: 'routes/user-thread' }),
 		]),
+		route('notifications', 'routes/notifications.tsx'),
+		route('moderation', 'routes/moderation.tsx'),
 	]),
 	route('t/:id/:floor?', 'routes/thread-shortlink.ts'),
-	route('notifications', 'routes/notifications.tsx'),
-	route('moderation', 'routes/moderation.tsx'),
 	// Write actions of extension plugins, called by their slot components.
 	route('ext/:extId/:action', 'routes/ext-action.ts'),
 	// Development only: renders the OpenUI component library from a fixed OpenUI Lang sample.
