@@ -254,6 +254,25 @@ export type UiSlotDto = Readonly<{
 	extId: string
 }>
 
+/** Glyphs a footer icon link may use; the frontend draws each one. */
+export const FOOTER_ICONS = ['github', 'rss', 'mail', 'link'] as const
+export type FooterIcon = (typeof FOOTER_ICONS)[number]
+
+export function isFooterIcon(value: unknown): value is FooterIcon {
+	return FOOTER_ICONS.some((icon) => icon === value)
+}
+
+/** A link in the site footer. `href` is a forum path (`/...`) or an http(s) URL. */
+export type FooterLinkDto = Readonly<{ label: string; href: string }>
+
+/** What running plugins add to the site footer, merged across contributors. */
+export type FooterDto = Readonly<{
+	/** Columns of text links; contributors naming the same title share one column. */
+	groups: Array<Readonly<{ title: string; links: FooterLinkDto[] }>>
+	/** Icon-only links in the footer's bottom row. */
+	icons: Array<FooterLinkDto & Readonly<{ icon: FooterIcon }>>
+}>
+
 export type MetaDto = Readonly<{
 	viewer: ViewerDto
 	auth: Readonly<{
@@ -277,6 +296,8 @@ export type MetaDto = Readonly<{
 	}>
 	/** Slots filled by the extensions that are running, in display order. */
 	uiSlots: UiSlotDto[]
+	/** Links running plugins put in the site footer. */
+	footer: FooterDto
 }>
 
 export const FORUM_ERROR_CODES = [

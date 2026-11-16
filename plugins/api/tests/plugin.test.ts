@@ -597,6 +597,7 @@ describe('ForumApiPlugin', () => {
 		expect(meta.content).toEqual({ format: 'plain' })
 		expect(meta.search).toEqual({ available: false })
 		expect(meta.uiSlots).toEqual([])
+		expect(meta.footer).toEqual({ groups: [], icons: [] })
 
 		expect(await api.ok<PreviewDto>('POST', '/preview', { body: 'a < b' })).toEqual({
 			bodyHtml: 'a &lt; b',

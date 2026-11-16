@@ -43,6 +43,7 @@ import {
 	type ThreadDetailDto,
 	type ThreadDto,
 	type UiSlotDto,
+	type FooterDto,
 	type UserDto,
 	type UserProfileDto,
 } from '@pluxum/domain'
@@ -77,6 +78,7 @@ import {
 	type PostBeforeWriteEvent,
 	type PostHookContribution,
 } from './hooks'
+import { FooterLinkRegistry, type FooterLinkContribution } from './footer'
 import { NotificationChannelRegistry, type NotificationChannelContribution } from './notifications'
 import { PolicyRegistry, type PermissionPolicyContribution } from './policies'
 import {
@@ -86,6 +88,7 @@ import {
 } from './search'
 
 export type { ContentRendererContribution } from './content'
+export type { FooterLinkContribution } from './footer'
 export type {
 	EntityExtensionContribution,
 	ExtendableEntity,
@@ -234,6 +237,7 @@ export class ForumCorePlugin extends BasePlugin {
 	private readonly contentRenderers = new ContentRendererRegistry()
 	private readonly entityExtensions = new EntityExtensionRegistry()
 	private readonly uiSlotContributions = new UiSlotRegistry()
+	private readonly footerLinks = new FooterLinkRegistry()
 	private readonly postHooks = new PostHookRegistry()
 	private readonly notificationChannels = new NotificationChannelRegistry()
 	private readonly searchProviders = new SearchProviderRegistry()
@@ -327,6 +331,21 @@ export class ForumCorePlugin extends BasePlugin {
 	/** The slots filled by running extensions, in display order. */
 	uiSlots(): UiSlotDto[] {
 		return this.uiSlotContributions.list()
+	}
+
+	/**
+	 * Puts links in the site footer while the contributor runs: text links in a titled column
+	 * and/or icon links. Plain data, so the plugin needs no frontend code. The returned disposer
+	 * must be handed to the contributor's `ctx.effects`. Throws on an invalid or duplicate ID, an
+	 * unsafe href (only forum paths and http(s) URLs), an unknown icon or an over-long label.
+	 */
+	registerFooterLinks(contribution: FooterLinkContribution): () => void {
+		return this.footerLinks.register(contribution)
+	}
+
+	/** The footer links of running plugins, merged. */
+	footer(): FooterDto {
+		return this.footerLinks.list()
 	}
 
 	/**

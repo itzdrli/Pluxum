@@ -1,8 +1,15 @@
-import { Mail, Rss } from 'lucide-react'
+import { Link2, Mail, Rss } from 'lucide-react'
 import type { ComponentType } from 'react'
-import { Link } from 'react-router'
+import { Link, useRouteLoaderData } from 'react-router'
 
-import { FOOTER, isInternalHref, type FooterIcon, type FooterLink } from '../../lib/footer'
+import {
+	FOOTER,
+	isInternalHref,
+	mergeFooter,
+	type FooterIcon,
+	type FooterLink,
+} from '../../lib/footer'
+import type { loader as rootLoader } from '../../root'
 import { LogoMark } from './logo-mark'
 import { ThemeSwatches } from './theme-picker'
 
@@ -15,11 +22,12 @@ function GithubIcon({ size = 16 }: { size?: number }) {
 	)
 }
 
-/** Glyphs the footer's icon links can use; `FooterIcon` in lib/footer.ts lists the names. */
+/** How each of FOOTER_ICONS (@pluxum/domain) is drawn. */
 const FOOTER_ICONS: Record<FooterIcon, ComponentType<{ size?: number }>> = {
 	github: GithubIcon,
 	rss: Rss,
 	mail: Mail,
+	link: Link2,
 }
 
 function FooterAnchor({
@@ -49,11 +57,13 @@ function FooterAnchor({
 }
 
 /**
- * Under every page that scrolls. Its content comes from `FOOTER` (lib/footer.ts): brand and
- * tagline, optional link columns, then a bottom row with notes, theme swatches and icon links.
+ * Under every page that scrolls. Its content comes from `FOOTER` (lib/footer.ts) plus the links
+ * running plugins add (`/meta` footer): brand and tagline, optional link columns, then a bottom
+ * row with notes, theme swatches and icon links.
  */
 export function SiteFooter() {
-	const { tagline, groups, icons, notes } = FOOTER
+	const fromPlugins = useRouteLoaderData<typeof rootLoader>('root')?.meta?.footer
+	const { tagline, groups, icons, notes } = mergeFooter(FOOTER, fromPlugins)
 	const brand = (
 		<div className="flex min-w-0 items-center gap-2.5">
 			<LogoMark className="size-5 shrink-0" />
@@ -119,7 +129,7 @@ export function SiteFooter() {
 										<h2 className="section-label">{group.title}</h2>
 										<ul className="flex flex-col gap-1.5">
 											{group.links.map((link) => (
-												<li key={link.href}>
+												<li key={`${link.label} ${link.href}`}>
 													<FooterAnchor
 														link={link}
 														className="text-ink hover:text-ink-strong text-ui hover:underline"

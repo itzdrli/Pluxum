@@ -162,6 +162,27 @@ export const meta = t.Object({
 			extId: t.String(),
 		}),
 	),
+	footer: t.Object({
+		groups: t.Array(
+			t.Object({
+				title: t.String(),
+				links: t.Array(t.Object({ label: t.String(), href: t.String() })),
+			}),
+		),
+		icons: t.Array(
+			t.Object({
+				label: t.String(),
+				href: t.String(),
+				// Mirrors FOOTER_ICONS in @pluxum/domain.
+				icon: t.Union([
+					t.Literal('github'),
+					t.Literal('rss'),
+					t.Literal('mail'),
+					t.Literal('link'),
+				]),
+			}),
+		),
+	}),
 })
 
 export const ping = t.Object({
