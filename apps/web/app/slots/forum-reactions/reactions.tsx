@@ -39,14 +39,15 @@ export function ReactionsFooter({ post }: { post: PostDto }) {
 	const loggedIn = viewer?.user != null
 	if (post.deleted) return null
 	return (
-		<div className="flex items-center gap-2 px-4 pb-3">
+		<div className="flex items-center gap-2 px-2.5 pb-2">
 			<Button
 				tone="ghost"
 				size="sm"
 				aria-pressed={shown.reacted}
 				aria-label={shown.reacted ? '取消点赞' : '点赞'}
+				{...{ title: shown.reacted ? '取消点赞' : '点赞' }}
 				isDisabled={!loggedIn}
-				className={shown.reacted ? 'text-accent' : 'text-ink-weak'}
+				className={`${shown.count > 0 ? 'px-2' : 'button--icon-only'} ${shown.reacted ? 'text-accent' : 'text-ink-weak'}`}
 				onPress={() =>
 					fetcher.submit(
 						{ postId: post.id, on: !shown.reacted },
@@ -55,7 +56,7 @@ export function ReactionsFooter({ post }: { post: PostDto }) {
 				}
 			>
 				<ThumbsUp aria-hidden fill={shown.reacted ? 'currentColor' : 'none'} />
-				<span className="tabular-nums">{shown.count > 0 ? shown.count : '赞'}</span>
+				{shown.count > 0 && <span className="tabular-nums">{shown.count}</span>}
 			</Button>
 			{error !== undefined && (
 				<span role="alert" className="text-danger text-meta">

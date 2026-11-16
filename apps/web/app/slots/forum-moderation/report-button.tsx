@@ -1,11 +1,11 @@
 import type { PostDto } from '@pluxum/domain'
 import { Modal } from '@heroui/react'
-import { Check, Flag } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useFetcher, useRouteLoaderData } from 'react-router'
 
-import { Button, IconButton } from '../../components/ui/button'
-import { FormError, Tag } from '../../components/ui/display'
+import { Button } from '../../components/ui/button'
+import { FormError } from '../../components/ui/display'
+import type { SlotProps } from '../slots'
 import type { loader as rootLoader } from '../../root'
 import type { ExtActionResult } from '../../routes/ext-action'
 
@@ -19,16 +19,15 @@ const PRESET_REASONS = [
 	'恶意灌水或偏离主题',
 ] as const
 
-/** `post.actions`: compact report button and dialog for signed-in members. */
-export function ReportButton({ post }: { post: PostDto }) {
+/** `post.actions`: a "举报" item in the post's menu for signed-in members, and its dialog. */
+export function ReportAction({ post, setMenuItems }: SlotProps['post.actions']) {
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
 	const fetcher = useFetcher<ExtActionResult>()
 	const [open, setOpen] = useState(false)
 	const [reason, setReason] = useState('')
 	const [acknowledgedData, setAcknowledgedData] = useState<ExtActionResult | undefined>(undefined)
 
-	if (!viewer?.user || post.deleted) return null
-
+	const available = viewer?.user != null && !post.deleted
 	const submitting = fetcher.state !== 'idle'
 	const succeeded = fetcher.state === 'idle' && fetcher.data?.ok === true
 	const isOpen = open && !(succeeded && fetcher.data !== acknowledgedData)
@@ -37,29 +36,27 @@ export function ReportButton({ post }: { post: PostDto }) {
 			? fetcher.data.error
 			: undefined
 
-	if (succeeded) {
-		return (
-			<Tag tone="neutral" icon={Check}>
-				已举报
-			</Tag>
-		)
-	}
+	const latestData = fetcher.data
+	const openDialog = useCallback(() => {
+		setAcknowledgedData(latestData)
+		setOpen(true)
+	}, [latestData])
+	useEffect(() => {
+		if (!available) {
+			setMenuItems([])
+			return
+		}
+		setMenuItems([
+			succeeded
+				? { id: 'report', label: '已举报', disabled: true, onAction: () => undefined }
+				: { id: 'report', label: '举报', onAction: openDialog },
+		])
+	}, [available, succeeded, openDialog, setMenuItems])
+
+	if (!available) return null
 
 	return (
 		<>
-			<IconButton
-				label="举报"
-				tone="ghost"
-				size="sm"
-				className="text-ink-weak hover:text-ink-strong"
-				onPress={() => {
-					setAcknowledgedData(fetcher.data)
-					setOpen(true)
-				}}
-			>
-				<Flag aria-hidden />
-			</IconButton>
-
 			<Modal
 				isOpen={isOpen}
 				onOpenChange={(nextOpen) => {

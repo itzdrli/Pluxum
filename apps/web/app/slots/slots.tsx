@@ -1,12 +1,13 @@
 import type { MetaDto, PostDto, ThreadDto, UiSlot, UserProfileDto } from '@pluxum/domain'
-import type { ComponentType } from 'react'
+import { useCallback, useState, type ComponentType, type ReactNode } from 'react'
 import { useRouteLoaderData } from 'react-router'
 
+import type { MenuItem } from '../components/ui/overlay'
 import type { loader as rootLoader } from '../root'
 import { AttachmentsFooter } from './forum-attachments/attachments'
 import { AvatarEditor } from './forum-attachments/avatar'
 import { UploadButton } from './forum-attachments/upload'
-import { ReportButton } from './forum-moderation/report-button'
+import { ReportAction } from './forum-moderation/report-button'
 import { UserBanTab } from './forum-moderation/user-ban-tab'
 import { NotificationBell } from './forum-notifications/bell'
 import { ReactionsFooter } from './forum-reactions/reactions'
@@ -19,7 +20,12 @@ export type InsertAttachment = (
 /** What each slot hands the components mounted in it. */
 export type SlotProps = {
 	'post.footer': { post: PostDto }
-	'post.actions': { post: PostDto }
+	/**
+	 * Actions on a post live in its "…" menu, so an extension does not draw a button: it hands its
+	 * menu items to `setMenuItems` (from an effect) and renders only what those items open, such
+	 * as a dialog, or nothing.
+	 */
+	'post.actions': { post: PostDto; setMenuItems: (items: readonly MenuItem[]) => void }
 	'thread.sidebar': { thread: ThreadDto }
 	'composer.toolbar': { insert: InsertAttachment }
 	'user.profile.tabs': { profile: UserProfileDto }
@@ -46,7 +52,7 @@ const EXTENSIONS: Readonly<Record<string, SlotComponents>> = {
 		'shell.actions': NotificationBell,
 	},
 	'forum-moderation': {
-		'post.actions': ReportButton,
+		'post.actions': ReportAction,
 		'user.profile.tabs': UserBanTab,
 	},
 }
@@ -64,11 +70,44 @@ function useFilled<S extends MountedSlot>(
 	})
 }
 
-export type PostSlot = Extract<MountedSlot, 'post.footer' | 'post.actions'>
+/** Renders what running extensions put under a post; nothing when there is none. */
+export function PostFooterSlots({ post }: { post: PostDto }) {
+	return useFilled('post.footer').map(([extId, Component]) => <Component key={extId} post={post} />)
+}
 
-/** Renders what running extensions contribute to a slot of a post; nothing when there is none. */
-export function PostSlots({ slot, post }: { slot: PostSlot; post: PostDto }) {
-	return useFilled(slot).map(([extId, Component]) => <Component key={extId} post={post} />)
+/**
+ * The menu items running extensions add to a post's "…" menu, in `/meta` order, and the element
+ * that mounts them (their dialogs). Render `slots` once inside the post.
+ */
+export function usePostMenuSlots(post: PostDto): { items: MenuItem[]; slots: ReactNode } {
+	const filled = useFilled('post.actions')
+	const [byExt, setByExt] = useState<Readonly<Record<string, readonly MenuItem[]>>>({})
+	const setterFor = useCallback(
+		(extId: string) => (items: readonly MenuItem[]) =>
+			setByExt((current) => (current[extId] === items ? current : { ...current, [extId]: items })),
+		[],
+	)
+	const items = filled.flatMap(([extId]) => byExt[extId] ?? [])
+	const slots = filled.map(([extId, Component]) => (
+		<SetterBound key={extId} extId={extId} setterFor={setterFor}>
+			{(setMenuItems) => <Component post={post} setMenuItems={setMenuItems} />}
+		</SetterBound>
+	))
+	return { items, slots }
+}
+
+/** Keeps one extension's setter stable across renders, so its effect does not loop. */
+function SetterBound({
+	extId,
+	setterFor,
+	children,
+}: {
+	extId: string
+	setterFor: (extId: string) => (items: readonly MenuItem[]) => void
+	children: (setMenuItems: (items: readonly MenuItem[]) => void) => ReactNode
+}) {
+	const [setMenuItems] = useState(() => setterFor(extId))
+	return children(setMenuItems)
 }
 
 /** Buttons running extensions add to the composer's toolbar. */

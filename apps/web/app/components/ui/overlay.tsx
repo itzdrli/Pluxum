@@ -11,6 +11,8 @@ export type MenuItem = Readonly<{
 	label: string
 	icon?: LucideIcon
 	danger?: boolean
+	/** Shown greyed out, e.g. an action already taken ("已举报"). */
+	disabled?: boolean
 	onAction: () => void
 }>
 
@@ -39,6 +41,7 @@ export function ActionMenu({
 			<Dropdown.Popover placement="bottom end" className="min-w-36">
 				<Dropdown.Menu
 					onAction={(key) => items.find((item) => item.id === key)?.onAction()}
+					disabledKeys={items.filter((item) => item.disabled === true).map((item) => item.id)}
 					aria-label={label}
 				>
 					{items.map((item) => (

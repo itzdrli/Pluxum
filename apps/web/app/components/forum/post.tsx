@@ -3,7 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Form, Link, useActionData, useNavigation } from 'react-router'
 
-import { PostSlots } from '../../slots/slots'
+import { PostFooterSlots, usePostMenuSlots } from '../../slots/slots'
 import { Composer } from '../composer/composer'
 import { Button } from '../ui/button'
 import { FormError, Tag, Timestamp } from '../ui/display'
@@ -36,7 +36,23 @@ export function PostCard({
 	const setEditing = (open: boolean) => setEditingFrom(open ? post.editedAt : undefined)
 	const [confirming, setConfirming] = useState(false)
 	const lightbox = useLightbox()
-	const items: MenuItem[] = []
+	const [copied, setCopied] = useState(false)
+	const ext = usePostMenuSlots(post)
+	// Order: share, then what extensions add (report), then the author's own edit and delete.
+	const items: MenuItem[] = [
+		{
+			id: 'copy-link',
+			label: '复制本楼链接',
+			onAction: () => {
+				const url = new URL(window.location.href)
+				url.hash = `post-${post.number}`
+				void navigator.clipboard?.writeText(url.toString())
+				setCopied(true)
+				window.setTimeout(() => setCopied(false), 2000)
+			},
+		},
+		...ext.items,
+	]
 	if (!post.deleted && post.can.edit) {
 		items.push({ id: 'edit', label: '编辑', icon: Pencil, onAction: () => setEditing(true) })
 	}
@@ -52,7 +68,8 @@ export function PostCard({
 	return (
 		<li
 			id={`post-${post.number}`}
-			className={`border-line bg-panel group scroll-mt-16 rounded-[2px] border${!opening && !editing ? ' post-card-cv' : ''}`}
+			// Phones: an edge-to-edge list divided by lines; wide screens: one panel per post.
+			className={`border-line bg-panel group scroll-mt-16 border-b lg:rounded-[2px] lg:border${!opening && !editing ? ' post-card-cv' : ''}`}
 			// Images in the body and the attachment strip open in the viewer, all of this post's in turn.
 			onClick={(event) => {
 				const found = lightbox ? imagesForClick(event, event.currentTarget) : null
@@ -62,36 +79,38 @@ export function PostCard({
 				}
 			}}
 		>
-			<div className="flex items-center gap-2.5 px-4 pt-3">
+			<div className="flex items-center gap-2.5 pt-3 pr-2 pl-4">
 				<Link to={`/u/${post.author.handle}`} tabIndex={-1} aria-hidden>
 					<UserAvatar user={post.author} />
 				</Link>
-				<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
-					<Link
-						to={`/u/${post.author.handle}`}
-						className="text-ink-strong truncate font-bold hover:underline"
-					>
-						{post.author.displayName}
-					</Link>
-					{byThreadAuthor && <Tag>楼主</Tag>}
-					<span className="text-ink-weak flex items-center gap-1.5 text-meta">
+				<div className="min-w-0 flex-1">
+					<div className="flex min-w-0 items-center gap-2">
+						<Link
+							to={`/u/${post.author.handle}`}
+							className="text-ink-strong truncate font-bold hover:underline"
+						>
+							{post.author.displayName}
+						</Link>
+						{byThreadAuthor && <Tag>楼主</Tag>}
+					</div>
+					<div className="text-ink-weak flex items-center gap-1.5 text-meta">
 						<Timestamp iso={post.createdAt} />
 						{post.editedAt !== null && !post.deleted && (
 							<span title={`编辑于 ${post.editedAt}`}>· 已编辑</span>
 						)}
-					</span>
+						<span aria-hidden>·</span>
+						<a
+							href={`#post-${post.number}`}
+							className="hover:text-ink-strong tabular-nums"
+							aria-label={`第 ${number} 楼的链接`}
+						>
+							#{number}
+						</a>
+						{copied && <span role="status">· 已复制链接</span>}
+					</div>
 				</div>
-				<div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-60 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
-					<a
-						href={`#post-${post.number}`}
-						className="text-ink-weak hover:text-ink-strong px-1 text-meta tabular-nums"
-						aria-label={`第 ${number} 楼的链接`}
-					>
-						#{number}
-					</a>
-					{!post.deleted && <PostSlots slot="post.actions" post={post} />}
-					<ActionMenu label={`第 ${number} 楼的操作`} items={items} />
-				</div>
+				<ActionMenu label={`第 ${number} 楼的操作`} items={items} />
+				{ext.slots}
 			</div>
 			{post.deleted ? (
 				<p className="text-ink-weak px-4 pt-2 pb-4 italic">这条回复已被删除。</p>
@@ -104,7 +123,7 @@ export function PostCard({
 					dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
 				/>
 			)}
-			{!post.deleted && !editing && <PostSlots slot="post.footer" post={post} />}
+			{!post.deleted && !editing && <PostFooterSlots post={post} />}
 			<ConfirmDialog
 				isOpen={confirming}
 				onOpenChange={setConfirming}
@@ -148,10 +167,10 @@ function EditPost({
 				autoFocus
 			/>
 			<div className="flex justify-end gap-2">
-				<Button tone="ghost" size="sm" onPress={onDone}>
+				<Button tone="ghost" onPress={onDone}>
 					取消
 				</Button>
-				<Button tone="primary" size="sm" type="submit" isPending={submitting}>
+				<Button tone="primary" type="submit" isPending={submitting}>
 					保存
 				</Button>
 			</div>

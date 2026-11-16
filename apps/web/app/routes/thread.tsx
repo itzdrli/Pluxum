@@ -1,17 +1,4 @@
-import {
-	Check,
-	Link2,
-	Lock,
-	LockOpen,
-	LogIn,
-	MessageSquare,
-	Pencil,
-	Pin,
-	PinOff,
-	Send,
-	Trash2,
-	X,
-} from 'lucide-react'
+import { Lock, MessageSquare, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
 	data,
@@ -29,9 +16,17 @@ import { Composer } from '../components/composer/composer'
 import { PostCard } from '../components/forum/post'
 import { ThreadFlags } from '../components/forum/rows'
 import { MobileThreadBar } from '../components/shell/mobile-stage-bar'
-import { useStage, useStageNavigate } from '../components/stage/stage'
+import { StageLink, useStage, useStageNavigate } from '../components/stage/stage'
 import { Button, ButtonAnchor, ButtonLink } from '../components/ui/button'
-import { Crumbs, EmptyState, FormError, Notice, PageHeader, Panel } from '../components/ui/display'
+import {
+	Crumbs,
+	EmptyState,
+	FormError,
+	Notice,
+	PageHeader,
+	Panel,
+	Tag,
+} from '../components/ui/display'
 import { TextInputField } from '../components/ui/field'
 import { ActionMenu, ConfirmDialog, type MenuItem } from '../components/ui/overlay'
 import { Pager } from '../components/ui/pager'
@@ -203,9 +198,21 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 		return () => window.removeEventListener('keydown', onKeyDown)
 	}, [closeHref, confirmingDelete, navigate, renaming])
 
-	const menu: MenuItem[] = []
+	const menu: MenuItem[] = [
+		{
+			id: 'copy-link',
+			label: '复制短链',
+			onAction: () => {
+				void navigator.clipboard?.writeText(`${window.location.origin}/t/${thread.ref}`)
+				setCopiedFor(thread.ref)
+				window.setTimeout(() => {
+					setCopiedFor((current) => (current === thread.ref ? undefined : current))
+				}, 2000)
+			},
+		},
+	]
 	if (can.edit) {
-		menu.push({ id: 'rename', label: '修改标题', icon: Pencil, onAction: () => setRenaming(true) })
+		menu.push({ id: 'rename', label: '修改标题', onAction: () => setRenaming(true) })
 	}
 	if (can.moderate) {
 		menu.push(
@@ -213,26 +220,22 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 				? {
 						id: 'unpin',
 						label: '取消置顶',
-						icon: PinOff,
 						onAction: () => submit({ intent: 'unpin' }, { method: 'post' }),
 					}
 				: {
 						id: 'pin',
 						label: '置顶',
-						icon: Pin,
 						onAction: () => submit({ intent: 'pin' }, { method: 'post' }),
 					},
 			thread.locked
 				? {
 						id: 'unlock',
 						label: '解除锁定',
-						icon: LockOpen,
 						onAction: () => submit({ intent: 'unlock' }, { method: 'post' }),
 					}
 				: {
 						id: 'lock',
 						label: '锁定',
-						icon: Lock,
 						onAction: () => submit({ intent: 'lock' }, { method: 'post' }),
 					},
 		)
@@ -255,13 +258,16 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 
 	const mainContent = (
 		<>
-			<Crumbs
-				items={[
-					{ label: '版块', to: '/' },
-					{ label: category.name, to: `/c/${category.slug}` },
-					{ label: thread.title },
-				]}
-			/>
+			{/* Phones go back through the bottom bar, so the breadcrumb is for wide screens. */}
+			<div className="max-lg:hidden">
+				<Crumbs
+					items={[
+						{ label: '版块', to: '/' },
+						{ label: category.name, to: `/c/${category.slug}` },
+						{ label: thread.title },
+					]}
+				/>
+			</div>
 			{renaming ? (
 				<RenameThread
 					title={thread.title}
@@ -274,43 +280,39 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 					title={thread.title}
 					meta={
 						<>
+							<StageLink
+								to={`/c/${category.slug}`}
+								prefetch="intent"
+								className="hover:text-ink-strong lg:hidden"
+							>
+								{category.name}
+							</StageLink>
 							<ThreadFlags thread={thread} />
 							<span className="flex items-center gap-1 tabular-nums">
 								<MessageSquare aria-hidden size={12} />
 								{thread.replyCount} 回复
 							</span>
+							{copied && (
+								<span role="status">
+									<Tag tone="accent">已复制短链</Tag>
+								</span>
+							)}
 						</>
 					}
 					actions={
-						<>
-							<Button
-								tone="ghost"
-								size="sm"
-								aria-label={copied ? '已复制短链' : '复制主题短链'}
-								className="button--icon-only"
-								onPress={() => {
-									const url = `${window.location.origin}/t/${thread.ref}`
-									void navigator.clipboard?.writeText(url)
-									setCopiedFor(thread.ref)
-									window.setTimeout(() => {
-										setCopiedFor((current) => (current === thread.ref ? undefined : current))
-									}, 2000)
-								}}
-							>
-								{copied ? <Check aria-hidden /> : <Link2 aria-hidden />}
-							</Button>
-							{menu.length > 0 && <ActionMenu label="主题操作" items={menu} size="md" />}
+						// Phones reach these through the bottom bar's menu.
+						<div className="flex items-center gap-1 max-lg:hidden">
+							<ActionMenu label="主题操作" items={menu} size="md" />
 							<ButtonLink
 								to={closeHref}
 								tone="ghost"
-								size="sm"
 								aria-label="关闭主题"
 								title="关闭主题"
 								className="button--icon-only"
 							>
 								<X aria-hidden />
 							</ButtonLink>
-						</>
+						</div>
 					}
 				/>
 			)}
@@ -318,7 +320,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			{posts.items.length === 0 ? (
 				<EmptyState icon={MessageSquare} title="这一页没有内容" />
 			) : (
-				<ol className="mt-4 flex flex-col gap-3">
+				<ol className="border-line mt-4 flex flex-col gap-3 max-lg:-mx-4 max-lg:gap-0 max-lg:border-t">
 					{posts.items.map((post, index) => (
 						<PostCard
 							key={post.id}
@@ -402,10 +404,10 @@ function RenameThread({
 				autoFocus
 			/>
 			<div className="flex justify-end gap-2">
-				<Button tone="ghost" size="sm" onPress={onCancel}>
+				<Button tone="ghost" onPress={onCancel}>
 					取消
 				</Button>
-				<Button tone="primary" size="sm" type="submit" isPending={submitting}>
+				<Button tone="primary" type="submit" isPending={submitting}>
 					保存标题
 				</Button>
 			</div>
@@ -430,17 +432,16 @@ function ReplyArea({
 	if (!canReply) {
 		if (locked) {
 			return (
-				<Notice icon={Lock} className="mt-6">
+				<Notice icon={Lock} className="mt-6 max-lg:hidden">
 					主题已锁定，不能再回复。
 				</Notice>
 			)
 		}
 		return (
-			<Panel className="mt-6 flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+			<Panel className="mt-6 flex flex-wrap items-center justify-between gap-3 px-4 py-3 max-lg:hidden">
 				<span className="text-ink">登录后参与讨论。</span>
 				{loginHref !== undefined && (
-					<ButtonAnchor href={loginHref} tone="primary" size="sm">
-						<LogIn aria-hidden />
+					<ButtonAnchor href={loginHref} tone="primary">
 						登录
 					</ButtonAnchor>
 				)}
@@ -468,7 +469,6 @@ function ReplyArea({
 				/>
 				<div className="flex justify-end">
 					<Button type="submit" tone="primary" isPending={submitting}>
-						<Send aria-hidden />
 						发表回复
 					</Button>
 				</div>
