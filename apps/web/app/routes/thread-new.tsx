@@ -45,7 +45,6 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 					items={[
 						{ label: '版块', to: '/' },
 						{ label: category.name, to: `/c/${category.slug}` },
-						{ label: '发布主题' },
 					]}
 				/>
 			</div>

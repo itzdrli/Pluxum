@@ -95,7 +95,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 						<>
 							{/* Phones have the way back and the post button in the bottom bar. */}
 							<div className="max-lg:hidden">
-								<Crumbs items={[{ label: '版块', to: '/' }, { label: category.name }]} />
+								<Crumbs items={[{ label: '版块', to: '/' }]} />
 							</div>
 							<PageHeader
 								title={category.name}
