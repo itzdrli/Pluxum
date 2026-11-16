@@ -25,6 +25,7 @@ import {
 	type CategoryDto,
 	type CategorySummaryDto,
 	type CommunityDto,
+	type PaletteCommandDto,
 	type CategoryThreadsDto,
 	type ForumAction,
 	type ForumError,
@@ -83,6 +84,7 @@ import {
 import { ForumAdminTarget } from './admin-target'
 import { ForumCoreConfig } from './config'
 import { FooterLinkRegistry, type FooterLinkContribution } from './footer'
+import { PaletteCommandRegistry, type PaletteCommandContribution } from './palette'
 import { ForumCoreWorkbench } from './workbench'
 import { NotificationChannelRegistry, type NotificationChannelContribution } from './notifications'
 import { PolicyRegistry, type PermissionPolicyContribution } from './policies'
@@ -120,6 +122,7 @@ export type UserListDto = Readonly<{
 	pageSize: number
 }>
 export type { FooterLinkContribution } from './footer'
+export type { PaletteCommandContribution, PaletteCommandInput } from './palette'
 export type {
 	EntityExtensionContribution,
 	ExtendableEntity,
@@ -288,6 +291,7 @@ export class ForumCorePlugin extends BasePlugin {
 	private readonly entityExtensions = new EntityExtensionRegistry()
 	private readonly uiSlotContributions = new UiSlotRegistry()
 	private readonly footerLinks = new FooterLinkRegistry()
+	private readonly paletteCommands = new PaletteCommandRegistry()
 	private readonly postHooks = new PostHookRegistry()
 	private readonly notificationChannels = new NotificationChannelRegistry()
 	private readonly searchProviders = new SearchProviderRegistry()
@@ -395,6 +399,21 @@ export class ForumCorePlugin extends BasePlugin {
 	 */
 	registerFooterLinks(contribution: FooterLinkContribution): () => void {
 		return this.footerLinks.register(contribution)
+	}
+
+	/**
+	 * Puts commands in the command palette while the contributor runs: places to go, as plain
+	 * data, so the plugin needs no frontend code. The returned disposer must be handed to the
+	 * contributor's `ctx.effects`. Throws on an invalid or duplicate ID, an unsafe href (only
+	 * forum paths and http(s) URLs), an unknown role or an over-long text.
+	 */
+	registerPaletteCommands(contribution: PaletteCommandContribution): () => void {
+		return this.paletteCommands.register(contribution)
+	}
+
+	/** The palette commands running plugins offer the principal. */
+	paletteCommandsFor(principal: Principal): PaletteCommandDto[] {
+		return this.paletteCommands.list(principal)
 	}
 
 	/** The site's name and blurbs from config. */

@@ -151,6 +151,20 @@ export class ForumNotificationsPlugin extends BasePlugin {
 		this.configs.onUpdate(this.config, () => {})
 
 		this.ctx.effects.defer(
+			this.core.registerPaletteCommands({
+				id: 'forum-notifications',
+				commands: [
+					{
+						id: 'inbox',
+						label: '通知',
+						keywords: ['消息', 'inbox'],
+						href: '/notifications',
+						minRole: 'member',
+					},
+				],
+			}),
+		)
+		this.ctx.effects.defer(
 			this.core.registerNotificationChannel({
 				id: INBOX_CHANNEL_ID,
 				deliver: (notification) => this.persistNotification(notification),

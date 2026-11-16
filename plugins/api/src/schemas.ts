@@ -204,6 +204,17 @@ export const paging = t.Object({
 	pageSize: t.Optional(t.String({ maxLength: 10 })),
 })
 
+export const paletteCommands = t.Array(
+	t.Object({
+		id: t.String(),
+		label: t.String(),
+		group: t.String(),
+		keywords: t.Array(t.String()),
+		href: t.String(),
+		external: t.Boolean(),
+	}),
+)
+
 export const community = t.Object({
 	members: t.Number(),
 	newMembers: t.Array(user),

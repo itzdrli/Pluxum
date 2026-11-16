@@ -9,6 +9,19 @@ export type UserDto = Readonly<{
 	ext?: ExtensionData
 }>
 
+/** One entry of the command palette that a running plugin offers. */
+export type PaletteCommandDto = Readonly<{
+	/** `<contributor>.<command>`, unique. */
+	id: string
+	label: string
+	group: string
+	keywords: string[]
+	/** A forum path or an http(s) URL. */
+	href: string
+	/** Whether `href` leaves the forum. */
+	external: boolean
+}>
+
 /** Who is around: the overview's community panel. */
 export type CommunityDto = Readonly<{
 	members: number

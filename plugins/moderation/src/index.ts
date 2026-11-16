@@ -246,6 +246,20 @@ export class ForumModerationPlugin extends BasePlugin {
 		this.ctx.effects.defer(() => {
 			this.activeBans.clear()
 		})
+		this.ctx.effects.defer(
+			this.core.registerPaletteCommands({
+				id: 'forum-moderation',
+				commands: [
+					{
+						id: 'queue',
+						label: '审核队列',
+						keywords: ['举报', '版主', 'moderation'],
+						href: '/moderation',
+						minRole: 'moderator',
+					},
+				],
+			}),
+		)
 
 		this.ctx.effects.defer(
 			this.core.registerPermissionPolicy({

@@ -17,7 +17,7 @@ function subscribe(listener: () => void) {
 	return () => listeners.delete(listener)
 }
 
-function chooseTheme(theme: ThemeId) {
+export function chooseTheme(theme: ThemeId) {
 	// oxlint-disable-next-line unicorn/no-document-cookie -- the theme cookie is meant to be readable and writable here.
 	document.cookie = themeCookie(theme)
 	chosenTheme = theme

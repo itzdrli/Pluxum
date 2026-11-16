@@ -1,10 +1,8 @@
-import { LIMITS, type MetaDto } from '@pluxum/domain'
-import { Search } from 'lucide-react'
-import { useEffect, useRef } from 'react'
-import { Form, Link, useLocation } from 'react-router'
+import type { MetaDto } from '@pluxum/domain'
+import { Link, useLocation } from 'react-router'
 
+import { PaletteTrigger } from '../palette/palette-trigger'
 import { RAIL_WIDTH, StageMotionSync, useStage } from '../stage/stage'
-import { ButtonLink } from '../ui/button'
 import { Notice } from '../ui/display'
 import { ShellSlots } from '../../slots/slots'
 import { siteOf } from '../../lib/site'
@@ -30,10 +28,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 	// Which columns and how tall: every page declares its part through `handle.stage`.
 	const stage = useStage()
 	const isSplitStage = stage.split
-	const isSearchPage = location.pathname === '/search' || location.pathname.startsWith('/search/')
 	const siteName = siteOf({ meta }).name
-	const searchAvailable = meta?.search.available === true
-	const headerQuery = isSearchPage ? (searchParams.get('q') ?? '') : ''
 	const mainClass = isSplitStage
 		? 'flex min-h-0 w-full flex-1 flex-col'
 		: `${CONTENT_WIDTH} flex-1 py-4 lg:py-6`
@@ -69,20 +64,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 						</Link>
 					</div>
 					<div className="ml-auto flex items-center gap-1">
-						{searchAvailable && !isSearchPage && (
-							<>
-								<HeaderSearch query={headerQuery} />
-								<ButtonLink
-									to="/search"
-									tone="ghost"
-									aria-label="搜索"
-									title="搜索"
-									className="button--icon-only md:hidden"
-								>
-									<Search aria-hidden />
-								</ButtonLink>
-							</>
-						)}
+						<PaletteTrigger />
 						<ShellSlots meta={meta} />
 						<UserMenu meta={meta} here={here} />
 					</div>
@@ -107,61 +89,5 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 				)
 			)}
 		</div>
-	)
-}
-
-/** The header's search box on wide screens; `/` focuses it from anywhere outside a field. */
-function HeaderSearch({ query }: { query: string }) {
-	const input = useRef<HTMLInputElement>(null)
-	useEffect(() => {
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key !== '/' || event.defaultPrevented || event.metaKey || event.ctrlKey) return
-			const active = document.activeElement
-			if (
-				active instanceof HTMLElement &&
-				(active.tagName === 'INPUT' ||
-					active.tagName === 'TEXTAREA' ||
-					active.tagName === 'SELECT' ||
-					active.isContentEditable)
-			) {
-				return
-			}
-			event.preventDefault()
-			input.current?.focus()
-		}
-		window.addEventListener('keydown', onKeyDown)
-		return () => window.removeEventListener('keydown', onKeyDown)
-	}, [])
-	return (
-		<Form
-			method="get"
-			action="/search"
-			role="search"
-			className="relative mr-1 flex items-center max-md:hidden"
-		>
-			<Search
-				aria-hidden
-				size={14}
-				className="text-ink-weak pointer-events-none absolute left-2.5"
-			/>
-			<input
-				ref={input}
-				key={query}
-				type="search"
-				name="q"
-				defaultValue={query}
-				maxLength={LIMITS.searchQueryMax}
-				placeholder="搜索"
-				aria-label="搜索论坛"
-				aria-keyshortcuts="/"
-				className="peer border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control w-48 rounded-[2px] border pr-8 pl-8 text-ui outline-none lg:w-64"
-			/>
-			<kbd
-				aria-hidden
-				className="border-line text-ink-weak pointer-events-none absolute right-2 inline-flex h-5 min-w-5 items-center justify-center rounded-[2px] border px-1 font-mono text-micro peer-focus:hidden"
-			>
-				/
-			</kbd>
-		</Form>
 	)
 }

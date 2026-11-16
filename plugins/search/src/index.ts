@@ -113,6 +113,12 @@ export class ForumSearchPlugin extends BasePlugin {
 	protected override async init(signal: AbortSignal): Promise<void> {
 		this.tokenizer = createSearchTokenizer(this.config.customWords)
 		this.database = await this.ctx.require(Database).use(SearchDatabase)
+		this.ctx.effects.defer(
+			this.core.registerPaletteCommands({
+				id: 'forum-search',
+				commands: [{ id: 'page', label: '搜索', keywords: ['查找', 'search'], href: '/search' }],
+			}),
+		)
 
 		// New custom words change how every post is segmented: swap the tokenizer at once, then
 		// re-index in the background so searches keep answering while it runs.

@@ -211,6 +211,9 @@ export class ForumApiPlugin extends BasePlugin {
 						time: new Date().toISOString(),
 					}))
 					.get('/meta', { response: schema.meta }, ({ request }) => this.meta(request))
+					.get('/palette', { response: schema.paletteCommands }, async ({ request }) =>
+						this.core.paletteCommandsFor(await this.viewer(request)),
+					)
 					.get(
 						'/community',
 						{ response: schema.community },
