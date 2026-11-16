@@ -10,6 +10,7 @@ import { UploadButton } from './forum-attachments/upload'
 import { ReportAction } from './forum-moderation/report-button'
 import { UserBanTab } from './forum-moderation/user-ban-tab'
 import { NotificationBell } from './forum-notifications/bell'
+import { OutlineSidebar } from './forum-outline/outline'
 import { MarkThreadRead } from './forum-reads/mark-read'
 import { ReactionsFooter } from './forum-reactions/reactions'
 
@@ -55,6 +56,7 @@ const EXTENSIONS: Readonly<Record<string, SlotComponents>> = {
 		'shell.actions': NotificationBell,
 	},
 	'forum-reads': { 'thread.view': MarkThreadRead },
+	'forum-outline': { 'thread.sidebar': OutlineSidebar },
 	'forum-moderation': {
 		'post.actions': ReportAction,
 		'user.profile.tabs': UserBanTab,

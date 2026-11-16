@@ -10,6 +10,7 @@ import { ForumMarkdownPlugin } from '@pluxum/markdown'
 import { ForumModerationPlugin } from '@pluxum/moderation'
 import { ForumFooterPlugin } from '@pluxum/footer'
 import { ForumNotificationsPlugin } from '@pluxum/notifications'
+import { ForumOutlinePlugin } from '@pluxum/outline'
 import { ForumReactionsPlugin } from '@pluxum/reactions'
 import { ForumReadsPlugin } from '@pluxum/reads'
 import { ForumSearchPlugin } from '@pluxum/search'
@@ -24,6 +25,7 @@ const forumPlugins = [
 	ForumMarkdownPlugin,
 	ForumReactionsPlugin,
 	ForumReadsPlugin,
+	ForumOutlinePlugin,
 	ForumAttachmentsPlugin,
 	ForumNotificationsPlugin,
 	ForumSearchPlugin,

@@ -28,6 +28,7 @@
 		"@pluxum/markdown": "workspace:*",
 		"@pluxum/moderation": "workspace:*",
 		"@pluxum/notifications": "workspace:*",
+		"@pluxum/outline": "workspace:*",
 		"@pluxum/reactions": "workspace:*",
 		"@pluxum/reads": "workspace:*",
 		"@pluxum/redis": "workspace:*",

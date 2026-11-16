@@ -402,9 +402,14 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 
 	if (hasSidebar) {
 		return (
-			<div className="mx-auto grid max-w-[1180px] gap-6 2xl:grid-cols-[minmax(0,1fr)_260px]">
+			// The side column is as wide as what it holds and folds away when its slots draw nothing. It
+			// needs the room of a wide window, or of focus reading, which hides the list.
+			<div className="mx-auto grid max-w-[1180px] 2xl:grid-cols-[minmax(0,1fr)_auto] group-data-[focus=true]/detail:xl:grid-cols-[minmax(0,1fr)_auto]">
 				<div className="min-w-0">{mainContent}</div>
-				<aside aria-label="主题侧栏" className="flex min-w-0 flex-col gap-4">
+				<aside
+					aria-label="主题侧栏"
+					className="hidden w-[240px] min-w-0 flex-col gap-4 self-start empty:hidden! 2xl:ml-6 2xl:flex group-data-[focus=true]/detail:xl:ml-6 group-data-[focus=true]/detail:xl:flex"
+				>
 					<ThreadSidebarSlots thread={thread} />
 				</aside>
 			</div>
