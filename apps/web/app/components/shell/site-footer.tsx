@@ -52,6 +52,64 @@ function FooterAnchor({
 }
 
 /**
+ * The footer folded into the category rail of the split stage (which has no page footer): flat
+ * links, then theme swatches and icon links, then the notes. Pinned to the rail's bottom.
+ */
+export function SiteFooterCompact() {
+	const root = useRouteLoaderData<typeof rootLoader>('root')
+	const { name } = siteOf(root)
+	const { groups, icons, notes, siteLinks: showSiteLinks } = footerOf(root)
+	const links = [
+		...(showSiteLinks && root?.meta?.search.available === true
+			? [{ label: '搜索', href: '/search' }]
+			: []),
+		...groups.flatMap((group) => group.links),
+	]
+	return (
+		<footer className="border-line text-ink-weak text-meta flex shrink-0 flex-col gap-2 border-t px-3 py-3">
+			{links.length > 0 && (
+				<ul className="flex flex-wrap gap-x-3 gap-y-1.5">
+					{links.map((link) => (
+						<li key={`${link.label} ${link.href}`}>
+							<FooterAnchor link={link} className="hover:text-ink-strong hover:underline">
+								{link.label}
+							</FooterAnchor>
+						</li>
+					))}
+				</ul>
+			)}
+			<div className="flex items-center justify-between gap-2">
+				<p className="flex min-w-0 flex-wrap gap-x-3 gap-y-0.5">
+					<span>© {name}</span>
+					{notes.map((note) => (
+						<span key={note}>{note}</span>
+					))}
+				</p>
+				{icons.length > 0 && (
+					<ul className="-my-1.5 -mr-1.5 flex shrink-0 items-center">
+						{icons.map((link) => {
+							const Icon = FOOTER_ICONS[link.icon]
+							return (
+								<li key={link.href}>
+									<FooterAnchor
+										link={link}
+										aria-label={link.label}
+										title={link.label}
+										className="hover:bg-hover hover:text-ink-strong size-control-sm flex items-center justify-center rounded-[2px]"
+									>
+										<Icon size={14} />
+									</FooterAnchor>
+								</li>
+							)
+						})}
+					</ul>
+				)}
+			</div>
+		</footer>
+	)
+}
+
+/**
  * Under every page that scrolls. Its content is Forum Core's site and footer config plus the links
  * running plugins add (both in `/meta`). Top: the brand with its tagline on the left, link columns
  * on the right (the optional built-in "站内" column first, then the configured ones). Bottom bar: copyright

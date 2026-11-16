@@ -3,6 +3,7 @@ import { Hash, Plus } from 'lucide-react'
 import { Outlet, useParams, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/forum-stage'
+import { SiteFooterCompact } from '../components/shell/site-footer'
 import { StageLink, useStage } from '../components/stage/stage'
 import { forumApi, orThrow } from '../lib/forum-api.server'
 import { stageShouldRevalidate } from '../lib/revalidate'
@@ -43,6 +44,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 						activeSlug={params.slug}
 						canManageCategories={canManageCategories}
 					/>
+					<SiteFooterCompact />
 				</aside>
 			)}
 			<Outlet />
