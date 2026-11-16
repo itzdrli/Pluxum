@@ -27,7 +27,7 @@ import { ActionMenu, type MenuItem } from '../ui/overlay'
 
 // Every bar shares one view-transition name, so switching bars cross-fades in place.
 const BAR_CLASS =
-	'border-line bg-panel fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] [view-transition-name:stage-bar] lg:hidden'
+	'stage-bar border-line bg-panel fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] [view-transition-name:stage-bar] lg:hidden'
 
 /** Decides whether the mobile floor-jump control scrolls back to top or down to the latest post. */
 export function resolveFloorJumpDirection(scrollY: number): 'top' | 'bottom' {
@@ -94,7 +94,7 @@ export function MobileCategoryBar({
 					type="button"
 					onClick={() => setSwitcherOpen(true)}
 					aria-label="切换版块"
-					className="border-line bg-control text-ink-strong hover:bg-hover active:bg-pressed flex h-8 min-w-0 flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-[2px] border px-2.5 text-ui font-bold"
+					className="border-line bg-control text-ink-strong hover:bg-hover active:bg-pressed flex h-10 min-w-0 flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-[2px] border px-2.5 text-ui font-bold"
 				>
 					<span className="flex min-w-0 items-center gap-1.5">
 						<Hash aria-hidden size={14} className="text-accent shrink-0" />
@@ -266,13 +266,13 @@ export function MobileThreadBar({
 					<button
 						type="button"
 						onClick={() => setReplyOpen(true)}
-						className="border-line bg-page text-ink-weak hover:border-ink-weak hover:text-ink flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-ui"
+						className="border-line bg-page text-ink-weak hover:border-ink-weak hover:text-ink flex h-10 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-ui"
 					>
 						<MessageSquarePlus aria-hidden size={14} className="text-accent shrink-0" />
 						<span className="truncate">写回复…</span>
 					</button>
 				) : locked ? (
-					<span className="text-ink-weak flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 text-meta">
+					<span className="text-ink-weak flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 text-meta">
 						<Lock aria-hidden size={13} className="shrink-0" />
 						<span className="truncate">主题已锁定</span>
 					</span>

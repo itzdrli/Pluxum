@@ -137,5 +137,5 @@ export function StageSplit({
  * only pages that have a bar reserve the room.
  */
 export function MobileBarSpacer() {
-	return <div aria-hidden className="h-[calc(4.25rem+env(safe-area-inset-bottom))] lg:hidden" />
+	return <div aria-hidden className="h-[calc(4.75rem+env(safe-area-inset-bottom))] lg:hidden" />
 }

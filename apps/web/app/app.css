@@ -332,6 +332,14 @@
 	.description {
 		font-size: var(--fs-meta);
 	}
+
+	/* The mobile thumb-zone bar is tapped with a thumb, so its controls get 40px touch targets. */
+	.stage-bar .button {
+		height: 40px;
+	}
+	.stage-bar .button--icon-only {
+		width: 40px;
+	}
 }
 
 @layer utilities {
