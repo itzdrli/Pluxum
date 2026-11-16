@@ -69,7 +69,7 @@ function AccountMenu({
 					aria-label={`账号：${name}`}
 					className="hover:bg-hover active:bg-pressed size-control flex items-center justify-center rounded-[2px] outline-none data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-[var(--c-accent)]"
 				>
-					<UserAvatar user={user} />
+					<UserAvatar user={user} size="lg" />
 				</Dropdown.Trigger>
 				<Dropdown.Popover placement="bottom end" className="min-w-52">
 					<div className="border-line flex items-center gap-2.5 border-b px-3 py-2.5">

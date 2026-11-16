@@ -140,13 +140,13 @@
  *   --h-control      md: bars, forms, main actions     32px, 40px on touch
  *   --h-control-sm   sm: small actions inside content  28px, 36px on touch
  *   --icon           glyph in a control                16px, 18px on touch
- *   --h-bar          top bar                           48px
+ *   --h-bar          top bar                           64px
  */
 :root {
 	--h-control: 32px;
 	--h-control-sm: 28px;
 	--icon: 16px;
-	--h-bar: 48px;
+	--h-bar: 64px;
 }
 @media (pointer: coarse) {
 	:root {

@@ -408,7 +408,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 				<div className="min-w-0">{mainContent}</div>
 				<aside
 					aria-label="主题侧栏"
-					className="hidden w-[240px] min-w-0 flex-col gap-4 self-start empty:hidden! lg:sticky lg:top-6 2xl:ml-6 2xl:flex group-data-[focus=true]/detail:xl:ml-6 group-data-[focus=true]/detail:xl:flex"
+					className="hidden w-[240px] min-w-0 flex-col gap-4 self-start empty:hidden! lg:sticky lg:top-3 2xl:ml-6 2xl:flex group-data-[focus=true]/detail:xl:ml-6 group-data-[focus=true]/detail:xl:flex"
 				>
 					<ThreadSidebarSlots thread={thread} />
 				</aside>

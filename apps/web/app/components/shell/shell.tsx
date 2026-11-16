@@ -47,9 +47,10 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 				{/* Full width. Where the category column shows, the brand cell is as wide as that column and
 				    shares its edge line, so the logo sits over the column's icons and one vertical runs
 				    from the bar down the page. */}
-				<div className="h-bar flex w-full items-center pr-4 lg:pr-6">
+				{/* The bar's controls are a step larger than the page's, and it keeps more air at the edges. */}
+				<div className="h-bar flex w-full items-center pr-5 [--h-control:40px] [--icon:20px] lg:pr-8">
 					<div
-						className={`flex h-full shrink-0 items-center gap-3 pl-4 lg:pl-[14px] ${
+						className={`flex h-full shrink-0 items-center gap-3 pl-5 lg:pl-[22px] ${
 							stage.nav ? `${RAIL_WIDTH} border-line-soft lg:border-r` : ''
 						}`}
 					>
@@ -59,8 +60,8 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 							aria-label={`${siteName} 首页`}
 							className="text-ink-strong flex shrink-0 items-center gap-2 font-bold"
 						>
-							<LogoMark className="size-6 shrink-0" />
-							<span className="text-title max-md:hidden">{siteName}</span>
+							<LogoMark className="size-8 shrink-0" />
+							<span className="text-heading max-md:hidden">{siteName}</span>
 						</Link>
 					</div>
 					<div className="ml-auto flex items-center gap-1">

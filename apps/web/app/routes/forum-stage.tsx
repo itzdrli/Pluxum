@@ -20,7 +20,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 /** A page that fills its pane grows with the window: reading width on laptops, more on big screens. */
 const WIDE_PAGE = 'max-w-[1180px] 2xl:max-w-[1400px] min-[1920px]:max-w-[1600px]'
-const RAIL_ITEM = 'flex items-center gap-3 border-l-2 px-4 h-11 transition-colors'
+const RAIL_ITEM = 'flex items-center gap-3 border-l-2 pr-5 pl-7 h-11 transition-colors'
 const RAIL_ITEM_ACTIVE = 'border-l-accent bg-selected text-ink-strong font-bold'
 const RAIL_ITEM_IDLE = 'text-ink hover:bg-hover hover:text-ink-strong border-l-transparent'
 
@@ -56,7 +56,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 			</aside>
 			{stage.depth === 0 ? (
 				// A page beside the column: one scrolling pane with a reading width.
-				<div className="min-w-0 flex-1 px-4 py-5 lg:overflow-y-auto lg:px-10 lg:pt-6 lg:pb-8">
+				<div className="min-w-0 flex-1 px-4 py-5 lg:overflow-y-auto lg:px-10 lg:pt-3 lg:pb-8">
 					<div className={`mx-auto w-full ${stage.wide ? WIDE_PAGE : 'max-w-[1040px]'}`}>
 						<Outlet />
 					</div>
@@ -92,7 +92,7 @@ function RailLink({
 			>
 				<Icon
 					aria-hidden
-					size={14}
+					size={16}
 					className={active ? 'text-accent shrink-0' : 'text-ink-weak shrink-0'}
 				/>
 				<span className="min-w-0 flex-1 truncate">{label}</span>
@@ -127,7 +127,7 @@ function CategoryNavPanel({
 		)
 	return (
 		<>
-			<ul className="border-line-soft border-b pt-6 pb-2">
+			<ul className="border-line-soft border-b pt-3 pb-2">
 				<RailLink to="/" icon={LayoutGrid} label="概览" active={pathname === '/'} />
 				{meta?.search.available === true && (
 					<RailLink
@@ -178,7 +178,7 @@ function CategoryNavPanel({
 								>
 									<Hash
 										aria-hidden
-										size={14}
+										size={16}
 										className={isActive ? 'text-accent shrink-0' : 'text-ink-weak shrink-0'}
 									/>
 									<span className="min-w-0 flex-1 truncate">{cat.name}</span>
