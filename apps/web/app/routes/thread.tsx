@@ -266,7 +266,6 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 					items={[
 						{ label: '版块', to: '/' },
 						{ label: category.name, to: `/c/${category.slug}` },
-						{ label: thread.title },
 					]}
 				/>
 			</div>
@@ -331,6 +330,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 							byThreadAuthor={post.author.id === thread.author.id}
 							// Posts are oldest first and the opening post cannot be deleted on its own.
 							opening={posts.page === 1 && index === 0}
+							threadTitle={thread.title}
 							bodyMax={forum?.limits.postBodyMax}
 						/>
 					))}

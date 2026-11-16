@@ -3,6 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Form, Link, useActionData, useNavigation } from 'react-router'
 
+import { withoutLeadingTitle } from '../../lib/post-html'
 import { PostFooterSlots, usePostMenuSlots } from '../../slots/slots'
 import { Composer } from '../composer/composer'
 import { Button } from '../ui/button'
@@ -20,6 +21,7 @@ export function PostCard({
 	number,
 	byThreadAuthor,
 	opening,
+	threadTitle,
 	bodyMax,
 }: {
 	post: PostDto
@@ -28,6 +30,8 @@ export function PostCard({
 	byThreadAuthor: boolean
 	/** The opening post goes away only with its thread, so it has no delete of its own. */
 	opening: boolean
+	/** The thread's title: an opening post that starts by repeating it drops that line. */
+	threadTitle: string
 	bodyMax: number | undefined
 }) {
 	// The edit time the editor was opened at. A saved edit comes back with a new one, which closes it.
@@ -120,7 +124,9 @@ export function PostCard({
 				// The forum core has already filtered this HTML against its allowlist.
 				<div
 					className={`post-body px-4 pt-2 pb-4${post.bodyFormat === 'plain' ? ' post-body--plain' : ''}`}
-					dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
+					dangerouslySetInnerHTML={{
+						__html: opening ? withoutLeadingTitle(post.bodyHtml, threadTitle) : post.bodyHtml,
+					}}
 				/>
 			)}
 			{!post.deleted && !editing && <PostFooterSlots post={post} />}

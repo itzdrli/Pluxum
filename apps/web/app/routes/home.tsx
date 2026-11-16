@@ -12,6 +12,7 @@ import {
 
 import type { Route } from './+types/home'
 import { ThreadFlags } from '../components/forum/rows'
+import { UserAvatar } from '../components/forum/user-avatar'
 import { StageLink } from '../components/stage/stage'
 import { Button, IconButton } from '../components/ui/button'
 import {
@@ -20,6 +21,7 @@ import {
 	PageHeader,
 	Panel,
 	SectionLabel,
+	Tag,
 	Timestamp,
 } from '../components/ui/display'
 import { TextInputField } from '../components/ui/field'
@@ -28,7 +30,7 @@ import { defineStage } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
 import { siteOf } from '../lib/site'
 
-export const handle = defineStage({ layer: 'page', wide: true })
+export const handle = defineStage({ layer: 'page', nav: true })
 
 export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
 	const site = siteOf(matches[0].loaderData)
@@ -161,7 +163,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
 				<aside
 					aria-label="最新活跃讨论"
-					className={`min-w-0 lg:sticky lg:top-16 lg:col-span-5 xl:col-span-4${mobileTab === 'recent' ? '' : ' max-lg:hidden'}`}
+					className={`min-w-0 lg:col-span-5 xl:col-span-4${mobileTab === 'recent' ? '' : ' max-lg:hidden'}`}
 				>
 					<div className="max-lg:hidden">
 						<SectionLabel>最新活跃讨论</SectionLabel>
@@ -221,22 +223,31 @@ function CategoryCard({ category }: { category: CategoryDto }) {
 			<StageLink
 				to={`/c/${category.slug}`}
 				prefetch="intent"
-				className="sm:border-line sm:bg-panel hover:bg-hover active:bg-pressed flex w-full flex-col gap-1 px-4 py-3 transition-colors sm:rounded-[2px] sm:border sm:py-3.5"
+				className="sm:border-line sm:bg-panel hover:bg-hover active:bg-pressed flex w-full items-start gap-3 px-4 py-3 transition-colors sm:rounded-[2px] sm:border sm:py-3.5"
 			>
-				<span className="flex items-baseline justify-between gap-3">
+				{/* The name's first character on the control tone: told apart at a glance, no extra hue. */}
+				<span
+					aria-hidden
+					className="bg-control text-ink-strong flex size-9 shrink-0 items-center justify-center rounded-[2px] text-heading font-bold select-none"
+				>
+					{Array.from(category.name)[0] ?? '#'}
+				</span>
+				<span className="flex min-w-0 flex-1 flex-col gap-1">
 					<span className="text-ink-strong min-w-0 truncate text-title font-bold">
 						{category.name}
 					</span>
-					<span className="text-ink-weak shrink-0 text-meta tabular-nums">
+					{category.description !== '' && (
+						<span className="text-ink-weak line-clamp-1 break-words sm:line-clamp-2">
+							{category.description}
+						</span>
+					)}
+					<span className="text-ink-weak flex items-center gap-1 text-meta tabular-nums">
+						<MessagesSquare aria-hidden size={12} />
 						{category.threadCount} 主题
-						<span className="max-sm:hidden"> · {category.postCount} 帖子</span>
+						<span aria-hidden>·</span>
+						{category.postCount} 帖子
 					</span>
 				</span>
-				{category.description !== '' && (
-					<span className="text-ink-weak line-clamp-1 break-words sm:line-clamp-2">
-						{category.description}
-					</span>
-				)}
 			</StageLink>
 		</li>
 	)
@@ -244,26 +255,22 @@ function CategoryCard({ category }: { category: CategoryDto }) {
 
 function RecentThreadItem({ item }: { item: RecentThreadDto }) {
 	return (
-		<li className="hover:bg-hover relative flex flex-col gap-1.5 px-4 py-3 transition-colors">
-			<div className="flex flex-wrap items-center gap-1.5">
-				<StageLink
-					to={`/c/${item.category.slug}`}
-					prefetch="intent"
-					className="bg-control text-ink-weak hover:text-ink-strong relative z-10 inline-flex h-5 shrink-0 items-center rounded-[2px] px-1.5 text-meta leading-none whitespace-nowrap"
-				>
-					{item.category.name}
-				</StageLink>
-				<ThreadFlags thread={item} />
-			</div>
-			<StageLink
-				to={`/c/${item.category.slug}/t/${item.ref}`}
-				prefetch="intent"
-				className="text-ink-strong text-ui font-bold break-words after:absolute after:inset-0"
-			>
-				{item.title}
-			</StageLink>
-			<div className="text-ink-weak flex items-center justify-between gap-2 text-meta">
-				<span className="flex min-w-0 items-center gap-1.5">
+		<li className="hover:bg-hover relative flex items-start gap-3 px-4 py-3 transition-colors">
+			<span className="mt-0.5 shrink-0">
+				<UserAvatar user={item.author} />
+			</span>
+			<div className="flex min-w-0 flex-1 flex-col gap-1">
+				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+					<ThreadFlags thread={item} />
+					<StageLink
+						to={`/c/${item.category.slug}/t/${item.ref}`}
+						prefetch="intent"
+						className="text-ink-strong text-ui font-bold break-words after:absolute after:inset-0"
+					>
+						{item.title}
+					</StageLink>
+				</div>
+				<div className="text-ink-weak flex min-w-0 items-center gap-1.5 text-meta">
 					<StageLink
 						to={`/u/${item.author.handle}`}
 						className="text-ink relative z-10 truncate hover:underline"
@@ -272,11 +279,23 @@ function RecentThreadItem({ item }: { item: RecentThreadDto }) {
 					</StageLink>
 					<span aria-hidden>·</span>
 					<Timestamp iso={item.lastPostAt} />
-				</span>
-				<span className="flex shrink-0 items-center gap-1 tabular-nums">
-					<MessageSquare aria-hidden size={12} />
-					{item.replyCount}
-				</span>
+				</div>
+			</div>
+			{/* Chips: the category (its own link, above the row's) and the reply count. */}
+			<div className="flex shrink-0 flex-col items-end gap-1">
+				<StageLink
+					to={`/c/${item.category.slug}`}
+					prefetch="intent"
+					className="relative z-10 max-w-28"
+				>
+					<Tag>
+						<span className="truncate">{item.category.name}</span>
+					</Tag>
+				</StageLink>
+				<Tag tone={item.replyCount > 0 ? 'accent' : 'neutral'} icon={MessageSquare}>
+					<span className="tabular-nums">{item.replyCount}</span>
+					<span className="sr-only"> 回复</span>
+				</Tag>
 			</div>
 		</li>
 	)

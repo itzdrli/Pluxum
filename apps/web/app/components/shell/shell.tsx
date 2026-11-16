@@ -3,7 +3,7 @@ import { Search } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { Form, Link, NavLink, useLocation } from 'react-router'
 
-import { StageMotionSync, useStage } from '../stage/stage'
+import { RAIL_WIDTH, StageMotionSync, useStage } from '../stage/stage'
 import { ButtonLink } from '../ui/button'
 import { Notice } from '../ui/display'
 import { ShellSlots } from '../../slots/slots'
@@ -42,9 +42,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 	const inForum = location.pathname === '/' || stage.nav || location.pathname.startsWith('/t/')
 	const mainClass = isSplitStage
 		? 'flex min-h-0 w-full flex-1 flex-col'
-		: stage.wide
-			? 'mx-auto w-full max-w-[1520px] flex-1 px-4 py-4 lg:px-6 lg:py-6'
-			: `${CONTENT_WIDTH} flex-1 py-4 lg:py-6`
+		: `${CONTENT_WIDTH} flex-1 py-4 lg:py-6`
 	return (
 		<div
 			className={`flex min-h-screen flex-col${isSplitStage ? ' lg:h-dvh lg:overflow-hidden' : ''}`}
@@ -56,19 +54,28 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 			>
 				跳到正文
 			</a>
-			<header className="border-line bg-panel sticky top-0 z-30 shrink-0 border-b [view-transition-name:site-header]">
-				<div className="h-bar mx-auto flex w-full max-w-[1760px] items-center gap-2 px-4 lg:px-6">
-					<Link
-						to="/"
-						viewTransition
-						aria-label={`${siteName} 首页`}
-						className="text-ink-strong flex shrink-0 items-center gap-2 font-bold"
+			<header className="border-line-soft bg-sunken sticky top-0 z-30 shrink-0 border-b [view-transition-name:site-header]">
+				{/* Full width. Where the category column shows, the brand cell is as wide as that column and
+				    shares its edge line, so the logo sits over the column's icons and one vertical runs
+				    from the bar down the page. */}
+				<div className="h-bar flex w-full items-center pr-4 lg:pr-6">
+					<div
+						className={`flex h-full shrink-0 items-center gap-3 pl-4 lg:pl-[14px] ${
+							stage.nav ? `${RAIL_WIDTH} border-line-soft lg:border-r` : ''
+						}`}
 					>
-						<LogoMark className="size-6 shrink-0" />
-						<span className="text-title max-md:hidden">{siteName}</span>
-					</Link>
+						<Link
+							to="/"
+							viewTransition
+							aria-label={`${siteName} 首页`}
+							className="text-ink-strong flex shrink-0 items-center gap-2 font-bold"
+						>
+							<LogoMark className="size-6 shrink-0" />
+							<span className="text-title max-md:hidden">{siteName}</span>
+						</Link>
+					</div>
 					{/* Phones reach the forum through the logo; the one nav entry is for wide screens. */}
-					<nav aria-label="主导航" className="ml-3 flex items-center gap-1 max-md:hidden">
+					<nav aria-label="主导航" className="flex items-center gap-1 px-3 max-md:hidden">
 						<NavLink to="/" viewTransition className={() => navClass({ isActive: inForum })} end>
 							版块
 						</NavLink>
@@ -101,7 +108,16 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 				)}
 				{children}
 			</main>
-			{!isSplitStage && <SiteFooter />}
+			{!isSplitStage ? (
+				<SiteFooter />
+			) : (
+				// The category column carries the footer on wide screens; a page beside it still needs one on phones.
+				stage.depth === 0 && (
+					<div className="lg:hidden">
+						<SiteFooter />
+					</div>
+				)
+			)}
 		</div>
 	)
 }

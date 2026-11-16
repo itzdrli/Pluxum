@@ -66,7 +66,7 @@ export function SiteFooterCompact() {
 		...groups.flatMap((group) => group.links),
 	]
 	return (
-		<footer className="border-line text-ink-weak text-meta flex shrink-0 flex-col gap-2 border-t px-3 py-3">
+		<footer className="border-line-soft text-ink-weak text-meta flex shrink-0 flex-col gap-2 border-t px-3 py-3">
 			{links.length > 0 && (
 				<ul className="flex flex-wrap gap-x-3 gap-y-1.5">
 					{links.map((link) => (

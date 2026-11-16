@@ -3,7 +3,8 @@
  *
  * A route joins the stage by exporting `handle = defineStage(...)` with one of three layers:
  *
- *   page    a standalone page (home, notifications, moderation). Depth 0.
+ *   page    a standalone page (home, notifications, moderation). Depth 0. A page may ask for the
+ *           category column (`nav`), as the home page does.
  *   list    a list of threads that can open one beside it (category, search, profile). Depth 1.
  *   detail  what a list opens in its detail pane (a thread, the new-thread form). Depth 2.
  *
@@ -24,8 +25,8 @@ export type StageDepth = 0 | 1 | 2
 
 export type StagePageSpec = Readonly<{
 	layer: 'page'
-	/** Uses the wide home column instead of the reading column. */
-	wide?: boolean
+	/** Shows the category column beside the page, so the page is a pane of the same frame. */
+	nav?: boolean
 }>
 
 export type StageListSpec = Readonly<{
@@ -59,8 +60,6 @@ export type ResolvedStage = Readonly<{
 	nav: boolean
 	/** Desktop renders full height with panes that scroll on their own. */
 	split: boolean
-	/** The wide home column (page layer only). */
-	wide: boolean
 	/** The list without any detail: where closing a detail goes. */
 	listHref: string | null
 	/** Pathname of the list, the base for detail links. */
@@ -154,9 +153,8 @@ export function resolveStage(matches: readonly StageMatch[], url: URL): Resolved
 	if (list === undefined) {
 		return {
 			depth: 0,
-			nav: false,
-			split: false,
-			wide: page?.wide === true,
+			nav: page?.nav === true,
+			split: page?.nav === true,
 			listHref: null,
 			listPath: null,
 			backLabel: '返回',
@@ -173,7 +171,6 @@ export function resolveStage(matches: readonly StageMatch[], url: URL): Resolved
 		depth,
 		nav: list.spec.nav === true,
 		split: true,
-		wide: false,
 		listHref: `${listPath}${query}`,
 		listPath,
 		backLabel: list.spec.backLabel,
