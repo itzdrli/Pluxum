@@ -1,6 +1,6 @@
 import { Modal } from '@heroui/react'
 import { ChevronLeft, ChevronRight, Download, X } from 'lucide-react'
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { IconButton } from './button'
 
@@ -86,6 +86,10 @@ function Viewer({
 		window.addEventListener('keydown', onKey)
 		return () => window.removeEventListener('keydown', onKey)
 	}, [state, step])
+	// A horizontal swipe pages too (phones have no side buttons over the picture). The click that
+	// ends a swipe must not count as a click beside the picture, which closes the viewer.
+	const swipe = useRef<{ x: number; y: number } | null>(null)
+	const swiped = useRef(false)
 	return (
 		<Modal isOpen={state !== null} onOpenChange={(open) => !open && onChange(null)}>
 			<Modal.Backdrop variant="blur" className="lightbox-backdrop">
@@ -120,9 +124,28 @@ function Viewer({
 							</IconButton>
 						</div>
 						<div
-							className="relative flex min-h-0 flex-1 items-center justify-center px-2 pb-4 sm:px-14"
+							className="relative flex min-h-0 flex-1 touch-pan-y items-center justify-center px-2 pb-4 sm:px-14"
+							onPointerDown={(event) => {
+								swipe.current = { x: event.clientX, y: event.clientY }
+								swiped.current = false
+							}}
+							onPointerUp={(event) => {
+								const start = swipe.current
+								swipe.current = null
+								if (start === null || count < 2) return
+								const dx = event.clientX - start.x
+								const dy = event.clientY - start.y
+								if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+									swiped.current = true
+									step(dx < 0 ? 1 : -1)
+								}
+							}}
 							// A click beside the picture closes, as on the backdrop.
 							onClick={(event) => {
+								if (swiped.current) {
+									swiped.current = false
+									return
+								}
 								if (event.target === event.currentTarget) onChange(null)
 							}}
 						>
@@ -134,18 +157,19 @@ function Viewer({
 									className="max-h-full max-w-full rounded-[2px] object-contain select-none"
 								/>
 							)}
+							{/* Wide screens: beside the picture, in the side margins it leaves free. */}
 							{count > 1 && (
 								<>
 									<IconButton
 										label="上一张"
-										className="lightbox-control lightbox-nav left-2"
+										className="lightbox-control lightbox-nav left-2 max-sm:hidden"
 										onPress={() => step(-1)}
 									>
 										<ChevronLeft aria-hidden />
 									</IconButton>
 									<IconButton
 										label="下一张"
-										className="lightbox-control lightbox-nav right-2"
+										className="lightbox-control lightbox-nav right-2 max-sm:hidden"
 										onPress={() => step(1)}
 									>
 										<ChevronRight aria-hidden />
@@ -153,6 +177,20 @@ function Viewer({
 								</>
 							)}
 						</div>
+						{/* Phones: a picture fills the width, so the buttons go below it instead of over it. */}
+						{count > 1 && state !== null && (
+							<div className="flex items-center justify-center gap-6 px-3 pt-1 pb-[max(12px,env(safe-area-inset-bottom))] sm:hidden">
+								<IconButton label="上一张" className="lightbox-control" onPress={() => step(-1)}>
+									<ChevronLeft aria-hidden />
+								</IconButton>
+								<span className="min-w-12 text-center text-ui text-white/70 tabular-nums">
+									{state.index + 1} / {count}
+								</span>
+								<IconButton label="下一张" className="lightbox-control" onPress={() => step(1)}>
+									<ChevronRight aria-hidden />
+								</IconButton>
+							</div>
+						)}
 					</Modal.Dialog>
 				</Modal.Container>
 			</Modal.Backdrop>

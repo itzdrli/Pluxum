@@ -306,7 +306,9 @@ export function MobileThreadBar({
 								autoFocus
 								deferRich
 							/>
-							<div className="flex justify-end gap-2">
+							{/* Pinned to the sheet's bottom edge, so a short screen (a phone held sideways) never
+							    scrolls the send button out of reach. */}
+							<div className="border-line-soft bg-panel sticky bottom-0 -mx-4 -mb-3 flex justify-end gap-2 border-t px-4 py-3">
 								<Button tone="ghost" onPress={close}>
 									取消
 								</Button>

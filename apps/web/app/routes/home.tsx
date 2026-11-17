@@ -1,6 +1,6 @@
-import type { CategoryDto, CommunityDto, RecentThreadDto, UserDto } from '@pluxum/domain'
+import type { CategoryDto, CommunityDto, UserDto } from '@pluxum/domain'
 import { Dropdown } from '@heroui/react'
-import { LayoutList, MessageSquare, MessagesSquare, Plus } from 'lucide-react'
+import { LayoutList, MessagesSquare, Plus } from 'lucide-react'
 import { useState } from 'react'
 import {
 	data,
@@ -12,12 +12,12 @@ import {
 } from 'react-router'
 
 import type { Route } from './+types/home'
-import { ThreadFlags, UnreadDot } from '../components/forum/rows'
+import { ThreadRow } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
 import { useDock } from '../components/dock/composer-dock'
 import { StageLink } from '../components/stage/stage'
-import { Button, ButtonAnchor, IconButton } from '../components/ui/button'
-import { EmptyState, FormError, Panel, Tag, Timestamp } from '../components/ui/display'
+import { Button, IconButton } from '../components/ui/button'
+import { EmptyState, FormError, Panel } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
 import { TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
@@ -68,10 +68,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const canManage = root?.meta?.viewer.can.manageCategories === true
 	const signedIn = root?.meta?.viewer.user != null
-	const loginHref =
-		root?.meta?.viewer.user === null && root.meta.auth.loginAvailable
-			? '/api/forum/auth/login?returnTo=%2F'
-			: undefined
 	const [searchParams, setSearchParams] = useSearchParams()
 	const requestedNew = searchParams.get('new') === '1'
 	// Open while creating, via `?new=1`, or when the API rejected the last attempt.
@@ -96,8 +92,9 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 			{/* Phones: two tabs instead of two columns; the page title would only repeat them. */}
 			<div className="border-line -mx-4 flex items-center gap-5 border-b px-4 lg:hidden">
 				<div role="tablist" aria-label="首页内容切换" className="flex items-center gap-5">
+					{/* Not 「最新」: that is also one of the feed's orderings right below. */}
 					<HomeTab selected={mobileTab === 'recent'} onSelect={() => setMobileTab('recent')}>
-						最新
+						动态
 					</HomeTab>
 					<HomeTab
 						selected={mobileTab === 'categories'}
@@ -106,7 +103,8 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 						版块
 					</HomeTab>
 				</div>
-				{canManage && !showForm && (
+				{/* Only beside the categories, so it is never mistaken for 「发布主题」 under the feed tab. */}
+				{canManage && !showForm && mobileTab === 'categories' && (
 					<IconButton
 						label="新建版块"
 						className="ml-auto"
@@ -132,13 +130,13 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
 			{/* Wide screens: one feed; the categories are the column beside it. Phones have no such
 			    column, so the categories are the second tab. */}
-			<div className="sm:max-lg:mt-4 lg:mx-auto lg:max-w-[880px] xl:grid xl:max-w-none xl:grid-cols-[minmax(0,1fr)_280px] xl:items-start xl:gap-6 2xl:grid-cols-[minmax(0,1fr)_320px] 2xl:gap-8">
+			<div className="max-lg:mt-3 lg:mx-auto lg:max-w-[880px] xl:grid xl:max-w-none xl:grid-cols-[minmax(0,1fr)_280px] xl:items-start xl:gap-6 2xl:grid-cols-[minmax(0,1fr)_320px] 2xl:gap-8">
 				<div className="min-w-0">
 					<section
 						aria-label="最新活跃讨论"
 						className={mobileTab === 'recent' ? '' : 'max-lg:hidden'}
 					>
-						{!signedIn && <GuestWelcome root={root} loginHref={loginHref} />}
+						{!signedIn && <GuestWelcome root={root} />}
 						<div className="mb-5 flex items-center justify-between gap-3">
 							<SortTabs sort={sort} />
 							<div className="flex items-center gap-3">
@@ -155,14 +153,23 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 								hint="版块内发布的主题与最新回复会在这里实时汇总。"
 							/>
 						) : (
-							<Panel
-								as="ul"
-								className="divide-line divide-y max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0"
-							>
-								{recentThreads.items.map((item) => (
-									<RecentThreadItem key={item.id} item={item} sort={sort} />
-								))}
-							</Panel>
+							// The same rows as a category's list; the overview's mix of categories shows each row's.
+							<div className="@container/threads">
+								<Panel
+									as="ul"
+									className="divide-line divide-y max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0"
+								>
+									{recentThreads.items.map((item) => (
+										<ThreadRow
+											key={item.id}
+											thread={item}
+											href={`/c/${item.category.slug}/t/${item.ref}`}
+											category={item.category}
+											narrowTime={sort === 'new' ? 'created' : 'last'}
+										/>
+									))}
+								</Panel>
+							</div>
 						)}
 						<Pager
 							page={recentThreads.page}
@@ -290,7 +297,7 @@ function SortTabs({ sort }: { sort: HomeSort }) {
 					to={item.id === 'active' ? '/' : `/?sort=${item.id}`}
 					replace
 					aria-current={item.id === sort ? 'page' : undefined}
-					className={`-mb-px inline-flex h-11 items-center border-b-2 text-ui transition-colors ${
+					className={`h-control -mb-px inline-flex items-center border-b-2 text-ui transition-colors max-lg:-mx-1 max-lg:px-1 lg:h-11 ${
 						item.id === sort
 							? 'border-accent text-ink-strong font-bold'
 							: 'text-ink-weak hover:text-ink-strong border-transparent'
@@ -332,27 +339,21 @@ function NewThreadMenu({ categories }: { categories: readonly CategoryDto[] }) {
 	)
 }
 
-/** What a visitor who has not signed in sees first: the site's one-line pitch and the way in. */
+/**
+ * What a visitor who has not signed in sees first: the site's one-line pitch. The way in is the
+ * top bar's 「登录」, so the card carries no second login button.
+ */
 function GuestWelcome({
 	root,
-	loginHref,
 }: {
 	root: ReturnType<typeof useRouteLoaderData<typeof rootLoader>>
-	loginHref: string | undefined
 }) {
 	const site = siteOf(root)
-	if (site.tagline === '' && loginHref === undefined) return null
+	if (site.tagline === '') return null
 	return (
-		<Panel as="section" className="mb-4 flex items-center justify-between gap-4 p-4">
-			<div className="min-w-0">
-				<p className="text-ink-strong text-title font-bold">欢迎来到 {site.name}</p>
-				{site.tagline !== '' && <p className="text-ink-weak mt-0.5 break-words">{site.tagline}</p>}
-			</div>
-			{loginHref !== undefined && (
-				<ButtonAnchor href={loginHref} tone="primary" className="shrink-0">
-					登录
-				</ButtonAnchor>
-			)}
+		<Panel as="section" className="mb-4 p-4">
+			<p className="text-ink-strong text-title font-bold">欢迎来到 {site.name}</p>
+			<p className="text-ink-weak mt-0.5 break-words">{site.tagline}</p>
 		</Panel>
 	)
 }
@@ -372,7 +373,7 @@ function HomeTab({
 			role="tab"
 			aria-selected={selected}
 			onClick={onSelect}
-			className={`h-control -mb-px cursor-pointer border-b-2 text-ui transition-colors ${
+			className={`h-control -mx-1 -mb-px cursor-pointer border-b-2 px-1 text-ui transition-colors ${
 				selected
 					? 'border-accent text-ink-strong font-bold'
 					: 'text-ink-weak hover:text-ink-strong border-transparent'
@@ -412,56 +413,6 @@ function CategoryItem({ category }: { category: CategoryDto }) {
 					<span className="sr-only"> 主题</span>
 				</span>
 			</StageLink>
-		</li>
-	)
-}
-
-function RecentThreadItem({ item, sort }: { item: RecentThreadDto; sort: HomeSort }) {
-	return (
-		<li className="hover:bg-hover relative flex items-start gap-4 px-5 py-4 transition-colors">
-			<span className="mt-0.5 shrink-0">
-				<UserAvatar user={item.author} />
-			</span>
-			<div className="flex min-w-0 flex-1 flex-col gap-1.5">
-				<div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-					<UnreadDot thread={item} />
-					<ThreadFlags thread={item} />
-					<StageLink
-						to={`/c/${item.category.slug}/t/${item.ref}`}
-						prefetch="intent"
-						className="text-ink-strong text-ui font-bold break-words after:absolute after:inset-0"
-					>
-						{item.title}
-					</StageLink>
-				</div>
-				<div className="text-ink-weak flex min-w-0 items-center gap-2 text-meta">
-					<StageLink
-						to={`/u/${item.author.handle}`}
-						className="text-ink relative z-10 truncate hover:underline"
-					>
-						{item.author.displayName}
-					</StageLink>
-					<span aria-hidden>·</span>
-					{/* The newest sort is about when it started; the others about its latest activity. */}
-					<Timestamp iso={sort === 'new' ? item.createdAt : item.lastPostAt} />
-				</div>
-			</div>
-			{/* Chips: the category (its own link, above the row's) and the reply count. */}
-			<div className="flex shrink-0 flex-col items-end gap-1">
-				<StageLink
-					to={`/c/${item.category.slug}`}
-					prefetch="intent"
-					className="relative z-10 max-w-28"
-				>
-					<Tag>
-						<span className="truncate">{item.category.name}</span>
-					</Tag>
-				</StageLink>
-				<Tag tone={item.replyCount > 0 ? 'accent' : 'neutral'} icon={MessageSquare}>
-					<span className="tabular-nums">{item.replyCount}</span>
-					<span className="sr-only"> 回复</span>
-				</Tag>
-			</div>
 		</li>
 	)
 }

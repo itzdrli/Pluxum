@@ -140,6 +140,27 @@ describe('tokenize & snippet helpers', () => {
 		expect(plain).not.toContain('<div')
 	})
 
+	it('keeps table cells and drops the table syntax', () => {
+		const raw = [
+			'对比如下：',
+			'',
+			'| 方案 | 成本 | 难度 |',
+			'| --- | :-: | ---: |',
+			'| 自建 | 高 | 高 |',
+			'| 托管 | `a|b` | 低 \\| 中 |',
+			'',
+			'表格之后的一段。',
+			'',
+			'不是表格的 a | b 一行',
+		].join('\n')
+
+		const plain = stripMarkup(raw)
+		expect(plain).toBe(
+			'对比如下： 方案 成本 难度 自建 高 高 托管 a|b 低 | 中 表格之后的一段。 不是表格的 a | b 一行',
+		)
+		expect(plain).not.toContain('---')
+	})
+
 	it('uses search-mode segmentation for index recall and precise-mode for queries', () => {
 		const tokenizer = createSearchTokenizer()
 		const indexTokens = tokenizer.tokenizeForIndex('我买了一副乒乓球拍！PostgreSQL 17')

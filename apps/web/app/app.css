@@ -14,6 +14,8 @@
  *   --c-control     control background         --c-text-strong  headings, emphasis
  *   --c-line        borders and dividers       --c-accent       the one accent colour
  *   --c-danger / --c-warning / --c-success     low-saturation status colours
+ *   --c-scrim       the veil behind a modal sheet or dialog: always darker than the page, so the
+ *                   raised layer stands out on light themes too
  *   --c-logo-disc   the brand mark's circle: a quiet control tone on dark themes, the strong
  *                   text tone on light ones, so the mark never sits on the header as a bright patch
  *
@@ -39,6 +41,7 @@
 	--c-success: #a3be8c;
 	--c-shadow: rgb(0 0 0 / 0.35);
 	--c-logo-disc: var(--c-control);
+	--c-scrim: rgb(20 23 30 / 0.6);
 }
 
 /* Dusk: near-black neutral grey with a pale cyan accent. */
@@ -57,6 +60,7 @@
 	--c-success: #9bd0a5;
 	--c-shadow: rgb(0 0 0 / 0.5);
 	--c-logo-disc: var(--c-control);
+	--c-scrim: rgb(0 0 0 / 0.6);
 }
 
 /* Frost: light and cool, cyan accent. */
@@ -75,6 +79,7 @@
 	--c-success: #3e8e4e;
 	--c-shadow: rgb(15 23 42 / 0.14);
 	--c-logo-disc: var(--c-text-strong);
+	--c-scrim: rgb(15 23 42 / 0.32);
 }
 
 /* Sand: warm paper tones, umber accent. */
@@ -93,6 +98,7 @@
 	--c-success: #5c7a43;
 	--c-shadow: rgb(46 37 24 / 0.16);
 	--c-logo-disc: var(--c-text-strong);
+	--c-scrim: rgb(46 37 24 / 0.32);
 }
 
 /* Native controls (scrollbars, pickers) follow the theme. */
@@ -147,6 +153,12 @@
 	--h-control-sm: 28px;
 	--icon: 16px;
 	--h-bar: 64px;
+}
+/* Phones held sideways have little height to spare: a shorter top bar that scrolls away. */
+@media (max-height: 500px) and (pointer: coarse) {
+	:root {
+		--h-bar: 48px;
+	}
 }
 @media (pointer: coarse) {
 	:root {
@@ -216,7 +228,7 @@
 	--separator: var(--c-line);
 	--focus: var(--c-accent);
 	--link: var(--c-accent);
-	--backdrop: color-mix(in srgb, var(--c-page) 70%, transparent);
+	--backdrop: var(--c-scrim);
 	--scrollbar-thumb: color-mix(in srgb, var(--c-text-weak) 35%, transparent);
 	/* Flat: only menus, popovers and dialogs float. */
 	--surface-shadow: none;
@@ -224,6 +236,11 @@
 	--overlay-shadow: var(--c-overlay-shadow);
 	--radius: 2px;
 	--field-radius: 2px;
+	/* HeroUI derives its larger corners from --radius (popovers use 3x, menu items 2x); the forum
+	   has one corner size, so pin them all to it. */
+	--radius-xl: 2px;
+	--radius-2xl: 2px;
+	--radius-3xl: 2px;
 }
 
 @theme inline {
@@ -242,6 +259,7 @@
 	--color-hover: var(--c-hover);
 	--color-pressed: var(--c-pressed);
 	--color-selected: var(--c-selected);
+	--color-scrim: var(--c-scrim);
 	--shadow-overlay: var(--c-overlay-shadow);
 
 	/*
@@ -527,6 +545,10 @@
 		border: 1px solid var(--c-line);
 		padding: 6px 12px;
 		min-width: 4em;
+		/* Phones: a wide table scrolls sideways before its columns shrink to a character or two. */
+		@media (max-width: 767px) {
+			min-width: 7em;
+		}
 		vertical-align: top;
 		text-align: left;
 	}
@@ -614,7 +636,7 @@
 	 * `.post-body` as well, so what is typed looks like the post it becomes.
 	 */
 	.composer {
-		border-radius: 4px;
+		border-radius: 2px;
 		background: var(--c-page);
 		box-shadow: inset 0 0 0 1px transparent;
 		transition: box-shadow 120ms;
@@ -622,15 +644,61 @@
 	.composer:focus-within {
 		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-accent) 70%, transparent);
 	}
+	/*
+	 * The groups are `display: contents`, so the toolbar wraps button by button instead of group by
+	 * group: a narrow box gets full rows instead of a row per group. A group still opens with a wider
+	 * gap, and the last one (undo / redo) stays in one piece at the end of its row.
+	 */
 	.composer-toolbar {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 2px 8px;
+		gap: 2px;
 		padding: 6px 8px 0;
 	}
 	.composer-tool-group {
+		display: contents;
+	}
+	.composer-tool-group + .composer-tool-group > :first-child {
+		margin-left: 6px;
+	}
+	/* Undo / redo stay together, at the end of the last row. */
+	.composer-tool-group--end {
 		display: flex;
 		gap: 2px;
+		margin-left: auto;
+	}
+	.composer-tool-group + .composer-tool-group--end > :first-child {
+		margin-left: 0;
+	}
+
+	/* Phones: fifteen touch-sized buttons need three rows, the last nearly empty; one row that
+	   scrolls sideways keeps the writing area tall instead. */
+	@media (max-width: 767px) {
+		.composer-toolbar {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			padding-bottom: 4px;
+			scrollbar-width: none;
+		}
+		.composer-toolbar button {
+			flex-shrink: 0;
+		}
+	}
+
+	/* A composer told to fill (the dock) grows its writing area into the height it is given. */
+	.composer-fill {
+		flex: 1 1 auto;
+		min-height: 0;
+	}
+	.composer-fill > :has(.composer-editor, textarea),
+	.composer-fill .composer > .relative,
+	.composer-fill .composer > .relative > div {
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: column;
+	}
+	.composer-fill :is(.composer-editor, textarea) {
+		flex: 1 1 auto;
 	}
 	.composer-tool--active {
 		background: var(--c-selected);

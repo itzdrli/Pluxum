@@ -50,6 +50,13 @@ export function ActionMenu({
 							id={item.id}
 							textValue={item.label}
 							variant={item.danger ? 'danger' : 'default'}
+							// The variant alone leaves the text in the menu's colour; a destructive item reads as one,
+							// blended toward the strong ink so it stays legible on the dark themes' panels.
+							className={
+								item.danger
+									? 'text-[color-mix(in_srgb,var(--c-danger)_55%,var(--c-text-strong))]'
+									: undefined
+							}
 						>
 							{/* Menus are text; only a destructive item keeps its icon as a warning. */}
 							{item.danger === true && item.icon !== undefined && (

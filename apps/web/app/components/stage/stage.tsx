@@ -94,6 +94,19 @@ export function StageMotionSync() {
 /** Width of the category column; the top bar's brand cell uses it too, so the two line up. */
 export const RAIL_WIDTH = 'lg:w-[220px] xl:w-[260px] 2xl:w-[288px]'
 
+/**
+ * The category column's width for a stage. With a detail open on a laptop (lg up to xl) the
+ * column shrinks to its icons, so the list and the detail beside it keep a reading width.
+ */
+export function railWidth(collapsed: boolean): string {
+	return collapsed ? 'lg:w-16 xl:w-[260px] 2xl:w-[288px]' : RAIL_WIDTH
+}
+
+/** Whether the category column shows only its icons (lg up to xl): when a detail is open. */
+export function railCollapsed(stage: ResolvedStage): boolean {
+	return stage.depth === 2
+}
+
 const LIST_WIDE =
 	'min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-list] lg:overflow-y-auto lg:px-10 lg:pt-3 lg:pb-7'
 const LIST_NARROW =

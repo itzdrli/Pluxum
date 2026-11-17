@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useFetcher, useRouteLoaderData } from 'react-router'
 
 import { Button } from '../../components/ui/button'
+import { NativeSelect } from '../../components/ui/field'
 import { FormError, Panel, SectionLabel, Tag, Timestamp } from '../../components/ui/display'
 import type { loader as rootLoader } from '../../root'
 import type { ExtActionResult } from '../../routes/ext-action'
@@ -155,18 +156,17 @@ function BanForm({ userId }: { userId: string }) {
 				</label>
 				<label className="flex flex-col gap-1">
 					<span className="text-ink-weak text-meta">封禁时长</span>
-					<select
+					<NativeSelect
 						value={duration}
 						onChange={(event) => setDuration(event.currentTarget.value)}
 						aria-label="封禁时长"
-						className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-control rounded-[2px] border px-2.5 text-ui outline-none"
 					>
 						{DURATION_OPTIONS.map((option) => (
 							<option key={option.value} value={option.value}>
 								{option.label}
 							</option>
 						))}
-					</select>
+					</NativeSelect>
 				</label>
 				<Button
 					tone="danger"

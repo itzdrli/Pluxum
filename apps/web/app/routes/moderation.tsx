@@ -331,7 +331,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 	return (
 		<>
 			<PageHeader
-				title="审核队列"
+				title="审核"
 				description="处理社区举报、清理违规内容并查阅管理操作记录。"
 				actions={
 					<div

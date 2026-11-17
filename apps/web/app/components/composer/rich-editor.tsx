@@ -378,7 +378,10 @@ export function RichEditor({
 		<div className="composer" style={rowsStyle(rows)}>
 			<div className="composer-toolbar" role="toolbar" aria-label="格式">
 				{TOOL_GROUPS.map((group, index) => (
-					<div key={group[0]?.id} className="composer-tool-group">
+					<div
+						key={group[0]?.id}
+						className={`composer-tool-group${index === TOOL_GROUPS.length - 1 ? ' composer-tool-group--end' : ''}`}
+					>
 						{group.map((tool) => (
 							<ToolButton
 								key={tool.id}

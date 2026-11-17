@@ -9,7 +9,9 @@ import type { loader as notificationsLoader } from '../../routes/notifications'
 import { UserAvatar } from '../../components/forum/user-avatar'
 import { StageLink } from '../../components/stage/stage'
 import { Button } from '../../components/ui/button'
+import { BottomSheet } from '../../components/ui/bottom-sheet'
 import { Timestamp } from '../../components/ui/display'
+import { NARROW_QUERY, useMediaQuery } from '../../lib/media'
 import { resolveNotificationHref } from './href'
 
 export function formatUnreadBadge(count: number): string | null {
@@ -26,6 +28,7 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const location = useLocation()
 	const [open, setOpen] = useState(false)
+	const narrow = useMediaQuery(NARROW_QUERY)
 	// Loads the first page from the `/notifications` route loader each time the popover opens.
 	const list = useFetcher<typeof notificationsLoader>({ key: 'notification-popover' })
 	// Mark-read posts go to the `/notifications` action, which also revalidates the root badge.
@@ -78,25 +81,99 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 
 	const showMarkAll = page !== null && page.unreadCount > 0 && !allRead
 
+	const trigger = (
+		<Button
+			tone="ghost"
+			data-testid="notification-bell"
+			aria-label={label}
+			className={`button--icon-only relative ${active ? 'bg-selected text-ink-strong' : 'text-ink-weak hover:text-ink-strong'}`}
+			{...{ title: label }}
+			{...(narrow ? { onPress: () => handleOpenChange(true) } : {})}
+		>
+			<Bell aria-hidden />
+			{badge !== null && (
+				<span
+					data-testid="notification-unread-badge"
+					className="bg-accent text-page absolute top-0.5 right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-[2px] px-1 text-micro leading-none font-bold tabular-nums"
+				>
+					{badge}
+				</span>
+			)}
+		</Button>
+	)
+
+	const unreadNote = page !== null && page.unreadCount > 0 && !allRead && (
+		<span className="text-ink-weak font-normal tabular-nums">{page.unreadCount} 条未读</span>
+	)
+	const markAllButton = showMarkAll && (
+		<Button tone="ghost" size="sm" onPress={markAllRead}>
+			全部已读
+		</Button>
+	)
+	const listBody = (
+		<div className="min-h-0 flex-1 overflow-y-auto">
+			{loading ? (
+				<p className="text-ink-weak px-3 py-8 text-center text-ui">加载中…</p>
+			) : unavailable ? (
+				<p className="text-ink-weak px-3 py-8 text-center text-ui">通知暂时无法加载。</p>
+			) : page !== null && page.items.length === 0 ? (
+				<p className="text-ink-weak px-3 py-8 text-center text-ui">暂时还没有收到通知。</p>
+			) : (
+				page !== null && (
+					<ol className="divide-line divide-y">
+						{page.items.map((item) => (
+							<PopoverRow
+								key={item.id}
+								item={item}
+								read={item.read || allRead || readIds.has(item.id)}
+								onOpen={() => {
+									markRead(item)
+									setOpen(false)
+								}}
+							/>
+						))}
+					</ol>
+				)
+			)}
+		</div>
+	)
+	const allLink = (
+		<StageLink
+			to="/notifications"
+			onClick={() => setOpen(false)}
+			className="border-line text-ink-weak hover:bg-hover hover:text-ink-strong flex h-11 shrink-0 items-center justify-center border-t text-ui"
+		>
+			查看全部通知
+		</StageLink>
+	)
+
+	// Phones: a bottom sheet, like every other overlay there (category switcher, reply), in thumb reach.
+	if (narrow) {
+		return (
+			<>
+				{trigger}
+				<BottomSheet
+					isOpen={open}
+					onOpenChange={handleOpenChange}
+					title="通知"
+					bodyClassName="flex min-h-0 flex-1 flex-col"
+				>
+					{(unreadNote || markAllButton) && (
+						<div className="border-line flex h-11 shrink-0 items-center justify-between gap-2 border-b pr-2.5 pl-4 text-ui">
+							{unreadNote || <span />}
+							{markAllButton}
+						</div>
+					)}
+					{listBody}
+					{allLink}
+				</BottomSheet>
+			</>
+		)
+	}
+
 	return (
 		<Popover isOpen={open} onOpenChange={handleOpenChange}>
-			<Button
-				tone="ghost"
-				data-testid="notification-bell"
-				aria-label={label}
-				className={`button--icon-only relative ${active ? 'bg-selected text-ink-strong' : 'text-ink-weak hover:text-ink-strong'}`}
-				{...{ title: label }}
-			>
-				<Bell aria-hidden />
-				{badge !== null && (
-					<span
-						data-testid="notification-unread-badge"
-						className="bg-accent text-page absolute top-0.5 right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-[2px] px-1 text-micro leading-none font-bold tabular-nums"
-					>
-						{badge}
-					</span>
-				)}
-			</Button>
+			{trigger}
 			<Popover.Content
 				placement="bottom end"
 				className="w-[min(24rem,calc(100vw-1rem))] overflow-hidden p-0"
@@ -106,54 +183,14 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 					className="flex max-h-[min(32rem,70dvh)] flex-col p-0 outline-none"
 				>
 					<div className="border-line flex h-11 shrink-0 items-center justify-between gap-2 border-b pr-1.5 pl-3">
-						<p className="text-ink-strong text-ui font-bold">
+						<p className="text-ink-strong flex items-center gap-1.5 text-ui font-bold">
 							通知
-							{page !== null && page.unreadCount > 0 && !allRead && (
-								<span className="text-ink-weak ml-1.5 font-normal tabular-nums">
-									{page.unreadCount} 条未读
-								</span>
-							)}
+							{unreadNote}
 						</p>
-						{showMarkAll && (
-							<Button tone="ghost" size="sm" onPress={markAllRead}>
-								全部已读
-							</Button>
-						)}
+						{markAllButton}
 					</div>
-
-					<div className="min-h-0 flex-1 overflow-y-auto">
-						{loading ? (
-							<p className="text-ink-weak px-3 py-8 text-center text-ui">加载中…</p>
-						) : unavailable ? (
-							<p className="text-ink-weak px-3 py-8 text-center text-ui">通知暂时无法加载。</p>
-						) : page !== null && page.items.length === 0 ? (
-							<p className="text-ink-weak px-3 py-8 text-center text-ui">暂时还没有收到通知。</p>
-						) : (
-							page !== null && (
-								<ol className="divide-line divide-y">
-									{page.items.map((item) => (
-										<PopoverRow
-											key={item.id}
-											item={item}
-											read={item.read || allRead || readIds.has(item.id)}
-											onOpen={() => {
-												markRead(item)
-												setOpen(false)
-											}}
-										/>
-									))}
-								</ol>
-							)
-						)}
-					</div>
-
-					<StageLink
-						to="/notifications"
-						onClick={() => setOpen(false)}
-						className="border-line text-ink-weak hover:bg-hover hover:text-ink-strong flex h-11 shrink-0 items-center justify-center border-t text-ui"
-					>
-						查看全部通知
-					</StageLink>
+					{listBody}
+					{allLink}
 				</Popover.Dialog>
 			</Popover.Content>
 		</Popover>

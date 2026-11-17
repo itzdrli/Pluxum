@@ -58,25 +58,36 @@ export function UnreadDot({
 }) {
 	if (hidden || !isUnread(thread)) return null
 	return (
+		// Inline in the title's text, so it stays on the title's first line however long the title.
 		<span
 			role="img"
 			aria-label="有未读内容"
 			title="有未读内容"
-			className="bg-accent size-2 shrink-0 rounded-full"
+			className="bg-accent mr-2 mb-px inline-block size-2 rounded-full align-middle"
 		/>
 	)
 }
 
-/** Pinned / locked markers of a thread. */
-export function ThreadFlags({ thread }: { thread: Pick<ThreadDto, 'pinned' | 'locked'> }) {
+/** Pinned / locked markers of a thread. `tagClassName` places them, e.g. inline before a title. */
+export function ThreadFlags({
+	thread,
+	tagClassName,
+}: {
+	thread: Pick<ThreadDto, 'pinned' | 'locked'>
+	tagClassName?: string
+}) {
 	return (
 		<>
 			{thread.pinned && (
-				<Tag tone="accent" icon={Pin}>
+				<Tag tone="accent" icon={Pin} className={tagClassName}>
 					置顶
 				</Tag>
 			)}
-			{thread.locked && <Tag icon={Lock}>已锁定</Tag>}
+			{thread.locked && (
+				<Tag icon={Lock} className={tagClassName}>
+					已锁定
+				</Tag>
+			)}
 		</>
 	)
 }
@@ -84,15 +95,22 @@ export function ThreadFlags({ thread }: { thread: Pick<ThreadDto, 'pinned' | 'lo
 /**
  * One thread in a list; adapts via `@container/threads` between wide and split-pane widths.
  * `href` comes from the list's stage (`useStageLinks().detail`), so the thread opens beside it.
+ * Lists that mix categories (the overview) pass `category`, shown as a link in the meta line.
+ * `narrowTime` is the moment the narrow layout shows: the latest activity unless the list is
+ * ordered by when threads started.
  */
 export function ThreadRow({
 	thread,
 	href,
 	isActive = false,
+	category,
+	narrowTime = 'last',
 }: {
 	thread: ThreadDto
 	href: string
 	isActive?: boolean
+	category?: Pick<CategoryDto, 'slug' | 'name'>
+	narrowTime?: 'last' | 'created'
 }) {
 	return (
 		<li
@@ -104,36 +122,60 @@ export function ThreadRow({
 				<UserAvatar user={thread.author} />
 			</div>
 			<div className="min-w-0 flex-1">
-				<div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+				{/* Dot, flags and title share one line of text, so markers never sit on a line of their own. */}
+				<p className="line-clamp-2 [overflow-wrap:anywhere] @lg/threads:line-clamp-none">
 					<UnreadDot thread={thread} hidden={isActive} />
-					<ThreadFlags thread={thread} />
+					<ThreadFlags thread={thread} tagClassName="mr-2 align-[1px]" />
 					{/* The link's box covers the row, so the whole row is clickable. */}
 					<StageLink
 						to={href}
 						prefetch="intent"
 						data-thread-link
 						aria-current={isActive ? 'page' : undefined}
-						className="text-ink-strong line-clamp-2 text-ui font-bold break-words after:absolute after:inset-0 @lg/threads:line-clamp-none @lg/threads:text-title"
+						className="text-ink-strong text-ui font-bold after:absolute after:inset-0 @lg/threads:text-title"
 					>
 						{thread.title}
 					</StageLink>
-				</div>
-				<div className="text-ink-weak mt-1.5 flex items-center justify-between gap-2 text-meta">
-					<p className="flex min-w-0 flex-wrap items-center gap-x-2">
+				</p>
+				<div className="text-ink-weak mt-1.5 flex items-center justify-between gap-3 text-meta">
+					<p className="flex min-w-0 items-center gap-x-2">
 						{/* Above the row link's box, so the name opens the profile instead. */}
 						<StageLink
 							to={`/u/${thread.author.handle}`}
-							className="text-ink relative z-10 truncate hover:underline"
+							className="text-ink relative z-10 min-w-0 truncate hover:underline"
 						>
 							{thread.author.displayName}
 						</StageLink>
-						<span aria-hidden>·</span>
-						<Timestamp iso={thread.lastPostAt} className="@lg/threads:hidden" />
-						<Timestamp iso={thread.createdAt} className="hidden @lg/threads:inline" />
+						{category !== undefined && (
+							<>
+								<span aria-hidden className="shrink-0">
+									·
+								</span>
+								<StageLink
+									to={`/c/${category.slug}`}
+									prefetch="intent"
+									className="hover:text-ink-strong relative z-10 max-w-32 shrink-0 truncate hover:underline"
+								>
+									{category.name}
+								</StageLink>
+							</>
+						)}
+						<span aria-hidden className="shrink-0">
+							·
+						</span>
+						<Timestamp
+							iso={narrowTime === 'created' ? thread.createdAt : thread.lastPostAt}
+							className="shrink-0 whitespace-nowrap @lg/threads:hidden"
+						/>
+						<Timestamp
+							iso={thread.createdAt}
+							className="hidden shrink-0 whitespace-nowrap @lg/threads:inline"
+						/>
 					</p>
 					<span className="flex shrink-0 items-center gap-1 tabular-nums @lg/threads:hidden">
 						<MessageSquare aria-hidden size={12} />
 						{thread.replyCount}
+						<span className="sr-only">回复</span>
 					</span>
 				</div>
 			</div>
@@ -143,7 +185,7 @@ export function ThreadRow({
 					{thread.replyCount}
 					<span className="sr-only">回复</span>
 				</span>
-				<span className="text-ink-weak">
+				<span className="text-ink-weak whitespace-nowrap">
 					<span className="sr-only">最后回复 </span>
 					<Timestamp iso={thread.lastPostAt} />
 				</span>

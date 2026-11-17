@@ -135,6 +135,7 @@ export function Composer({
 	autoFocus = false,
 	deferRich = false,
 	insertRef,
+	fill = false,
 }: {
 	name?: string
 	label: string
@@ -152,6 +153,8 @@ export function Composer({
 	deferRich?: boolean
 	/** Receives the box's insert function, so something outside it (a drop) can put a link in. */
 	insertRef?: React.RefObject<InsertAttachment | null>
+	/** Grow the writing area into the height of a flex column around it (the dock). */
+	fill?: boolean
 }) {
 	const format = useRouteLoaderData<typeof rootLoader>('root')?.meta?.content.format ?? 'plain'
 	const [value, setValue] = useState(defaultValue)
@@ -289,10 +292,10 @@ export function Composer({
 	)
 
 	return (
-		<div ref={root} className="flex flex-col gap-1">
+		<div ref={root} className={`flex flex-col gap-1${fill ? ' composer-fill' : ''}`}>
 			{showRich ? (
 				<>
-					<div className="flex min-h-7 items-end gap-2">
+					<div className="flex min-h-7 items-center gap-2">
 						{!hideLabel && <span className="label">{label}</span>}
 						{tools}
 						{toggle}
@@ -324,7 +327,7 @@ export function Composer({
 					}}
 					fullWidth
 				>
-					<div className="flex min-h-7 items-end gap-2 empty:hidden">
+					<div className="flex min-h-7 items-center gap-2 empty:hidden">
 						<Label className={hideLabel ? 'sr-only' : undefined}>{label}</Label>
 						{tools}
 						{toggle}

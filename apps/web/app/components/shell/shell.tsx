@@ -2,7 +2,7 @@ import type { MetaDto } from '@pluxum/domain'
 import { Link, useLocation } from 'react-router'
 
 import { PaletteTrigger } from '../palette/palette-trigger'
-import { RAIL_WIDTH, StageMotionSync, useStage } from '../stage/stage'
+import { railCollapsed, railWidth, StageMotionSync, useStage } from '../stage/stage'
 import { Notice } from '../ui/display'
 import { ShellSlots } from '../../slots/slots'
 import { siteOf } from '../../lib/site'
@@ -43,7 +43,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 			>
 				跳到正文
 			</a>
-			<header className="border-line-soft bg-sunken sticky top-0 z-30 shrink-0 border-b [view-transition-name:site-header]">
+			<header className="border-line-soft bg-sunken sticky top-0 z-30 shrink-0 border-b [view-transition-name:site-header] [@media(max-height:500px)_and_(pointer:coarse)]:static">
 				{/* Full width. Where the category column shows, the brand cell is as wide as that column and
 				    shares its edge line, so the logo sits over the column's icons and one vertical runs
 				    from the bar down the page. */}
@@ -51,7 +51,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 				<div className="h-bar flex w-full items-center pr-5 [--h-control:40px] [--icon:20px] lg:pr-8">
 					<div
 						className={`flex h-full shrink-0 items-center gap-3 pl-5 lg:pl-[22px] ${
-							stage.nav ? `${RAIL_WIDTH} border-line-soft lg:border-r` : ''
+							stage.nav ? `${railWidth(railCollapsed(stage))} border-line-soft lg:border-r` : ''
 						}`}
 					>
 						<Link
@@ -61,7 +61,11 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 							className="text-ink-strong flex shrink-0 items-center gap-2 font-bold"
 						>
 							<LogoMark className="size-8 shrink-0" />
-							<span className="text-heading max-md:hidden">{siteName}</span>
+							<span
+								className={`text-heading max-md:hidden ${stage.nav && railCollapsed(stage) ? 'lg:max-xl:hidden' : ''}`}
+							>
+								{siteName}
+							</span>
 						</Link>
 					</div>
 					<div className="ml-auto flex items-center gap-1">

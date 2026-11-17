@@ -27,10 +27,10 @@ export function BottomSheet({
 			isOpen={isOpen}
 			onOpenChange={onOpenChange}
 			isDismissable={isDismissable}
-			className="bottom-sheet-overlay bg-page/70 fixed inset-0 z-40 flex flex-col justify-end"
+			className="bottom-sheet-overlay bg-scrim fixed inset-0 z-40 flex flex-col justify-end"
 		>
 			<Modal className="bottom-sheet-modal w-full outline-none">
-				<Dialog className="border-line bg-panel shadow-overlay flex max-h-[85dvh] w-full flex-col rounded-t-[4px] border-t pb-[env(safe-area-inset-bottom)] outline-none">
+				<Dialog className="border-line bg-panel shadow-overlay flex max-h-[85dvh] w-full flex-col rounded-t-[2px] border-t pb-[env(safe-area-inset-bottom)] outline-none">
 					{({ close }) => (
 						<>
 							<div aria-hidden className="bg-line mx-auto mt-2 h-1 w-9 shrink-0 rounded-[2px]" />

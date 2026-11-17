@@ -17,6 +17,7 @@ import {
 	Timestamp,
 } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
+import { NativeSelect } from '../components/ui/field'
 import { forumApi, orThrow } from '../lib/forum-api.server'
 import { pageTitle } from '../lib/site'
 import {
@@ -201,12 +202,12 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 									</div>
 
 									<div className="flex flex-wrap items-center gap-2">
-										<select
+										<NativeSelect
 											key={categoryId}
 											name="categoryId"
 											defaultValue={categoryId}
 											aria-label="按版块筛选"
-											className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-control max-w-full rounded-[2px] border px-2.5 text-ui outline-none"
+											className="max-w-full"
 										>
 											<option value="">全部版块</option>
 											{categories.map((category) => (
@@ -214,7 +215,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 													{category.name}
 												</option>
 											))}
-										</select>
+										</NativeSelect>
 
 										<label className="border-line bg-page text-ink hover:border-ink-weak flex h-control cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-ui select-none">
 											<input
@@ -325,7 +326,7 @@ function SearchHitRow({
 }) {
 	return (
 		<li
-			className={`hover:bg-hover relative flex items-start gap-3 border-l-2 px-3 py-2.5 transition-colors @lg/threads:px-4 @lg/threads:py-3 ${
+			className={`hover:bg-hover relative flex items-start gap-4 border-l-2 px-5 py-4 transition-colors ${
 				isActive ? 'border-l-accent bg-selected' : 'border-l-transparent'
 			}`}
 		>
@@ -338,38 +339,56 @@ function SearchHitRow({
 				<UserAvatar user={hit.author} />
 			</StageLink>
 			<div className="min-w-0 flex-1">
-				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-					<Tag tone={hit.opening ? 'accent' : 'neutral'}>{hit.opening ? '主题' : '回复'}</Tag>
-					{category !== undefined && <Tag>{category.name}</Tag>}
+				{/* Kind tag and title share one line of text, like the rows of every other list. */}
+				<p className="[overflow-wrap:anywhere]">
+					<Tag tone={hit.opening ? 'accent' : 'neutral'} className="mr-2 align-[1px]">
+						{hit.opening ? '主题' : '回复'}
+					</Tag>
 					{/* The link's box covers the row, so the whole row opens the hit. */}
 					<StageLink
 						to={href}
 						prefetch="intent"
 						data-thread-link
 						aria-current={isActive ? 'page' : undefined}
-						className="text-ink-strong text-ui font-bold break-words after:absolute after:inset-0 hover:underline @lg/threads:text-title"
+						className="text-ink-strong text-ui font-bold after:absolute after:inset-0 hover:underline @lg/threads:text-title"
 					>
 						{hit.title}
 					</StageLink>
-				</div>
+				</p>
 
 				{hit.snippetHtml !== '' && (
 					// Sanitized by forum-core (`sanitizeSearchSnippet` allows `<mark>` with no attributes).
 					<p
-						className="search-snippet text-ink mt-1.5 line-clamp-2 @lg/threads:line-clamp-3 text-ui leading-relaxed break-words"
+						className="search-snippet text-ink mt-1.5 line-clamp-2 @lg/threads:line-clamp-3 text-ui leading-relaxed [overflow-wrap:anywhere]"
 						dangerouslySetInnerHTML={{ __html: hit.snippetHtml }}
 					/>
 				)}
 
-				<div className="text-ink-weak mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta">
+				<div className="text-ink-weak mt-1.5 flex min-w-0 items-center gap-x-2 text-meta">
 					<StageLink
 						to={`/u/${hit.author.handle}`}
-						className="text-ink relative z-10 truncate hover:underline"
+						className="text-ink relative z-10 min-w-0 truncate hover:underline"
 					>
 						{hit.author.displayName}
 					</StageLink>
-					<span aria-hidden>·</span>
-					<Timestamp iso={hit.createdAt} />
+					{category !== undefined && (
+						<>
+							<span aria-hidden className="shrink-0">
+								·
+							</span>
+							<StageLink
+								to={`/c/${category.slug}`}
+								prefetch="intent"
+								className="hover:text-ink-strong relative z-10 max-w-32 shrink-0 truncate hover:underline"
+							>
+								{category.name}
+							</StageLink>
+						</>
+					)}
+					<span aria-hidden className="shrink-0">
+						·
+					</span>
+					<Timestamp iso={hit.createdAt} className="shrink-0 whitespace-nowrap" />
 				</div>
 			</div>
 		</li>

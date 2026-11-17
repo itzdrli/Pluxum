@@ -8,31 +8,49 @@ import { StageLink } from '../stage/stage'
 /** Small inline label. `accent` marks the one thing worth noticing (pinned, own role). */
 export type TagTone = 'neutral' | 'accent' | 'warning' | 'danger' | 'success'
 
+// A tone's text sits on a tint of the same tone, which costs contrast (Nord's accent on its own
+// tint is under 4:1); blending the text toward the strong ink keeps the hue and reads at 4.5:1.
 const TAG_TONES: Record<TagTone, string> = {
 	neutral: 'bg-control text-ink-weak',
-	accent: 'bg-accent-soft text-accent',
-	warning: 'bg-warning-soft text-warning',
-	danger: 'bg-danger-soft text-danger',
-	success: 'bg-success-soft text-success',
+	accent: 'bg-accent-soft text-[color-mix(in_srgb,var(--c-accent)_65%,var(--c-text-strong))]',
+	warning: 'bg-warning-soft text-[color-mix(in_srgb,var(--c-warning)_65%,var(--c-text-strong))]',
+	danger: 'bg-danger-soft text-[color-mix(in_srgb,var(--c-danger)_55%,var(--c-text-strong))]',
+	success: 'bg-success-soft text-[color-mix(in_srgb,var(--c-success)_65%,var(--c-text-strong))]',
 }
 
 export function Tag({
 	tone = 'neutral',
 	icon: Icon,
+	className,
 	children,
 }: {
 	tone?: TagTone
 	icon?: LucideIcon
+	className?: string
 	children: React.ReactNode
 }) {
 	return (
 		<span
-			className={`inline-flex h-5 shrink-0 items-center gap-1 rounded-[2px] px-1.5 text-meta leading-none whitespace-nowrap ${TAG_TONES[tone]}`}
+			className={`inline-flex h-5 shrink-0 items-center gap-1 rounded-[2px] px-1.5 text-meta leading-none whitespace-nowrap ${TAG_TONES[tone]} ${className ?? ''}`}
 		>
 			{Icon !== undefined && <Icon aria-hidden size={12} strokeWidth={2} />}
 			{children}
 		</span>
 	)
+}
+
+// Single-stroke characters read as punctuation on their own (「一」 looks like a minus sign), so a
+// name that starts with one shows its next character instead.
+const STROKE_CHARACTERS = new Set(['一', '丨', '丶', '丿', '乙', '亅', '乚', '乛'])
+
+function monogramOf(name: string): string {
+	const characters = Array.from(name.trim())
+	const first = characters[0]
+	if (first === undefined) return '?'
+	const next = characters[1]
+	if (STROKE_CHARACTERS.has(first) && next !== undefined && next.trim() !== '')
+		return next.toUpperCase()
+	return first.toUpperCase()
 }
 
 const AVATAR_SIZES = {
@@ -75,7 +93,7 @@ export function Avatar({
 			</span>
 		)
 	}
-	const initial = Array.from(name.trim())[0]?.toUpperCase() ?? '?'
+	const initial = monogramOf(name)
 	return (
 		<span aria-hidden className={`bg-control text-ink-strong font-bold ${box}`}>
 			{initial}
@@ -186,7 +204,7 @@ export function Panel({
 	className?: string
 	children: React.ReactNode
 }) {
-	return <Element className={`bg-panel rounded-[4px] ${className ?? ''}`}>{children}</Element>
+	return <Element className={`bg-panel rounded-[2px] ${className ?? ''}`}>{children}</Element>
 }
 
 export function SectionLabel({

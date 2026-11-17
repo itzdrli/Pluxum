@@ -7,6 +7,7 @@ import { droppedLink, toggledSize, type DockSize } from '../../lib/dock'
 import type { loader as rootLoader } from '../../root'
 import type { InsertAttachment } from '../../slots/slots'
 import { Composer } from '../composer/composer'
+import { NativeSelect } from '../ui/field'
 import { Button, IconButton } from '../ui/button'
 import { FormError } from '../ui/display'
 
@@ -89,7 +90,7 @@ export function DockProvider({ children }: { children: React.ReactNode }) {
 
 const SIZE_CLASS: Record<DockSize, string> = {
 	min: 'w-[min(360px,calc(100vw-2rem))]',
-	half: 'h-[min(600px,calc(100dvh-5rem))] w-[min(480px,calc(100vw-2rem))]',
+	half: 'h-[min(600px,calc(100dvh-5rem))] w-[min(520px,calc(100vw-2rem))]',
 	full: 'h-[calc(100dvh-5rem)] w-[min(960px,calc(100vw-2rem))]',
 }
 
@@ -149,7 +150,7 @@ function Dock({
 	return (
 		<aside
 			aria-label="创作抽屉"
-			className={`border-line bg-panel shadow-overlay fixed right-4 bottom-0 z-40 flex flex-col overflow-hidden rounded-t-[4px] border border-b-0 max-sm:right-0 max-sm:left-0 max-sm:w-auto ${SIZE_CLASS[size]} ${
+			className={`border-line bg-panel shadow-overlay fixed right-4 bottom-0 z-40 flex flex-col overflow-hidden rounded-t-[2px] border border-b-0 max-sm:right-0 max-sm:left-0 max-sm:w-auto ${SIZE_CLASS[size]} ${
 				dragging ? 'outline-accent outline-2 -outline-offset-2' : ''
 			}`}
 			onDragOver={(event) => {
@@ -222,17 +223,13 @@ function Dock({
 					<>
 						<label className="flex flex-col gap-1">
 							<span className="label">版块</span>
-							<select
-								value={slug}
-								onChange={(event) => setSlug(event.target.value)}
-								className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-control rounded-[2px] border px-2.5 text-ui outline-none"
-							>
+							<NativeSelect value={slug} onChange={(event) => setSlug(event.target.value)}>
 								{categories.map((category) => (
 									<option key={category.id} value={category.slug}>
 										{category.name}
 									</option>
 								))}
-							</select>
+							</NativeSelect>
 						</label>
 						<label className="flex flex-col gap-1">
 							<span className="label">标题</span>
@@ -255,8 +252,9 @@ function Dock({
 					autoFocus={target.kind === 'reply'}
 					insertRef={insertRef}
 					placeholder="可以把左侧的主题拖进来，生成引用链接"
+					fill
 				/>
-				<div className="mt-auto flex items-center justify-between gap-2">
+				<div className="flex shrink-0 items-center justify-between gap-2">
 					<span className="text-ink-weak text-meta max-sm:hidden">Ctrl+Enter 发布</span>
 					<Button tone="primary" type="submit" isPending={busy} className="ml-auto">
 						{target.kind === 'reply' ? '回复' : '发布'}

@@ -69,6 +69,9 @@ export function stripMarkup(source: string): string {
 	text = text.replaceAll(INLINE_HTML_TAG, '')
 	text = decodeEntities(text)
 
+	// GFM tables: the cell text stays, the pipes and the `| --- |` delimiter row go.
+	text = stripTables(text)
+
 	// Block-level Markdown markers.
 	text = text.replaceAll(/^\s*(?:[-*_]\s*){3,}\s*$/gm, ' ')
 	text = text.replaceAll(/^\s*#{1,6}\s+/gm, '')
@@ -89,6 +92,51 @@ export function stripMarkup(source: string): string {
 	})
 
 	return text.replaceAll(/\s+/g, ' ').trim()
+}
+
+/** A GFM table's delimiter row: `| --- | :-: |`, at least one cell, pipes optional at the ends. */
+const TABLE_DELIMITER = /^\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$/
+
+/**
+ * Replaces each GFM table (a header row, its delimiter row and the rows after it up to a blank
+ * line) by its cells separated with spaces. An escaped `\|` is a literal pipe inside a cell.
+ */
+function stripTables(text: string): string {
+	const lines = text.split('\n')
+	const out: string[] = []
+	for (let index = 0; index < lines.length; index++) {
+		const header = lines[index] ?? ''
+		const delimiter = lines[index + 1]
+		if (delimiter === undefined || !header.includes('|') || !TABLE_DELIMITER.test(delimiter)) {
+			out.push(header)
+			continue
+		}
+		out.push(tableCells(header))
+		index += 2
+		while (
+			index < lines.length &&
+			(lines[index] ?? '').includes('|') &&
+			(lines[index] ?? '').trim() !== ''
+		) {
+			out.push(tableCells(lines[index] ?? ''))
+			index++
+		}
+		index--
+	}
+	return out.join('\n')
+}
+
+function tableCells(row: string): string {
+	return row
+		.replaceAll('\\|', '\uE002')
+		.trim()
+		.replace(/^\|/, '')
+		.replace(/\|$/, '')
+		.split('|')
+		.map((cell) => cell.trim())
+		.filter((cell) => cell !== '')
+		.join(' ')
+		.replaceAll('\uE002', '|')
 }
 
 /** Normalizes text for segmentation: NFKC folds full-width ASCII, and ASCII letters become lowercase. */

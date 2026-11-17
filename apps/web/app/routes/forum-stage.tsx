@@ -1,10 +1,10 @@
 import type { CategoryDto } from '@pluxum/domain'
-import { Bell, Hash, LayoutGrid, Plus, Search, type LucideIcon } from 'lucide-react'
+import { Bell, Hash, LayoutGrid, Plus, Search, ShieldCheck, type LucideIcon } from 'lucide-react'
 import { Outlet, useLocation, useParams, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/forum-stage'
 import { SiteFooterCompact } from '../components/shell/site-footer'
-import { RAIL_WIDTH, StageLink, useStage } from '../components/stage/stage'
+import { railCollapsed, railWidth, StageLink, useStage } from '../components/stage/stage'
 import { forumApi, orThrow } from '../lib/forum-api.server'
 import { stageShouldRevalidate } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
@@ -23,6 +23,10 @@ const WIDE_PAGE = 'max-w-[1180px] 2xl:max-w-[1400px] min-[1920px]:max-w-[1600px]
 const RAIL_ITEM = 'flex items-center gap-3 border-l-2 pr-5 pl-7 h-11 transition-colors'
 const RAIL_ITEM_ACTIVE = 'border-l-accent bg-selected text-ink-strong font-bold'
 const RAIL_ITEM_IDLE = 'text-ink hover:bg-hover hover:text-ink-strong border-l-transparent'
+/** The rail item's layout while the column shows only icons (lg up to xl, a detail open). */
+const RAIL_ITEM_COLLAPSED = 'lg:max-xl:justify-center lg:max-xl:px-0'
+/** Hidden while the column shows only icons. */
+const COLLAPSED_HIDDEN = 'lg:max-xl:hidden'
 
 export const shouldRevalidate = stageShouldRevalidate
 
@@ -33,6 +37,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 	const pathname = useLocation().pathname
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const canManageCategories = root?.meta?.viewer.can.manageCategories === true
+	const collapsed = railCollapsed(stage)
 
 	if (!stage.nav) return <Outlet />
 
@@ -43,7 +48,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 		>
 			<aside
 				aria-label="版块导航"
-				className={`${RAIL_WIDTH} border-line-soft bg-sunken flex min-h-0 shrink-0 flex-col border-r [view-transition-name:stage-nav] max-lg:hidden`}
+				className={`${railWidth(collapsed)} border-line-soft bg-sunken flex min-h-0 shrink-0 flex-col border-r [view-transition-name:stage-nav] max-lg:hidden`}
 			>
 				<CategoryNavPanel
 					categories={categories}
@@ -51,8 +56,11 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 					canManageCategories={canManageCategories}
 					pathname={pathname}
 					root={root}
+					collapsed={collapsed}
 				/>
-				<SiteFooterCompact />
+				<div className={`flex shrink-0 flex-col ${collapsed ? COLLAPSED_HIDDEN : ''}`}>
+					<SiteFooterCompact />
+				</div>
 			</aside>
 			{stage.depth === 0 ? (
 				// A page beside the column: one scrolling pane with a reading width.
@@ -72,19 +80,21 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 	)
 }
 
-/** A destination of the frame: the overview, search, notifications. */
+/** A destination of the frame: the overview, search, notifications, moderation. */
 function RailLink({
 	to,
 	icon: Icon,
 	label,
 	active,
 	badge,
+	collapsed,
 }: {
 	to: string
 	icon: LucideIcon
 	label: string
 	active: boolean
 	badge?: number
+	collapsed: boolean
 }) {
 	return (
 		<li>
@@ -92,16 +102,23 @@ function RailLink({
 				to={to}
 				prefetch="intent"
 				aria-current={active ? 'page' : undefined}
-				className={`${RAIL_ITEM} ${active ? RAIL_ITEM_ACTIVE : RAIL_ITEM_IDLE}`}
+				title={collapsed ? label : undefined}
+				className={`relative ${RAIL_ITEM} ${active ? RAIL_ITEM_ACTIVE : RAIL_ITEM_IDLE} ${collapsed ? RAIL_ITEM_COLLAPSED : ''}`}
 			>
 				<Icon
 					aria-hidden
 					size={16}
 					className={active ? 'text-accent shrink-0' : 'text-ink-weak shrink-0'}
 				/>
-				<span className="min-w-0 flex-1 truncate">{label}</span>
+				<span className={`min-w-0 flex-1 truncate ${collapsed ? 'lg:max-xl:sr-only' : ''}`}>
+					{label}
+				</span>
 				{badge !== undefined && badge > 0 && (
-					<span className="bg-accent text-page min-w-5 shrink-0 rounded-[2px] px-1 text-center text-micro leading-5 font-bold tabular-nums">
+					<span
+						className={`bg-accent text-page min-w-5 shrink-0 rounded-[2px] px-1 text-center text-micro leading-5 font-bold tabular-nums ${
+							collapsed ? 'lg:max-xl:absolute lg:max-xl:top-1 lg:max-xl:right-1.5' : ''
+						}`}
+					>
 						{badge > 99 ? '99+' : badge}
 					</span>
 				)}
@@ -116,14 +133,21 @@ function CategoryNavPanel({
 	canManageCategories,
 	pathname,
 	root,
+	collapsed,
 }: {
 	categories: readonly CategoryDto[]
 	activeSlug: string | undefined
 	canManageCategories: boolean
 	pathname: string
 	root: ReturnType<typeof useRouteLoaderData<typeof rootLoader>>
+	collapsed: boolean
 }) {
 	const meta = root?.meta
+	// Staff reach the moderation page from the frame too, not only from the account menu.
+	const moderationOn =
+		meta != null &&
+		(meta.viewer.roles.includes('moderator') || meta.viewer.roles.includes('admin')) &&
+		meta.uiSlots.some((slot) => slot.extId === 'forum-moderation')
 	const notificationsOn =
 		meta?.viewer.user != null &&
 		meta.uiSlots.some(
@@ -132,13 +156,20 @@ function CategoryNavPanel({
 	return (
 		<>
 			<ul className="border-line-soft border-b pb-2">
-				<RailLink to="/" icon={LayoutGrid} label="概览" active={pathname === '/'} />
+				<RailLink
+					to="/"
+					icon={LayoutGrid}
+					label="概览"
+					active={pathname === '/'}
+					collapsed={collapsed}
+				/>
 				{meta?.search.available === true && (
 					<RailLink
 						to="/search"
 						icon={Search}
 						label="搜索"
 						active={pathname === '/search' || pathname.startsWith('/search/')}
+						collapsed={collapsed}
 					/>
 				)}
 				{notificationsOn && (
@@ -148,10 +179,22 @@ function CategoryNavPanel({
 						label="通知"
 						active={pathname === '/notifications'}
 						badge={root?.unreadNotifications}
+						collapsed={collapsed}
+					/>
+				)}
+				{moderationOn && (
+					<RailLink
+						to="/moderation"
+						icon={ShieldCheck}
+						label="审核"
+						active={pathname === '/moderation'}
+						collapsed={collapsed}
 					/>
 				)}
 			</ul>
-			<div className="border-line-soft flex h-12 shrink-0 items-center justify-between gap-2 border-b px-4">
+			<div
+				className={`border-line-soft flex h-12 shrink-0 items-center justify-between gap-2 border-b px-4 ${collapsed ? COLLAPSED_HIDDEN : ''}`}
+			>
 				<span className="section-label">版块 · {categories.length}</span>
 				<div className="flex items-center gap-1">
 					{canManageCategories && (
@@ -178,15 +221,33 @@ function CategoryNavPanel({
 									to={`/c/${cat.slug}`}
 									prefetch="intent"
 									aria-current={isActive ? 'page' : undefined}
-									className={`${RAIL_ITEM} ${isActive ? RAIL_ITEM_ACTIVE : RAIL_ITEM_IDLE}`}
+									title={collapsed ? cat.name : undefined}
+									className={`${RAIL_ITEM} ${isActive ? RAIL_ITEM_ACTIVE : RAIL_ITEM_IDLE} ${collapsed ? RAIL_ITEM_COLLAPSED : ''}`}
 								>
 									<Hash
 										aria-hidden
 										size={16}
-										className={isActive ? 'text-accent shrink-0' : 'text-ink-weak shrink-0'}
+										className={`shrink-0 ${isActive ? 'text-accent' : 'text-ink-weak'} ${collapsed ? COLLAPSED_HIDDEN : ''}`}
 									/>
-									<span className="min-w-0 flex-1 truncate">{cat.name}</span>
-									<span className="text-ink-weak shrink-0 text-meta tabular-nums">
+									{/* Icons only: every category would be the same 「#」, so each shows its first character. */}
+									{collapsed && (
+										<span
+											aria-hidden
+											className={`hidden size-6 shrink-0 items-center justify-center rounded-[2px] text-ui font-bold lg:max-xl:inline-flex ${
+												isActive ? 'text-accent' : 'bg-control text-ink-strong'
+											}`}
+										>
+											{Array.from(cat.name)[0] ?? '#'}
+										</span>
+									)}
+									<span
+										className={`min-w-0 flex-1 truncate ${collapsed ? 'lg:max-xl:sr-only' : ''}`}
+									>
+										{cat.name}
+									</span>
+									<span
+										className={`text-ink-weak shrink-0 text-meta tabular-nums ${collapsed ? COLLAPSED_HIDDEN : ''}`}
+									>
 										{cat.threadCount}
 									</span>
 								</StageLink>

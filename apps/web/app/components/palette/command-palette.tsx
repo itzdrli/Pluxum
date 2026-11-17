@@ -301,12 +301,12 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 			isOpen
 			onOpenChange={(open) => !open && onClose()}
 			isDismissable
-			className="bg-page/60 fixed inset-0 z-50 flex items-start justify-center px-4 pt-[10vh] backdrop-blur-[2px]"
+			className="bg-scrim fixed inset-0 z-50 flex items-start justify-center px-4 pt-[10vh]"
 		>
 			<Modal className="w-full max-w-[640px] outline-none">
 				<Dialog
 					aria-label="命令面板"
-					className="border-line bg-panel shadow-overlay flex max-h-[70dvh] flex-col overflow-hidden rounded-[4px] border outline-none"
+					className="border-line bg-panel shadow-overlay flex max-h-[70dvh] flex-col overflow-hidden rounded-[2px] border outline-none"
 				>
 					<div className="border-line-soft flex items-center gap-2.5 border-b px-3.5">
 						<Search aria-hidden size={16} className="text-ink-weak shrink-0" />

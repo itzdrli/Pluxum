@@ -32,7 +32,7 @@ export function PaletteTrigger() {
 				className="border-line bg-page text-ink-weak hover:border-ink-weak mr-2 flex h-control w-52 cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-ui max-md:hidden lg:w-72"
 			>
 				<Search aria-hidden size={16} className="shrink-0" />
-				<span className="text-ink-weak/60 min-w-0 flex-1 truncate text-left">搜索或输入命令</span>
+				<span className="text-ink-weak min-w-0 flex-1 truncate text-left">搜索或输入命令</span>
 				<kbd className="border-line pointer-events-none inline-flex h-5 shrink-0 items-center rounded-[2px] border px-1 font-mono text-micro">
 					{modifier} K
 				</kbd>
