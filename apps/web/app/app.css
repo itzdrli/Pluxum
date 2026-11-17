@@ -146,13 +146,15 @@
  *   --h-control      md: bars, forms, main actions     32px, 40px on touch
  *   --h-control-sm   sm: small actions inside content  28px, 36px on touch
  *   --icon           glyph in a control                16px, 18px on touch
- *   --h-bar          top bar                           64px
+ *   --h-bar          top bar (phones; pages without the rail)  64px
+ *   --h-pane-bar     a pane's head on wide screens       56px
  */
 :root {
 	--h-control: 32px;
 	--h-control-sm: 28px;
 	--icon: 16px;
 	--h-bar: 64px;
+	--h-pane-bar: 56px;
 }
 /* Phones held sideways have little height to spare: a shorter top bar that scrolls away. */
 @media (max-height: 500px) and (pointer: coarse) {
@@ -411,6 +413,32 @@
 }
 @utility h-bar {
 	height: var(--h-bar);
+}
+
+/*
+ * A pane's head on wide screens (the frame has no top bar there): 56px, sticky at the top of the
+ * pane, holding the pane's title and actions. Its content follows the column it sits in, while
+ * its background and bottom line run the pane's full width (the pane clips them sideways).
+ * Use as `lg:pane-bar`; phones keep the top bar and lay the same header out as a page title.
+ */
+@utility pane-bar {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	height: var(--h-pane-bar);
+	margin-bottom: 20px;
+	background-color: var(--c-page);
+	&::before {
+		content: '';
+		position: absolute;
+		inset: 0 -100vmax;
+		z-index: -1;
+		background-color: var(--c-page);
+		border-bottom: 1px solid var(--c-line-soft);
+	}
 }
 
 @layer utilities {

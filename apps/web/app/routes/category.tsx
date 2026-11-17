@@ -4,10 +4,16 @@ import { useParams, useRouteLoaderData } from 'react-router'
 import type { Route } from './+types/category'
 import { ThreadRow } from '../components/forum/rows'
 import { MobileCategoryBar } from '../components/shell/mobile-stage-bar'
-import { StageLink, StageSplit, useOpenThreadRef, useStageLinks } from '../components/stage/stage'
+import {
+	FoldListButton,
+	StageLink,
+	StageSplit,
+	useOpenThreadRef,
+	useStageLinks,
+} from '../components/stage/stage'
 import { useDock } from '../components/dock/composer-dock'
-import { Button, ButtonAnchor } from '../components/ui/button'
-import { Crumbs, EmptyState, PageHeader, Panel, SectionLabel } from '../components/ui/display'
+import { Button, ButtonAnchor, IconButton } from '../components/ui/button'
+import { EmptyState, PageHeader, PaneBar, Panel } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
 import { forumApi, orThrow } from '../lib/forum-api.server'
 import {
@@ -62,7 +68,12 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 			? `/api/forum/auth/login?returnTo=${encodeURIComponent(newThread)}`
 			: undefined
 	const action = (compact: boolean) =>
-		can.createThread ? (
+		can.createThread && compact ? (
+			// The narrow list's head has room for the icon only.
+			<IconButton label="发布主题" onPress={() => dock.openThread(category.slug)}>
+				<Plus aria-hidden />
+			</IconButton>
+		) : can.createThread ? (
 			<Button
 				tone="primary"
 				size={compact ? 'sm' : 'md'}
@@ -82,36 +93,34 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 			{(detailOpen) => (
 				<>
 					{detailOpen ? (
-						<header className="mb-3 flex items-center justify-between gap-2">
-							<div className="min-w-0">
-								<StageLink
-									to={`/c/${category.slug}`}
-									prefetch="intent"
-									className="text-ink-strong hover:text-accent block truncate text-heading font-bold"
-								>
-									{category.name}
-								</StageLink>
-								<p className="text-ink-weak text-meta tabular-nums">{threads.total} 主题</p>
-							</div>
-							{can.createThread || loginToPost !== undefined ? (
-								<div className="shrink-0">{action(true)}</div>
-							) : null}
-						</header>
+						// The list's head beside a detail (wide screens only: phones show the detail alone).
+						<PaneBar className="gap-2!">
+							<StageLink
+								to={`/c/${category.slug}`}
+								prefetch="intent"
+								className="text-ink-strong hover:text-accent min-w-0 truncate text-heading font-bold"
+							>
+								{category.name}
+							</StageLink>
+							<span className="text-ink-weak shrink-0 text-meta tabular-nums">{threads.total}</span>
+							<span className="ml-auto flex shrink-0 items-center">
+								{can.createThread || loginToPost !== undefined ? action(true) : null}
+								<FoldListButton />
+							</span>
+						</PaneBar>
 					) : (
-						<>
-							{/* Phones have the way back and the post button in the bottom bar. */}
-							<div className="max-lg:hidden">
-								<Crumbs items={[{ label: '版块', to: '/' }]} />
-							</div>
-							<PageHeader
-								title={category.name}
-								description={category.description}
-								actions={<div className="max-lg:hidden">{action(false)}</div>}
-							/>
-							<div className="max-lg:hidden">
-								<SectionLabel>主题 · {threads.total}</SectionLabel>
-							</div>
-						</>
+						<PageHeader
+							title={
+								<>
+									{category.name}
+									<span className="text-ink-weak ml-2.5 text-meta font-normal tabular-nums max-lg:hidden">
+										{threads.total} 主题
+									</span>
+								</>
+							}
+							description={category.description}
+							actions={<div className="max-lg:hidden">{action(false)}</div>}
+						/>
 					)}
 					{threads.items.length === 0 ? (
 						<EmptyState

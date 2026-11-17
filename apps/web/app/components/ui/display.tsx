@@ -140,11 +140,18 @@ export function Timestamp({ iso, className }: { iso: string; className?: string 
 	)
 }
 
-export function Crumbs({ items }: { items: ReadonlyArray<{ label: string; to?: string }> }) {
+export function Crumbs({
+	items,
+	className = 'mb-4',
+}: {
+	items: ReadonlyArray<{ label: string; to?: string }>
+	/** Placement; the default leaves room under a breadcrumb that opens a page. */
+	className?: string
+}) {
 	return (
 		<nav
 			aria-label="位置"
-			className="text-ink-weak mb-4 flex min-w-0 items-center gap-1.5 text-meta"
+			className={`text-ink-weak flex min-w-0 items-center gap-1.5 text-meta ${className}`}
 		>
 			{items.map((item, index) => (
 				<span key={item.to ?? item.label} className="flex min-w-0 items-center gap-1">
@@ -164,34 +171,72 @@ export function Crumbs({ items }: { items: ReadonlyArray<{ label: string; to?: s
 	)
 }
 
-/** Title row of a page: heading, optional description and meta, actions on the right. */
+/**
+ * Title row of a page: heading, optional description and meta, actions on the right.
+ *
+ * On wide screens it is the pane's head (`pane-bar`): the title at heading size with the actions
+ * beside it, sticky at the top of the pane, and the description moves just under it. Phones lay
+ * it out as a page title under the top bar. `bar={false}` keeps the page-title layout at every
+ * width, for a page whose pane head holds something else (a thread: breadcrumb and actions).
+ */
 export function PageHeader({
 	title,
 	description,
 	meta,
 	actions,
+	bar = true,
 }: {
 	title: React.ReactNode
 	description?: string
 	meta?: React.ReactNode
 	actions?: React.ReactNode
+	bar?: boolean
 }) {
+	const hasDescription = description !== undefined && description !== ''
 	return (
-		<header className="mb-6 flex flex-wrap items-start justify-between gap-4">
-			<div className="min-w-0 flex-1 basis-64">
-				<h1 className="text-ink-strong text-[20px] leading-snug font-bold break-words">{title}</h1>
-				{description !== undefined && description !== '' && (
-					<p className="text-ink-weak mt-1 break-words">{description}</p>
-				)}
-				{meta !== undefined && (
-					<div className="text-ink-weak mt-2.5 flex flex-wrap items-center gap-2.5 text-meta">
-						{meta}
-					</div>
-				)}
-			</div>
-			{actions !== undefined && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
-		</header>
+		<>
+			<header
+				className={`mb-6 flex flex-wrap items-start justify-between gap-4 ${
+					bar ? 'lg:pane-bar lg:flex-nowrap lg:items-center lg:justify-start' : ''
+				}`}
+			>
+				<div className={`min-w-0 flex-1 basis-64 ${bar ? 'lg:basis-auto' : ''}`}>
+					<h1
+						className={`text-ink-strong text-[20px] leading-snug font-bold break-words ${
+							bar ? 'lg:truncate lg:text-heading' : ''
+						}`}
+					>
+						{title}
+					</h1>
+					{hasDescription && (
+						<p className={`text-ink-weak mt-1 break-words ${bar ? 'lg:hidden' : ''}`}>
+							{description}
+						</p>
+					)}
+					{meta !== undefined && (
+						<div className="text-ink-weak mt-2.5 flex flex-wrap items-center gap-2.5 text-meta">
+							{meta}
+						</div>
+					)}
+				</div>
+				{actions !== undefined && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+			</header>
+			{bar && hasDescription && (
+				<p className="text-ink-weak -mt-1 mb-5 break-words max-lg:hidden">{description}</p>
+			)}
+		</>
 	)
+}
+
+/** A pane head on wide screens only (see `PageHeader`): for panes whose head is not a page title. */
+export function PaneBar({
+	className,
+	children,
+}: {
+	className?: string
+	children: React.ReactNode
+}) {
+	return <div className={`lg:pane-bar max-lg:hidden ${className ?? ''}`}>{children}</div>
 }
 
 /** A raised panel; lists inside get dividers from `divide-line`. */

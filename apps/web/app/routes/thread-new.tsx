@@ -4,7 +4,7 @@ import { data, Form, redirect, useNavigation, useRouteLoaderData } from 'react-r
 import type { Route } from './+types/thread-new'
 import { Composer } from '../components/composer/composer'
 import { Button, ButtonLink } from '../components/ui/button'
-import { Crumbs, FormError, PageHeader, Panel } from '../components/ui/display'
+import { FormError, PageHeader, Panel } from '../components/ui/display'
 import { TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, textField } from '../lib/forum-api.server'
 import { defineStage } from '../lib/stage'
@@ -40,14 +40,6 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 	const submitting = useNavigation().state === 'submitting'
 	return (
 		<div className="mx-auto max-w-[860px]">
-			<div className="max-lg:hidden">
-				<Crumbs
-					items={[
-						{ label: '版块', to: '/' },
-						{ label: category.name, to: `/c/${category.slug}` },
-					]}
-				/>
-			</div>
 			<PageHeader
 				title="发布主题"
 				description={`发布到「${category.name}」`}

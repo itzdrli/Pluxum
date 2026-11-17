@@ -136,16 +136,18 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 						aria-label="最新活跃讨论"
 						className={mobileTab === 'recent' ? '' : 'max-lg:hidden'}
 					>
-						{!signedIn && <GuestWelcome root={root} />}
-						<div className="mb-5 flex items-center justify-between gap-3">
+						{/* Wide screens: the pane's head, with the overview's title; phones: the feed's sort row. */}
+						<div className="mb-5 flex items-center justify-between gap-3 lg:pane-bar">
+							<h1 className="text-ink-strong mr-4 text-heading font-bold max-lg:hidden">概览</h1>
 							<SortTabs sort={sort} />
-							<div className="flex items-center gap-3">
+							<div className="flex items-center gap-3 lg:ml-auto">
 								<span className="text-ink-weak text-meta tabular-nums max-lg:hidden xl:hidden">
 									{categories.length} 版块 · {totalThreads} 主题 · {totalPosts} 帖子
 								</span>
 								{signedIn && <NewThreadMenu categories={categories} />}
 							</div>
 						</div>
+						{!signedIn && <GuestWelcome root={root} />}
 						{recentThreads.items.length === 0 ? (
 							<EmptyState
 								icon={MessagesSquare}
@@ -226,8 +228,9 @@ function CommunityPanel({
 	posts: number
 }) {
 	return (
-		<aside aria-label="社区" className="min-w-0 max-xl:hidden xl:sticky xl:top-0">
-			<h2 className="section-label mb-5 flex h-11 items-center">社区</h2>
+		// Above the feed's pane head, whose band runs under this column: the heading sits in that band.
+		<aside aria-label="社区" className="min-w-0 max-xl:hidden xl:sticky xl:top-0 xl:z-20">
+			<h2 className="section-label mb-5 flex h-[var(--h-pane-bar)] items-center">社区</h2>
 			<Panel className="flex flex-col divide-y divide-line">
 				<dl className="grid grid-cols-3 gap-2 px-4 py-4 text-center">
 					{[
@@ -297,7 +300,7 @@ function SortTabs({ sort }: { sort: HomeSort }) {
 					to={item.id === 'active' ? '/' : `/?sort=${item.id}`}
 					replace
 					aria-current={item.id === sort ? 'page' : undefined}
-					className={`h-control -mb-px inline-flex items-center border-b-2 text-ui transition-colors max-lg:-mx-1 max-lg:px-1 lg:h-11 ${
+					className={`h-control -mb-px inline-flex items-center border-b-2 text-ui transition-colors max-lg:-mx-1 max-lg:px-1 lg:h-[var(--h-pane-bar)] ${
 						item.id === sort
 							? 'border-accent text-ink-strong font-bold'
 							: 'text-ink-weak hover:text-ink-strong border-transparent'

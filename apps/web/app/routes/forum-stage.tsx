@@ -1,13 +1,17 @@
 import type { CategoryDto } from '@pluxum/domain'
-import { Bell, Hash, LayoutGrid, Plus, Search, ShieldCheck, type LucideIcon } from 'lucide-react'
-import { Outlet, useLocation, useParams, useRouteLoaderData } from 'react-router'
+import { Bell, Hash, LayoutGrid, Plus, ShieldCheck, type LucideIcon } from 'lucide-react'
+import { Link, Outlet, useLocation, useParams, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/forum-stage'
+import { PaletteTrigger } from '../components/palette/palette-trigger'
+import { LogoMark } from '../components/shell/logo-mark'
 import { SiteFooterCompact } from '../components/shell/site-footer'
+import { UserMenu } from '../components/shell/user-menu'
 import { railCollapsed, railWidth, StageLink, useStage } from '../components/stage/stage'
 import { forumApi, orThrow } from '../lib/forum-api.server'
 import { stageShouldRevalidate } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
+import { siteOf } from '../lib/site'
 
 /**
  * The stage frame around every list and detail route. It owns the category navigation: a column
@@ -34,7 +38,8 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 	const { categories } = loaderData
 	const stage = useStage()
 	const params = useParams()
-	const pathname = useLocation().pathname
+	const location = useLocation()
+	const pathname = location.pathname
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const canManageCategories = root?.meta?.viewer.can.manageCategories === true
 	const collapsed = railCollapsed(stage)
@@ -50,6 +55,30 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 				aria-label="版块导航"
 				className={`${railWidth(collapsed)} border-line-soft bg-sunken flex min-h-0 shrink-0 flex-col border-r [view-transition-name:stage-nav] max-lg:hidden`}
 			>
+				{/* Wide screens have no top bar: the frame's way home, its search and the account live
+				    in this column, top and bottom, and every pane opens with a head of its own. */}
+				<div
+					className={`flex h-[var(--h-pane-bar)] shrink-0 items-center pl-5 ${collapsed ? 'lg:max-xl:justify-center lg:max-xl:pl-0' : ''}`}
+				>
+					<Link
+						to="/"
+						viewTransition
+						aria-label={`${siteOf(root).name} 首页`}
+						className="text-ink-strong flex items-center gap-2.5 font-bold"
+					>
+						<LogoMark className="size-7 shrink-0" />
+						<span className={`text-heading ${collapsed ? COLLAPSED_HIDDEN : ''}`}>
+							{siteOf(root).name}
+						</span>
+					</Link>
+				</div>
+				<div className={`shrink-0 px-3 pb-3 ${collapsed ? 'lg:max-xl:px-0' : ''}`}>
+					<PaletteTrigger
+						variant="rail"
+						collapsed={collapsed}
+						active={pathname === '/search' || pathname.startsWith('/search/')}
+					/>
+				</div>
 				<CategoryNavPanel
 					categories={categories}
 					activeSlug={params.slug}
@@ -61,14 +90,18 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 				<div className={`flex shrink-0 flex-col ${collapsed ? COLLAPSED_HIDDEN : ''}`}>
 					<SiteFooterCompact />
 				</div>
+				<div className="border-line-soft shrink-0 border-t">
+					<UserMenu
+						meta={root?.meta ?? null}
+						here={`${pathname}${location.search}`}
+						variant="rail"
+						collapsed={collapsed}
+					/>
+				</div>
 			</aside>
 			{stage.depth === 0 ? (
-				// A page beside the column: one scrolling pane with a reading width.
-				// The overview starts with a row of its own, level with the first rail row under the bar; the
-				// other pages open with a title that keeps a little air above it.
-				<div
-					className={`min-w-0 flex-1 px-4 py-5 lg:overflow-y-auto lg:px-10 lg:pb-8 ${pathname === '/' ? 'lg:pt-0' : 'lg:pt-3'}`}
-				>
+				// A page beside the column: one scrolling pane with a reading width, opening with its head.
+				<div className="min-w-0 flex-1 px-4 py-5 lg:overflow-x-hidden lg:overflow-y-auto lg:px-10 lg:pt-0 lg:pb-8">
 					<div className={`mx-auto w-full ${stage.wide ? WIDE_PAGE : 'max-w-[1040px]'}`}>
 						<Outlet />
 					</div>
@@ -163,15 +196,6 @@ function CategoryNavPanel({
 					active={pathname === '/'}
 					collapsed={collapsed}
 				/>
-				{meta?.search.available === true && (
-					<RailLink
-						to="/search"
-						icon={Search}
-						label="搜索"
-						active={pathname === '/search' || pathname.startsWith('/search/')}
-						collapsed={collapsed}
-					/>
-				)}
 				{notificationsOn && (
 					<RailLink
 						to="/notifications"

@@ -9,7 +9,10 @@ import {
 	useParams,
 } from 'react-router'
 
-import { useFocusReading } from '../../lib/focus'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+
+import { toggleFocusReading, useFocusReading } from '../../lib/focus'
+import { IconButton } from '../ui/button'
 
 import {
 	type ResolvedStage,
@@ -107,12 +110,26 @@ export function railCollapsed(stage: ResolvedStage): boolean {
 	return stage.depth === 2
 }
 
+// Every pane opens with its head (`pane-bar`, wide screens), so panes have no top padding there.
+// They clip sideways: the head's background and line reach past its column to the pane's edges.
 const LIST_WIDE =
-	'min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-list] lg:overflow-y-auto lg:px-10 lg:pt-3 lg:pb-7'
+	'min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-list] lg:overflow-x-hidden lg:overflow-y-auto lg:px-10 lg:pt-0 lg:pb-7'
 const LIST_NARROW =
-	'border-line-soft bg-page w-[280px] shrink-0 border-r px-4 pt-3 pb-5 [view-transition-name:stage-list-side] max-lg:hidden lg:overflow-y-auto xl:w-[320px] 2xl:w-[380px]'
+	'border-line-soft bg-page w-[280px] shrink-0 border-r px-4 pb-5 [view-transition-name:stage-list-side] max-lg:hidden lg:overflow-x-hidden lg:overflow-y-auto xl:w-[320px] 2xl:w-[380px]'
 const DETAIL =
-	'bg-page min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-detail] lg:overflow-y-auto lg:px-10 lg:pt-3 lg:pb-7'
+	'bg-page min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-detail] lg:overflow-x-hidden lg:overflow-y-auto lg:px-10 lg:pt-0 lg:pb-7'
+
+/**
+ * Folds the list beside a detail away (focus reading) — it sits in the list's own head, next to
+ * what it folds. The `[` shortcut does the same.
+ */
+export function FoldListButton() {
+	return (
+		<IconButton label="收起主题列表（[）" onPress={toggleFocusReading}>
+			<PanelLeftClose aria-hidden />
+		</IconButton>
+	)
+}
 
 /**
  * The list layer's panes: the list on its own at depth 1, and list + detail (the child route) at
@@ -155,6 +172,19 @@ export function StageSplit({
 
 	return (
 		<div className="flex min-h-0 w-full flex-1 lg:overflow-hidden">
+			{/* The folded list leaves a strip where it was, with the way to open it again. */}
+			{focus && (
+				<div className="border-line-soft bg-page flex w-10 shrink-0 flex-col items-center border-r max-lg:hidden">
+					<div className="flex h-[var(--h-pane-bar)] shrink-0 items-center">
+						<IconButton label="展开主题列表（[）" onPress={toggleFocusReading}>
+							<PanelLeftOpen aria-hidden />
+						</IconButton>
+					</div>
+					<span className="text-ink-weak text-meta tracking-widest [writing-mode:vertical-rl]">
+						{label}
+					</span>
+				</div>
+			)}
 			<section
 				ref={listRef}
 				aria-label={label}

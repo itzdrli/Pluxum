@@ -6,11 +6,17 @@ import { data, Form, redirect, useNavigation, useParams, useRouteLoaderData } fr
 import type { Route } from './+types/user'
 import { ThreadRow } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
-import { StageSplit, useOpenThreadRef, useStageLinks } from '../components/stage/stage'
+import {
+	FoldListButton,
+	StageSplit,
+	useOpenThreadRef,
+	useStageLinks,
+} from '../components/stage/stage'
 import { Button } from '../components/ui/button'
 import {
 	EmptyState,
 	FormError,
+	PaneBar,
 	Panel,
 	SectionLabel,
 	Tag,
@@ -102,21 +108,27 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 			{(detailOpen) =>
 				detailOpen ? (
 					<>
-						<header className="mb-3 flex items-center gap-2.5">
-							<UserAvatar user={user} />
-							<div className="min-w-0">
-								<p className="text-ink-strong truncate text-heading font-bold">
-									{user.displayName}
-								</p>
-								<p className="text-ink-weak text-meta tabular-nums">
-									@{user.handle} · {threadCount} 主题 · {postCount} 回复
-								</p>
+						{/* The list's head beside a detail: whose threads, and the way to fold the list away. */}
+						<PaneBar className="gap-2.5!">
+							<UserAvatar user={user} size="sm" />
+							<div className="min-w-0 flex-1 leading-tight">
+								<p className="text-ink-strong truncate font-bold">{user.displayName}</p>
+								<p className="text-ink-weak text-meta tabular-nums">{threadCount} 主题</p>
 							</div>
-						</header>
+							<FoldListButton />
+						</PaneBar>
 						<UserThreads threads={threads} activeId={openRef} detail={detail} />
 					</>
 				) : (
 					<>
+						{/* The pane's head (wide screens): whose page this is, in short; the card below has it all. */}
+						<PaneBar className="gap-2.5!">
+							<UserAvatar user={user} size="sm" />
+							<p className="text-ink-strong min-w-0 truncate text-heading font-bold">
+								{user.displayName}
+							</p>
+							<span className="text-ink-weak shrink-0 font-mono text-meta">@{user.handle}</span>
+						</PaneBar>
 						<Panel className="mb-6 flex flex-wrap items-start gap-4 px-4 py-4">
 							<UserAvatar user={user} size="xl" />
 							<div className="min-w-0 flex-1 basis-56">

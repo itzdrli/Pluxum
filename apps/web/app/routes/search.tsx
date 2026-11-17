@@ -5,12 +5,19 @@ import { Form, useNavigation, useParams, useRouteLoaderData } from 'react-router
 import type { Route } from './+types/search'
 import type { loader as stageLoader } from './forum-stage'
 import { UserAvatar } from '../components/forum/user-avatar'
-import { StageLink, StageSplit, useOpenThreadRef, useStageLinks } from '../components/stage/stage'
+import {
+	FoldListButton,
+	StageLink,
+	StageSplit,
+	useOpenThreadRef,
+	useStageLinks,
+} from '../components/stage/stage'
 import { Button } from '../components/ui/button'
 import {
 	EmptyState,
 	FormError,
 	PageHeader,
+	PaneBar,
 	Panel,
 	SectionLabel,
 	Tag,
@@ -182,10 +189,14 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 			{(detailOpen) => (
 				<>
 					{detailOpen ? (
-						<Form method="get" action="/search" role="search" className="mb-3">
-							{hiddenFilters}
-							<SearchInput query={query} size="sm" />
-						</Form>
+						// The list's head beside a detail: the query, and the way to fold the list away.
+						<PaneBar className="gap-1!">
+							<Form method="get" action="/search" role="search" className="min-w-0 flex-1">
+								{hiddenFilters}
+								<SearchInput query={query} size="sm" />
+							</Form>
+							<FoldListButton />
+						</PaneBar>
 					) : (
 						<>
 							<PageHeader title="搜索" description="支持中英文分词检索，可按版块或主题范围筛选。" />

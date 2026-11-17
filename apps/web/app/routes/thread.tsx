@@ -1,4 +1,4 @@
-import { Lock, MessageSquare, PanelLeftClose, PanelLeftOpen, Reply, Trash2, X } from 'lucide-react'
+import { Lock, MessageSquare, Reply, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
 	data,
@@ -18,13 +18,14 @@ import { PostCard } from '../components/forum/post'
 import { ThreadFlags } from '../components/forum/rows'
 import { MobileThreadBar } from '../components/shell/mobile-stage-bar'
 import { StageLink, useStage, useStageNavigate } from '../components/stage/stage'
-import { Button, ButtonAnchor, ButtonLink, IconButton } from '../components/ui/button'
+import { Button, ButtonAnchor, ButtonLink } from '../components/ui/button'
 import {
 	Crumbs,
 	EmptyState,
 	FormError,
 	Notice,
 	PageHeader,
+	PaneBar,
 	Panel,
 	Tag,
 } from '../components/ui/display'
@@ -32,7 +33,6 @@ import { TextInputField } from '../components/ui/field'
 import { ActionMenu, ConfirmDialog, type MenuItem } from '../components/ui/overlay'
 import { Pager } from '../components/ui/pager'
 import { pageCount } from '../lib/format'
-import { toggleFocusReading, useFocusReading } from '../lib/focus'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { defineStage, listPathOf, pagePathOf } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
@@ -137,7 +137,6 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const { thread, category, posts, can } = loaderData
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const dock = useDock()
-	const focusReading = useFocusReading()
 	const submit = useSubmit()
 	const stage = useStage()
 	const navigate = useStageNavigate()
@@ -262,21 +261,63 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			? `/api/forum/auth/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`
 			: undefined
 
+	const threadActions = (
+		// Phones reach these through the bottom bar's menu.
+		<div className="flex items-center gap-1 max-lg:hidden">
+			{can.reply && (
+				<Button
+					tone="ghost"
+					size="sm"
+					data-shortcut="reply"
+					{...{ title: '回复（R）' }}
+					onPress={() =>
+						dock.openReply({
+							threadId: thread.id,
+							title: thread.title,
+							action: `${location.pathname}${location.search}`,
+						})
+					}
+				>
+					<Reply aria-hidden />
+					回复
+				</Button>
+			)}
+			<ActionMenu label="主题操作" items={menu} size="md" />
+			<ButtonLink
+				to={closeHref}
+				tone="ghost"
+				aria-label="关闭主题"
+				title="关闭主题"
+				className="button--icon-only"
+			>
+				<X aria-hidden />
+			</ButtonLink>
+		</div>
+	)
+
+	const paneBar = (
+		<>
+			{/* The pane's head (wide screens): where the thread is, and what can be done with it. Phones
+		    go back and act through the bottom bar. */}
+			<PaneBar>
+				<Crumbs
+					className="min-w-0 flex-1"
+					items={[
+						{ label: '版块', to: '/' },
+						{ label: category.name, to: `/c/${category.slug}` },
+					]}
+				/>
+				{threadActions}
+			</PaneBar>
+		</>
+	)
+
 	const mainContent = (
 		<>
 			<ThreadViewSlots
 				thread={thread}
 				atEnd={posts.page >= pageCount(posts.total, posts.pageSize)}
 			/>
-			{/* Phones go back through the bottom bar, so the breadcrumb is for wide screens. */}
-			<div className="max-lg:hidden">
-				<Crumbs
-					items={[
-						{ label: '版块', to: '/' },
-						{ label: category.name, to: `/c/${category.slug}` },
-					]}
-				/>
-			</div>
 			{renaming ? (
 				<RenameThread
 					title={thread.title}
@@ -286,6 +327,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 				/>
 			) : (
 				<PageHeader
+					bar={false}
 					title={thread.title}
 					meta={
 						<>
@@ -307,46 +349,6 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 								</span>
 							)}
 						</>
-					}
-					actions={
-						// Phones reach these through the bottom bar's menu.
-						<div className="flex items-center gap-1 max-lg:hidden">
-							{can.reply && (
-								<Button
-									tone="ghost"
-									size="sm"
-									data-shortcut="reply"
-									{...{ title: '回复（R）' }}
-									onPress={() =>
-										dock.openReply({
-											threadId: thread.id,
-											title: thread.title,
-											action: `${location.pathname}${location.search}`,
-										})
-									}
-								>
-									<Reply aria-hidden />
-									回复
-								</Button>
-							)}
-							<IconButton
-								label={focusReading ? '退出专注阅读（[）' : '专注阅读（[）'}
-								aria-pressed={focusReading}
-								onPress={toggleFocusReading}
-							>
-								{focusReading ? <PanelLeftOpen aria-hidden /> : <PanelLeftClose aria-hidden />}
-							</IconButton>
-							<ActionMenu label="主题操作" items={menu} size="md" />
-							<ButtonLink
-								to={closeHref}
-								tone="ghost"
-								aria-label="关闭主题"
-								title="关闭主题"
-								className="button--icon-only"
-							>
-								<X aria-hidden />
-							</ButtonLink>
-						</div>
 					}
 				/>
 			)}
@@ -404,20 +406,24 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 		return (
 			// The side column is as wide as what it holds and folds away when its slots draw nothing. It
 			// needs the room of a wide window, or of focus reading, which hides the list.
-			<div className="mx-auto grid max-w-[1180px] 2xl:grid-cols-[minmax(0,1fr)_auto] group-data-[focus=true]/detail:xl:grid-cols-[minmax(0,1fr)_auto]">
-				<div className="min-w-0">{mainContent}</div>
-				<aside
-					aria-label="主题侧栏"
-					className="hidden w-[240px] min-w-0 flex-col gap-4 self-start empty:hidden! lg:sticky lg:top-3 2xl:ml-6 2xl:flex group-data-[focus=true]/detail:xl:ml-6 group-data-[focus=true]/detail:xl:flex"
-				>
-					<ThreadSidebarSlots thread={thread} />
-				</aside>
+			<div className="mx-auto max-w-[1180px]">
+				{paneBar}
+				<div className="grid 2xl:grid-cols-[minmax(0,1fr)_auto] group-data-[focus=true]/detail:xl:grid-cols-[minmax(0,1fr)_auto]">
+					<div className="min-w-0">{mainContent}</div>
+					<aside
+						aria-label="主题侧栏"
+						className="hidden w-[240px] min-w-0 flex-col gap-4 self-start empty:hidden! lg:sticky lg:top-[calc(var(--h-pane-bar)+12px)] 2xl:ml-6 2xl:flex group-data-[focus=true]/detail:xl:ml-6 group-data-[focus=true]/detail:xl:flex"
+					>
+						<ThreadSidebarSlots thread={thread} />
+					</aside>
+				</div>
 			</div>
 		)
 	}
 
 	return (
 		<div className="mx-auto max-w-[880px] group-data-[focus=true]/detail:max-w-[1040px]">
+			{paneBar}
 			{mainContent}
 		</div>
 	)

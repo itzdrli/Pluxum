@@ -1,6 +1,6 @@
 import type { MetaDto, UserDto } from '@pluxum/domain'
 import { Dropdown, Popover } from '@heroui/react'
-import { Palette } from 'lucide-react'
+import { Ellipsis, LogIn, Palette } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 
@@ -12,22 +12,58 @@ import { ThemeSwatches } from './theme-picker'
 
 const ROLE_LABELS = { guest: '游客', member: '成员', moderator: '版主', admin: '管理员' } as const
 
-/** Login link, or the signed-in account with its menu. */
-export function UserMenu({ meta, here }: { meta: MetaDto | null; here: string }) {
+/**
+ * Login link, or the signed-in account with its menu. `variant="bar"` is the top bar's avatar
+ * button; `variant="rail"` is the account row at the foot of the wide-screen rail (name and role
+ * beside the avatar, the menu opening upwards), down to the avatar while the rail shows only icons.
+ */
+export function UserMenu({
+	meta,
+	here,
+	variant = 'bar',
+	collapsed = false,
+}: {
+	meta: MetaDto | null
+	here: string
+	variant?: Variant
+	collapsed?: boolean
+}) {
 	const user = meta?.viewer.user
 	if (!user) {
+		const loginHref = `/api/forum/auth/login?returnTo=${encodeURIComponent(here)}`
+		if (variant === 'rail') {
+			return (
+				<div
+					className={`flex items-center gap-2 px-3 py-3 ${collapsed ? 'lg:max-xl:flex-col lg:max-xl:px-0' : ''}`}
+				>
+					{meta?.auth.loginAvailable ? (
+						<ButtonAnchor
+							data-testid="viewer"
+							href={loginHref}
+							tone="primary"
+							aria-label="登录"
+							className={`flex-1 ${collapsed ? 'lg:max-xl:w-10 lg:max-xl:flex-none lg:max-xl:px-0' : ''}`}
+						>
+							<LogIn aria-hidden />
+							<span className={collapsed ? 'lg:max-xl:hidden' : undefined}>登录</span>
+						</ButtonAnchor>
+					) : (
+						<span data-testid="viewer" className="text-ink-weak flex-1 text-meta">
+							未登录
+						</span>
+					)}
+					<GuestThemeButton placement={collapsed ? 'right bottom' : 'top end'} />
+				</div>
+			)
+		}
 		// Guests have no account menu, and list and thread pages have no footer, so the theme
 		// swatches get their own small button here.
 		return (
 			<>
-				<GuestThemeButton />
+				<GuestThemeButton placement="bottom end" />
 				{meta?.auth.loginAvailable ? (
 					// A document navigation, not a client-side one: the API redirects to the identity provider.
-					<ButtonAnchor
-						data-testid="viewer"
-						href={`/api/forum/auth/login?returnTo=${encodeURIComponent(here)}`}
-						tone="primary"
-					>
+					<ButtonAnchor data-testid="viewer" href={loginHref} tone="primary">
 						登录
 					</ButtonAnchor>
 				) : (
@@ -42,17 +78,32 @@ export function UserMenu({ meta, here }: { meta: MetaDto | null; here: string })
 	const role = meta.viewer.roles.at(-1)
 	const isStaff = meta.viewer.roles.includes('moderator') || meta.viewer.roles.includes('admin')
 	const moderationActive = meta.uiSlots.some((slot) => slot.extId === 'forum-moderation')
-	return <AccountMenu user={user} role={role} showModeration={isStaff && moderationActive} />
+	return (
+		<AccountMenu
+			user={user}
+			role={role}
+			showModeration={isStaff && moderationActive}
+			variant={variant}
+			collapsed={collapsed}
+		/>
+	)
 }
+
+type Variant = 'bar' | 'rail'
+type Placement = 'bottom end' | 'top end' | 'top start' | 'right bottom'
 
 function AccountMenu({
 	user,
 	role,
 	showModeration,
+	variant,
+	collapsed,
 }: {
 	user: UserDto
 	role: keyof typeof ROLE_LABELS | undefined
 	showModeration: boolean
+	variant: Variant
+	collapsed: boolean
 }) {
 	const name = user.displayName
 	const navigate = useNavigate()
@@ -91,8 +142,9 @@ function AccountMenu({
 		</>
 	)
 
-	// Phones: a bottom sheet, like every other overlay there, with rows sized for a thumb.
-	if (narrow) {
+	// Phones: a bottom sheet, like every other overlay there, with rows sized for a thumb. (The rail
+	// only shows on wide screens.)
+	if (narrow && variant === 'bar') {
 		return (
 			<>
 				{forms}
@@ -112,15 +164,42 @@ function AccountMenu({
 		<>
 			{forms}
 			<Dropdown>
-				{/* Only the avatar: name and role are inside the menu. */}
-				<Dropdown.Trigger
-					data-testid="viewer"
-					aria-label={`账号：${name}`}
-					className={triggerClass}
+				{variant === 'rail' ? (
+					// The rail's foot: who is signed in, the whole row opening the menu.
+					<Dropdown.Trigger
+						data-testid="viewer"
+						aria-label={`账号：${name}`}
+						className={`hover:bg-hover active:bg-pressed flex h-14 w-full cursor-pointer items-center gap-2.5 pr-2 pl-4 text-left outline-none data-[focus-visible=true]:outline-2 data-[focus-visible=true]:-outline-offset-2 data-[focus-visible=true]:outline-[var(--c-accent)] ${
+							collapsed ? 'lg:max-xl:justify-center lg:max-xl:px-0' : ''
+						}`}
+					>
+						<UserAvatar user={user} />
+						<span className={`min-w-0 flex-1 leading-tight ${collapsed ? 'lg:max-xl:hidden' : ''}`}>
+							<span className="text-ink-strong block truncate font-bold">{name}</span>
+							{role !== undefined && (
+								<span className="text-ink-weak block text-meta">{ROLE_LABELS[role]}</span>
+							)}
+						</span>
+						<Ellipsis
+							aria-hidden
+							size={16}
+							className={`text-ink-weak shrink-0 ${collapsed ? 'lg:max-xl:hidden' : ''}`}
+						/>
+					</Dropdown.Trigger>
+				) : (
+					// Only the avatar: name and role are inside the menu.
+					<Dropdown.Trigger
+						data-testid="viewer"
+						aria-label={`账号：${name}`}
+						className={triggerClass}
+					>
+						<UserAvatar user={user} size="lg" />
+					</Dropdown.Trigger>
+				)}
+				<Dropdown.Popover
+					placement={variant === 'bar' ? 'bottom end' : collapsed ? 'right bottom' : 'top start'}
+					className="min-w-52"
 				>
-					<UserAvatar user={user} size="lg" />
-				</Dropdown.Trigger>
-				<Dropdown.Popover placement="bottom end" className="min-w-52">
 					<div className="border-line border-b px-3 py-2.5">{header}</div>
 					<Dropdown.Menu aria-label="账号" onAction={(key) => act(String(key))}>
 						{items.map((item) => (
@@ -205,13 +284,13 @@ function NarrowAccountMenu({
 	)
 }
 
-function GuestThemeButton() {
+function GuestThemeButton({ placement }: { placement: Placement }) {
 	return (
 		<Popover>
 			<IconButton label="切换主题" className="text-ink-weak hover:text-ink-strong">
 				<Palette aria-hidden />
 			</IconButton>
-			<Popover.Content placement="bottom end" className="p-0">
+			<Popover.Content placement={placement} className="p-0">
 				<Popover.Dialog
 					aria-label="主题"
 					className="flex items-center gap-3 px-3 py-2.5 outline-none"
