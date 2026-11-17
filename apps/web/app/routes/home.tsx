@@ -118,35 +118,37 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 				)}
 			</div>
 
-			{showForm && (
-				<div className="lg:mx-auto lg:max-w-[880px]">
-					<NewCategory
-						error={actionData?.error}
-						nameMax={root?.meta?.limits.categoryNameMax}
-						onCancel={closeForm}
-					/>
-				</div>
-			)}
-
 			{/* Wide screens: one feed; the categories are the column beside it. Phones have no such
 			    column, so the categories are the second tab. */}
 			<div className="max-lg:mt-3 lg:mx-auto lg:max-w-[880px] xl:grid xl:max-w-none xl:grid-cols-[minmax(0,1fr)_280px] xl:items-start xl:gap-6 2xl:grid-cols-[minmax(0,1fr)_320px] 2xl:gap-8">
 				<div className="min-w-0">
+					{/* Wide screens: the pane's head, with the overview's title; phones: the feed's sort row.
+					    Above both sections so the new-category form opens under it, not above it. */}
+					<div
+						className={`mb-5 flex items-center justify-between gap-3 lg:pane-bar ${
+							mobileTab === 'recent' ? '' : 'max-lg:hidden'
+						}`}
+					>
+						<h1 className="text-ink-strong mr-4 text-heading font-bold max-lg:hidden">概览</h1>
+						<SortTabs sort={sort} />
+						<div className="flex items-center gap-3 lg:ml-auto">
+							<span className="text-ink-weak text-meta tabular-nums max-lg:hidden xl:hidden">
+								{categories.length} 版块 · {totalThreads} 主题 · {totalPosts} 帖子
+							</span>
+							{signedIn && <NewThreadMenu categories={categories} />}
+						</div>
+					</div>
+					{showForm && (
+						<NewCategory
+							error={actionData?.error}
+							nameMax={root?.meta?.limits.categoryNameMax}
+							onCancel={closeForm}
+						/>
+					)}
 					<section
 						aria-label="最新活跃讨论"
 						className={mobileTab === 'recent' ? '' : 'max-lg:hidden'}
 					>
-						{/* Wide screens: the pane's head, with the overview's title; phones: the feed's sort row. */}
-						<div className="mb-5 flex items-center justify-between gap-3 lg:pane-bar">
-							<h1 className="text-ink-strong mr-4 text-heading font-bold max-lg:hidden">概览</h1>
-							<SortTabs sort={sort} />
-							<div className="flex items-center gap-3 lg:ml-auto">
-								<span className="text-ink-weak text-meta tabular-nums max-lg:hidden xl:hidden">
-									{categories.length} 版块 · {totalThreads} 主题 · {totalPosts} 帖子
-								</span>
-								{signedIn && <NewThreadMenu categories={categories} />}
-							</div>
-						</div>
 						{!signedIn && <GuestWelcome root={root} />}
 						{recentThreads.items.length === 0 ? (
 							<EmptyState
