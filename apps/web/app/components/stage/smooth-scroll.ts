@@ -34,7 +34,8 @@ function create(wrapper: HTMLElement | Window): Lenis {
 		wrapper,
 		...(element === undefined ? {} : { content: element, eventsTarget: element }),
 		autoRaf: true,
-		lerp: 0.12,
+		// How much of the remaining distance each frame covers: higher settles sooner.
+		lerp: 0.16,
 		// Lists, menus, code blocks and the editor scroll on their own, natively.
 		allowNestedScroll: true,
 		// Panes change content without changing size (a new thread, more replies): read the
