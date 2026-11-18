@@ -293,7 +293,7 @@ export function MobileThreadBar({
 					{(close) => (
 						<Form method="post" className="flex flex-col gap-3">
 							<input type="hidden" name="intent" value="reply" />
-							{locked && <Notice icon={Lock}>主题已锁定，只有版主和管理员还能回复。</Notice>}
+							{locked && <Notice icon={Lock}>主题已锁定，仅版主可回复</Notice>}
 							<FormError message={replyError} />
 							<Composer
 								key={`${threadId}-${postsTotal}`}

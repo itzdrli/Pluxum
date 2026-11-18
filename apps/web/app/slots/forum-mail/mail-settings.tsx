@@ -104,9 +104,7 @@ export function MailSettings({ profile }: { profile: UserProfileDto }) {
 				{state.email === null ? (
 					<p className="text-ink-weak flex items-start gap-2">
 						<MailX aria-hidden className="mt-0.5 size-4 shrink-0" />
-						<span>
-							你的登录账号没有提供（已验证的）邮箱，所以收不到邮件提醒。在登录服务里设置邮箱后，下次登录即可生效。
-						</span>
+						<span>登录账号没有已验证的邮箱，收不到邮件提醒。</span>
 					</p>
 				) : (
 					<>
@@ -124,7 +122,6 @@ export function MailSettings({ profile }: { profile: UserProfileDto }) {
 							<Mail aria-hidden className="mt-[0.2em] size-3.5 shrink-0" />
 							<span>
 								发到 <span className="text-ink break-all">{state.email}</span>
-								。这是登录账号的邮箱，在登录服务里修改，下次登录生效；不会公开。
 							</span>
 						</p>
 					</>

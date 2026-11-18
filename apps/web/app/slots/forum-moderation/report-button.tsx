@@ -74,9 +74,6 @@ export function ReportAction({ post, setMenuItems }: SlotProps['post.actions']) 
 								</Modal.Heading>
 							</Modal.Header>
 							<Modal.Body className="flex flex-col gap-3">
-								<p className="text-ink-weak text-meta">
-									请说明举报 {post.author.displayName} 的原因，版主和管理员会尽快核实处理。
-								</p>
 								<FormError message={error} />
 								<div className="flex flex-wrap gap-1.5">
 									{PRESET_REASONS.map((preset) => {
@@ -98,14 +95,13 @@ export function ReportAction({ post, setMenuItems }: SlotProps['post.actions']) 
 									})}
 								</div>
 								<label className="flex flex-col gap-1">
-									<span className="text-ink-weak text-meta">详细说明</span>
+									<span className="text-ink-weak text-meta">原因</span>
 									<textarea
 										value={reason}
 										onChange={(event) => setReason(event.currentTarget.value)}
 										maxLength={REASON_MAX}
 										rows={3}
 										required
-										placeholder="补充违规细节或选择上方常见原因…"
 										className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border px-2.5 py-2 text-ui leading-relaxed outline-none"
 									/>
 								</label>

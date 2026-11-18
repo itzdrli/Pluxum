@@ -41,8 +41,7 @@ export const ForumSearchConfig = v.object({
 			v.array(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(64))),
 			f.formMeta({
 				title: '自定义词',
-				description:
-					'分词时当作一个整体的词，例如社区黑话、产品名。保存后立即生效，并在后台重建全部索引。',
+				description: '分词时当作一个整体的词，例如产品名。保存后会重建索引。',
 			}),
 			f.arrayMeta({ itemLabel: '词', addLabel: '添加词', emptyHint: '未添加自定义词' }),
 		),

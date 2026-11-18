@@ -250,7 +250,6 @@ function RenameUser({
 				<TextInputField
 					name="displayName"
 					label="昵称"
-					hint="只在本论坛显示，不会改动登录账号的名字。"
 					required
 					maxLength={max}
 					defaultValue={name}
@@ -259,7 +258,6 @@ function RenameUser({
 				<TextInputField
 					name="handle"
 					label="用户名"
-					hint="用于个人主页地址 /u/用户名（小写字母开头）。"
 					required
 					maxLength={handleMax}
 					defaultValue={userHandle}

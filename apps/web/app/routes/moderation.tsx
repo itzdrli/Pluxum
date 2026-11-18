@@ -278,12 +278,8 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 	if (!available) {
 		return (
 			<>
-				<PageHeader title="审核队列" description="处理用户举报并查看社区管理日志。" />
-				<EmptyState
-					icon={ShieldOff}
-					title="审核功能未启用"
-					hint="内容审核插件当前处于停用状态，请稍后再试。"
-				/>
+				<PageHeader title="审核队列" />
+				<EmptyState icon={ShieldOff} title="审核功能未启用" />
 			</>
 		)
 	}
@@ -291,11 +287,10 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 	if (!loggedIn) {
 		return (
 			<>
-				<PageHeader title="审核队列" description="处理用户举报并查看社区管理日志。" />
+				<PageHeader title="审核队列" />
 				<EmptyState
 					icon={LogIn}
 					title="请先登录"
-					hint="请使用版主或管理员账号登录以访问审核队列。"
 					action={
 						loginAvailable ? (
 							<ButtonAnchor
@@ -315,12 +310,8 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 	if (!authorized) {
 		return (
 			<>
-				<PageHeader title="审核队列" description="处理用户举报并查看社区管理日志。" />
-				<EmptyState
-					icon={ShieldAlert}
-					title="没有权限访问审核队列"
-					hint="仅版主或管理员可以处理举报与查看审核日志。"
-				/>
+				<PageHeader title="审核队列" />
+				<EmptyState icon={ShieldAlert} title="没有权限访问审核队列" />
 			</>
 		)
 	}
@@ -332,7 +323,6 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 		<>
 			<PageHeader
 				title="审核"
-				description="处理社区举报、清理违规内容并查阅管理操作记录。"
 				actions={
 					<div
 						role="tablist"
@@ -413,7 +403,6 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 						<EmptyState
 							icon={ShieldCheck}
 							title={status === 'open' ? '没有待处理的举报' : '当前筛选下没有举报记录'}
-							hint={status === 'open' ? '所有举报均已处理完毕。' : '切换其他状态筛选查看历史记录。'}
 						/>
 					) : (
 						<div className="flex flex-col gap-3">
@@ -438,7 +427,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 			{tab === 'logs' && logs !== null && (
 				<section aria-label="审核日志">
 					{logs.items.length === 0 ? (
-						<EmptyState icon={History} title="暂无审核日志" hint="社区管理操作记录将显示在这里。" />
+						<EmptyState icon={History} title="暂无审核日志" />
 					) : (
 						<Panel as="ul" className="divide-line divide-y">
 							{logs.items.map((entry) => (
@@ -544,7 +533,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 							type="text"
 							name="note"
 							maxLength={500}
-							placeholder="处理备注（可选，记入审核日志）…"
+							placeholder="备注（可选）"
 							aria-label="处理备注"
 							className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control min-w-0 flex-1 basis-48 rounded-[2px] border px-2.5 text-ui outline-none"
 						/>

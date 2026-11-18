@@ -151,11 +151,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 					>
 						{!signedIn && <GuestWelcome root={root} />}
 						{recentThreads.items.length === 0 ? (
-							<EmptyState
-								icon={MessagesSquare}
-								title="还没有讨论"
-								hint="版块内发布的主题与最新回复会在这里实时汇总。"
-							/>
+							<EmptyState icon={MessagesSquare} title="还没有讨论" />
 						) : (
 							// The same rows as a category's list; the overview's mix of categories shows each row's.
 							<div className="@container/threads">
@@ -187,15 +183,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 						className={mobileTab === 'categories' ? 'lg:hidden' : 'hidden'}
 					>
 						{categories.length === 0 ? (
-							<EmptyState
-								icon={LayoutList}
-								title="还没有版块"
-								hint={
-									canManage
-										? '新建第一个版块后，成员就可以在里面发布主题。'
-										: '管理员还没有创建版块。'
-								}
-							/>
+							<EmptyState icon={LayoutList} title="还没有版块" />
 						) : (
 							<Panel
 								as="ul"
@@ -449,7 +437,7 @@ function NewCategory({
 					<TextInputField
 						name="slug"
 						label="标识"
-						hint="用在网址里，小写字母、数字和连字符；留空则按名称生成。"
+						hint="留空则按名称生成"
 						placeholder="general"
 						pattern="[a-z0-9]+(-[a-z0-9]+)*"
 					/>

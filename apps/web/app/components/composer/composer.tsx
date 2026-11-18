@@ -292,13 +292,11 @@ export function Composer({
 
 	const showCount = maxLength !== undefined && value.length > maxLength * 0.8
 	const hint =
-		format !== 'markdown'
-			? '目前按纯文本显示，换行会保留。'
-			: showRich
-				? undefined
-				: fits
-					? '支持 Markdown：**粗体**、`代码`、> 引用、- 列表。'
-					: '这篇内容里有富文本编辑器不支持的写法（如表格、图片），切到富文本会改变它们。'
+		format !== 'markdown' || showRich
+			? undefined
+			: fits
+				? '支持 Markdown'
+				: '含表格或图片，切到富文本会改变它们。'
 
 	const toggle = rich !== null && format === 'markdown' && (
 		<button

@@ -164,7 +164,7 @@ function CategoriesPanel({ host }: { host: Host }) {
 		<Stack gap="md">
 			<Group justify="space-between">
 				<Text size="sm" c="dimmed">
-					版块按这里的顺序显示在论坛首页。名称、标识和简介的规则与前台一致。
+					版块按这里的顺序显示在论坛首页。
 				</Text>
 				<Button leftSection={<IconPlus size={16} />} onClick={() => setEditing('new')}>
 					新建版块

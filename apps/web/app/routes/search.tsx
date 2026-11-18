@@ -161,12 +161,8 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 			<StageSplit label="搜索">
 				{() => (
 					<>
-						<PageHeader title="搜索" description="检索论坛中的主题与回复。" />
-						<EmptyState
-							icon={SearchX}
-							title="搜索功能未启用"
-							hint="全文检索插件当前处于停用状态，请稍后再试。"
-						/>
+						<PageHeader title="搜索" />
+						<EmptyState icon={SearchX} title="搜索功能未启用" />
 					</>
 				)}
 			</StageSplit>
@@ -199,7 +195,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 						</PaneBar>
 					) : (
 						<>
-							<PageHeader title="搜索" description="支持中英文分词检索，可按版块或主题范围筛选。" />
+							<PageHeader title="搜索" />
 							<Panel className="mb-6 p-3 sm:p-4">
 								<Form method="get" action="/search" role="search" className="flex flex-col gap-3">
 									{authorId !== undefined && (
@@ -252,19 +248,9 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 					)}
 
 					{results === null ? (
-						error === undefined && (
-							<EmptyState
-								icon={Search}
-								title="输入关键词开始搜索"
-								hint="支持中文词语切分与英文搜索，结果按相关度与发布时间排序。"
-							/>
-						)
+						error === undefined && <EmptyState icon={Search} title="输入关键词开始搜索" />
 					) : results.items.length === 0 ? (
-						<EmptyState
-							icon={SearchX}
-							title="没有找到匹配的内容"
-							hint="试试缩短关键词、换个说法，或放宽版块与主题筛选条件。"
-						/>
+						<EmptyState icon={SearchX} title="没有找到匹配的内容" />
 					) : (
 						<section>
 							<SectionLabel>搜索结果 · {results.total}</SectionLabel>
@@ -315,7 +301,7 @@ function SearchInput({
 				name="q"
 				defaultValue={query}
 				maxLength={LIMITS.searchQueryMax}
-				placeholder="输入关键词搜索主题或帖子…"
+				placeholder="搜索主题或回复…"
 				aria-label="搜索关键词"
 				autoFocus={autoFocus}
 				className={`border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border pr-3 pl-8 text-ui outline-none ${size === 'sm' ? 'h-control-sm' : 'h-control'}`}

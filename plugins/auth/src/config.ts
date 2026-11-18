@@ -48,8 +48,7 @@ export const ForumAuthConfig = v.object({
 			v.check(isOrigin, 'publicOrigin must be an origin like https://forum.test'),
 			f.formMeta({
 				title: '论坛公开地址',
-				description:
-					'浏览器访问论坛前台的 origin，例如 https://forum.example.com。登录回调、会话 Cookie 和跨站检查都绑定它。',
+				description: '论坛前台的 origin，例如 https://forum.example.com。',
 				section: LOGIN,
 			}),
 			f.stringMeta({ placeholder: 'https://forum.example.com' }),
@@ -99,7 +98,7 @@ export const ForumAuthConfig = v.object({
 			f.formMeta({
 				title: 'OpenID Connect',
 				description:
-					'登录服务（Zitadel）。客户端密钥不在这里填写：机密客户端把它存进本插件的 Vault 记录 oidc-client-secret，没有该记录时只用 PKCE。',
+					'登录服务（Zitadel）。客户端密钥存在 Vault 记录 oidc-client-secret 中，没有时只用 PKCE。',
 				section: LOGIN,
 			}),
 			f.objectMeta({ variant: 'card' }),

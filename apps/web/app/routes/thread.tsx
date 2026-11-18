@@ -395,7 +395,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 				isOpen={confirmingDelete}
 				onOpenChange={setConfirmingDelete}
 				title="删除这个主题？"
-				body="主题和其中的全部回复都会从版块中消失。"
+				body="所有回复会一并删除。"
 				confirmLabel="删除主题"
 				fields={{ intent: 'delete-thread' }}
 			/>
@@ -483,7 +483,7 @@ function ReplyArea({
 		if (locked) {
 			return (
 				<Notice icon={Lock} className="mt-6 max-lg:hidden">
-					主题已锁定，不能再回复。
+					主题已锁定
 				</Notice>
 			)
 		}
@@ -505,7 +505,7 @@ function ReplyArea({
 				<input type="hidden" name="intent" value="reply" />
 				{locked && (
 					// Only moderators reach the form of a locked thread.
-					<Notice icon={Lock}>主题已锁定，只有版主和管理员还能回复。</Notice>
+					<Notice icon={Lock}>主题已锁定，仅版主可回复</Notice>
 				)}
 				<FormError message={error} />
 				<Composer

@@ -86,7 +86,7 @@ export function ConfirmDialog({
 	isOpen: boolean
 	onOpenChange: (open: boolean) => void
 	title: string
-	body: string
+	body?: string
 	confirmLabel: string
 	fields: Readonly<Record<string, string>>
 }) {
@@ -101,7 +101,7 @@ export function ConfirmDialog({
 								{title}
 							</AlertDialog.Heading>
 						</AlertDialog.Header>
-						<AlertDialog.Body className="text-ink">{body}</AlertDialog.Body>
+						{body !== undefined && <AlertDialog.Body className="text-ink">{body}</AlertDialog.Body>}
 						<AlertDialog.Footer>
 							<Form ref={form} method="post" className="flex justify-end gap-2">
 								{Object.entries(fields).map(([name, value]) => (

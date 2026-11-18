@@ -146,12 +146,8 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 	if (!available) {
 		return (
 			<>
-				<PageHeader title="通知" description="查看收到的话题回复与站内消息。" />
-				<EmptyState
-					icon={BellOff}
-					title="通知功能未启用"
-					hint="站内通知插件当前处于停用状态，请稍后再试。"
-				/>
+				<PageHeader title="通知" />
+				<EmptyState icon={BellOff} title="通知功能未启用" />
 			</>
 		)
 	}
@@ -159,11 +155,10 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 	if (!loggedIn || notifications === null) {
 		return (
 			<>
-				<PageHeader title="通知" description="查看收到的话题回复与站内消息。" />
+				<PageHeader title="通知" />
 				<EmptyState
 					icon={LogIn}
 					title="请先登录"
-					hint="登录后即可查看收到的话题回复与站内通知。"
 					action={
 						loginAvailable ? (
 							<ButtonAnchor
@@ -184,7 +179,6 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 		<>
 			<PageHeader
 				title="通知"
-				description="查看收到的话题回复与站内消息。"
 				actions={
 					<div className="flex flex-wrap items-center gap-2">
 						<div
@@ -239,11 +233,6 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 				<EmptyState
 					icon={Bell}
 					title={unreadOnly ? '没有未读通知' : '暂时还没有收到通知'}
-					hint={
-						unreadOnly
-							? '所有通知都已读完，可以切换到“全部”查看历史通知。'
-							: '当其他成员回复你发布的主题时，会在这里收到提醒。'
-					}
 					action={
 						unreadOnly ? (
 							<ButtonLink to="/notifications" tone="secondary" size="sm">

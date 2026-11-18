@@ -44,8 +44,7 @@ export const ForumModerationConfig = v.object({
 			v.array(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(120))),
 			f.formMeta({
 				title: '屏蔽词',
-				description:
-					'标题或正文含有这些词或短语时拒绝发布，不区分大小写和全半角。保存后立即生效，不影响已发布的内容。',
+				description: '标题或正文含有这些词时拒绝发布，不区分大小写和全半角。',
 			}),
 			f.arrayMeta({ itemLabel: '屏蔽词', addLabel: '添加屏蔽词', emptyHint: '未设置屏蔽词' }),
 		),

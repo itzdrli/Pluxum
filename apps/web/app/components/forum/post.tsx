@@ -138,7 +138,6 @@ export function PostCard({
 				isOpen={confirming}
 				onOpenChange={setConfirming}
 				title="删除这条回复？"
-				body="删除后其他人只能看到“这条回复已被删除”。"
 				confirmLabel="删除"
 				fields={{ intent: 'delete-post', postId: post.id }}
 			/>

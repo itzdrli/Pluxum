@@ -15,8 +15,7 @@ export const ForumCacheConfig = v.object({
 			v.maxValue(3600),
 			f.formMeta({
 				title: '列表缓存时间（秒）',
-				description:
-					'首页、版块列表和社区面板的缓存时间。发帖、编辑、删帖和改版块会立即清掉缓存，这个时间只是兜底（例如“热门”的时间窗口）。',
+				description: '首页、版块列表和社区面板的缓存时间。内容变动时会立即失效。',
 			}),
 		),
 		60,

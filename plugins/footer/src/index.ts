@@ -22,7 +22,7 @@ const href = v.pipe(
 	v.trim(),
 	f.formMeta({
 		title: '链接',
-		description: '论坛内路径（/ 开头）在当前页打开，其他地址在新标签页打开。',
+		description: '站内路径以 / 开头，外链在新标签页打开。',
 	}),
 	f.stringMeta({ placeholder: '/c/general 或 https://…' }),
 	v.check((value: string) => isFooterHref(value), '链接须是论坛内路径（/ 开头）或 http(s) 地址'),
@@ -42,7 +42,7 @@ const FooterIconLink = v.object({
 	),
 	label: v.pipe(
 		text(FOOTER_LABEL_MAX),
-		f.formMeta({ title: '名称', description: '鼠标悬停和读屏软件读出的文字。' }),
+		f.formMeta({ title: '名称', description: '悬停提示和读屏文字。' }),
 	),
 	href,
 })
@@ -65,7 +65,7 @@ export const ForumFooterConfig = v.object({
 			v.boolean(),
 			f.formMeta({
 				title: '显示「站内」栏',
-				description: '在页脚最前面加一栏站内入口（版块，搜索可用时还有搜索）。',
+				description: '在页脚最前面加一栏站内入口。',
 			}),
 		),
 		false,

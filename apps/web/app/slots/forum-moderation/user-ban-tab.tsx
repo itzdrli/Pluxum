@@ -55,7 +55,7 @@ export function UserBanTab({ profile }: { profile: UserProfileDto }) {
 	return (
 		<section aria-labelledby="moderation-status-heading">
 			<SectionLabel>
-				<span id="moderation-status-heading">{canManage ? '账号状态与封禁管理' : '账号状态'}</span>
+				<span id="moderation-status-heading">账号状态</span>
 			</SectionLabel>
 			<Panel className="flex flex-col gap-3 px-4 py-3">
 				<div className="flex flex-wrap items-center justify-between gap-2">
@@ -80,11 +80,7 @@ export function UserBanTab({ profile }: { profile: UserProfileDto }) {
 								<Tag tone="success" icon={ShieldCheck}>
 									正常
 								</Tag>
-								<span className="text-ink-weak text-meta">
-									{isTargetAdmin
-										? '管理员账号受保护，不可封禁。'
-										: '该账号当前状态正常，可正常发帖与互动。'}
-								</span>
+								{isTargetAdmin && <span className="text-ink-weak text-meta">管理员不可封禁</span>}
 							</>
 						)}
 					</div>
@@ -150,7 +146,6 @@ function BanForm({ userId }: { userId: string }) {
 						onChange={(event) => setReason(event.currentTarget.value)}
 						maxLength={REASON_MAX}
 						required
-						placeholder="填写封禁原因（将记入审核日志）…"
 						className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control w-full rounded-[2px] border px-2.5 text-ui outline-none"
 					/>
 				</label>
@@ -217,7 +212,6 @@ function UnbanForm({ userId }: { userId: string }) {
 						value={note}
 						onChange={(event) => setNote(event.currentTarget.value)}
 						maxLength={REASON_MAX}
-						placeholder="填写解除封禁说明…"
 						className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control w-full rounded-[2px] border px-2.5 text-ui outline-none"
 					/>
 				</label>

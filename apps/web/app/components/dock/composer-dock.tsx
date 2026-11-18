@@ -251,7 +251,6 @@ function Dock({
 					rows={size === 'full' ? 18 : 8}
 					autoFocus={target.kind === 'reply'}
 					insertRef={insertRef}
-					placeholder="可以把左侧的主题拖进来，生成引用链接"
 					fill
 				/>
 				<div className="flex shrink-0 items-center justify-between gap-2">
