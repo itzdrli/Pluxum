@@ -89,7 +89,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 		) : undefined
 
 	return (
-		<StageSplit label={`${category.name} 主题列表`}>
+		<StageSplit label={`${category.name} 主题列表`} short={category.name}>
 			{(detailOpen) => (
 				<>
 					{detailOpen ? (

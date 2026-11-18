@@ -106,7 +106,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 	const categories = useRouteLoaderData<typeof stageLoader>('routes/forum-stage')?.categories
 
 	return (
-		<StageSplit label={`${user.displayName} 的主页`}>
+		<StageSplit label={`${user.displayName} 的主页`} short={user.displayName}>
 			{(detailOpen) =>
 				detailOpen ? (
 					<>

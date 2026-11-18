@@ -128,9 +128,13 @@ export function FoldListButton() {
  */
 export function StageSplit({
 	label,
+	short,
 	children,
 }: {
+	/** Names the list pane for assistive technology. */
 	label: string
+	/** What the folded list's strip reads: a word or a name, not a sentence. Defaults to `label`. */
+	short?: string
 	children: (detailOpen: boolean) => React.ReactNode
 }) {
 	const stage = useStage()
@@ -174,8 +178,11 @@ export function StageSplit({
 							<PanelLeftOpen aria-hidden />
 						</IconButton>
 					</div>
-					<span className="text-ink-weak text-meta tracking-widest [writing-mode:vertical-rl]">
-						{label}
+					<span
+						title={label}
+						className="text-ink-weak mt-2 max-h-[8em] overflow-hidden text-meta tracking-widest text-ellipsis whitespace-nowrap [writing-mode:vertical-rl]"
+					>
+						{short ?? label}
 					</span>
 				</div>
 			)}

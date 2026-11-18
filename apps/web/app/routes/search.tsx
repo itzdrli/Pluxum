@@ -181,7 +181,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 	)
 
 	return (
-		<StageSplit label="搜索结果">
+		<StageSplit label="搜索结果" short="搜索">
 			{(detailOpen) => (
 				<>
 					{detailOpen ? (
