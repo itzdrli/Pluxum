@@ -18,7 +18,7 @@ catalogs:
     elysia: 2.0.0-rc.0
     drizzle-orm: ^0.45.4
     marked: 17.0.6
-    redis: ^6.3.0
+    redis: ^6.3.1
     s3mini: ^1.0.3
     sanitize-html: 2.18.1
     typebox: ^1.4.3
@@ -27,39 +27,45 @@ catalogs:
     '@fontsource/ibm-plex-sans': 5.3.0
     '@fontsource/jetbrains-mono': 5.3.0
     '@fontsource/noto-sans-sc': 5.3.1
-    '@heroui/react': 3.2.6
-    '@heroui/styles': 3.2.6
+    '@heroui/react': 3.2.7
+    '@heroui/styles': 3.2.7
     '@internationalized/date': ^3.12.4
-    '@mantine/core': 9.7.3
-    '@mantine/hooks': 9.7.3
+    '@mantine/core': 9.7.4
+    '@mantine/hooks': 9.7.4
     '@openuidev/react-lang': 1.1.0
     '@react-aria/ssr': ^3.10.1
     '@react-aria/utils': ^3.34.1
     '@react-router/dev': ^8.5.1
     '@react-router/node': ^8.5.1
     '@react-router/serve': ^8.5.1
-    '@tabler/icons-react': ^3.49.0
-    '@tailwindcss/vite': ^4.3.3
-    '@tiptap/core': 3.32.0
-    '@tiptap/extension-image': 3.32.0
-    '@tiptap/extension-table': 3.32.0
-    '@tiptap/markdown': 3.32.0
-    '@tiptap/pm': 3.32.0
-    '@tiptap/react': 3.32.0
-    '@tiptap/starter-kit': 3.32.0
+    '@tabler/icons-react': ^3.50.0
+    '@tailwindcss/vite': ^4.3.4
+    '@tiptap/core': 3.32.2
+    '@tiptap/extension-heading': 3.32.2
+    '@tiptap/extension-image': 3.32.2
+    '@tiptap/extension-table': 3.32.2
+    '@tiptap/markdown': 3.32.2
+    '@tiptap/pm': 3.32.2
+    '@tiptap/react': 3.32.2
+    '@tiptap/starter-kit': 3.32.2
     '@types/react': ^19.3.0
     '@types/react-dom': ^19.3.0
-    '@vitejs/plugin-react': ^6.1.2
+    '@vitejs/plugin-react': ^6.2.1
     isbot: ^5.2.2
-    lucide-react: ^1.61.0
+    lucide-react: ^1.67.0
     # Published Workbench producers require this exact shared React version.
     react: 19.3.1
     react-aria: ^3.53.1
     react-aria-components: ^1.22.1
     react-dom: 19.3.1
     react-router: ^8.5.1
-    tailwindcss: ^4.3.3
+    tailwindcss: ^4.3.4
     zod: 4.6.7
+  # Published compatibility of plugin peers, apart from the versions installed.
+  frontend-peer:
+    '@mantine/core': 9.7.3
+    '@mantine/hooks': 9.7.3
+    '@tabler/icons-react': ^3.49.0
   pluxel:
     '@pluxel/cli': ^1.1.0
     '@pluxel/core': ^1.1.0
@@ -79,16 +85,16 @@ catalogs:
     valibot-form: ^1.1.0
   test:
     happy-dom: 21.0.4
-    vitest: 5.0.5
+    vitest: 5.1.0
   tooling:
     '@types/sanitize-html': 2.16.2
     vite-plus: 1.4.0
-    '@types/node': ^26.6.5
+    '@types/node': ^26.6.6
     typescript: ^7.0.2
     vite: npm:@voidzero-dev/vite-plus-core@1.4.0
   prod:
-    '@electric-sql/pglite': ^0.5.10
-    jose: ^6.2.12
+    '@electric-sql/pglite': ^0.5.15
+    jose: ^6.2.15
     capnweb: 0.12.0
 overrides:
   'vite@*': npm:@voidzero-dev/vite-plus-core@1.4.0

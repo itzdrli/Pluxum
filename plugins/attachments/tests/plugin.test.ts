@@ -420,20 +420,22 @@ describe('ForumAttachmentsPlugin', () => {
 				.set('s3.credentials', { accessKeyId: liveAccessKey!, secretAccessKey: liveSecretKey! })
 			await host.stop(ForumStoragePlugin)
 			await host.config.patch(ForumStoragePlugin, {
-				buckets: [
-					{
-						id: 'default',
-						backend: {
-							type: 'remote',
-							endpoint: liveEndpoint!,
-							region: 'us-east-1',
-							credentials: { type: 'vault', namespace: 'forum-storage' },
-							requestSizeInBytes: 8 * 1024 * 1024,
-							requestAbortTimeout: 10_000,
-							minPartSize: 5 * 1024 * 1024,
+				set: {
+					buckets: [
+						{
+							id: 'default',
+							backend: {
+								type: 'remote',
+								endpoint: liveEndpoint!,
+								region: 'us-east-1',
+								credentials: { type: 'vault', namespace: 'forum-storage' },
+								requestSizeInBytes: 8 * 1024 * 1024,
+								requestAbortTimeout: 10_000,
+								minPartSize: 5 * 1024 * 1024,
+							},
 						},
-					},
-				],
+					],
+				},
 			})
 			await host.commit((change) => {
 				change.start(ForumStoragePlugin)

@@ -35,6 +35,7 @@
 		"@tiptap/core": "catalog:frontend",
 		"@tiptap/starter-kit": "catalog:frontend",
 		"@tiptap/markdown": "catalog:frontend",
+		"@tiptap/extension-heading": "catalog:frontend",
 		"@tiptap/extension-image": "catalog:frontend",
 		"@tiptap/extension-table": "catalog:frontend"
 	},

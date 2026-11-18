@@ -1,4 +1,4 @@
-import { BasePlugin, Plugin, pluginNodeAddressOf } from '@pluxel/core'
+import { BasePlugin, Plugin } from '@pluxel/core'
 import { defineRedisScript, Redis } from '@pluxel/plugin-redis'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
@@ -39,7 +39,7 @@ describe('ForumRedisPlugin', () => {
 		})
 		expect(failure.lifecycleReport.issues).toContainEqual(
 			expect.objectContaining({
-				plugin: pluginNodeAddressOf(ForumRedisPlugin),
+				plugin: ForumRedisPlugin.nodeAddress(),
 				kind: 'start-failed',
 			}),
 		)

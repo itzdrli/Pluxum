@@ -32,7 +32,7 @@ const PRESERVED: readonly (readonly [name: string, source: string, rewritten: st
 	['explicit breaks', '两个空格  \n反斜杠\\\n结束', '两个空格  \n反斜杠  \n结束'],
 	['blank lines between paragraphs', '上\n\n\n\n下', '上\n\n\n\n下'],
 	['headings 2 to 4', '## 二\n\n### 三\n\n#### 四', '## 二\n\n### 三\n\n#### 四'],
-	['headings outside 2 to 4', '# 一\n\n##### 五', '# 一\n\n##### 五'],
+	['headings outside 2 to 4', '# 一\n\n##### 五', '## 一\n\n#### 五'],
 	[
 		'emphasis in either notation',
 		'**粗** __粗__ *斜* _斜_ ~~删~~ `码`',

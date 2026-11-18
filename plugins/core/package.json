@@ -43,12 +43,12 @@
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
-		"@mantine/core": "catalog:frontend",
-		"@mantine/hooks": "catalog:frontend",
+		"@mantine/core": "catalog:frontend-peer",
+		"@mantine/hooks": "catalog:frontend-peer",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/workbench": "catalog:pluxel",
-		"@tabler/icons-react": "catalog:frontend",
+		"@tabler/icons-react": "catalog:frontend-peer",
 		"capnweb": "catalog:prod",
 		"react": "catalog:frontend",
 		"react-dom": "catalog:frontend"

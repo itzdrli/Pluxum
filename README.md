@@ -36,9 +36,9 @@ vp run verify     # governance, lint/format/types, tests, production builds
 live Redis test. Machine-local public origins go in the ignored `mise.local.toml`
 (`PLUXEL_PUBLIC_ORIGIN` for the host/Workbench, `FORUM_WEB_PUBLIC_ORIGIN` for the frontend).
 
-When saved runtime state predates a plugin (new or renamed packages), `state.initial` no longer applies;
-persist auto start with `vp exec pluxel dev run host/web/dev/plugins.ts --export autostart` and clear stale
-nodes with `--export prune`.
+Auto start, provider routing and env-derived plugin config are declared in `host/src/runtime-state.ts`.
+A saved Workbench edit of the same field or plugin wins over the declaration (`saved-first`); remove the
+saved value to return to the declared one.
 
 ## Template reference
 

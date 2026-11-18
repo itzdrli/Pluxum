@@ -1,4 +1,5 @@
 import { type Editor, Extension, type Extensions, markInputRule } from '@tiptap/core'
+import { Heading, type Level } from '@tiptap/extension-heading'
 import { Image } from '@tiptap/extension-image'
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table'
 import { Markdown } from '@tiptap/markdown'
@@ -98,6 +99,21 @@ const tableExtensions: Extensions = [
 	TableCell.extend({ content: 'paragraph+' }),
 ]
 
+// Level 1 is the thread title; the renderer has no style below level 4.
+const HEADING_LEVELS: Level[] = [2, 3, 4]
+
+/**
+ * Headings outside 2–4 become the nearest allowed level, as the renderer shows them (`#` as a level
+ * 2 heading, `#####` as level 4), so a post keeps its look; Tiptap would make them paragraphs.
+ */
+const ForumHeading = Heading.extend({
+	parseMarkdown(token, helpers) {
+		const depth = typeof token.depth === 'number' ? token.depth : 1
+		const level = Math.min(Math.max(depth, HEADING_LEVELS[0]), HEADING_LEVELS.at(-1)!)
+		return helpers.createNode('heading', { level }, helpers.parseInline(token.tokens ?? []))
+	},
+})
+
 /**
  * The editor's extensions for the forum's Markdown dialect (see forum-markdown): paragraphs, line
  * breaks, headings 2–4, bold, italic, strikethrough, inline code, code blocks, quotes, lists,
@@ -110,8 +126,7 @@ const tableExtensions: Extensions = [
 export function composerExtensions(): Extensions {
 	return [
 		StarterKit.configure({
-			// Level 1 is the thread title; the renderer has no style below level 4.
-			heading: { levels: [2, 3, 4] },
+			heading: false,
 			// Markdown has no underline.
 			underline: false,
 			link: {
@@ -123,6 +138,7 @@ export function composerExtensions(): Extensions {
 				HTMLAttributes: { rel: 'nofollow ugc noopener', target: null },
 			},
 		}),
+		ForumHeading.configure({ levels: HEADING_LEVELS }),
 		ForumImage,
 		...tableExtensions,
 		InlineInputRules,

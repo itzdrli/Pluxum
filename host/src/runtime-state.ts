@@ -1,9 +1,11 @@
+import type { HostConfigOptions, HostPolicyOptions } from '@pluxel/host'
+import { Redis } from '@pluxel/plugin-redis'
+import { S3 } from '@pluxel/plugin-storage'
 import { VaultAdminPlugin } from '@pluxel/services/plugins'
-import { pluginNodeAddressOf } from '@pluxel/core'
 import * as v from 'valibot'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAttachmentsPlugin, ForumStorageConfig, ForumStoragePlugin } from '@pluxum/attachments'
-import { ForumAuthConfig, ForumAuthPlugin } from '@pluxum/auth'
+import { ForumAuth, ForumAuthConfig, ForumAuthPlugin } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { ForumFooterPlugin } from '@pluxum/footer'
 import { ForumMarkdownPlugin } from '@pluxum/markdown'
@@ -33,9 +35,19 @@ export const appPlugins = [
 	VaultAdminPlugin,
 ] as const
 
-export function appHostState() {
+/**
+ * Which plugins start and which forum plugin provides each shared capability. Saved policy
+ * (Workbench edits) wins; these declarations apply until something is saved.
+ */
+export function appHostPolicy(): HostPolicyOptions {
 	return {
-		initial: { autoStart: appPlugins.map(pluginNodeAddressOf) },
+		mode: { autoStart: 'saved-first', providerDefaults: 'saved-first' },
+		autoStart: appPlugins,
+		providerDefaults: [
+			{ token: ForumAuth.definitionAddress(), provider: ForumAuthPlugin.nodeAddress() },
+			{ token: Redis.definitionAddress(), provider: ForumRedisPlugin.nodeAddress() },
+			{ token: S3.definitionAddress(), provider: ForumStoragePlugin.nodeAddress() },
+		],
 	}
 }
 
@@ -50,9 +62,11 @@ export type AppConfigEnv = Readonly<{
 	S3_BUCKETS?: string
 }>
 
-export function appConfigRecords(env: AppConfigEnv) {
+/** Declared config; a plugin's saved record (Workbench edits) replaces its declared one. */
+export function appConfig(env: AppConfigEnv): HostConfigOptions {
 	return {
-		initial: [
+		mode: 'saved-first',
+		records: [
 			...redisConfigRecord(env.REDIS_CONNECTIONS),
 			...storageConfigRecord(env.S3_BUCKETS),
 			...authConfigRecord(env),
@@ -69,7 +83,7 @@ function parseJsonEnv(name: string, raw: string): unknown {
 }
 
 /**
- * REDIS_CONNECTIONS (JSON array) becomes the base config layer of ForumRedisPlugin.
+ * REDIS_CONNECTIONS (JSON array) becomes the declared config of ForumRedisPlugin.
  * Not an `envBinding`: the static `modules` deployment build cannot yet resolve package Plugin
  * catalogs for env bindings, so Workbench edits can still override this value (see FORUM_PLAN).
  */
@@ -77,7 +91,7 @@ function redisConfigRecord(raw: string | undefined) {
 	if (raw === undefined) return []
 	return [
 		{
-			owner: pluginNodeAddressOf(ForumRedisPlugin),
+			owner: ForumRedisPlugin.nodeAddress(),
 			config: v.parse(ForumRedisConfig, {
 				connections: parseJsonEnv('REDIS_CONNECTIONS', raw),
 			}),
@@ -89,7 +103,7 @@ function storageConfigRecord(raw: string | undefined) {
 	if (raw === undefined) return []
 	return [
 		{
-			owner: pluginNodeAddressOf(ForumStoragePlugin),
+			owner: ForumStoragePlugin.nodeAddress(),
 			config: v.parse(ForumStorageConfig, {
 				buckets: parseJsonEnv('S3_BUCKETS', raw),
 			}),
@@ -100,7 +114,7 @@ function storageConfigRecord(raw: string | undefined) {
 const set = (value: string | undefined): string | undefined => (value === '' ? undefined : value)
 
 /**
- * Base config layer of ForumAuthPlugin (Workbench edits can override it, like Redis above):
+ * Declared config of ForumAuthPlugin (a saved Workbench record replaces it, like Redis above):
  * - FORUM_WEB_PUBLIC_ORIGIN: the forum frontend's origin as browsers see it;
  * - FORUM_OIDC_ISSUER + FORUM_OIDC_CLIENT_ID: the Zitadel instance and the forum's OIDC application;
  * - FORUM_OIDC_PROVIDER_LOGOUT=true: logging out of the forum also ends the Zitadel session;
@@ -130,7 +144,7 @@ function authConfigRecord(env: AppConfigEnv) {
 	}
 	return [
 		{
-			owner: pluginNodeAddressOf(ForumAuthPlugin),
+			owner: ForumAuthPlugin.nodeAddress(),
 			// Config records hold plain data: an unset option is left out, not stored as undefined.
 			config: v.parse(ForumAuthConfig, {
 				...(publicOrigin === undefined ? {} : { publicOrigin }),

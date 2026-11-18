@@ -76,7 +76,7 @@ async function switchTo(
 	dev: Parameters<Parameters<typeof defineDevConsole>[0]>[0],
 	buckets: unknown,
 ) {
-	const saved = await dev.config.patch(ForumStoragePlugin, { buckets })
+	const saved = await dev.config.patch(ForumStoragePlugin, { set: { buckets } })
 	if (!saved.ok) return { saved }
 	const restart = await dev.plugins.restart(ForumStoragePlugin)
 	return { saved: saved.ok, restart, status: await dev.plugins.status(ForumStoragePlugin) }
