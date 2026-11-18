@@ -43,6 +43,7 @@ const ERROR_CODES = [
 	'not_found',
 	'conflict',
 	'unavailable',
+	'rate_limited',
 	'internal',
 ] as const satisfies ReadonlyArray<ApiError['code']>
 

@@ -67,7 +67,11 @@ import {
 	userRoles,
 	users,
 } from './database'
-import { ContentRendererRegistry, type ContentRendererContribution } from './content'
+import {
+	ContentRendererRegistry,
+	type ContentRendererContribution,
+	type RenderedBody,
+} from './content'
 import {
 	EntityExtensionRegistry,
 	UiSlotRegistry,
@@ -77,10 +81,20 @@ import {
 } from './extensions'
 import {
 	PostHookRegistry,
+	type PostAdmitEvent,
 	type PostAfterWriteEvent,
 	type PostBeforeWriteEvent,
 	type PostHookContribution,
 } from './hooks'
+import { digest, ForumCacheRegistry, type ForumCacheContribution } from './cache'
+import {
+	isCategoryListing,
+	isCommunityListing,
+	isThreadListing,
+	type CategoryListing,
+	type CommunityListing,
+	type ThreadListing,
+} from './listings'
 import { ForumAdminTarget } from './admin-target'
 import { ForumCoreConfig } from './config'
 import { FooterLinkRegistry, type FooterLinkContribution } from './footer'
@@ -129,12 +143,15 @@ export type {
 	UiSlotContribution,
 } from './extensions'
 export type {
+	PostAdmitEvent,
+	PostAdmitRejection,
 	PostAfterWriteEvent,
 	PostBeforeWriteEvent,
 	PostHookContribution,
 	PostHookRejection,
 	PostHookRejectionCode,
 } from './hooks'
+export type { ForumCacheContribution } from './cache'
 export type { NotificationChannelContribution } from './notifications'
 export type { PermissionPolicyContribution } from './policies'
 export type {
@@ -157,6 +174,8 @@ const HOT_WINDOW_DAYS = 30
 /** The community panel counts posts this recent, and lists this many members in each of its lists. */
 const ACTIVE_WINDOW_DAYS = 7
 const COMMUNITY_LIST_SIZE = 5
+/** Listings past this page are read fresh: few people go there, and keys stay bounded. */
+const CACHED_PAGES = 3
 
 export type CreateCategoryInput = Readonly<{
 	name: string
@@ -295,6 +314,9 @@ export class ForumCorePlugin extends BasePlugin {
 	private readonly postHooks = new PostHookRegistry()
 	private readonly notificationChannels = new NotificationChannelRegistry()
 	private readonly searchProviders = new SearchProviderRegistry()
+	private readonly cache = new ForumCacheRegistry()
+	/** Bumped whenever the content renderer changes, so cached HTML of the old one is not served. */
+	private renderGeneration = 0
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(ForumDatabase)
@@ -334,7 +356,58 @@ export class ForumCorePlugin extends BasePlugin {
 	 * already installed: one renderer serves the whole forum.
 	 */
 	registerContentRenderer(contribution: ContentRendererContribution): () => void {
-		return this.contentRenderers.register(contribution)
+		const dispose = this.contentRenderers.register(contribution)
+		this.rendererChanged()
+		let disposed = false
+		return () => {
+			if (disposed) return
+			disposed = true
+			dispose()
+			this.rendererChanged()
+		}
+	}
+
+	private rendererChanged(): void {
+		this.renderGeneration += 1
+		this.cache.clearRendered((error, cacheId) =>
+			this.ctx.logger.error('cache failed to drop rendered posts', { error, cacheId }),
+		)
+	}
+
+	// ── Cache ───────────────────────────────────────────────────────────────────────────────
+
+	/**
+	 * Installs the cache the core keeps rendered posts and listings in (see `ForumCacheContribution`).
+	 * Without one, everything is read fresh. The returned disposer must be handed to the
+	 * contributor's `ctx.effects`. Throws on an invalid ID or when a cache is already installed.
+	 */
+	registerCache(contribution: ForumCacheContribution): () => void {
+		return this.cache.register(contribution)
+	}
+
+	/** ID of the installed cache, or null while the core reads everything fresh. */
+	cacheId(): string | null {
+		return this.cache.id()
+	}
+
+	/** Drops every cached listing. Called after each write that changes what a listing shows. */
+	private async listingsChanged(): Promise<void> {
+		await this.cache.clearListings((error, cacheId) =>
+			this.ctx.logger.error('cache failed to drop listings; they may be stale until they expire', {
+				error,
+				cacheId,
+			}),
+		)
+	}
+
+	private cachedListing<V>(
+		key: string,
+		load: () => Promise<V>,
+		parse: (value: unknown) => value is V,
+	): Promise<V> {
+		return this.cache.listing(key, load, parse, (error, cacheId) =>
+			this.ctx.logger.error('cache failed; reading the listing fresh', { error, cacheId, key }),
+		)
 	}
 
 	/** ID of the installed content renderer, or null while posts are shown as plain text. */
@@ -689,12 +762,13 @@ export class ForumCorePlugin extends BasePlugin {
 		}
 	}
 
-	private createOrFindUser(
+	private async createOrFindUser(
 		subject: string,
 		displayName: string,
 		handleHint: string | undefined,
 	): Promise<ForumResult<UserDto>> {
-		return this.database.transaction(async (tx) => {
+		let created = false
+		const found = await this.database.transaction(async (tx) => {
 			const [existing] = await tx.select(author).from(users).where(eq(users.subject, subject))
 			if (existing) return Result.ok(existing)
 
@@ -706,6 +780,7 @@ export class ForumCorePlugin extends BasePlugin {
 				.returning({ id: users.id, number: users.number })
 
 			if (inserted) {
+				created = true
 				const base = deriveHandleBase(handleHint ?? '') || deriveHandleBase(displayName)
 				const rawCandidates =
 					base === ''
@@ -732,6 +807,9 @@ export class ForumCorePlugin extends BasePlugin {
 			if (!user) throw new Error('User row is missing right after its upsert')
 			return Result.ok(user)
 		})
+		// The community panel lists the newest members.
+		if (created) await this.listingsChanged()
+		return found
 	}
 
 	/** The account of an identity-provider subject, or null when it has never logged in. */
@@ -754,6 +832,7 @@ export class ForumCorePlugin extends BasePlugin {
 				.where(eq(users.id, userId))
 				.returning(author),
 		)
+		if (user) await this.listingsChanged()
 		return user ? Result.ok(user) : notFound('用户')
 	}
 
@@ -815,6 +894,8 @@ export class ForumCorePlugin extends BasePlugin {
 				throw error
 			})
 		if (updated.isErr()) return updated
+		// Listings show authors' names.
+		await this.listingsChanged()
 		const enriched = await this.extendedUsers(principal, [updated.value])
 		return Result.ok(enriched.get(updated.value.id) ?? updated.value)
 	}
@@ -1059,6 +1140,7 @@ export class ForumCorePlugin extends BasePlugin {
 				.onConflictDoNothing({ target: categories.slug })
 				.returning(),
 		)
+		if (row) await this.listingsChanged()
 		return row ? Result.ok(toCategoryDto(row)) : fail('conflict', '版块标识已被使用')
 	}
 
@@ -1090,7 +1172,7 @@ export class ForumCorePlugin extends BasePlugin {
 			patch.position = input.position
 		}
 
-		return this.database.transaction(async (tx) => {
+		const updated = await this.database.transaction(async (tx) => {
 			const [current] = await tx.select().from(categories).where(eq(categories.id, categoryId))
 			if (!current) return notFound('版块')
 			if (Object.keys(patch).length === 0) return Result.ok(toCategoryDto(current))
@@ -1108,13 +1190,15 @@ export class ForumCorePlugin extends BasePlugin {
 				.returning()
 			return row ? Result.ok(toCategoryDto(row)) : notFound('版块')
 		})
+		if (updated.isOk()) await this.listingsChanged()
+		return updated
 	}
 
 	/** Only a category that never held a thread can be removed; history is not discarded. */
 	async deleteCategory(principal: Principal, categoryId: string): Promise<ForumResult<void>> {
 		if (!this.can(principal, 'category.manage', { categoryId })) return denied(principal)
 		if (!isEntityId(categoryId)) return notFound('版块')
-		return this.database.transaction(async (tx) => {
+		const outcome = await this.database.transaction(async (tx) => {
 			const [used] = await tx
 				.select({ id: threads.id })
 				.from(threads)
@@ -1127,6 +1211,8 @@ export class ForumCorePlugin extends BasePlugin {
 				.returning({ id: categories.id })
 			return removed.length > 0 ? Result.ok() : notFound('版块')
 		})
+		if (outcome.isOk()) await this.listingsChanged()
+		return outcome
 	}
 
 	// ── Threads ─────────────────────────────────────────────────────────────────────────────
@@ -1143,58 +1229,53 @@ export class ForumCorePlugin extends BasePlugin {
 	): Promise<RecentThreadsDto> {
 		const { page, pageSize } = normalizePage(paging)
 		const sort = filter.sort ?? 'active'
-		const read = await this.database.read(async (db) => {
-			const allCategories = await db
-				.select({
-					id: categories.id,
-					slug: categories.slug,
-					name: categories.name,
-				})
-				.from(categories)
-				.orderBy(asc(categories.position), asc(categories.id))
-			const visibleCategories = allCategories.filter((category) =>
-				this.can(principal, 'category.view', { categoryId: category.id }),
-			)
-			if (visibleCategories.length === 0) return null
+		const visibleCategories = await this.visibleCategories(principal)
+		if (visibleCategories.length === 0) return { items: [], page, pageSize, total: 0 }
+		const visibleIds = visibleCategories.map((category) => category.id)
+		const categoriesById = new Map<string, CategorySummaryDto>(
+			visibleCategories.map(({ id, slug, name }) => [id, { id, slug, name }]),
+		)
+		const load = () =>
+			this.database.read(async (db): Promise<ThreadListing> => {
+				const visible = and(
+					inArray(threads.categoryId, visibleIds),
+					isNull(threads.deletedAt),
+					sort === 'hot'
+						? gte(threads.lastPostAt, new Date(Date.now() - HOT_WINDOW_DAYS * 86_400_000))
+						: undefined,
+				)
+				const order =
+					sort === 'new'
+						? [desc(threads.createdAt), desc(threads.id)]
+						: sort === 'hot'
+							? [desc(threads.replyCount), desc(threads.lastPostAt), desc(threads.id)]
+							: [desc(threads.lastPostAt), desc(threads.id)]
+				const [total] = await db.select({ value: count() }).from(threads).where(visible)
+				const rows = await db
+					.select({ thread: threads, author })
+					.from(threads)
+					.innerJoin(users, eq(users.id, threads.authorId))
+					.where(visible)
+					.orderBy(...order)
+					.limit(pageSize)
+					.offset((page - 1) * pageSize)
+				return {
+					threads: rows.map((row) => toThreadDto(row.thread, row.author)),
+					total: total?.value ?? 0,
+				}
+			})
+		const read =
+			page <= CACHED_PAGES
+				? await this.cachedListing(
+						`recent:${sort}:${page}:${pageSize}:${digest(visibleIds.join(','))}`,
+						load,
+						isThreadListing,
+					)
+				: await load()
 
-			const visibleIds = visibleCategories.map((category) => category.id)
-			const categoriesById = new Map<string, CategorySummaryDto>(
-				visibleCategories.map((category) => [category.id, category]),
-			)
-			const visible = and(
-				inArray(threads.categoryId, visibleIds),
-				isNull(threads.deletedAt),
-				sort === 'hot'
-					? gte(threads.lastPostAt, new Date(Date.now() - HOT_WINDOW_DAYS * 86_400_000))
-					: undefined,
-			)
-			const order =
-				sort === 'new'
-					? [desc(threads.createdAt), desc(threads.id)]
-					: sort === 'hot'
-						? [desc(threads.replyCount), desc(threads.lastPostAt), desc(threads.id)]
-						: [desc(threads.lastPostAt), desc(threads.id)]
-			const [total] = await db.select({ value: count() }).from(threads).where(visible)
-			const rows = await db
-				.select({ thread: threads, author })
-				.from(threads)
-				.innerJoin(users, eq(users.id, threads.authorId))
-				.where(visible)
-				.orderBy(...order)
-				.limit(pageSize)
-				.offset((page - 1) * pageSize)
-			return {
-				categoriesById,
-				rows,
-				total: total?.value ?? 0,
-			}
-		})
-		if (!read) return { items: [], page, pageSize, total: 0 }
-
-		const baseThreads = read.rows.map((row) => toThreadDto(row.thread, row.author))
-		const extendedThreads = await this.extended('thread', principal, baseThreads)
+		const extendedThreads = await this.extended('thread', principal, read.threads)
 		const items: RecentThreadDto[] = extendedThreads.flatMap((thread) => {
-			const category = read.categoriesById.get(thread.categoryId)
+			const category = categoriesById.get(thread.categoryId)
 			return category ? [{ ...thread, category }] : []
 		})
 		return {
@@ -1205,45 +1286,65 @@ export class ForumCorePlugin extends BasePlugin {
 		}
 	}
 
+	/** Every category the viewer may see, in display order. */
+	private async visibleCategories(principal: Principal) {
+		const all = await this.database.read((db) =>
+			db
+				.select({ id: categories.id, slug: categories.slug, name: categories.name })
+				.from(categories)
+				.orderBy(asc(categories.position), asc(categories.id)),
+		)
+		return all.filter((category) =>
+			this.can(principal, 'category.view', { categoryId: category.id }),
+		)
+	}
+
 	/**
 	 * The overview's community panel: how many members there are, who joined last, and who posted
 	 * most in the last `ACTIVE_WINDOW_DAYS` days. Only posts in categories the viewer may see count.
 	 */
 	async communityPulse(principal: Principal): Promise<CommunityDto> {
-		const read = await this.database.read(async (db) => {
-			const allCategories = await db.select({ id: categories.id }).from(categories)
-			const visibleIds = allCategories
-				.filter((category) => this.can(principal, 'category.view', { categoryId: category.id }))
-				.map((category) => category.id)
-			const [members] = await db.select({ value: count() }).from(users)
-			const newest = await db
-				.select(author)
-				.from(users)
-				.orderBy(desc(users.number))
-				.limit(COMMUNITY_LIST_SIZE)
-			const since = new Date(Date.now() - ACTIVE_WINDOW_DAYS * 86_400_000)
-			const posted = count()
-			const active =
-				visibleIds.length === 0
-					? []
-					: await db
-							.select({ ...author, posts: posted })
-							.from(posts)
-							.innerJoin(threads, eq(threads.id, posts.threadId))
-							.innerJoin(users, eq(users.id, posts.authorId))
-							.where(
-								and(
-									inArray(threads.categoryId, visibleIds),
-									isNull(threads.deletedAt),
-									isNull(posts.deletedAt),
-									gte(posts.createdAt, since),
-								),
-							)
-							.groupBy(users.id, users.handle, users.displayName, users.number)
-							.orderBy(desc(posted), asc(users.number))
-							.limit(COMMUNITY_LIST_SIZE)
-			return { members: members?.value ?? 0, newest, active }
-		})
+		const visibleIds = (await this.visibleCategories(principal)).map((category) => category.id)
+		const read = await this.cachedListing(
+			`community:${digest(visibleIds.join(','))}`,
+			() =>
+				this.database.read(async (db): Promise<CommunityListing> => {
+					const [members] = await db.select({ value: count() }).from(users)
+					const newest = await db
+						.select({ id: users.id, handle: users.handle, displayName: users.displayName })
+						.from(users)
+						.orderBy(desc(users.number))
+						.limit(COMMUNITY_LIST_SIZE)
+					const since = new Date(Date.now() - ACTIVE_WINDOW_DAYS * 86_400_000)
+					const posted = count()
+					const active =
+						visibleIds.length === 0
+							? []
+							: await db
+									.select({
+										id: users.id,
+										handle: users.handle,
+										displayName: users.displayName,
+										posts: posted,
+									})
+									.from(posts)
+									.innerJoin(threads, eq(threads.id, posts.threadId))
+									.innerJoin(users, eq(users.id, posts.authorId))
+									.where(
+										and(
+											inArray(threads.categoryId, visibleIds),
+											isNull(threads.deletedAt),
+											isNull(posts.deletedAt),
+											gte(posts.createdAt, since),
+										),
+									)
+									.groupBy(users.id, users.handle, users.displayName, users.number)
+									.orderBy(desc(posted), asc(users.number))
+									.limit(COMMUNITY_LIST_SIZE)
+					return { members: members?.value ?? 0, newest, active }
+				}),
+			isCommunityListing,
+		)
 		const byId = await this.extendedUsers(principal, [
 			...read.newest,
 			...read.active.map(({ id, handle, displayName }) => ({ id, handle, displayName })),
@@ -1267,15 +1368,13 @@ export class ForumCorePlugin extends BasePlugin {
 		paging: PageRequest = {},
 	): Promise<ForumResult<CategoryThreadsDto>> {
 		const { page, pageSize } = normalizePage(paging)
-		const listing = await this.database.read(
-			async (db): Promise<ForumResult<CategoryThreadsDto>> => {
+		const load = () =>
+			this.database.read(async (db): Promise<CategoryListing | null> => {
 				const [category] = await db
 					.select()
 					.from(categories)
 					.where(eq(categories.slug, categorySlug))
-				if (!category || !this.can(principal, 'category.view', { categoryId: category.id })) {
-					return notFound('版块')
-				}
+				if (!category) return null
 				const visible = and(eq(threads.categoryId, category.id), isNull(threads.deletedAt))
 				const [total] = await db.select({ value: count() }).from(threads).where(visible)
 				const rows = await db
@@ -1286,25 +1385,35 @@ export class ForumCorePlugin extends BasePlugin {
 					.orderBy(desc(threads.pinned), desc(threads.lastPostAt), desc(threads.id))
 					.limit(pageSize)
 					.offset((page - 1) * pageSize)
-				return Result.ok({
+				return {
 					category: toCategoryDto(category),
-					threads: {
-						items: rows.map((row) => toThreadDto(row.thread, row.author)),
-						page,
-						pageSize,
-						total: total?.value ?? 0,
-					},
-					can: {
-						createThread: this.can(principal, 'thread.create', { categoryId: category.id }),
-					},
-				})
-			},
-		)
-		if (listing.isErr()) return listing
-		const { threads: threadPage } = listing.value
+					threads: rows.map((row) => toThreadDto(row.thread, row.author)),
+					total: total?.value ?? 0,
+				}
+			})
+		const listing =
+			page <= CACHED_PAGES
+				? await this.cachedListing(
+						`category:${digest(categorySlug)}:${page}:${pageSize}`,
+						load,
+						isCategoryListing,
+					)
+				: await load()
+		if (!listing || !this.can(principal, 'category.view', { categoryId: listing.category.id })) {
+			return notFound('版块')
+		}
+		const { category } = listing
 		return Result.ok({
-			...listing.value,
-			threads: { ...threadPage, items: await this.extended('thread', principal, threadPage.items) },
+			category,
+			threads: {
+				items: await this.extended('thread', principal, listing.threads),
+				page,
+				pageSize,
+				total: listing.total,
+			},
+			can: {
+				createThread: this.can(principal, 'thread.create', { categoryId: category.id }),
+			},
 		})
 	}
 
@@ -1378,6 +1487,8 @@ export class ForumCorePlugin extends BasePlugin {
 		const authorId = principal.userId
 		if (authorId === null) return denied(principal)
 		const slug = slugifyAsciiTitle(title.value)
+		const refused = await this.admit({ kind: 'thread.create', principal })
+		if (refused) return Result.err(refused)
 
 		const written = await this.database.transaction(
 			async (
@@ -1460,6 +1571,11 @@ export class ForumCorePlugin extends BasePlugin {
 		}
 		if (input.pinned !== undefined) patch.pinned = input.pinned
 		if (input.locked !== undefined) patch.locked = input.locked
+		// Pinning and locking are moderation, not writing: only a new title is admitted.
+		if (patch.title !== undefined && principal.userId !== null) {
+			const refused = await this.admit({ kind: 'thread.update', principal })
+			if (refused) return Result.err(refused)
+		}
 
 		const written = await this.database.transaction(
 			async (
@@ -1574,6 +1690,10 @@ export class ForumCorePlugin extends BasePlugin {
 		if (!body.ok) return invalid(body.reason)
 		if (!parseThreadRef(input.threadId)) return notFound('主题')
 		const authorId = principal.userId
+		if (authorId !== null) {
+			const refused = await this.admit({ kind: 'post.create', principal })
+			if (refused) return Result.err(refused)
+		}
 
 		const written = await this.database.transaction(
 			async (tx): Promise<ForumResult<Readonly<{ dto: PostDto; event: PostAfterWriteEvent }>>> => {
@@ -1657,6 +1777,10 @@ export class ForumCorePlugin extends BasePlugin {
 		if (!body.ok) return invalid(body.reason)
 		if (!isEntityId(postId)) return notFound('帖子')
 		const editorId = principal.userId
+		if (editorId !== null) {
+			const refused = await this.admit({ kind: 'post.update', principal })
+			if (refused) return Result.err(refused)
+		}
 
 		const written = await this.database.transaction(
 			async (
@@ -1777,6 +1901,16 @@ export class ForumCorePlugin extends BasePlugin {
 		}
 	}
 
+	private admit(event: PostAdmitEvent): Promise<ForumError | null> {
+		return this.postHooks.admit(event, (error, hookId) =>
+			this.ctx.logger.error('post admit hook failed; continuing without it', {
+				error,
+				hookId,
+				kind: event.kind,
+			}),
+		)
+	}
+
 	private beforeWrite(event: PostBeforeWriteEvent): ForumError | null {
 		return this.postHooks.beforeWrite(event, (error, hookId) =>
 			this.ctx.logger.error('post beforeWrite hook failed; continuing without it', {
@@ -1788,6 +1922,7 @@ export class ForumCorePlugin extends BasePlugin {
 	}
 
 	private async afterWrite(event: PostAfterWriteEvent): Promise<void> {
+		await this.listingsChanged()
 		await this.postHooks.afterWrite(event, (error, hookId) =>
 			this.ctx.logger.error('post afterWrite hook failed', {
 				error,
@@ -1879,13 +2014,7 @@ export class ForumCorePlugin extends BasePlugin {
 	private toPostDto(principal: Principal, post: PostRow, by: UserDto, thread: ThreadRow): PostDto {
 		const deleted = post.deletedAt !== null
 		const resource = this.postResource(post, thread)
-		const rendered = this.contentRenderers.render(deleted ? '' : post.body, (error, rendererId) =>
-			this.ctx.logger.error('content renderer failed; showing the post as plain text', {
-				error,
-				rendererId,
-				postId: post.id,
-			}),
-		)
+		const rendered = deleted ? this.renderBody('', post.id) : this.renderBody(post.body, post.id)
 		return {
 			id: post.id,
 			threadId: post.threadId,
@@ -1903,6 +2032,29 @@ export class ForumCorePlugin extends BasePlugin {
 			},
 			ext: {},
 		}
+	}
+
+	/** A post body as HTML, from the cache when the same source was rendered before. */
+	private renderBody(source: string, postId: string): RenderedBody {
+		const render = () => {
+			let failed = false
+			const body = this.contentRenderers.render(source, (error, rendererId) => {
+				failed = true
+				this.ctx.logger.error('content renderer failed; showing the post as plain text', {
+					error,
+					rendererId,
+					postId,
+				})
+			})
+			return { body, failed }
+		}
+		if (source === '') return render().body
+		return this.cache.rendered(
+			`${this.renderGeneration}:${digest(source)}`,
+			render,
+			(error, cacheId) =>
+				this.ctx.logger.error('cache failed; rendering the post again', { error, cacheId }),
+		)
 	}
 
 	/** A thread that has not been deleted, with its author and category. */

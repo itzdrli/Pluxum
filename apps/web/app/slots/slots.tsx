@@ -1,11 +1,13 @@
 import type { MetaDto, PostDto, ThreadDto, UiSlot, UserProfileDto } from '@pluxum/domain'
-import { useCallback, useState, type ComponentType, type ReactNode } from 'react'
+import type { Extensions } from '@tiptap/core'
+import { useCallback, useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { useRouteLoaderData } from 'react-router'
 
 import type { MenuItem } from '../components/ui/overlay'
 import type { loader as rootLoader } from '../root'
 import { AttachmentsFooter } from './forum-attachments/attachments'
 import { AvatarEditor } from './forum-attachments/avatar'
+import { MailSettings } from './forum-mail/mail-settings'
 import { UploadButton } from './forum-attachments/upload'
 import { ReportAction } from './forum-moderation/report-button'
 import { UserBanTab } from './forum-moderation/user-ban-tab'
@@ -61,6 +63,54 @@ const EXTENSIONS: Readonly<Record<string, SlotComponents>> = {
 		'post.actions': ReportAction,
 		'user.profile.tabs': UserBanTab,
 	},
+	'forum-mail': { 'user.profile.tabs': MailSettings },
+}
+
+/**
+ * `composer.editor`: what an extension adds to the rich-text editor. It hands over Tiptap
+ * extensions (new marks, nodes, input rules, suggestion popups) that must only write Markdown the
+ * forum's renderer already shows, such as links: the server stores and renders the Markdown, not
+ * the editor's document. Each entry is loaded on demand together with the editor, so none of it
+ * reaches pages without a text box.
+ */
+export type ComposerEditorExtension = Readonly<{ extensions: () => Extensions }>
+
+const EDITOR_EXTENSIONS: Readonly<Record<string, () => Promise<ComposerEditorExtension>>> = {
+	'forum-mentions': () => import('./forum-mentions/editor').then((module) => module.mentionsEditor),
+}
+
+/** The editor extensions running plugins ask for, as a key and a loader for their Tiptap parts. */
+export function useComposerEditorExtensions(): Readonly<{
+	key: string
+	load: () => Promise<Extensions>
+}> {
+	const filled = useRouteLoaderData<typeof rootLoader>('root')?.meta?.uiSlots ?? []
+	const ids = filled
+		.filter((entry) => entry.slot === 'composer.editor' && entry.extId in EDITOR_EXTENSIONS)
+		.map((entry) => entry.extId)
+	const key = ids.join(',')
+	return useMemo(
+		() => ({
+			key,
+			load: async () => {
+				const loaded = await Promise.all(
+					key
+						.split(',')
+						.filter(Boolean)
+						.map(async (id) => {
+							try {
+								return (await EDITOR_EXTENSIONS[id]?.())?.extensions() ?? []
+							} catch {
+								// An extension that fails to load leaves the editor without it.
+								return []
+							}
+						}),
+				)
+				return loaded.flat()
+			},
+		}),
+		[key],
+	)
 }
 
 /** The components running extensions put into a slot, in the order `/meta` lists them. */

@@ -264,6 +264,7 @@ export const UI_SLOTS = [
 	'thread.view',
 	'user.profile.tabs',
 	'composer.toolbar',
+	'composer.editor',
 	'shell.actions',
 ] as const
 export type UiSlot = (typeof UI_SLOTS)[number]
@@ -351,6 +352,7 @@ export const FORUM_ERROR_CODES = [
 	'not_found',
 	'conflict',
 	'unavailable',
+	'rate_limited',
 ] as const
 export type ForumErrorCode = (typeof FORUM_ERROR_CODES)[number]
 

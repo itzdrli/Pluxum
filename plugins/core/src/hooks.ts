@@ -35,7 +35,23 @@ export type PostBeforeWriteEvent =
 			body: string
 	  }>
 
+/**
+ * A write that passed validation and permission checks and is about to open its transaction,
+ * handed to asynchronous `admit` hooks (rate limits, quotas). Only who is writing and what kind
+ * of write it is: the content checks belong to `beforeWrite`.
+ */
+export type PostAdmitEvent = Readonly<{
+	kind: PostBeforeWriteEvent['kind']
+	principal: Principal
+}>
+
 export type PostHookRejectionCode = Extract<ForumErrorCode, 'invalid' | 'forbidden'>
+
+/** Returned by an `admit` hook that refuses the write. */
+export type PostAdmitRejection = Readonly<{
+	code?: PostHookRejectionCode | 'rate_limited'
+	message: string
+}>
 
 /** Returned by a `beforeWrite` hook when it refuses the write; `code` defaults to `'invalid'`. */
 export type PostHookRejection = Readonly<{
@@ -121,6 +137,12 @@ export type PostHookContribution = Readonly<{
 	/** Stable contribution ID, e.g. `forum-moderation.filter` or `forum-search.indexer`. */
 	id: string
 	/**
+	 * Asynchronous admission before a write opens its transaction: runs after the core's own
+	 * validation and permission checks, and may refuse with `rate_limited`. A hook that throws or
+	 * takes too long is skipped, so a broken limiter never blocks writing.
+	 */
+	admit?: (event: PostAdmitEvent) => PostAdmitRejection | void | Promise<PostAdmitRejection | void>
+	/**
 	 * Synchronous check before a thread or post is created or edited. Returning a rejection aborts
 	 * the write with that error; returning undefined lets it proceed.
 	 */
@@ -136,6 +158,20 @@ function isRejectionCode(value: unknown): value is PostHookRejectionCode {
 	return value === 'invalid' || value === 'forbidden'
 }
 
+function isRejection(
+	value: unknown,
+	codes: (code: unknown) => boolean,
+): value is PostAdmitRejection {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		'message' in value &&
+		typeof value.message === 'string' &&
+		value.message.trim() !== '' &&
+		(!('code' in value) || value.code === undefined || codes(value.code))
+	)
+}
+
 /**
  * Open registry of post hooks. Registration is scoped to the contributor's generation: the
  * returned disposer withdraws exactly that registration and is safe to call more than once.
@@ -144,9 +180,12 @@ export class PostHookRegistry {
 	private readonly entries = new Map<string, PostHookContribution>()
 
 	register(contribution: PostHookContribution): () => void {
-		const { id, beforeWrite, afterWrite } = contribution
+		const { id, admit, beforeWrite, afterWrite } = contribution
 		if (typeof id !== 'string' || !CONTRIBUTION_ID.test(id)) {
 			throw new TypeError(`Invalid post hook ID: ${id}`)
+		}
+		if (admit !== undefined && typeof admit !== 'function') {
+			throw new TypeError(`Post hook "${id}" admit must be a function`)
 		}
 		if (beforeWrite !== undefined && typeof beforeWrite !== 'function') {
 			throw new TypeError(`Post hook "${id}" beforeWrite must be a function`)
@@ -154,8 +193,8 @@ export class PostHookRegistry {
 		if (afterWrite !== undefined && typeof afterWrite !== 'function') {
 			throw new TypeError(`Post hook "${id}" afterWrite must be a function`)
 		}
-		if (beforeWrite === undefined && afterWrite === undefined) {
-			throw new TypeError(`Post hook "${id}" must provide beforeWrite or afterWrite`)
+		if (admit === undefined && beforeWrite === undefined && afterWrite === undefined) {
+			throw new TypeError(`Post hook "${id}" must provide admit, beforeWrite or afterWrite`)
 		}
 		if (this.entries.has(id)) {
 			throw new Error(`Post hook "${id}" is already registered`)
@@ -168,6 +207,42 @@ export class PostHookRegistry {
 
 	ids(): string[] {
 		return [...this.entries.keys()]
+	}
+
+	/**
+	 * Runs every registered `admit` hook in parallel and returns the first refusal in registration
+	 * order, or null. A hook that throws, answers with something that is not a refusal or takes longer than
+	 * `EXTENSION_TIMEOUT_MS` is reported via `onFailure` and skipped.
+	 */
+	async admit(
+		event: PostAdmitEvent,
+		onFailure: (error: unknown, hookId: string) => void,
+	): Promise<ForumError | null> {
+		const hooks = [...this.entries.values()]
+		const verdicts = await Promise.all(
+			hooks.map(async (entry): Promise<ForumError | null> => {
+				const { admit } = entry
+				if (!admit) return null
+				try {
+					const verdict = await withTimeout(
+						Promise.resolve().then(() => admit(event)),
+						EXTENSION_TIMEOUT_MS,
+					)
+					if (verdict === TIMED_OUT) throw new Error(`No answer within ${EXTENSION_TIMEOUT_MS} ms`)
+					if (verdict === undefined) return null
+					if (!isRejection(verdict, (code) => isRejectionCode(code) || code === 'rate_limited')) {
+						throw new TypeError('The hook returned an invalid rejection')
+					}
+					// Withdrawn while answering: its verdict no longer counts.
+					if (this.entries.get(entry.id) !== entry) return null
+					return { code: verdict.code ?? 'invalid', message: verdict.message }
+				} catch (error) {
+					onFailure(error, entry.id)
+					return null
+				}
+			}),
+		)
+		return verdicts.find((verdict) => verdict !== null) ?? null
 	}
 
 	/**

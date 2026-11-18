@@ -1,7 +1,7 @@
 // The rich-text half of the composer. Everything that needs Tiptap lives in this module, which
 // composer.tsx loads on demand in the browser: it never runs on the server and stays out of the
 // bundle of pages without a text box.
-import { Editor, Extension } from '@tiptap/core'
+import { Editor, Extension, type Extensions } from '@tiptap/core'
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import {
 	BetweenHorizontalEnd,
@@ -34,9 +34,9 @@ import { composerExtensions, markdownOf } from './markdown'
  * The Markdown the editor would save for this source, without showing an editor. When rendering
  * it gives the same HTML as the source, the post can be edited as rich text without changing it.
  */
-export function roundTrip(source: string): string {
+export function roundTrip(source: string, extra: Extensions = []): string {
 	const editor = new Editor({
-		extensions: composerExtensions(),
+		extensions: [...composerExtensions(), ...extra],
 		content: source,
 		contentType: 'markdown',
 	})
@@ -250,6 +250,8 @@ function ToolButton({
 	)
 }
 
+const NO_EXTENSIONS: Extensions = []
+
 /** Inserts an uploaded file at the cursor. */
 export type InsertAttachment = (item: AttachmentRef) => void
 
@@ -265,6 +267,7 @@ export function RichEditor({
 	onChange,
 	onSubmit,
 	insertRef,
+	extensions = NO_EXTENSIONS,
 }: {
 	/** Markdown to start from. Later changes of this prop are ignored: the editor owns the text. */
 	initial: string
@@ -278,6 +281,8 @@ export function RichEditor({
 	onSubmit: () => void
 	/** Filled with a function that inserts a link at the cursor while the editor is mounted. */
 	insertRef?: { current: InsertAttachment | null }
+	/** Contributed by running extensions (`composer.editor`); read once, when the editor starts. */
+	extensions?: Extensions
 }) {
 	// The editor is created once; these refs let its callbacks reach the latest props.
 	const changed = useRef(onChange)
@@ -291,6 +296,7 @@ export function RichEditor({
 	const editor = useEditor({
 		extensions: [
 			...composerExtensions(),
+			...extensions,
 			Extension.create({
 				name: 'submitShortcut',
 				// Ahead of the hard break, which binds the same keys by default.

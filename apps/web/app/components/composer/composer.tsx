@@ -1,11 +1,16 @@
 import type { PreviewDto } from '@pluxum/domain'
 import { Label, TextArea, TextField } from '@heroui/react'
 import { Code, Type } from 'lucide-react'
+import type { Extensions } from '@tiptap/core'
 import { useEffect, useRef, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 
 import type { loader as rootLoader } from '../../root'
-import { ComposerToolbarSlots, type InsertAttachment } from '../../slots/slots'
+import {
+	ComposerToolbarSlots,
+	useComposerEditorExtensions,
+	type InsertAttachment,
+} from '../../slots/slots'
 
 type RichModule = typeof import('./rich-editor')
 
@@ -100,6 +105,7 @@ async function renderedHtmlOf(body: string, signal: AbortSignal): Promise<string
  */
 async function fitsRichEditor(
 	rich: RichModule,
+	extra: Extensions,
 	source: string,
 	renderedHtml: string | undefined,
 	signal: AbortSignal,
@@ -107,7 +113,7 @@ async function fitsRichEditor(
 	if (source.trim() === '') return true
 	let rewritten: string
 	try {
-		rewritten = rich.roundTrip(source)
+		rewritten = rich.roundTrip(source, extra)
 	} catch {
 		return false
 	}
@@ -161,6 +167,9 @@ export function Composer({
 	// On the first page load (or when deferred) nothing is mounted as rich yet.
 	const [mode, setMode] = useState<Mode>(() => initialMode(format, defaultValue, deferRich))
 	const [rich, setRich] = useState<RichModule | null>(loadedRich)
+	const editorExtensions = useComposerEditorExtensions()
+	// What running extensions add to the editor, once loaded together with it.
+	const [extra, setExtra] = useState<Readonly<{ key: string; extensions: Extensions }> | null>(null)
 	// False once the rich editor is known to change how the saved source renders.
 	const [fits, setFits] = useState(true)
 	const [focusOnUpgrade, setFocusOnUpgrade] = useState(false)
@@ -185,16 +194,27 @@ export function Composer({
 			cancelIdle = null
 			void (async () => {
 				let loaded: RichModule
+				let extensions: Extensions
 				try {
-					loaded = loadedRich ?? (await import('./rich-editor'))
+					;[loaded, extensions] = await Promise.all([
+						loadedRich ?? import('./rich-editor'),
+						editorExtensions.load(),
+					])
 				} catch {
 					// Without the editor the textarea simply stays.
 					return
 				}
 				loadedRich = loaded
 				if (abort.signal.aborted) return
+				setExtra({ key: editorExtensions.key, extensions })
 				setRich(loaded)
-				const suits = await fitsRichEditor(loaded, defaultValue, renderedHtml, abort.signal)
+				const suits = await fitsRichEditor(
+					loaded,
+					extensions,
+					defaultValue,
+					renderedHtml,
+					abort.signal,
+				)
 				if (abort.signal.aborted) return
 				setFits(suits)
 				// Take over only a box the visitor has not started typing in.
@@ -221,7 +241,7 @@ export function Composer({
 			cancelIdle?.()
 			abort.abort()
 		}
-	}, [format, defaultValue, renderedHtml, deferRich])
+	}, [format, defaultValue, renderedHtml, deferRich, editorExtensions])
 
 	function choose(next: Mode) {
 		rememberMode(next)
@@ -232,7 +252,7 @@ export function Composer({
 		root.current?.closest('form')?.requestSubmit()
 	}
 
-	const showRich = mode === 'rich' && rich !== null && format === 'markdown'
+	const showRich = mode === 'rich' && rich !== null && extra !== null && format === 'markdown'
 
 	// Set by the rich editor while it is shown.
 	const richInsert = useRef<InsertAttachment | null>(null)
@@ -302,6 +322,9 @@ export function Composer({
 					</div>
 					<input type="hidden" name={name} value={value} />
 					<rich.RichEditor
+						// A different set of extensions needs a new editor; it starts from the text so far.
+						key={extra.key}
+						extensions={extra.extensions}
 						initial={value}
 						label={label}
 						placeholder={placeholder}

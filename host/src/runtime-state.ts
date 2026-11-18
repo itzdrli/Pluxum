@@ -1,17 +1,29 @@
 import type { HostConfigOptions, HostPolicyOptions } from '@pluxel/host'
-import { Redis } from '@pluxel/plugin-redis'
+import { Cache, CacheBackend, CachePlugin } from '@pluxel/plugin-cache'
+import { Rates, RatesBackend, RatesPlugin } from '@pluxel/plugin-rates'
+import {
+	Redis,
+	RedisCacheBackendConfig,
+	RedisCacheBackendPlugin,
+	RedisRatesBackendConfig,
+	RedisRatesBackendPlugin,
+} from '@pluxel/plugin-redis'
 import { S3 } from '@pluxel/plugin-storage'
 import { VaultAdminPlugin } from '@pluxel/services/plugins'
 import * as v from 'valibot'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAttachmentsPlugin, ForumStorageConfig, ForumStoragePlugin } from '@pluxum/attachments'
 import { ForumAuth, ForumAuthConfig, ForumAuthPlugin } from '@pluxum/auth'
+import { ForumCachePlugin } from '@pluxum/cache'
 import { ForumCorePlugin } from '@pluxum/core'
 import { ForumFooterPlugin } from '@pluxum/footer'
+import { ForumMailConfig, ForumMailPlugin } from '@pluxum/mail'
 import { ForumMarkdownPlugin } from '@pluxum/markdown'
+import { ForumMentionsPlugin } from '@pluxum/mentions'
 import { ForumModerationPlugin } from '@pluxum/moderation'
 import { ForumNotificationsPlugin } from '@pluxum/notifications'
 import { ForumOutlinePlugin } from '@pluxum/outline'
+import { ForumRatesPlugin } from '@pluxum/rates'
 import { ForumReactionsPlugin } from '@pluxum/reactions'
 import { ForumReadsPlugin } from '@pluxum/reads'
 import { ForumRedisConfig, ForumRedisPlugin } from '@pluxum/redis'
@@ -19,6 +31,11 @@ import { ForumSearchPlugin } from '@pluxum/search'
 
 export const appPlugins = [
 	ForumRedisPlugin,
+	// Official cache and rate capabilities, both backed by the forum's Redis connection.
+	RedisCacheBackendPlugin,
+	CachePlugin,
+	RedisRatesBackendPlugin,
+	RatesPlugin,
 	ForumStoragePlugin,
 	ForumCorePlugin,
 	ForumAuthPlugin,
@@ -32,6 +49,10 @@ export const appPlugins = [
 	ForumSearchPlugin,
 	ForumModerationPlugin,
 	ForumFooterPlugin,
+	ForumCachePlugin,
+	ForumRatesPlugin,
+	ForumMailPlugin,
+	ForumMentionsPlugin,
 	VaultAdminPlugin,
 ] as const
 
@@ -50,6 +71,10 @@ export function appHostPolicy(): HostPolicyOptions {
 			{ token: ForumAuth.definitionAddress(), provider: ForumAuthPlugin.nodeAddress() },
 			{ token: Redis.definitionAddress(), provider: ForumRedisPlugin.nodeAddress() },
 			{ token: S3.definitionAddress(), provider: ForumStoragePlugin.nodeAddress() },
+			{ token: Cache.definitionAddress(), provider: CachePlugin.nodeAddress() },
+			{ token: CacheBackend.definitionAddress(), provider: RedisCacheBackendPlugin.nodeAddress() },
+			{ token: Rates.definitionAddress(), provider: RatesPlugin.nodeAddress() },
+			{ token: RatesBackend.definitionAddress(), provider: RedisRatesBackendPlugin.nodeAddress() },
 		],
 	}
 }
@@ -71,8 +96,10 @@ export function appConfig(env: AppConfigEnv): HostConfigOptions {
 		mode: 'saved-first',
 		records: [
 			...redisConfigRecord(env.REDIS_CONNECTIONS),
+			...redisBackendConfigRecords(env.REDIS_CONNECTIONS),
 			...storageConfigRecord(env.S3_BUCKETS),
 			...authConfigRecord(env),
+			...mailConfigRecord(env),
 		],
 	}
 }
@@ -97,6 +124,37 @@ function redisConfigRecord(raw: string | undefined) {
 			owner: ForumRedisPlugin.nodeAddress(),
 			config: v.parse(ForumRedisConfig, {
 				connections: parseJsonEnv('REDIS_CONNECTIONS', raw),
+			}),
+		},
+	]
+}
+
+/**
+ * The official cache and rate backends use the Redis connections named `cache` and `rates` when
+ * REDIS_CONNECTIONS has them (separate logical databases, so clearing the cache never scans
+ * sessions), else the first connection there is. Keys get a `pluxum:` prefix either way.
+ */
+function redisBackendConfigRecords(raw: string | undefined) {
+	const ids =
+		raw === undefined
+			? ['default']
+			: v
+					.parse(ForumRedisConfig, { connections: parseJsonEnv('REDIS_CONNECTIONS', raw) })
+					.connections.map((connection) => connection.id)
+	const pick = (preferred: string) => (ids.includes(preferred) ? preferred : (ids[0] ?? 'default'))
+	return [
+		{
+			owner: RedisCacheBackendPlugin.nodeAddress(),
+			config: v.parse(RedisCacheBackendConfig, {
+				connectionId: pick('cache'),
+				keyPrefix: 'pluxum:cache:',
+			}),
+		},
+		{
+			owner: RedisRatesBackendPlugin.nodeAddress(),
+			config: v.parse(RedisRatesBackendConfig, {
+				connectionId: pick('rates'),
+				keyPrefix: 'pluxum:rates:',
 			}),
 		},
 	]
@@ -163,6 +221,22 @@ function authConfigRecord(env: AppConfigEnv) {
 				adminSubjects,
 				...(testLoginTokenSha256 === undefined ? {} : { testLoginTokenSha256 }),
 			}),
+		},
+	]
+}
+
+/**
+ * Declared config of ForumMailPlugin: links in mail start with FORUM_WEB_PUBLIC_ORIGIN. The SMTP
+ * settings are entered in Workbench (mail stays off until then); the password lives in the
+ * plugin's Vault record.
+ */
+function mailConfigRecord(env: AppConfigEnv) {
+	const siteUrl = set(env.FORUM_WEB_PUBLIC_ORIGIN)
+	if (siteUrl === undefined) return []
+	return [
+		{
+			owner: ForumMailPlugin.nodeAddress(),
+			config: v.parse(ForumMailConfig, { siteUrl: new URL(siteUrl).origin }),
 		},
 	]
 }

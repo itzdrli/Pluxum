@@ -41,6 +41,7 @@ const STATUS: Readonly<Record<ForumErrorCode, number>> = {
 	not_found: 404,
 	conflict: 409,
 	unavailable: 503,
+	rate_limited: 429,
 }
 
 function errorResponse(status: number, error: ApiError): Response {
