@@ -120,8 +120,8 @@ export function MailSettings({ profile }: { profile: UserProfileDto }) {
 							/>
 							<span>有人回复或提到我时发邮件给我</span>
 						</label>
-						<p className="text-ink-weak text-meta flex flex-wrap items-center gap-x-1.5">
-							<Mail aria-hidden className="size-3.5" />
+						<p className="text-ink-weak text-meta flex items-start gap-1.5">
+							<Mail aria-hidden className="mt-[0.2em] size-3.5 shrink-0" />
 							<span>
 								发到 <span className="text-ink break-all">{state.email}</span>
 								。这是登录账号的邮箱，在登录服务里修改，下次登录生效；不会公开。
