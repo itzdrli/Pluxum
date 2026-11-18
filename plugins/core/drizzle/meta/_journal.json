@@ -15,6 +15,13 @@
 			"when": 1794795384790,
 			"tag": "0001_readable_routes",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1795011073771,
+			"tag": "0002_contact_email",
+			"breakpoints": true
 		}
 	]
 }

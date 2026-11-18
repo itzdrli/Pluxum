@@ -298,6 +298,32 @@ describe.skipIf(!liveUrl)('ForumAuthPlugin with Redis sessions', () => {
 		expect(await nameAfterLogin({ sub, name: 'Someone Else' })).toBe('Grace Hopper')
 	})
 
+	it('keeps the address the provider vouches for, from the ID token or UserInfo', async () => {
+		await using host = await createHost()
+		const { auth, core, issuer, login } = await start(host)
+		const sub = subject()
+		const emailAfterLogin = async (user: MockUser) => {
+			const id = sessionIdOf((await login(user)).result.unwrap().setCookie)
+			const authentication = await auth.authenticate(withSession(id))
+			if (authentication.status !== 'authenticated') throw new Error('expected a session')
+			return core.contactEmail(authentication.userId)
+		}
+
+		expect(await emailAfterLogin({ sub })).toBeNull()
+		expect(await emailAfterLogin({ sub, email: 'ada@example.com', emailVerified: true })).toBe(
+			'ada@example.com',
+		)
+		// An address the provider has not verified is not used, and replaces the old one.
+		expect(
+			await emailAfterLogin({ sub, email: 'other@example.com', emailVerified: false }),
+		).toBeNull()
+		// Providers that never verify leave the claim out; UserInfo is asked when the token lacks it.
+		issuer.options.nameInIdToken = false
+		expect(await emailAfterLogin({ sub, name: 'Ada', email: 'ada@example.org' })).toBe(
+			'ada@example.org',
+		)
+	})
+
 	it('rejects login attempts that do not check out', async () => {
 		await using host = await createHost()
 		const { auth, issuer, login } = await start(host)

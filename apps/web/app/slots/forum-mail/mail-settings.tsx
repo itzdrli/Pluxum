@@ -1,10 +1,9 @@
 import type { UserProfileDto } from '@pluxum/domain'
-import { Mail, MailCheck } from 'lucide-react'
+import { Mail, MailX } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 
-import { Button } from '../../components/ui/button'
-import { FormError, Notice, Panel, SectionLabel, Tag } from '../../components/ui/display'
+import { FormError, Panel, SectionLabel } from '../../components/ui/display'
 import type { loader as rootLoader } from '../../root'
 
 const EXT_ID = 'forum-mail'
@@ -12,9 +11,7 @@ const EXT_ID = 'forum-mail'
 type MailState = Readonly<{
 	available: boolean
 	email: string | null
-	verified: boolean
 	enabled: boolean
-	pending: boolean
 }>
 
 function isMailState(value: unknown): value is MailState {
@@ -25,12 +22,8 @@ function isMailState(value: unknown): value is MailState {
 		typeof value.available === 'boolean' &&
 		'email' in value &&
 		(value.email === null || typeof value.email === 'string') &&
-		'verified' in value &&
-		typeof value.verified === 'boolean' &&
 		'enabled' in value &&
-		typeof value.enabled === 'boolean' &&
-		'pending' in value &&
-		typeof value.pending === 'boolean'
+		typeof value.enabled === 'boolean'
 	)
 }
 
@@ -66,13 +59,9 @@ async function call(action: string, input?: unknown): Promise<Outcome> {
 	}
 }
 
-const INPUT =
-	'border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control w-full rounded-[2px] border px-2.5 text-ui outline-none'
-
 /**
- * `user.profile.tabs` (own profile only): the address notifications are mailed to. Entering one
- * sends a six-digit code; mail starts once the code is confirmed, and can be switched off or the
- * address removed at any time.
+ * `user.profile.tabs` (own profile only): whether notifications are mailed. The forum keeps no
+ * address of its own; mail goes to the one the sign-in provider gives, so it is changed there.
  */
 export function MailSettings({ profile }: { profile: UserProfileDto }) {
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
@@ -80,9 +69,6 @@ export function MailSettings({ profile }: { profile: UserProfileDto }) {
 	const [state, setState] = useState<MailState | null>(null)
 	const [error, setError] = useState<string | undefined>()
 	const [busy, setBusy] = useState(false)
-	const [editing, setEditing] = useState(false)
-	const [email, setEmail] = useState('')
-	const [code, setCode] = useState('')
 
 	useEffect(() => {
 		if (!isSelf) return undefined
@@ -96,179 +82,52 @@ export function MailSettings({ profile }: { profile: UserProfileDto }) {
 		}
 	}, [isSelf])
 
-	if (!isSelf || state === null) return null
-	// Mail is off forum-wide and nothing was ever set up: nothing to show.
-	if (!state.available && state.email === null) return null
+	// Mail is off forum-wide: nothing to choose.
+	if (!isSelf || state === null || !state.available) return null
 
-	async function run(action: string, input: unknown, after?: () => void) {
+	async function toggle(enabled: boolean) {
 		setBusy(true)
 		setError(undefined)
-		const outcome = await call(action, input)
+		const outcome = await call('preference', { enabled })
 		setBusy(false)
-		if (!outcome.ok) {
-			setError(outcome.error)
-			return
-		}
-		setState(outcome.state)
-		after?.()
+		if (outcome.ok) setState(outcome.state)
+		else setError(outcome.error)
 	}
-
-	const askForCode = (address: string) =>
-		run('set-address', { email: address }, () => {
-			setEditing(false)
-			setCode('')
-		})
-
-	const showForm = state.email === null || editing
 
 	return (
 		<section aria-labelledby="mail-settings-heading">
 			<SectionLabel>
-				<span id="mail-settings-heading">邮件通知</span>
+				<span id="mail-settings-heading">邮件提醒</span>
 			</SectionLabel>
 			<Panel className="flex flex-col gap-3 px-4 py-3">
-				{!state.available && (
-					<Notice tone="warning">论坛暂时没有开启邮件，现在不会收到邮件。</Notice>
-				)}
 				<FormError message={error} />
-
-				{state.email !== null && !editing && (
-					<div className="flex flex-wrap items-center gap-2">
-						{state.verified ? (
-							<Tag tone="success" icon={MailCheck}>
-								已验证
-							</Tag>
-						) : (
-							<Tag icon={Mail}>待验证</Tag>
-						)}
-						<span className="text-ink-strong min-w-0 break-all">{state.email}</span>
-						<span className="ml-auto flex gap-1">
-							<Button
-								tone="ghost"
-								size="sm"
-								isDisabled={busy}
-								onPress={() => {
-									setEmail(state.email ?? '')
-									setEditing(true)
-								}}
-							>
-								更换
-							</Button>
-							<Button
-								tone="ghost"
-								size="sm"
-								isDisabled={busy}
-								onPress={() => void run('remove', {})}
-							>
-								移除
-							</Button>
+				{state.email === null ? (
+					<p className="text-ink-weak flex items-start gap-2">
+						<MailX aria-hidden className="mt-0.5 size-4 shrink-0" />
+						<span>
+							你的登录账号没有提供（已验证的）邮箱，所以收不到邮件提醒。在登录服务里设置邮箱后，下次登录即可生效。
 						</span>
-					</div>
-				)}
-
-				{state.email !== null && !editing && state.verified && (
-					<label className="flex cursor-pointer items-center gap-2.5">
-						<input
-							type="checkbox"
-							className="accent-accent size-4"
-							checked={state.enabled}
-							disabled={busy}
-							onChange={(event) => void run('preference', { enabled: event.currentTarget.checked })}
-						/>
-						<span>有人回复或提到我时发邮件给我</span>
-					</label>
-				)}
-
-				{state.email !== null && !editing && !state.verified && (
-					<form
-						className="flex flex-col gap-2"
-						onSubmit={(event) => {
-							event.preventDefault()
-							void run('verify', { code: code.trim() })
-						}}
-					>
-						<p className="text-ink-weak text-meta">
-							{state.pending
-								? '验证码已发到这个邮箱，30 分钟内有效。输入后才会开始收到通知。'
-								: '验证码已失效，请重新获取。'}
-						</p>
-						<div className="flex flex-wrap items-center gap-2">
-							{state.pending && (
-								<>
-									<input
-										type="text"
-										inputMode="numeric"
-										autoComplete="one-time-code"
-										pattern="\d{6}"
-										maxLength={6}
-										value={code}
-										onChange={(event) => setCode(event.currentTarget.value.replaceAll(/\D/g, ''))}
-										placeholder="6 位验证码"
-										aria-label="验证码"
-										className={`${INPUT} max-w-36`}
-									/>
-									<Button
-										tone="primary"
-										size="md"
-										type="submit"
-										isPending={busy}
-										isDisabled={code.length !== 6 || busy}
-									>
-										验证
-									</Button>
-								</>
-							)}
-							<Button
-								tone="ghost"
-								size="md"
-								isDisabled={busy || !state.available}
-								onPress={() => void askForCode(state.email ?? '')}
-							>
-								重新发送
-							</Button>
-						</div>
-					</form>
-				)}
-
-				{showForm && (
-					<form
-						className="flex flex-col gap-2"
-						onSubmit={(event) => {
-							event.preventDefault()
-							void askForCode(email)
-						}}
-					>
-						<p className="text-ink-weak text-meta">
-							填写邮箱后会收到一封验证码邮件，验证后有人回复或提到你时会发邮件提醒。邮箱只用于通知，不会公开。
-						</p>
-						<div className="flex flex-wrap items-center gap-2">
+					</p>
+				) : (
+					<>
+						<label className="flex cursor-pointer items-center gap-2.5">
 							<input
-								type="email"
-								autoComplete="email"
-								required
-								maxLength={254}
-								value={email}
-								onChange={(event) => setEmail(event.currentTarget.value)}
-								placeholder="you@example.com"
-								aria-label="邮箱地址"
-								className={`${INPUT} min-w-0 flex-1 basis-56`}
+								type="checkbox"
+								className="accent-accent size-4"
+								checked={state.enabled}
+								disabled={busy}
+								onChange={(event) => void toggle(event.currentTarget.checked)}
 							/>
-							<Button
-								tone="primary"
-								size="md"
-								type="submit"
-								isPending={busy}
-								isDisabled={email.trim() === '' || busy || !state.available}
-							>
-								发送验证码
-							</Button>
-							{editing && (
-								<Button tone="ghost" size="md" isDisabled={busy} onPress={() => setEditing(false)}>
-									取消
-								</Button>
-							)}
-						</div>
-					</form>
+							<span>有人回复或提到我时发邮件给我</span>
+						</label>
+						<p className="text-ink-weak text-meta flex flex-wrap items-center gap-x-1.5">
+							<Mail aria-hidden className="size-3.5" />
+							<span>
+								发到 <span className="text-ink break-all">{state.email}</span>
+								。这是登录账号的邮箱，在登录服务里修改，下次登录生效；不会公开。
+							</span>
+						</p>
+					</>
 				)}
 			</Panel>
 		</section>

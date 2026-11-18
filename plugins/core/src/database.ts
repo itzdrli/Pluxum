@@ -24,6 +24,11 @@ export const users = pgTable('users', {
 	/** Identity provider subject (OIDC `sub` from M2 on); unique per account. */
 	subject: text('subject').notNull().unique(),
 	displayName: text('display_name').notNull(),
+	/**
+	 * Verified address the identity provider gave at the latest login, for notification mail.
+	 * Never part of a DTO; null when the provider shares none.
+	 */
+	email: text('email'),
 	createdAt: createdAt(),
 })
 

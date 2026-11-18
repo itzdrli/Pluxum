@@ -4,7 +4,21 @@ import { pkceChallenge } from '../src/crypto'
 export const ISSUER = 'https://idp.test'
 export const CLIENT_ID = 'forum-client'
 
-export type MockUser = Readonly<{ sub: string; name?: string; sid?: string }>
+export type MockUser = Readonly<{
+	sub: string
+	name?: string
+	sid?: string
+	email?: string
+	emailVerified?: boolean
+}>
+
+/** The `email` / `email_verified` claims of `user`, as a provider would state them. */
+function emailClaims(user: MockUser) {
+	return {
+		...(user.email === undefined ? {} : { email: user.email }),
+		...(user.emailVerified === undefined ? {} : { email_verified: user.emailVerified }),
+	}
+}
 
 type Grant = Readonly<{
 	user: MockUser
@@ -65,6 +79,7 @@ export async function createMockIssuer() {
 			sub: user.sub,
 			nonce: options.tamperNonce ? 'someone-else' : grant.nonce,
 			...(user.name === undefined || !options.nameInIdToken ? {} : { name: user.name }),
+			...(options.nameInIdToken ? emailClaims(user) : {}),
 			...(user.sid === undefined ? {} : { sid: user.sid }),
 		})
 		const accessToken = crypto.randomUUID()
@@ -96,7 +111,9 @@ export async function createMockIssuer() {
 				case '/userinfo': {
 					const bearer = (request.headers.get('authorization') ?? '').replace(/^Bearer /, '')
 					const user = profiles.get(bearer)
-					return user ? json({ sub: user.sub, name: user.name }) : json({}, 401)
+					return user
+						? json({ sub: user.sub, name: user.name, ...emailClaims(user) })
+						: json({}, 401)
 				}
 				default:
 					return json({ error: 'not_found' }, 404)

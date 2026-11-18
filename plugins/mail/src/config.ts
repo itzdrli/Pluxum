@@ -14,7 +14,7 @@ export const ForumMailConfig = v.object({
 			v.boolean(),
 			f.formMeta({
 				title: '发送邮件',
-				description: '关闭时不发任何邮件（包括验证码），用户也不能绑定邮箱。',
+				description: '关闭时不发任何邮件。',
 				section: SMTP,
 			}),
 		),

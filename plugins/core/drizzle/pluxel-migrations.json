@@ -12,6 +12,11 @@
 			"id": "0001_readable_routes",
 			"file": "0001_readable_routes.sql",
 			"checksum": "ed00f8b9c356e7daabec3b44616b18fb68f093118d4e573d0c6fd4af3b9c0e58"
+		},
+		{
+			"id": "0002_contact_email",
+			"file": "0002_contact_email.sql",
+			"checksum": "9fb44245b4e2c1beb6ca10cff6108d083b9210af671d76d018255aa301dc9b69"
 		}
 	]
 }

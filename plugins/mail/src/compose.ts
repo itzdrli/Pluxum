@@ -18,7 +18,7 @@ export type MailSite = Readonly<{
 
 const EMAIL = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]+$/u
 
-export const EMAIL_MAX = 254
+const EMAIL_MAX = 254
 
 /** A trimmed, lower-cased address when it looks deliverable, else null. */
 export function normalizeEmail(input: string): string | null {
@@ -116,30 +116,6 @@ export function notificationMail(
 			: '不想再收到邮件？在论坛的个人资料页关闭邮件通知。',
 	)
 	return { to, subject: subjectOf(notification.title), text, html }
-}
-
-/** The mail carrying the code that confirms an address. */
-export function confirmationMail(
-	to: string,
-	code: string,
-	minutes: number,
-	site: MailSite,
-): MailMessage {
-	const subject = `${site.name} 邮箱验证码：${code}`
-	const text = [
-		`你的验证码是 ${code}，${minutes} 分钟内有效。`,
-		`在 ${site.name} 的个人资料页输入它，就能用这个邮箱接收通知。`,
-		'如果不是你本人操作，忽略这封邮件即可。',
-	].join('\n\n')
-	const html = layout(
-		site,
-		[
-			`你的验证码是 <strong style="font-size:22px;letter-spacing:4px">${escapeHtml(code)}</strong>，${minutes} 分钟内有效。`,
-			`在 ${escapeHtml(site.name)} 的个人资料页输入它，就能用这个邮箱接收通知。`,
-		],
-		'如果不是你本人操作，忽略这封邮件即可。',
-	)
-	return { to, subject: subjectOf(subject), text, html }
 }
 
 /** The mail Workbench sends to check the SMTP settings. */

@@ -31,6 +31,11 @@ export type OidcIdentity = Readonly<{
 	name: string
 	/** Optional ASCII username hint from `preferred_username` or `email`. */
 	preferredUsername?: string
+	/**
+	 * The account's address when the provider vouches for it; null when it shares none or marks
+	 * it unverified; undefined when it could not be asked (keep what is known).
+	 */
+	email?: string | null
 }>
 
 export type LogoutTokenClaims = Readonly<{ subject: string | undefined; sid: string | undefined }>
@@ -56,6 +61,16 @@ function nameOf(claims: Record<string, unknown>): string {
 		text(claims.email)?.split('@')[0] ??
 		''
 	)
+}
+
+/**
+ * The `email` claim unless the provider says it is unverified. Providers that never verify
+ * addresses usually leave `email_verified` out; those are trusted like the provider itself.
+ */
+function emailOf(claims: Record<string, unknown>): string | null {
+	const email = text(claims.email)?.trim()
+	if (email === undefined || email.length > 254 || !email.includes('@')) return null
+	return claims.email_verified === false || claims.email_verified === 'false' ? null : email
 }
 
 function usernameOf(claims: Record<string, unknown>): string | undefined {
@@ -149,29 +164,40 @@ export class OidcClient {
 		if (subject === undefined) throw new OidcRejectedError('ID token has no subject')
 		// Providers may leave profile claims out of the ID token and serve them from UserInfo only
 		// (Zitadel does unless the application opts in).
-		const name =
-			nameOf(claims) || (await this.userinfoName(subject, text(body.access_token)).catch(() => ''))
+		let name = nameOf(claims)
+		let email: string | null | undefined = 'email' in claims ? emailOf(claims) : undefined
+		if (name === '' || email === undefined) {
+			const info = await this.userinfo(subject, text(body.access_token)).catch(() => undefined)
+			if (info !== undefined) {
+				name ||= nameOf(info)
+				email ??= emailOf(info)
+			}
+		}
 		const preferredUsername = usernameOf(claims)
 		return {
 			subject,
 			sid: text(claims.sid),
 			name,
 			...(preferredUsername === undefined ? {} : { preferredUsername }),
+			...(email === undefined ? {} : { email }),
 		}
 	}
 
-	/** The account's name from the UserInfo endpoint; empty when it cannot be had. */
-	private async userinfoName(subject: string, accessToken: string | undefined): Promise<string> {
+	/** The account's UserInfo claims; undefined when they cannot be had. */
+	private async userinfo(
+		subject: string,
+		accessToken: string | undefined,
+	): Promise<Record<string, unknown> | undefined> {
 		const { userinfoEndpoint } = await this.discover()
-		if (userinfoEndpoint === undefined || accessToken === undefined) return ''
+		if (userinfoEndpoint === undefined || accessToken === undefined) return undefined
 		const response = await this.request(userinfoEndpoint, {
 			method: 'GET',
 			headers: { accept: 'application/json', authorization: `Bearer ${accessToken}` },
 		})
-		if (!response.ok) return ''
+		if (!response.ok) return undefined
 		const claims = await this.json(response)
 		// The response must describe the account the ID token named (OIDC Core §5.3.2).
-		return claims.sub === subject ? nameOf(claims) : ''
+		return claims.sub === subject ? claims : undefined
 	}
 
 	/** Verifies an OIDC Back-Channel Logout token (§2.6) and returns whom it logs out. */

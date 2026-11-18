@@ -338,6 +338,10 @@ export class ForumAuthPlugin extends ForumAuth {
 				handleHint: identity.preferredUsername,
 			})
 			if (user.isErr()) return fail('rejected', user.error.message)
+			// The provider owns the address: notification mail follows whatever it says now.
+			if (identity.email !== undefined) {
+				await this.core.setContactEmail(user.value.id, identity.email)
+			}
 			// An account created before the provider shared a name picks it up once it does.
 			const provided = displayNameOf(identity.name)
 			if (user.value.displayName === FALLBACK_DISPLAY_NAME && provided !== FALLBACK_DISPLAY_NAME) {

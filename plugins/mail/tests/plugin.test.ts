@@ -135,78 +135,72 @@ function notice(recipientId: string, title: string): ForumNotification {
 }
 
 describe('forum mail plugin', () => {
-	it('confirms an address with a mailed code, then mails notifications while switched on', async () => {
+	it('mails notifications to the address from the identity provider unless switched off', async () => {
 		const { core, mail, smtp, signUp, configure } = await boot()
 		const alice = await signUp('Alice')
+		const aliceId = alice.userId ?? ''
 
-		// Off by default: nothing to bind, nothing sent.
-		expect((await mail.address(alice)).unwrap()).toMatchObject({ available: false, email: null })
-		const early = await mail.setAddress(alice, 'alice@example.com')
-		expect(early.isErr() && early.error.code).toBe('unavailable')
-
-		expect(await configure()).toMatchObject({ ok: true, application: 'applied' })
-		expect((await mail.setAddress(alice, 'not an address')).isErr()).toBe(true)
-		const pending = (await mail.setAddress(alice, ' Alice@Example.COM ')).unwrap()
-		expect(pending).toMatchObject({
-			available: true,
-			email: 'Alice@example.com',
-			verified: false,
-			pending: true,
+		// Off until configured; the address comes from the provider, none yet.
+		expect((await mail.address(alice)).unwrap()).toEqual({
+			available: false,
+			email: null,
+			enabled: true,
 		})
+		expect(await configure()).toMatchObject({ ok: true, application: 'applied' })
+
+		// Without an address from the provider nothing is sent.
+		expect(await core.deliverNotification(notice(aliceId, '没有邮箱'))).toContain(MAIL_CHANNEL_ID)
+		await mail.idle()
+		expect(smtp.mails).toHaveLength(0)
+
+		await core.setContactEmail(aliceId, 'Alice@Example.COM')
+		expect((await mail.address(alice)).unwrap()).toEqual({
+			available: true,
+			email: 'Alice@Example.COM',
+			enabled: true,
+		})
+		await core.deliverNotification(notice(aliceId, 'Bob 回复了你的主题《测试》'))
+		await mail.idle()
 		expect(smtp.mails).toHaveLength(1)
 		expect(smtp.mails[0]?.to).toEqual(['<Alice@example.com>'])
-		const code = /验证码是 (\d{6})/.exec(textOf(smtp.mails[0]?.data ?? ''))?.[1]
-		expect(code).toMatch(/^\d{6}$/)
-
-		// Asking again within a minute is refused.
-		const again = await mail.setAddress(alice, 'alice@example.com')
-		expect(again.isErr() && again.error.code).toBe('rate_limited')
-
-		// An unconfirmed address receives no notifications.
-		expect(await core.deliverNotification(notice(alice.userId!, '还没验证'))).toContain(
-			MAIL_CHANNEL_ID,
-		)
-		await mail.idle()
-		expect(smtp.mails).toHaveLength(1)
-
-		const wrong = await mail.verify(alice, code === '000000' ? '111111' : '000000')
-		expect(wrong.isErr() && wrong.error.message).toBe('验证码不正确')
-		expect((await mail.verify(alice, code ?? '')).unwrap()).toMatchObject({
-			verified: true,
-			enabled: true,
-			pending: false,
-		})
-
-		await core.deliverNotification(notice(alice.userId!, 'Bob 回复了你的主题《测试》'))
-		await mail.idle()
-		expect(smtp.mails).toHaveLength(2)
-		const text = textOf(smtp.mails[1]?.data ?? '')
+		const text = textOf(smtp.mails[0]?.data ?? '')
 		expect(text).toContain('Bob 回复了你的主题《测试》')
 		expect(text).toContain('https://forum.test/t/1001/2')
-		expect(smtp.mails[1]?.from).toBe('<noreply@forum.test>')
+		expect(smtp.mails[0]?.from).toBe('<noreply@forum.test>')
 
-		// Switched off, then removed: no more mail.
+		// Switched off: no more mail; back on: mail again.
 		expect((await mail.setEnabled(alice, false)).unwrap().enabled).toBe(false)
-		await core.deliverNotification(notice(alice.userId!, '关掉了'))
+		await core.deliverNotification(notice(aliceId, '关掉了'))
+		await mail.idle()
+		expect(smtp.mails).toHaveLength(1)
+		expect((await mail.setEnabled(alice, true)).unwrap().enabled).toBe(true)
+		await core.deliverNotification(notice(aliceId, '又开了'))
 		await mail.idle()
 		expect(smtp.mails).toHaveLength(2)
-		expect((await mail.remove(alice)).unwrap().email).toBeNull()
-		expect((await mail.setEnabled(alice, true)).isErr()).toBe(true)
+
+		// The provider stops sharing the address: nothing is sent.
+		await core.setContactEmail(aliceId, null)
+		await core.deliverNotification(notice(aliceId, '邮箱没了'))
+		await mail.idle()
+		expect(smtp.mails).toHaveLength(2)
 	})
 
 	it('logs in with the password kept in Vault, and stays off without it', async () => {
-		const { host, mail, smtp, signUp, configure } = await boot({ password: 'hunter2' })
+		const { host, core, mail, smtp, signUp, configure } = await boot({ password: 'hunter2' })
 		const bob = await signUp('Bob')
+		await core.setContactEmail(bob.userId ?? '', 'bob@example.com')
 		await configure({ username: 'forum' })
 		// A login without a password: mail stays off.
 		expect((await mail.address(bob)).unwrap().available).toBe(false)
 
 		await host.require(ForumMailPlugin).ctx.require(Vault).kv().set(SMTP_PASSWORD_KEY, 'hunter2')
-		await configure({ username: 'forum', fromName: '论坛' })
+		await configure({ username: 'forum', fromName: 'Pluxum' })
 		expect((await mail.address(bob)).unwrap().available).toBe(true)
-		;(await mail.setAddress(bob, 'bob@example.com')).unwrap()
+		await core.deliverNotification(notice(bob.userId ?? '', '登录发信'))
+		await mail.idle()
 		expect(smtp.logins).toEqual(['forum'])
 		expect(smtp.mails).toHaveLength(1)
+		expect(textOf(smtp.mails[0]?.data ?? '')).toContain('Pluxum')
 	})
 })
 

@@ -7,6 +7,11 @@
 			"id": "0000_initial",
 			"file": "0000_initial.sql",
 			"checksum": "52e33a66aae2635608ace070c3be6d78698515f9d586f3fb860d2481ec21c46d"
+		},
+		{
+			"id": "0001_preferences",
+			"file": "0001_preferences.sql",
+			"checksum": "97d7bd9acf434dddd09697ff628e70cc58747169f7de10cdb588b4cb6ba87471"
 		}
 	]
 }

@@ -820,6 +820,30 @@ export class ForumCorePlugin extends BasePlugin {
 		return user ?? null
 	}
 
+	/**
+	 * Privileged: records the address the identity provider vouches for (null: it shares none).
+	 * The forum keeps no address of its own; this is what notification mail goes to.
+	 */
+	async setContactEmail(userId: string, email: string | null): Promise<void> {
+		if (!isEntityId(userId)) return
+		const value = email === null ? null : email.trim().slice(0, 254) || null
+		await this.database.transaction((tx) =>
+			tx
+				.update(users)
+				.set({ email: value })
+				.where(and(eq(users.id, userId), sql`${users.email} is distinct from ${value}`)),
+		)
+	}
+
+	/** Privileged: the account's contact address from its identity provider, if any. */
+	async contactEmail(userId: string): Promise<string | null> {
+		if (!isEntityId(userId)) return null
+		const [row] = await this.database.read((db) =>
+			db.select({ email: users.email }).from(users).where(eq(users.id, userId)),
+		)
+		return row?.email ?? null
+	}
+
 	/** Privileged: changes an account's display name; callers decide who may. */
 	async renameUser(userId: string, displayName: string): Promise<ForumResult<UserDto>> {
 		if (!isEntityId(userId)) return notFound('用户')

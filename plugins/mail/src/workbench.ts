@@ -19,7 +19,7 @@ const MailStatus = v.pipe(
 				labels: { vault: '已存入 Vault', deployment: '由部署提供（只读）', none: '未设置' },
 			}),
 		),
-		subscribers: v.pipe(v.number(), v.integer(), f.formMeta({ title: '已验证并开启的邮箱' })),
+		optedOut: v.pipe(v.number(), v.integer(), f.formMeta({ title: '关闭了邮件通知的用户' })),
 		queued: v.pipe(v.number(), v.integer(), f.formMeta({ title: '待发送' })),
 	}),
 	f.formMeta({ title: '邮件状态' }),
