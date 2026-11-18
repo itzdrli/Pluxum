@@ -93,8 +93,9 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 			<Bell aria-hidden />
 			{badge !== null && (
 				<span
+					key={badge}
 					data-testid="notification-unread-badge"
-					className="bg-accent text-page absolute top-0.5 right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-[2px] px-1 text-micro leading-none font-bold tabular-nums"
+					className="bg-accent text-page animate-pop-in absolute top-0.5 right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-[2px] px-1 text-micro leading-none font-bold tabular-nums"
 				>
 					{badge}
 				</span>

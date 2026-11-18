@@ -150,7 +150,7 @@ function Dock({
 	return (
 		<aside
 			aria-label="创作抽屉"
-			className={`border-line bg-panel shadow-overlay fixed right-4 bottom-0 z-40 flex flex-col overflow-hidden rounded-t-[2px] border border-b-0 max-sm:right-0 max-sm:left-0 max-sm:w-auto ${SIZE_CLASS[size]} ${
+			className={`border-line bg-panel shadow-overlay animate-dock-in fixed right-4 transition-[width,height] duration-300 ease-[var(--stage-ease)] [interpolate-size:allow-keywords] bottom-0 z-40 flex flex-col overflow-hidden rounded-t-[2px] border border-b-0 max-sm:right-0 max-sm:left-0 max-sm:w-auto ${SIZE_CLASS[size]} ${
 				dragging ? 'outline-accent outline-2 -outline-offset-2' : ''
 			}`}
 			onDragOver={(event) => {

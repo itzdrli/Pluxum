@@ -88,13 +88,14 @@ export function PostCard({
 			}}
 		>
 			<div className="flex items-center gap-3 pt-4 pr-3 pl-4 lg:pl-5">
-				<Link to={`/u/${post.author.handle}`} tabIndex={-1} aria-hidden>
+				<Link to={`/u/${post.author.handle}`} viewTransition tabIndex={-1} aria-hidden>
 					<UserAvatar user={post.author} />
 				</Link>
 				<div className="min-w-0 flex-1">
 					<div className="flex min-w-0 items-center gap-2">
 						<Link
 							to={`/u/${post.author.handle}`}
+							viewTransition
 							className="text-ink-strong truncate font-bold hover:underline"
 						>
 							{post.author.displayName}

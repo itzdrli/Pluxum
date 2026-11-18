@@ -65,8 +65,21 @@ export function ReactionsFooter({ post }: { post: PostDto }) {
 					)
 				}
 			>
-				<ThumbsUp aria-hidden fill={shown.reacted ? 'currentColor' : 'none'} />
-				{shown.count > 0 && <span className="tabular-nums">{shown.count}</span>}
+				{/* Keyed by the state, so each like pops (only when pressed, not on load). */}
+				<ThumbsUp
+					key={shown.reacted ? 'on' : 'off'}
+					aria-hidden
+					fill={shown.reacted ? 'currentColor' : 'none'}
+					className={asked === true ? 'animate-like-pop' : undefined}
+				/>
+				{shown.count > 0 && (
+					<span
+						key={shown.count}
+						className={`tabular-nums ${asked === undefined ? '' : 'animate-notice-in'}`}
+					>
+						{shown.count}
+					</span>
+				)}
 			</Button>
 			{error !== undefined && (
 				<span role="alert" className="text-danger text-meta">

@@ -327,18 +327,19 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 					<div
 						role="tablist"
 						aria-label="审核视图"
-						className="border-line bg-panel inline-flex rounded-[2px] border p-0.5 text-meta"
+						className="border-line bg-panel isolate inline-flex rounded-[2px] border p-0.5 text-meta"
 					>
 						<StageLink
 							role="tab"
 							aria-selected={tab === 'queue'}
 							to={buildModerationHref('queue', status)}
-							className={`flex items-center gap-1.5 rounded-[2px] px-2.5 py-1 ${
+							className={`relative flex items-center gap-1.5 rounded-[2px] px-2.5 py-1 ${
 								tab === 'queue'
-									? 'bg-selected text-ink-strong font-bold'
+									? 'text-ink-strong font-bold'
 									: 'text-ink-weak hover:text-ink-strong'
 							}`}
 						>
+							{tab === 'queue' && <SegmentIndicator />}
 							<ClipboardList aria-hidden size={13} />
 							<span>举报队列</span>
 							{queue !== null && queue.openCount > 0 && (
@@ -349,12 +350,11 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 							role="tab"
 							aria-selected={tab === 'logs'}
 							to={buildModerationHref('logs')}
-							className={`flex items-center gap-1.5 rounded-[2px] px-2.5 py-1 ${
-								tab === 'logs'
-									? 'bg-selected text-ink-strong font-bold'
-									: 'text-ink-weak hover:text-ink-strong'
+							className={`relative flex items-center gap-1.5 rounded-[2px] px-2.5 py-1 ${
+								tab === 'logs' ? 'text-ink-strong font-bold' : 'text-ink-weak hover:text-ink-strong'
 							}`}
 						>
+							{tab === 'logs' && <SegmentIndicator />}
 							<History aria-hidden size={13} />
 							<span>审核日志</span>
 						</StageLink>
@@ -620,5 +620,19 @@ function LogRow({ entry }: { entry: ModerationLogDto }) {
 			</div>
 			<Timestamp iso={entry.createdAt} className="text-ink-weak shrink-0 text-meta" />
 		</li>
+	)
+}
+
+/** The selected segment's fill; it slides to the other segment when the view switches. */
+function SegmentIndicator() {
+	return (
+		<span
+			aria-hidden
+			style={{
+				viewTransitionName: 'moderation-tab',
+				viewTransitionClass: 'indicator',
+			}}
+			className="bg-selected absolute inset-0 -z-10 rounded-[2px]"
+		/>
 	)
 }

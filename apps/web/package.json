@@ -17,6 +17,7 @@
 		"@react-router/node": "catalog:frontend",
 		"@react-router/serve": "catalog:frontend",
 		"isbot": "catalog:frontend",
+		"lenis": "catalog:frontend",
 		"@heroui/react": "catalog:frontend",
 		"@heroui/styles": "catalog:frontend",
 		"react-aria": "catalog:frontend",

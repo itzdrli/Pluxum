@@ -33,22 +33,20 @@ export function UserMenu({
 		const loginHref = `/api/forum/auth/login?returnTo=${encodeURIComponent(here)}`
 		if (variant === 'rail') {
 			return (
-				<div
-					className={`flex items-center gap-2 px-3 py-3 ${collapsed ? 'lg:max-xl:flex-col lg:max-xl:px-0' : ''}`}
-				>
+				<div className="flex items-center gap-2 overflow-hidden px-3 py-3 rail-mini:flex-col">
 					{meta?.auth.loginAvailable ? (
 						<ButtonAnchor
 							data-testid="viewer"
 							href={loginHref}
 							tone="primary"
 							aria-label="登录"
-							className={`flex-1 ${collapsed ? 'lg:max-xl:w-10 lg:max-xl:flex-none lg:max-xl:px-0' : ''}`}
+							className="flex-1 rail-mini:w-10 rail-mini:flex-none rail-mini:px-0"
 						>
 							<LogIn aria-hidden />
-							<span className={collapsed ? 'lg:max-xl:hidden' : undefined}>登录</span>
+							<span className="rail-mini:hidden">登录</span>
 						</ButtonAnchor>
 					) : (
-						<span data-testid="viewer" className="text-ink-weak flex-1 text-meta">
+						<span data-testid="viewer" className="text-ink-weak flex-1 text-meta rail-mini:hidden">
 							未登录
 						</span>
 					)}
@@ -119,8 +117,8 @@ function AccountMenu({
 		{ id: 'logout-all', label: '退出所有设备' },
 	]
 	const act = (key: string) => {
-		if (key === 'profile') void navigate(`/u/${user.handle}`)
-		if (key === 'moderation') void navigate('/moderation')
+		if (key === 'profile') void navigate(`/u/${user.handle}`, { viewTransition: true })
+		if (key === 'moderation') void navigate('/moderation', { viewTransition: true })
 		if (key === 'logout') logout.current?.requestSubmit()
 		if (key === 'logout-all') logoutAll.current?.requestSubmit()
 	}
@@ -169,12 +167,10 @@ function AccountMenu({
 					<Dropdown.Trigger
 						data-testid="viewer"
 						aria-label={`账号：${name}`}
-						className={`hover:bg-hover active:bg-pressed flex h-14 w-full cursor-pointer items-center gap-2.5 pr-2 pl-4 text-left outline-none data-[focus-visible=true]:outline-2 data-[focus-visible=true]:-outline-offset-2 data-[focus-visible=true]:outline-[var(--c-accent)] ${
-							collapsed ? 'lg:max-xl:justify-center lg:max-xl:px-0' : ''
-						}`}
+						className="hover:bg-hover active:bg-pressed flex h-14 w-full cursor-pointer items-center gap-2.5 overflow-hidden pr-2 pl-[18px] text-left whitespace-nowrap outline-none data-[focus-visible=true]:outline-2 data-[focus-visible=true]:-outline-offset-2 data-[focus-visible=true]:outline-[var(--c-accent)]"
 					>
 						<UserAvatar user={user} />
-						<span className={`min-w-0 flex-1 leading-tight ${collapsed ? 'lg:max-xl:hidden' : ''}`}>
+						<span className="min-w-0 flex-1 leading-tight transition-opacity duration-200 rail-mini:opacity-0">
 							<span className="text-ink-strong block truncate font-bold">{name}</span>
 							{role !== undefined && (
 								<span className="text-ink-weak block text-meta">{ROLE_LABELS[role]}</span>
@@ -183,7 +179,7 @@ function AccountMenu({
 						<Ellipsis
 							aria-hidden
 							size={16}
-							className={`text-ink-weak shrink-0 ${collapsed ? 'lg:max-xl:hidden' : ''}`}
+							className="text-ink-weak shrink-0 transition-opacity duration-200 rail-mini:opacity-0"
 						/>
 					</Dropdown.Trigger>
 				) : (

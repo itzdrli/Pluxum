@@ -17,12 +17,13 @@ import { UserAvatar } from '../components/forum/user-avatar'
 import { useDock } from '../components/dock/composer-dock'
 import { StageLink } from '../components/stage/stage'
 import { Button, IconButton } from '../components/ui/button'
-import { EmptyState, FormError, Panel } from '../components/ui/display'
+import { EmptyState, FormError, Panel, TabIndicator } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
 import { TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { HOME_PAGE_SIZE, HOME_SORTS, homeSortOf, type HomeSort } from '../lib/home'
 import { defineStage } from '../lib/stage'
+import { withViewTransition } from '../lib/view-transition'
 import type { loader as rootLoader } from '../root'
 import { siteOf } from '../lib/site'
 
@@ -93,12 +94,15 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 			<div className="border-line -mx-4 flex items-center gap-5 border-b px-4 lg:hidden">
 				<div role="tablist" aria-label="首页内容切换" className="flex items-center gap-5">
 					{/* Not 「最新」: that is also one of the feed's orderings right below. */}
-					<HomeTab selected={mobileTab === 'recent'} onSelect={() => setMobileTab('recent')}>
+					<HomeTab
+						selected={mobileTab === 'recent'}
+						onSelect={() => withViewTransition(() => setMobileTab('recent'))}
+					>
 						动态
 					</HomeTab>
 					<HomeTab
 						selected={mobileTab === 'categories'}
-						onSelect={() => setMobileTab('categories')}
+						onSelect={() => withViewTransition(() => setMobileTab('categories'))}
 					>
 						版块
 					</HomeTab>
@@ -290,13 +294,12 @@ function SortTabs({ sort }: { sort: HomeSort }) {
 					to={item.id === 'active' ? '/' : `/?sort=${item.id}`}
 					replace
 					aria-current={item.id === sort ? 'page' : undefined}
-					className={`h-control -mb-px inline-flex items-center border-b-2 text-ui transition-colors max-lg:-mx-1 max-lg:px-1 lg:h-[var(--h-pane-bar)] ${
-						item.id === sort
-							? 'border-accent text-ink-strong font-bold'
-							: 'text-ink-weak hover:text-ink-strong border-transparent'
+					className={`h-control relative -mb-px inline-flex items-center text-ui transition-colors max-lg:-mx-1 max-lg:px-1 lg:h-[var(--h-pane-bar)] ${
+						item.id === sort ? 'text-ink-strong font-bold' : 'text-ink-weak hover:text-ink-strong'
 					}`}
 				>
 					{item.label}
+					{item.id === sort && <TabIndicator name="sort-tab" />}
 				</StageLink>
 			))}
 		</nav>
@@ -366,13 +369,12 @@ function HomeTab({
 			role="tab"
 			aria-selected={selected}
 			onClick={onSelect}
-			className={`h-control -mx-1 -mb-px cursor-pointer border-b-2 px-1 text-ui transition-colors ${
-				selected
-					? 'border-accent text-ink-strong font-bold'
-					: 'text-ink-weak hover:text-ink-strong border-transparent'
+			className={`h-control relative -mx-1 -mb-px cursor-pointer px-1 text-ui transition-colors ${
+				selected ? 'text-ink-strong font-bold' : 'text-ink-weak hover:text-ink-strong'
 			}`}
 		>
 			{children}
+			{selected && <TabIndicator name="home-tab" />}
 		</button>
 	)
 }

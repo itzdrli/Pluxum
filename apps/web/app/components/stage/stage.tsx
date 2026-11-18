@@ -12,6 +12,8 @@ import {
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 import { toggleFocusReading, useFocusReading } from '../../lib/focus'
+import { withViewTransition } from '../../lib/view-transition'
+import { jumpPaneTo, useSmoothScroll } from './smooth-scroll'
 import { IconButton } from '../ui/button'
 
 import {
@@ -80,34 +82,21 @@ export function useStageNavigate() {
  */
 export function StageMotionSync() {
 	const stage = useStage()
-	const previous = useRef<ResolvedStage | null>(null)
+	const { pathname } = useLocation()
+	const previous = useRef<{ stage: ResolvedStage; pathname: string } | null>(null)
 	useLayoutEffect(() => {
 		const from = previous.current
-		previous.current = stage
-		const motion: StageMotion = from === null ? 'none' : stageMotion(from, stage)
+		previous.current = { stage, pathname }
+		let motion: StageMotion = from === null ? 'none' : stageMotion(from.stage, stage)
+		// Another standalone page (the overview, notifications, moderation) takes the same pane.
+		if (motion === 'none' && from !== null && stage.depth === 0 && from.pathname !== pathname) {
+			motion = 'page'
+		}
 		const root = document.documentElement
 		root.dataset.stageMotion = motion
 		root.dataset.stageDepth = String(stage.depth)
-	}, [stage])
+	}, [stage, pathname])
 	return null
-}
-
-// The first rail row sits right under the bar and is 44px high (`h-11`); the overview starts at the
-// same line with a row of the same height, the other panes keep a 12px inset.
-/** Width of the category column; the top bar's brand cell uses it too, so the two line up. */
-export const RAIL_WIDTH = 'lg:w-[220px] xl:w-[260px] 2xl:w-[288px]'
-
-/**
- * The category column's width for a stage. With a detail open on a laptop (lg up to xl) the
- * column shrinks to its icons, so the list and the detail beside it keep a reading width.
- */
-export function railWidth(collapsed: boolean): string {
-	return collapsed ? 'lg:w-16 xl:w-[260px] 2xl:w-[288px]' : RAIL_WIDTH
-}
-
-/** Whether the category column shows only its icons (lg up to xl): when a detail is open. */
-export function railCollapsed(stage: ResolvedStage): boolean {
-	return stage.depth === 2
 }
 
 // Every pane opens with its head (`pane-bar`, wide screens), so panes have no top padding there.
@@ -125,7 +114,7 @@ const DETAIL =
  */
 export function FoldListButton() {
 	return (
-		<IconButton label="收起主题列表（[）" onPress={toggleFocusReading}>
+		<IconButton label="收起主题列表（[）" onPress={() => withViewTransition(toggleFocusReading)}>
 			<PanelLeftClose aria-hidden />
 		</IconButton>
 	)
@@ -155,19 +144,21 @@ export function StageSplit({
 	useLayoutEffect(() => {
 		if (scrolledList.current === stage.listKey) return
 		scrolledList.current = stage.listKey
-		listRef.current?.scrollTo({ top: 0 })
+		if (listRef.current !== null) jumpPaneTo(listRef.current, 0)
 	}, [stage.listKey])
 
 	// A new detail, or another page of it, starts at the top unless the URL points at a post.
 	const detailPage = new URLSearchParams(location.search).get('page') ?? '1'
 	const detailRef = useRef<HTMLDivElement>(null)
+	useSmoothScroll(listRef)
+	useSmoothScroll(detailRef, detailOpen)
 	const scrolledDetail = useRef<string | null>(null)
 	useLayoutEffect(() => {
 		const key = stage.detailKey === null ? null : `${stage.detailKey}?page=${detailPage}`
 		if (scrolledDetail.current === key) return
 		scrolledDetail.current = key
 		if (key === null || location.hash.startsWith('#post-')) return
-		detailRef.current?.scrollTo({ top: 0 })
+		if (detailRef.current !== null) jumpPaneTo(detailRef.current, 0)
 	}, [stage.detailKey, detailPage, location.hash])
 
 	return (
@@ -176,7 +167,10 @@ export function StageSplit({
 			{focus && (
 				<div className="border-line-soft bg-page flex w-10 shrink-0 flex-col items-center border-r max-lg:hidden">
 					<div className="flex h-[var(--h-pane-bar)] shrink-0 items-center">
-						<IconButton label="展开主题列表（[）" onPress={toggleFocusReading}>
+						<IconButton
+							label="展开主题列表（[）"
+							onPress={() => withViewTransition(toggleFocusReading)}
+						>
 							<PanelLeftOpen aria-hidden />
 						</IconButton>
 					</div>

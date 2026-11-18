@@ -217,7 +217,8 @@ export function stageDetailHref(
 }
 
 /** How the stage moves between two states; drives the CSS of the view transition. */
-export type StageMotion = 'push' | 'pop' | 'detail' | 'list' | 'none'
+/** `page` (another standalone page in place) is told apart by StageMotionSync, from the path. */
+export type StageMotion = 'push' | 'pop' | 'detail' | 'list' | 'page' | 'none'
 
 export function stageMotion(
 	from: Pick<ResolvedStage, 'depth' | 'listKey' | 'detailKey'>,

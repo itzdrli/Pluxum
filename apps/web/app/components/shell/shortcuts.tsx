@@ -2,8 +2,10 @@ import { useEffect } from 'react'
 import { useParams, useRouteLoaderData } from 'react-router'
 
 import { toggleFocusReading } from '../../lib/focus'
+import { withViewTransition } from '../../lib/view-transition'
 import type { loader as rootLoader } from '../../root'
 import { useDock } from '../dock/composer-dock'
+import { toggleRail, useRailPreference } from './rail-state'
 import { useStage, useStageNavigate } from '../stage/stage'
 
 /** The keys that do something on their own: not while typing, not with a modifier, not in a dialog. */
@@ -30,7 +32,7 @@ function listedThreads(): HTMLAnchorElement[] {
 
 /**
  * Single-key shortcuts for reading: J / K open the next / previous thread of the list, `[` folds the
- * list away for focus reading, C starts a thread and R a reply, in the dock. (Ctrl/Cmd+K and `/`
+ * list away for focus reading, `\` folds the category column to its icons, C starts a thread and R a reply, in the dock. (Ctrl/Cmd+K and `/`
  * belong to the command palette.) Draws nothing.
  */
 export function GlobalShortcuts() {
@@ -42,6 +44,7 @@ export function GlobalShortcuts() {
 	const signedIn = viewer?.user != null
 	const slug = params.slug
 	const depth = stage.depth
+	const rail = useRailPreference()
 
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
@@ -65,7 +68,14 @@ export function GlobalShortcuts() {
 				case '[': {
 					if (depth !== 2) return
 					event.preventDefault()
-					toggleFocusReading()
+					withViewTransition(toggleFocusReading)
+					return
+				}
+				case '\\': {
+					// Folds the category column to its icons, or opens it again (wide screens only).
+					if (!stage.nav || !window.matchMedia('(min-width: 1024px)').matches) return
+					event.preventDefault()
+					toggleRail(rail)
 					return
 				}
 				case 'c': {
@@ -86,6 +96,6 @@ export function GlobalShortcuts() {
 		}
 		window.addEventListener('keydown', onKeyDown)
 		return () => window.removeEventListener('keydown', onKeyDown)
-	}, [navigate, dock, depth, signedIn, slug])
+	}, [navigate, dock, depth, signedIn, slug, rail, stage.nav])
 	return null
 }

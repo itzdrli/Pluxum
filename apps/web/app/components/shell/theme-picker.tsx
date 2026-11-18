@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { useRouteLoaderData } from 'react-router'
 
 import { DEFAULT_THEME, THEMES, themeCookie, type ThemeId } from '../../lib/theme'
+import { withThemeReveal } from '../../lib/view-transition'
 import type { loader as rootLoader } from '../../root'
 
 /*
@@ -54,8 +55,15 @@ export function ThemeSwatches({ className }: { className?: string }) {
 						aria-pressed={selected}
 						aria-label={`${theme.label}（${theme.dark ? '暗色' : '亮色'}）`}
 						title={theme.label}
-						onClick={() => chooseTheme(theme.id)}
-						className={`bg-page flex size-6 shrink-0 cursor-pointer items-end gap-px overflow-hidden rounded-[2px] border p-0.5 ${
+						onClick={(event) => {
+							if (selected) return
+							const box = event.currentTarget.getBoundingClientRect()
+							withThemeReveal(() => chooseTheme(theme.id), {
+								x: box.left + box.width / 2,
+								y: box.top + box.height / 2,
+							})
+						}}
+						className={`bg-page flex size-6 shrink-0 cursor-pointer items-end gap-px overflow-hidden rounded-[2px] border p-0.5 transition-[border-color,outline-color,scale] hover:scale-110 active:scale-95 ${
 							selected
 								? 'border-accent outline-accent outline-1 outline-offset-1'
 								: 'border-line hover:border-ink-weak'

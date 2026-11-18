@@ -20,17 +20,20 @@ import {
 } from 'react-router'
 
 import type { Route } from './+types/root'
+import 'lenis/dist/lenis.css'
 import './app.css'
 import { Shell } from './components/shell/shell'
 import { useTheme } from './components/shell/theme-picker'
 import { DockProvider } from './components/dock/composer-dock'
 import { HoverCards } from './components/hover/hover-cards'
+import { WindowSmoothScroll } from './components/stage/smooth-scroll'
 import { GlobalShortcuts } from './components/shell/shortcuts'
 import { PaletteProvider } from './components/palette/command-palette'
 import { LightboxProvider } from './components/ui/lightbox'
 import { ButtonLink } from './components/ui/button'
 import { forumApi } from './lib/forum-api.server'
 import { siteOf } from './lib/site'
+import { railFromRequest } from './lib/rail'
 import { isDarkTheme, themeFromRequest } from './lib/theme'
 
 // Who is browsing, what the forum allows, and the visitor's theme. Child routes read it through
@@ -53,6 +56,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		meta: forumMeta,
 		unreadNotifications,
 		theme: themeFromRequest(request),
+		rail: railFromRequest(request),
 		// Social cards need an absolute image URL; behind the TLS proxy request.url says http://.
 		origin: process.env.FORUM_WEB_PUBLIC_ORIGIN || new URL(request.url).origin,
 	}
@@ -99,6 +103,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
 			<DockProvider>
 				<PaletteProvider>
 					<GlobalShortcuts />
+					<WindowSmoothScroll />
 					<HoverCards />
 					<Shell meta={loaderData.meta}>
 						<Outlet />

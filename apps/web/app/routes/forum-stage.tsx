@@ -1,5 +1,15 @@
 import type { CategoryDto } from '@pluxum/domain'
-import { Bell, Hash, LayoutGrid, Plus, ShieldCheck, type LucideIcon } from 'lucide-react'
+import {
+	Bell,
+	Hash,
+	LayoutGrid,
+	PanelLeftClose,
+	PanelLeftOpen,
+	Plus,
+	ShieldCheck,
+	type LucideIcon,
+} from 'lucide-react'
+import { useRef } from 'react'
 import { Link, Outlet, useLocation, useParams, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/forum-stage'
@@ -7,7 +17,11 @@ import { PaletteTrigger } from '../components/palette/palette-trigger'
 import { LogoMark } from '../components/shell/logo-mark'
 import { SiteFooterCompact } from '../components/shell/site-footer'
 import { UserMenu } from '../components/shell/user-menu'
-import { railCollapsed, railWidth, StageLink, useStage } from '../components/stage/stage'
+import { useRailPreference, toggleRail } from '../components/shell/rail-state'
+import { useSmoothScroll } from '../components/stage/smooth-scroll'
+import { StageLink, useStage } from '../components/stage/stage'
+import { IconButton } from '../components/ui/button'
+import { railMode, railWidthClass } from '../lib/rail'
 import { forumApi, orThrow } from '../lib/forum-api.server'
 import { stageShouldRevalidate } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
@@ -24,13 +38,36 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 /** A page that fills its pane grows with the window: reading width on laptops, more on big screens. */
 const WIDE_PAGE = 'max-w-[1180px] 2xl:max-w-[1400px] min-[1920px]:max-w-[1600px]'
-const RAIL_ITEM = 'flex items-center gap-3 border-l-2 pr-5 pl-7 h-11 transition-colors'
-const RAIL_ITEM_ACTIVE = 'border-l-accent bg-selected text-ink-strong font-bold'
-const RAIL_ITEM_IDLE = 'text-ink hover:bg-hover hover:text-ink-strong border-l-transparent'
-/** The rail item's layout while the column shows only icons (lg up to xl, a detail open). */
-const RAIL_ITEM_COLLAPSED = 'lg:max-xl:justify-center lg:max-xl:px-0'
-/** Hidden while the column shows only icons. */
-const COLLAPSED_HIDDEN = 'lg:max-xl:hidden'
+
+/*
+ * The rail keeps one geometry whether it is full or folded: every glyph sits in a 24px slot whose
+ * centre is 32px from the left edge, which is the centre of the folded 64px column. Folding then
+ * only narrows the column and fades the labels, so nothing jumps sideways while it animates.
+ */
+const RAIL_ITEM =
+	'relative flex h-11 items-center gap-3 overflow-hidden pr-5 pl-5 whitespace-nowrap transition-colors'
+const RAIL_ITEM_ACTIVE = 'bg-selected text-ink-strong font-bold'
+const RAIL_ITEM_IDLE = 'text-ink hover:bg-hover hover:text-ink-strong active:bg-pressed'
+/** A label of the rail: fades out while the rail shows only icons. */
+const RAIL_LABEL =
+	'transition-opacity duration-200 rail-mini:pointer-events-none rail-mini:opacity-0'
+
+/**
+ * The accent bar of the rail's current destination. It carries a view-transition name, so moving
+ * from one destination to another slides the bar along the rail.
+ */
+function RailIndicator() {
+	return (
+		<span
+			aria-hidden
+			style={{
+				viewTransitionName: 'rail-indicator',
+				viewTransitionClass: 'indicator',
+			}}
+			className="bg-accent absolute inset-y-0 left-0 w-0.5"
+		/>
+	)
+}
 
 export const shouldRevalidate = stageShouldRevalidate
 
@@ -42,10 +79,16 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 	const pathname = location.pathname
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const canManageCategories = root?.meta?.viewer.can.manageCategories === true
-	const collapsed = railCollapsed(stage)
+	const preference = useRailPreference()
+	const mode = railMode(preference, stage.depth)
+	// Approximate for `auto` (folded on laptops only); it only picks where the account menu opens.
+	const collapsed = mode !== 'full'
+	const pageRef = useRef<HTMLDivElement>(null)
+	useSmoothScroll(pageRef, stage.nav && stage.depth === 0)
 
 	if (!stage.nav) return <Outlet />
 
+	const siteName = siteOf(root).name
 	return (
 		<div
 			data-stage-depth={stage.depth}
@@ -53,26 +96,47 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 		>
 			<aside
 				aria-label="版块导航"
-				className={`${railWidth(collapsed)} border-line-soft bg-sunken flex min-h-0 shrink-0 flex-col border-r [view-transition-name:stage-nav] max-lg:hidden`}
+				data-rail={mode}
+				className={`${railWidthClass(mode)} border-line-soft bg-sunken flex min-h-0 shrink-0 flex-col overflow-x-hidden border-r transition-[width] duration-300 ease-[var(--stage-ease)] [view-transition-name:stage-nav] max-lg:hidden`}
 			>
 				{/* Wide screens have no top bar: the frame's way home, its search and the account live
 				    in this column, top and bottom, and every pane opens with a head of its own. */}
-				<div
-					className={`flex h-[var(--h-pane-bar)] shrink-0 items-center pl-5 ${collapsed ? 'lg:max-xl:justify-center lg:max-xl:pl-0' : ''}`}
-				>
+				<div className="group/head relative flex h-[var(--h-pane-bar)] shrink-0 items-center pr-3 pl-[18px]">
 					<Link
 						to="/"
 						viewTransition
-						aria-label={`${siteOf(root).name} 首页`}
-						className="text-ink-strong flex items-center gap-2.5 font-bold"
+						aria-label={`${siteName} 首页`}
+						className={`text-ink-strong flex min-w-0 items-center gap-2.5 font-bold transition-opacity ${
+							preference === 'mini'
+								? 'group-hover/head:opacity-0 group-has-[:focus-visible]/head:opacity-0'
+								: ''
+						}`}
 					>
 						<LogoMark className="size-7 shrink-0" />
-						<span className={`text-heading ${collapsed ? COLLAPSED_HIDDEN : ''}`}>
-							{siteOf(root).name}
-						</span>
+						<span className={`text-heading truncate ${RAIL_LABEL}`}>{siteName}</span>
 					</Link>
+					{preference === 'mini' ? (
+						// Folded: the logo turns into the way to open the rail on hover, as in most editors.
+						<IconButton
+							label={'展开侧栏（\\）'}
+							key="expand"
+							className="absolute top-1/2 left-3 -translate-y-1/2 opacity-0 group-hover/head:opacity-100 focus-visible:opacity-100"
+							onPress={() => toggleRail(preference)}
+						>
+							<PanelLeftOpen aria-hidden />
+						</IconButton>
+					) : (
+						<IconButton
+							key="collapse"
+							label={'收起侧栏（\\）'}
+							className={`text-ink-weak ml-auto shrink-0 ${RAIL_LABEL}`}
+							onPress={() => toggleRail(preference)}
+						>
+							<PanelLeftClose aria-hidden />
+						</IconButton>
+					)}
 				</div>
-				<div className={`shrink-0 px-3 pb-3 ${collapsed ? 'lg:max-xl:px-0' : ''}`}>
+				<div className="shrink-0 px-3 pb-3">
 					<PaletteTrigger
 						variant="rail"
 						collapsed={collapsed}
@@ -87,9 +151,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 					root={root}
 					collapsed={collapsed}
 				/>
-				<div className={`flex shrink-0 flex-col ${collapsed ? COLLAPSED_HIDDEN : ''}`}>
-					<SiteFooterCompact />
-				</div>
+				{/* The account first, the fine print last: the row people use sits above the one they don't. */}
 				<div className="border-line-soft shrink-0 border-t">
 					<UserMenu
 						meta={root?.meta ?? null}
@@ -98,10 +160,16 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 						collapsed={collapsed}
 					/>
 				</div>
+				<div className="flex shrink-0 flex-col rail-mini:hidden">
+					<SiteFooterCompact />
+				</div>
 			</aside>
 			{stage.depth === 0 ? (
 				// A page beside the column: one scrolling pane with a reading width, opening with its head.
-				<div className="min-w-0 flex-1 px-4 py-5 lg:overflow-x-hidden lg:overflow-y-auto lg:px-10 lg:pt-0 lg:pb-8">
+				<div
+					ref={pageRef}
+					className="min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-page] lg:overflow-x-hidden lg:overflow-y-auto lg:px-10 lg:pt-0 lg:pb-8"
+				>
 					<div className={`mx-auto w-full ${stage.wide ? WIDE_PAGE : 'max-w-[1040px]'}`}>
 						<Outlet />
 					</div>
@@ -136,22 +204,15 @@ function RailLink({
 				prefetch="intent"
 				aria-current={active ? 'page' : undefined}
 				title={collapsed ? label : undefined}
-				className={`relative ${RAIL_ITEM} ${active ? RAIL_ITEM_ACTIVE : RAIL_ITEM_IDLE} ${collapsed ? RAIL_ITEM_COLLAPSED : ''}`}
+				className={`${RAIL_ITEM} ${active ? RAIL_ITEM_ACTIVE : RAIL_ITEM_IDLE}`}
 			>
-				<Icon
-					aria-hidden
-					size={16}
-					className={active ? 'text-accent shrink-0' : 'text-ink-weak shrink-0'}
-				/>
-				<span className={`min-w-0 flex-1 truncate ${collapsed ? 'lg:max-xl:sr-only' : ''}`}>
-					{label}
+				{active && <RailIndicator />}
+				<span className="flex size-6 shrink-0 items-center justify-center">
+					<Icon aria-hidden size={16} className={active ? 'text-accent' : 'text-ink-weak'} />
 				</span>
+				<span className={`min-w-0 flex-1 truncate ${RAIL_LABEL}`}>{label}</span>
 				{badge !== undefined && badge > 0 && (
-					<span
-						className={`bg-accent text-page min-w-5 shrink-0 rounded-[2px] px-1 text-center text-micro leading-5 font-bold tabular-nums ${
-							collapsed ? 'lg:max-xl:absolute lg:max-xl:top-1 lg:max-xl:right-1.5' : ''
-						}`}
-					>
+					<span className="bg-accent text-page animate-pop-in min-w-5 shrink-0 rounded-[2px] px-1 text-center text-micro leading-5 font-bold tabular-nums transition-[top,left,right] rail-mini:absolute rail-mini:top-1 rail-mini:left-9">
 						{badge > 99 ? '99+' : badge}
 					</span>
 				)}
@@ -216,9 +277,8 @@ function CategoryNavPanel({
 					/>
 				)}
 			</ul>
-			<div
-				className={`border-line-soft flex h-12 shrink-0 items-center justify-between gap-2 border-b px-4 ${collapsed ? COLLAPSED_HIDDEN : ''}`}
-			>
+			{/* Folding closes this head to nothing, so the categories glide up instead of jumping. */}
+			<div className="border-line-soft flex h-12 shrink-0 items-center justify-between gap-2 overflow-hidden border-b pr-3 pl-5 whitespace-nowrap transition-[height,opacity,border-color] duration-300 ease-[var(--stage-ease)] rail-mini:h-0 rail-mini:border-transparent rail-mini:opacity-0">
 				<span className="section-label">版块 · {categories.length}</span>
 				<div className="flex items-center gap-1">
 					{canManageCategories && (
@@ -226,6 +286,7 @@ function CategoryNavPanel({
 							to="/?new=1"
 							aria-label="新建版块"
 							title="新建版块"
+							tabIndex={collapsed ? -1 : undefined}
 							className="text-ink-weak hover:bg-hover hover:text-ink-strong inline-flex size-control-sm items-center justify-center rounded-[2px]"
 						>
 							<Plus aria-hidden size={14} />
@@ -233,9 +294,9 @@ function CategoryNavPanel({
 					)}
 				</div>
 			</div>
-			<ul className="flex-1 overflow-y-auto py-2">
+			<ul className="flex-1 overflow-x-hidden overflow-y-auto py-2">
 				{categories.length === 0 ? (
-					<li className="text-ink-weak px-4 py-5 text-meta">还没有版块</li>
+					<li className={`text-ink-weak px-5 py-5 text-meta ${RAIL_LABEL}`}>还没有版块</li>
 				) : (
 					categories.map((cat) => {
 						const isActive = cat.slug === activeSlug
@@ -246,32 +307,28 @@ function CategoryNavPanel({
 									prefetch="intent"
 									aria-current={isActive ? 'page' : undefined}
 									title={collapsed ? cat.name : undefined}
-									className={`${RAIL_ITEM} ${isActive ? RAIL_ITEM_ACTIVE : RAIL_ITEM_IDLE} ${collapsed ? RAIL_ITEM_COLLAPSED : ''}`}
+									className={`${RAIL_ITEM} ${isActive ? RAIL_ITEM_ACTIVE : RAIL_ITEM_IDLE}`}
 								>
-									<Hash
-										aria-hidden
-										size={16}
-										className={`shrink-0 ${isActive ? 'text-accent' : 'text-ink-weak'} ${collapsed ? COLLAPSED_HIDDEN : ''}`}
-									/>
-									{/* Icons only: every category would be the same 「#」, so each shows its first character. */}
-									{collapsed && (
+									{isActive && <RailIndicator />}
+									{/* Icons only: every category would be the same 「#」, so the slot cross-fades to the
+									    category's first character. */}
+									<span className="relative flex size-6 shrink-0 items-center justify-center">
+										<Hash
+											aria-hidden
+											size={16}
+											className={`transition-opacity duration-200 rail-mini:opacity-0 ${isActive ? 'text-accent' : 'text-ink-weak'}`}
+										/>
 										<span
 											aria-hidden
-											className={`hidden size-6 shrink-0 items-center justify-center rounded-[2px] text-ui font-bold lg:max-xl:inline-flex ${
+											className={`absolute inset-0 flex items-center justify-center rounded-[2px] text-ui font-bold opacity-0 transition-opacity duration-200 rail-mini:opacity-100 ${
 												isActive ? 'text-accent' : 'bg-control text-ink-strong'
 											}`}
 										>
 											{Array.from(cat.name)[0] ?? '#'}
 										</span>
-									)}
-									<span
-										className={`min-w-0 flex-1 truncate ${collapsed ? 'lg:max-xl:sr-only' : ''}`}
-									>
-										{cat.name}
 									</span>
-									<span
-										className={`text-ink-weak shrink-0 text-meta tabular-nums ${collapsed ? COLLAPSED_HIDDEN : ''}`}
-									>
+									<span className={`min-w-0 flex-1 truncate ${RAIL_LABEL}`}>{cat.name}</span>
+									<span className={`text-ink-weak shrink-0 text-meta tabular-nums ${RAIL_LABEL}`}>
 										{cat.threadCount}
 									</span>
 								</StageLink>

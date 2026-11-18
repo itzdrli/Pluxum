@@ -315,7 +315,7 @@ export function Notice({
 	return (
 		<div
 			role={tone === 'danger' || tone === 'warning' ? 'alert' : 'status'}
-			className={`flex items-start gap-2.5 rounded-[2px] border px-4 py-3 ${toneClass} ${className ?? ''}`}
+			className={`animate-notice-in flex items-start gap-2.5 rounded-[2px] border px-4 py-3 ${toneClass} ${className ?? ''}`}
 		>
 			<Icon aria-hidden size={16} className="mt-px shrink-0" />
 			<div className="min-w-0 flex-1">{children}</div>
@@ -327,4 +327,19 @@ export function Notice({
 export function FormError({ message }: { message: string | undefined }) {
 	if (message === undefined) return null
 	return <Notice tone="danger">{message}</Notice>
+}
+
+/**
+ * The underline of the selected tab. Its view-transition name (unique per tab row) makes a switch
+ * slide it from the old tab to the new one; every indicator shares the `indicator` class, which
+ * app.css animates. The parent needs `relative`.
+ */
+export function TabIndicator({ name, className }: { name: string; className?: string }) {
+	return (
+		<span
+			aria-hidden
+			style={{ viewTransitionName: name, viewTransitionClass: 'indicator' }}
+			className={`bg-accent absolute inset-x-0 bottom-0 h-0.5 ${className ?? ''}`}
+		/>
+	)
 }

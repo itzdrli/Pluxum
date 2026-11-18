@@ -2,6 +2,24 @@
 @import '@heroui/styles';
 
 /*
+ * `rail-mini:` styles the category column while it shows only its icons: always when the visitor
+ * folded it (`data-rail="mini"`), and on laptops (lg up to xl) while a detail is open beside a
+ * list (`data-rail="auto"`). See app/lib/rail.ts.
+ */
+@custom-variant rail-mini {
+	@media (width >= 64rem) {
+		&:where([data-rail='mini'], [data-rail='mini'] *) {
+			@slot;
+		}
+	}
+	@media (width >= 64rem) and (width < 80rem) {
+		&:where([data-rail='auto'], [data-rail='auto'] *) {
+			@slot;
+		}
+	}
+}
+
+/*
  * Forum design tokens. The design language follows FantasticFrame (colour roles, type, density,
  * state feedback); the layout is the forum's own.
  *
@@ -300,11 +318,38 @@
 	::selection {
 		background-color: color-mix(in srgb, var(--c-accent) 30%, transparent);
 	}
+
+	/*
+	 * Every control eases between its states (hover, press, selection, focus) instead of snapping.
+	 * Zero specificity: a component's or a utility's own transition still wins.
+	 */
+	:where(
+		a,
+		button,
+		summary,
+		label,
+		input,
+		textarea,
+		select,
+		[role='button'],
+		[role='tab'],
+		[role='menuitem'],
+		[role='menuitemradio'],
+		[role='option'],
+		[role='switch'],
+		[role='checkbox']
+	) {
+		transition-property:
+			color, background-color, border-color, outline-color, text-decoration-color, fill, stroke,
+			opacity, box-shadow, transform, translate, scale;
+		transition-duration: 160ms;
+		transition-timing-function: var(--stage-ease);
+	}
 }
 
 /*
  * HeroUI at editor density: controls 28 / 32 / 36 px, 14px type, 2px corners, regular weight,
- * no press-scale. Same layer as HeroUI's component styles and later, so these win at equal
+ * a gentle press-scale. Same layer as HeroUI's component styles and later, so these win at equal
  * specificity while Tailwind utilities on an element still override them.
  */
 @layer components {
@@ -327,9 +372,16 @@
 	.button--icon-only.button--sm {
 		width: var(--h-control-sm);
 	}
-	.button:active,
+	/* A press sinks the button a little; it springs back as it is released. */
+	.button {
+		transition-property:
+			color, background-color, border-color, outline-color, box-shadow, opacity, transform;
+		transition-duration: 160ms;
+		transition-timing-function: var(--stage-ease);
+	}
+	.button:active:not(:disabled, [data-disabled='true']),
 	.button[data-pressed='true'] {
-		transform: none;
+		transform: scale(0.96);
 	}
 	.button svg:not([data-slot='spinner'] svg, [data-slot='link-icon'] svg) {
 		width: var(--icon);
@@ -424,7 +476,8 @@
 @utility pane-bar {
 	position: sticky;
 	top: 0;
-	z-index: 10;
+	/* Above the list rows' own raised links (z-10), which would otherwise show through it. */
+	z-index: 20;
 	display: flex;
 	align-items: center;
 	gap: 12px;
@@ -983,11 +1036,154 @@
 	animation: stage-rise-in var(--stage-duration) var(--stage-ease) 60ms both;
 }
 
+/* Another standalone page in the same pane, and a page coming or going beside a list. */
+:root[data-stage-motion='page']::view-transition-old(stage-page) {
+	animation: stage-sink-out var(--stage-duration-out) var(--stage-ease-in) both;
+}
+:root[data-stage-motion='page']::view-transition-new(stage-page) {
+	animation: stage-rise-in var(--stage-duration) var(--stage-ease) 60ms both;
+}
+::view-transition-old(stage-page):only-child {
+	animation: stage-fade-out 160ms linear both;
+}
+::view-transition-new(stage-page):only-child {
+	animation: stage-rise-in var(--stage-duration) var(--stage-ease) 40ms both;
+}
+
+/*
+ * Markers that travel: the rail's accent bar and a tab's underline carry names of their own, so
+ * the view transition slides them from the old place to the new one. Their snapshots swap at
+ * once; only the box moves.
+ */
+::view-transition-group(*.indicator) {
+	z-index: 3;
+	animation-duration: 320ms;
+}
+::view-transition-old(*.indicator) {
+	display: none;
+}
+::view-transition-new(*.indicator) {
+	animation: none;
+}
+
+/*
+ * A new theme spreads in a circle from the swatch that was pressed. The page is one snapshot for
+ * it: the panes drop their names while the transition is captured.
+ */
+:root[data-stage-motion='theme'] *,
+:root[data-stage-motion='theme'] *::before {
+	view-transition-name: none !important;
+}
+/* HeroUI takes the root out of view transitions (`:root { view-transition-name: none }`); the
+   reveal needs it back. */
+:root[data-stage-motion='theme'] {
+	view-transition-name: root;
+}
+:root[data-stage-motion='theme']::view-transition-old(root) {
+	animation: none;
+}
+:root[data-stage-motion='theme']::view-transition-new(root) {
+	animation: theme-reveal 520ms var(--stage-ease) both;
+}
+@keyframes theme-reveal {
+	from {
+		clip-path: circle(0 at var(--reveal-x, 50%) var(--reveal-y, 50%));
+	}
+	to {
+		clip-path: circle(var(--reveal-r, 150vmax) at var(--reveal-x, 50%) var(--reveal-y, 50%));
+	}
+}
+
+/*
+ * Small entrances for things that appear without a navigation: notices and errors, badges, the
+ * command palette, the composer dock, link previews, a like.
+ */
+@keyframes pop-in {
+	from {
+		opacity: 0;
+		transform: scale(0.6);
+	}
+}
+@keyframes notice-in {
+	from {
+		opacity: 0;
+		transform: translate3d(0, -4px, 0);
+	}
+}
+@keyframes palette-in {
+	from {
+		opacity: 0;
+		transform: translate3d(0, -8px, 0) scale(0.98);
+	}
+}
+@keyframes palette-out {
+	to {
+		opacity: 0;
+		transform: translate3d(0, -4px, 0) scale(0.99);
+	}
+}
+@keyframes dock-in {
+	from {
+		opacity: 0;
+		transform: translate3d(0, 24px, 0);
+	}
+}
+@keyframes popover-in {
+	from {
+		opacity: 0;
+		transform: translate3d(0, -4px, 0);
+	}
+}
+@keyframes like-pop {
+	40% {
+		transform: scale(1.35) rotate(-12deg);
+	}
+	70% {
+		transform: scale(0.92);
+	}
+}
+@utility animate-pop-in {
+	animation: pop-in 260ms var(--stage-ease) both;
+}
+@utility animate-notice-in {
+	animation: notice-in 240ms var(--stage-ease) both;
+}
+@utility animate-dock-in {
+	animation: dock-in var(--stage-duration) var(--stage-ease) both;
+}
+@utility animate-like-pop {
+	animation: like-pop 420ms var(--stage-ease) both;
+}
+.palette-overlay[data-entering] {
+	animation: sheet-fade-in 180ms linear both;
+}
+.palette-overlay[data-exiting] {
+	animation: sheet-fade-out 140ms linear both;
+}
+.palette-overlay[data-entering] .palette-modal {
+	animation: palette-in 240ms var(--stage-ease) both;
+}
+.palette-overlay[data-exiting] .palette-modal {
+	animation: palette-out 140ms var(--stage-ease-in) both;
+}
+.popover-motion[data-entering] {
+	animation: popover-in 180ms var(--stage-ease) both;
+}
+.popover-motion[data-exiting] {
+	animation: stage-fade-out 120ms linear both;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	::view-transition-group(*),
 	::view-transition-old(*),
 	::view-transition-new(*) {
 		animation: none !important;
+	}
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
 	}
 }
 

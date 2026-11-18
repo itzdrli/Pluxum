@@ -38,6 +38,8 @@ export function PaletteTrigger({
 		</kbd>
 	)
 	if (variant === 'rail') {
+		// Folding narrows the field to a square around its magnifier; the text and the key hint fade.
+		const fade = 'transition-opacity duration-200 rail-mini:opacity-0'
 		return (
 			<button
 				type="button"
@@ -45,17 +47,13 @@ export function PaletteTrigger({
 				aria-label="搜索或输入命令"
 				aria-keyshortcuts="Control+K Meta+K /"
 				title={collapsed ? '搜索或输入命令' : undefined}
-				className={`hover:border-ink-weak flex h-control w-full cursor-pointer items-center gap-2 rounded-[2px] border px-2.5 text-ui ${
+				className={`hover:border-ink-weak flex h-control w-full cursor-pointer items-center gap-2 overflow-hidden rounded-[2px] border pr-2.5 pl-[11px] text-ui whitespace-nowrap transition-[width,border-color,background-color,color] duration-300 ease-[var(--stage-ease)] active:scale-[0.97] rail-mini:w-10 ${
 					active ? 'border-accent bg-selected text-ink-strong' : 'border-line bg-page text-ink-weak'
-				} ${collapsed ? 'lg:max-xl:mx-auto lg:max-xl:w-10 lg:max-xl:justify-center lg:max-xl:px-0' : ''}`}
+				}`}
 			>
 				<Search aria-hidden size={16} className="shrink-0" />
-				<span
-					className={`min-w-0 flex-1 truncate text-left ${collapsed ? 'lg:max-xl:hidden' : ''}`}
-				>
-					搜索或输入命令
-				</span>
-				<span className={collapsed ? 'contents lg:max-xl:hidden' : 'contents'}>{kbd}</span>
+				<span className={`min-w-0 flex-1 truncate text-left ${fade}`}>搜索或输入命令</span>
+				<span className={`flex ${fade}`}>{kbd}</span>
 			</button>
 		)
 	}

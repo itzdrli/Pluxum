@@ -155,7 +155,7 @@ export function HoverCards() {
 			placement="bottom start"
 			offset={6}
 			shouldCloseOnInteractOutside={() => false}
-			className="border-line bg-panel shadow-overlay w-[320px] max-w-[calc(100vw-1rem)] rounded-[2px] border"
+			className="popover-motion border-line bg-panel shadow-overlay w-[320px] max-w-[calc(100vw-1rem)] rounded-[2px] border"
 		>
 			<div
 				role="dialog"
