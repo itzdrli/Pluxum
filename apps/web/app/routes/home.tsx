@@ -165,7 +165,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 											thread={item}
 											href={`/c/${item.category.slug}/t/${item.ref}`}
 											category={item.category}
-											narrowTime={sort === 'new' ? 'created' : 'last'}
+											time={sort === 'new' ? 'created' : 'last'}
 										/>
 									))}
 								</Panel>

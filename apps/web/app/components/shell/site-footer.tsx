@@ -51,13 +51,15 @@ function FooterAnchor({
 	)
 }
 
+// The site's name already heads the rail and the footer's brand, so the copyright line carries the year.
+const COPYRIGHT_YEAR = new Date().getFullYear()
+
 /**
  * The footer folded into the category rail of the split stage (which has no page footer): flat
  * links, then theme swatches and icon links, then the notes. Pinned to the rail's bottom.
  */
 export function SiteFooterCompact() {
 	const root = useRouteLoaderData<typeof rootLoader>('root')
-	const { name } = siteOf(root)
 	const { groups, icons, notes, siteLinks: showSiteLinks } = footerOf(root)
 	const links = [
 		...(showSiteLinks && root?.meta?.search.available === true
@@ -80,7 +82,7 @@ export function SiteFooterCompact() {
 			)}
 			<div className="flex items-center justify-between gap-2">
 				<p className="flex min-w-0 flex-wrap gap-x-3 gap-y-0.5">
-					<span>© {name}</span>
+					<span>© {COPYRIGHT_YEAR}</span>
 					{notes.map((note) => (
 						<span key={note}>{note}</span>
 					))}
@@ -162,7 +164,7 @@ export function SiteFooter() {
 				</div>
 				<div className="border-line text-ink-weak text-meta flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t pt-5">
 					<p className="flex flex-wrap items-center gap-x-4 gap-y-1">
-						<span>© {name}</span>
+						<span>© {COPYRIGHT_YEAR}</span>
 						{notes.map((note) => (
 							<span key={note}>{note}</span>
 						))}

@@ -1,9 +1,10 @@
-import { parseThreadRef, type Role } from '@pluxum/domain'
+import { parseThreadRef, type CategoryDto, type Role } from '@pluxum/domain'
 import { CalendarDays, MessagesSquare } from 'lucide-react'
 import { useState } from 'react'
 import { data, Form, redirect, useNavigation, useParams, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/user'
+import type { loader as stageLoader } from './forum-stage'
 import { ThreadRow } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
 import {
@@ -102,6 +103,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 	const shownRoles = roles.filter((role) => role !== 'member' && role !== 'guest')
 	const openRef = useOpenThreadRef()
 	const { detail } = useStageLinks()
+	const categories = useRouteLoaderData<typeof stageLoader>('routes/forum-stage')?.categories
 
 	return (
 		<StageSplit label={`${user.displayName} 的主页`}>
@@ -117,17 +119,18 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 							</div>
 							<FoldListButton />
 						</PaneBar>
-						<UserThreads threads={threads} activeId={openRef} detail={detail} />
+						<UserThreads
+							threads={threads}
+							categories={categories}
+							activeId={openRef}
+							detail={detail}
+						/>
 					</>
 				) : (
 					<>
-						{/* The pane's head (wide screens): whose page this is, in short; the card below has it all. */}
-						<PaneBar className="gap-2.5!">
-							<UserAvatar user={user} size="sm" />
-							<p className="text-ink-strong min-w-0 truncate text-heading font-bold">
-								{user.displayName}
-							</p>
-							<span className="text-ink-weak shrink-0 font-mono text-meta">@{user.handle}</span>
+						{/* The pane's head (wide screens); the card right below says whose page it is. */}
+						<PaneBar>
+							<p className="text-ink-strong text-heading font-bold">主页</p>
 						</PaneBar>
 						<Panel className="mb-6 flex flex-wrap items-start gap-4 px-4 py-4">
 							<UserAvatar user={user} size="xl" />
@@ -176,8 +179,13 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 						<div className="flex flex-col gap-6">
 							<ProfileSlots profile={loaderData} />
 							<section>
-								<SectionLabel>发布的主题 · {threads.total}</SectionLabel>
-								<UserThreads threads={threads} activeId={openRef} detail={detail} />
+								<SectionLabel>发布的主题</SectionLabel>
+								<UserThreads
+									threads={threads}
+									categories={categories}
+									activeId={openRef}
+									detail={detail}
+								/>
 							</section>
 						</div>
 					</>
@@ -189,10 +197,12 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 
 function UserThreads({
 	threads,
+	categories,
 	activeId,
 	detail,
 }: {
 	threads: Route.ComponentProps['loaderData']['threads']
+	categories: readonly CategoryDto[] | undefined
 	activeId: string | undefined
 	detail: (threadId: string) => string
 }) {
@@ -211,6 +221,8 @@ function UserThreads({
 							thread={thread}
 							href={detail(thread.ref)}
 							isActive={thread.ref === activeId || thread.id === activeId}
+							category={categories?.find((category) => category.id === thread.categoryId)}
+							showAuthor={false}
 						/>
 					))}
 				</Panel>

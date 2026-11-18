@@ -396,7 +396,9 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 								)
 							})}
 						</div>
-						<span className="text-ink-weak text-meta tabular-nums">共 {queue.total} 条记录</span>
+						{queue.total > 0 && (
+							<span className="text-ink-weak text-meta tabular-nums">共 {queue.total} 条</span>
+						)}
 					</div>
 
 					{queue.items.length === 0 ? (

@@ -99,7 +99,7 @@ export function PostCard({
 						>
 							{post.author.displayName}
 						</Link>
-						{byThreadAuthor && <Tag>楼主</Tag>}
+						{byThreadAuthor && number > 1 && <Tag>楼主</Tag>}
 					</div>
 					<div className="text-ink-weak flex items-center gap-1.5 text-meta">
 						<Timestamp iso={post.createdAt} />

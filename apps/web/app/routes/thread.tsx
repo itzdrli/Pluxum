@@ -34,6 +34,7 @@ import { ActionMenu, ConfirmDialog, type MenuItem } from '../components/ui/overl
 import { Pager } from '../components/ui/pager'
 import { pageCount } from '../lib/format'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
+import { useFocusReading } from '../lib/focus'
 import { defineStage, listPathOf, pagePathOf } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
 import { ThreadSidebarSlots, ThreadViewSlots, useHasFilledSlot } from '../slots/slots'
@@ -139,6 +140,9 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const dock = useDock()
 	const submit = useSubmit()
 	const stage = useStage()
+	// The category's own list open beside the thread already names it, so the crumbs would repeat it.
+	const focusReading = useFocusReading()
+	const besideOwnList = stage.listPath === `/c/${category.slug}` && !focusReading
 	const navigate = useStageNavigate()
 	const closeHref = stage.listHref ?? `/c/${category.slug}`
 	const location = useLocation()
@@ -300,13 +304,17 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			{/* The pane's head (wide screens): where the thread is, and what can be done with it. Phones
 		    go back and act through the bottom bar. */}
 			<PaneBar>
-				<Crumbs
-					className="min-w-0 flex-1"
-					items={[
-						{ label: '版块', to: '/' },
-						{ label: category.name, to: `/c/${category.slug}` },
-					]}
-				/>
+				{besideOwnList ? (
+					<span className="flex-1" />
+				) : (
+					<Crumbs
+						className="min-w-0 flex-1"
+						items={[
+							{ label: '版块', to: '/' },
+							{ label: category.name, to: `/c/${category.slug}` },
+						]}
+					/>
+				)}
 				{threadActions}
 			</PaneBar>
 		</>

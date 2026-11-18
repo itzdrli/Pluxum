@@ -1,4 +1,5 @@
 import type { CategoryDto, ThreadDto } from '@pluxum/domain'
+import { Fragment } from 'react'
 import { Hash, Lock, MessageSquare, Pin } from 'lucide-react'
 import { StageLink } from '../stage/stage'
 import { isUnread } from '../../slots/forum-reads/state'
@@ -95,32 +96,59 @@ export function ThreadFlags({
 /**
  * One thread in a list; adapts via `@container/threads` between wide and split-pane widths.
  * `href` comes from the list's stage (`useStageLinks().detail`), so the thread opens beside it.
- * Lists that mix categories (the overview) pass `category`, shown as a link in the meta line.
- * `narrowTime` is the moment the narrow layout shows: the latest activity unless the list is
- * ordered by when threads started.
+ * Lists that mix categories (the overview, a profile) pass `category`, shown as a link in the meta
+ * line; a profile's list hides the author it is all by. `time` is the one moment the row shows: the
+ * latest activity unless the list is ordered by when threads started.
  */
 export function ThreadRow({
 	thread,
 	href,
 	isActive = false,
 	category,
-	narrowTime = 'last',
+	showAuthor = true,
+	time = 'last',
 }: {
 	thread: ThreadDto
 	href: string
 	isActive?: boolean
 	category?: Pick<CategoryDto, 'slug' | 'name'>
-	narrowTime?: 'last' | 'created'
+	showAuthor?: boolean
+	time?: 'last' | 'created'
 }) {
+	const shownTime = time === 'created' ? thread.createdAt : thread.lastPostAt
+	const meta = [
+		showAuthor && (
+			// Above the row link's box, so the name opens the profile instead.
+			<StageLink
+				key="author"
+				to={`/u/${thread.author.handle}`}
+				className="text-ink relative z-10 min-w-0 truncate hover:underline"
+			>
+				{thread.author.displayName}
+			</StageLink>
+		),
+		category !== undefined && (
+			<StageLink
+				key="category"
+				to={`/c/${category.slug}`}
+				prefetch="intent"
+				className="hover:text-ink-strong relative z-10 max-w-32 shrink-0 truncate hover:underline"
+			>
+				{category.name}
+			</StageLink>
+		),
+	].filter((item) => item !== false)
 	return (
 		<li
 			className={`hover:bg-hover relative flex items-start gap-4 border-l-2 px-5 py-4 transition-colors ${
 				isActive ? 'border-l-accent bg-selected' : 'border-l-transparent'
 			}`}
 		>
-			<div className="hidden shrink-0 @lg/threads:block">
-				<UserAvatar user={thread.author} />
-			</div>
+			{showAuthor && (
+				<div className="hidden shrink-0 @lg/threads:block">
+					<UserAvatar user={thread.author} />
+				</div>
+			)}
 			<div className="min-w-0 flex-1">
 				{/* Dot, flags and title share one line of text, so markers never sit on a line of their own. */}
 				<p className="line-clamp-2 [overflow-wrap:anywhere] @lg/threads:line-clamp-none">
@@ -139,38 +167,23 @@ export function ThreadRow({
 				</p>
 				<div className="text-ink-weak mt-1.5 flex items-center justify-between gap-3 text-meta">
 					<p className="flex min-w-0 items-center gap-x-2">
-						{/* Above the row link's box, so the name opens the profile instead. */}
-						<StageLink
-							to={`/u/${thread.author.handle}`}
-							className="text-ink relative z-10 min-w-0 truncate hover:underline"
-						>
-							{thread.author.displayName}
-						</StageLink>
-						{category !== undefined && (
-							<>
-								<span aria-hidden className="shrink-0">
-									·
-								</span>
-								<StageLink
-									to={`/c/${category.slug}`}
-									prefetch="intent"
-									className="hover:text-ink-strong relative z-10 max-w-32 shrink-0 truncate hover:underline"
-								>
-									{category.name}
-								</StageLink>
-							</>
+						{meta.map((item, index) => (
+							<Fragment key={item.key}>
+								{index > 0 && (
+									<span aria-hidden className="shrink-0">
+										·
+									</span>
+								)}
+								{item}
+							</Fragment>
+						))}
+						{/* Wide rows show the moment in the right column instead. */}
+						{meta.length > 0 && (
+							<span aria-hidden className="shrink-0 @lg/threads:hidden">
+								·
+							</span>
 						)}
-						<span aria-hidden className="shrink-0">
-							·
-						</span>
-						<Timestamp
-							iso={narrowTime === 'created' ? thread.createdAt : thread.lastPostAt}
-							className="shrink-0 whitespace-nowrap @lg/threads:hidden"
-						/>
-						<Timestamp
-							iso={thread.createdAt}
-							className="hidden shrink-0 whitespace-nowrap @lg/threads:inline"
-						/>
+						<Timestamp iso={shownTime} className="shrink-0 whitespace-nowrap @lg/threads:hidden" />
 					</p>
 					<span className="flex shrink-0 items-center gap-1 tabular-nums @lg/threads:hidden">
 						<MessageSquare aria-hidden size={12} />
@@ -186,8 +199,8 @@ export function ThreadRow({
 					<span className="sr-only">回复</span>
 				</span>
 				<span className="text-ink-weak whitespace-nowrap">
-					<span className="sr-only">最后回复 </span>
-					<Timestamp iso={thread.lastPostAt} />
+					{time === 'last' && <span className="sr-only">最后回复 </span>}
+					<Timestamp iso={shownTime} />
 				</span>
 			</div>
 		</li>

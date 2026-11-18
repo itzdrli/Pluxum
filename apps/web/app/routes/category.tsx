@@ -102,7 +102,6 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 							>
 								{category.name}
 							</StageLink>
-							<span className="text-ink-weak shrink-0 text-meta tabular-nums">{threads.total}</span>
 							<span className="ml-auto flex shrink-0 items-center">
 								{can.createThread || loginToPost !== undefined ? action(true) : null}
 								<FoldListButton />
@@ -110,14 +109,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 						</PaneBar>
 					) : (
 						<PageHeader
-							title={
-								<>
-									{category.name}
-									<span className="text-ink-weak ml-2.5 text-meta font-normal tabular-nums max-lg:hidden">
-										{threads.total} 主题
-									</span>
-								</>
-							}
+							title={category.name}
 							description={category.description}
 							actions={<div className="max-lg:hidden">{action(false)}</div>}
 						/>
