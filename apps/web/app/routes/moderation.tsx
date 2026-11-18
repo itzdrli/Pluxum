@@ -374,7 +374,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 						<div
 							role="group"
 							aria-label="举报状态筛选"
-							className="border-line bg-panel inline-flex flex-wrap rounded-[2px] border p-0.5 text-meta"
+							className="border-line bg-panel isolate inline-flex flex-wrap rounded-[2px] border p-0.5 text-meta"
 						>
 							{QUEUE_STATUS_TABS.map((entry) => {
 								const active = status === entry.status
@@ -382,12 +382,12 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 									<StageLink
 										key={entry.status}
 										to={buildModerationHref('queue', entry.status)}
-										className={`flex items-center gap-1 rounded-[2px] px-2.5 py-1 ${
-											active
-												? 'bg-selected text-ink-strong font-bold'
-												: 'text-ink-weak hover:text-ink-strong'
+										aria-current={active ? 'true' : undefined}
+										className={`relative flex items-center gap-1 rounded-[2px] px-2.5 py-1 ${
+											active ? 'text-ink-strong font-bold' : 'text-ink-weak hover:text-ink-strong'
 										}`}
 									>
+										{active && <SegmentIndicator name="moderation-status" />}
 										<span>{entry.label}</span>
 										{entry.status === 'open' && queue.openCount > 0 && (
 											<span className="tabular-nums">({queue.openCount})</span>
@@ -623,13 +623,16 @@ function LogRow({ entry }: { entry: ModerationLogDto }) {
 	)
 }
 
-/** The selected segment's fill; it slides to the other segment when the view switches. */
-function SegmentIndicator() {
+/**
+ * The selected segment's fill; it slides to the newly selected segment when the view or filter
+ * switches. Each row of segments on the page needs its own `name`.
+ */
+function SegmentIndicator({ name = 'moderation-tab' }: { name?: string }) {
 	return (
 		<span
 			aria-hidden
 			style={{
-				viewTransitionName: 'moderation-tab',
+				viewTransitionName: name,
 				viewTransitionClass: 'indicator',
 			}}
 			className="bg-selected absolute inset-0 -z-10 rounded-[2px]"
