@@ -442,6 +442,24 @@
 		font-size: var(--fs-meta);
 	}
 
+	/* Corners HeroUI works out past the pinned steps above: popovers that pad their menu add the
+	 * padding (`--radius-2xl` + 6px, or `--radius` × 2.5, which came out 8px), and menu rows
+	 * double `--radius`. The forum has one corner size. */
+	.dropdown__popover,
+	.select__popover,
+	.combo-box__popover,
+	.autocomplete__popover,
+	.color-picker__popover,
+	.date-picker__popover,
+	.date-range-picker__popover,
+	/* Rows and icons that multiply `--radius` directly (× 2) instead of using the pinned steps. */
+	.menu-item,
+	.list-box-item,
+	.alert-dialog__icon,
+	.modal__icon {
+		border-radius: 2px;
+	}
+
 	/* A Dropdown.Trigger styled as a button: HeroUI's `.dropdown__trigger` makes it display:block,
 	 * which pins the icon to the left edge instead of centring it like every other button. */
 	.dropdown__trigger.button {
