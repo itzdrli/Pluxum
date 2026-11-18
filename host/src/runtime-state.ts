@@ -42,6 +42,9 @@ export const appPlugins = [
 export function appHostPolicy(): HostPolicyOptions {
 	return {
 		mode: { autoStart: 'saved-first', providerDefaults: 'saved-first' },
+		// The default 1.5 s is too short on a cold boot, while the Workbench builds: Redis misses
+		// it and every plugin that needs a session is blocked.
+		startTimeoutMs: 30_000,
 		autoStart: appPlugins,
 		providerDefaults: [
 			{ token: ForumAuth.definitionAddress(), provider: ForumAuthPlugin.nodeAddress() },
