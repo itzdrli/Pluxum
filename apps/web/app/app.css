@@ -307,6 +307,14 @@
 		line-height: 1.5;
 		font-variant-numeric: tabular-nums;
 		-webkit-font-smoothing: antialiased;
+		/* A narrow gap between Han and Latin letters or digits (「用 Pluxum 写了 3 篇」) without typing
+		   spaces; browsers without text-autospace just show the text as typed. */
+		text-autospace: normal;
+	}
+
+	/* Code and fields keep exactly the characters there are. */
+	:where(code, pre, kbd, samp, input, textarea, .font-mono) {
+		text-autospace: no-autospace;
 	}
 
 	/* Focus shows on keyboard use only, as an outline that never shifts layout. */

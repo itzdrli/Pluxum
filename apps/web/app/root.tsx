@@ -1,9 +1,13 @@
 // First, so older engines have these APIs before any other module runs.
 import './lib/polyfills'
-// Self-hosted fonts (Fontsource), weights 400 and 700 only. Noto Sans SC is split by unicode
-// range, so a page downloads only the slices for the characters it shows.
+// Self-hosted fonts (Fontsource), weights 400 and 700 only. Every face is split by unicode range
+// (Latin, Latin Extended, Vietnamese, Greek, Cyrillic for Plex and JetBrains Mono; slices of the
+// Han range for Noto Sans SC), so a page downloads only the slices for the characters it shows.
+// Plex ships true italics for emphasis in posts; Han has no italic and keeps a slanted upright.
 import '@fontsource/ibm-plex-sans/400.css'
+import '@fontsource/ibm-plex-sans/400-italic.css'
 import '@fontsource/ibm-plex-sans/700.css'
+import '@fontsource/ibm-plex-sans/700-italic.css'
 import '@fontsource/noto-sans-sc/400.css'
 import '@fontsource/noto-sans-sc/700.css'
 import '@fontsource/jetbrains-mono/400.css'
