@@ -183,8 +183,8 @@ export function StageSplit({
 		if (detailRef.current !== null) jumpPaneTo(detailRef.current, 0)
 	}, [stage.detailKey, detailPage, location.hash])
 
-	// Folding animates only once the page has painted: focus reading is restored from storage right
-	// after hydration, and the list should simply be folded on arrival, not fold before your eyes.
+	// Folding animates only once the page has painted, so a list that arrives folded (or whose old
+	// stored choice is carried into the cookie just after hydration) is simply folded.
 	const [settled, setSettled] = useState(false)
 	useEffect(() => {
 		let second = 0

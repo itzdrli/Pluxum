@@ -37,6 +37,7 @@ import { LightboxProvider } from './components/ui/lightbox'
 import { ButtonLink } from './components/ui/button'
 import { forumApi } from './lib/forum-api.server'
 import { siteOf } from './lib/site'
+import { focusFromRequest } from './lib/focus'
 import { railFromRequest } from './lib/rail'
 import { isDarkTheme, themeFromRequest } from './lib/theme'
 
@@ -61,6 +62,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		unreadNotifications,
 		theme: themeFromRequest(request),
 		rail: railFromRequest(request),
+		focusReading: focusFromRequest(request),
 		// Social cards need an absolute image URL; behind the TLS proxy request.url says http://.
 		origin: process.env.FORUM_WEB_PUBLIC_ORIGIN || new URL(request.url).origin,
 	}

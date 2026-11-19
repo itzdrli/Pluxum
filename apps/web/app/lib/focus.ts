@@ -1,24 +1,61 @@
 // Focus reading: the list pane folds away and the thread takes its place in a wider, centred
-// column. The choice is the visitor's and lasts, so it is kept in this browser.
+// column. The choice is the visitor's and lasts. It is kept in a cookie, like the theme and the
+// rail, so a server-rendered page arrives already folded instead of folding after hydration.
 
 import { useSyncExternalStore } from 'react'
+import { useRouteLoaderData } from 'react-router'
 
-const KEY = 'forum_focus_reading'
+import type { loader as rootLoader } from '../root'
 
-let focused = false
-let loaded = false
-const listeners = new Set<() => void>()
+export const FOCUS_COOKIE = 'forum_focus_reading'
+/** Where the choice lived before the cookie; read once to carry it over. */
+const LEGACY_STORAGE_KEY = 'forum_focus_reading'
 
-function load(): boolean {
-	if (!loaded) {
-		loaded = true
-		try {
-			focused = window.localStorage.getItem(KEY) === '1'
-		} catch {
-			focused = false
+function cookieValue(cookies: string): boolean | null {
+	for (const part of cookies.split(';')) {
+		const separator = part.indexOf('=')
+		if (separator > 0 && part.slice(0, separator).trim() === FOCUS_COOKIE) {
+			return part.slice(separator + 1).trim() === '1'
 		}
 	}
-	return focused
+	return null
+}
+
+/** Whether the request's cookie asks for focus reading. */
+export function focusFromRequest(request: Request): boolean {
+	return cookieValue(request.headers.get('cookie') ?? '') === true
+}
+
+export function focusCookie(on: boolean): string {
+	return `${FOCUS_COOKIE}=${on ? '1' : '0'}; Path=/; Max-Age=31536000; SameSite=Lax`
+}
+
+const listeners = new Set<() => void>()
+let migrated = false
+
+function writeCookie(on: boolean) {
+	// oxlint-disable-next-line unicorn/no-document-cookie -- the focus cookie is meant to be readable and writable here.
+	document.cookie = focusCookie(on)
+}
+
+/** The choice as the browser holds it now. */
+function current(): boolean {
+	const fromCookie = cookieValue(document.cookie)
+	if (fromCookie !== null) return fromCookie
+	// Once: a choice made before the cookie existed moves into it.
+	if (!migrated) {
+		migrated = true
+		try {
+			if (window.localStorage.getItem(LEGACY_STORAGE_KEY) === '1') {
+				window.localStorage.removeItem(LEGACY_STORAGE_KEY)
+				writeCookie(true)
+				return true
+			}
+		} catch {
+			// Storage can be unavailable; there is then nothing to carry over.
+		}
+	}
+	return false
 }
 
 function subscribe(listener: () => void): () => void {
@@ -28,21 +65,16 @@ function subscribe(listener: () => void): () => void {
 
 /** Switches focus reading on or off, for every part of the page that follows it. */
 export function setFocusReading(next: boolean): void {
-	load()
-	focused = next
-	try {
-		window.localStorage.setItem(KEY, next ? '1' : '0')
-	} catch {
-		// Storage can be unavailable; the choice then lasts until the page is left.
-	}
+	writeCookie(next)
 	for (const listener of listeners) listener()
 }
 
 export function toggleFocusReading(): void {
-	setFocusReading(!load())
+	setFocusReading(!current())
 }
 
-/** Whether focus reading is on. The server and the first client render say no; it then catches up. */
+/** Whether focus reading is on: the cookie's answer, on the server and in the browser alike. */
 export function useFocusReading(): boolean {
-	return useSyncExternalStore(subscribe, load, () => false)
+	const fromServer = useRouteLoaderData<typeof rootLoader>('root')?.focusReading ?? false
+	return useSyncExternalStore(subscribe, current, () => fromServer)
 }
