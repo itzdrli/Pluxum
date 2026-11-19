@@ -2,6 +2,7 @@ import type { CategoryDto } from '@pluxum/domain'
 import { Maximize2, Minimize2, Minus, PenSquare, X } from 'lucide-react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useFetcher, useRouteLoaderData } from 'react-router'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import { droppedLink, toggledSize, type DockSize } from '../../lib/dock'
 import type { loader as rootLoader } from '../../root'
@@ -105,6 +106,7 @@ function Dock({
 	onSize: (size: DockSize) => void
 	onClose: () => void
 }) {
+	const { t } = useLingui()
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const limits = root?.meta?.limits
 	const fetcher = useFetcher<{ error?: string }>()
@@ -145,11 +147,12 @@ function Dock({
 	}, [fetcher.state, fetcher.data, onClose])
 
 	const action = target.kind === 'reply' ? target.action : slug === '' ? '/' : `/c/${slug}/new`
-	const title = target.kind === 'reply' ? `回复 · ${target.title}` : '发布主题'
+	const replyTo = target.kind === 'reply' ? target.title : ''
+	const title = target.kind === 'reply' ? t`回复 · ${replyTo}` : t`发布主题`
 
 	return (
 		<aside
-			aria-label="创作抽屉"
+			aria-label={t`创作抽屉`}
 			className={`border-line bg-panel shadow-overlay animate-dock-in fixed right-4 transition-[width,height] duration-300 ease-[var(--stage-ease)] [interpolate-size:allow-keywords] bottom-0 z-40 flex flex-col overflow-hidden rounded-t-[2px] border border-b-0 max-sm:right-0 max-sm:left-0 max-sm:w-auto ${SIZE_CLASS[size]} ${
 				dragging ? 'outline-accent outline-2 -outline-offset-2' : ''
 			}`}
@@ -193,21 +196,21 @@ function Dock({
 					{title}
 				</button>
 				<IconButton
-					label={size === 'min' ? '展开' : '最小化'}
+					label={size === 'min' ? t`展开` : t`最小化`}
 					size="sm"
 					onPress={() => onSize(size === 'min' ? 'half' : 'min')}
 				>
 					<Minus aria-hidden />
 				</IconButton>
 				<IconButton
-					label={size === 'full' ? '半屏' : '全屏'}
+					label={size === 'full' ? t`半屏` : t`全屏`}
 					size="sm"
 					className="max-sm:hidden"
 					onPress={() => onSize(toggledSize(size))}
 				>
 					{size === 'full' ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
 				</IconButton>
-				<IconButton label="关闭" size="sm" onPress={onClose}>
+				<IconButton label={t`关闭`} size="sm" onPress={onClose}>
 					<X aria-hidden />
 				</IconButton>
 			</header>
@@ -222,7 +225,9 @@ function Dock({
 				{target.kind === 'thread' && (
 					<>
 						<label className="flex flex-col gap-1">
-							<span className="label">版块</span>
+							<span className="label">
+								<Trans>版块</Trans>
+							</span>
 							<NativeSelect value={slug} onChange={(event) => setSlug(event.target.value)}>
 								{categories.map((category) => (
 									<option key={category.id} value={category.slug}>
@@ -232,7 +237,9 @@ function Dock({
 							</NativeSelect>
 						</label>
 						<label className="flex flex-col gap-1">
-							<span className="label">标题</span>
+							<span className="label">
+								<Trans>标题</Trans>
+							</span>
 							<input
 								name="title"
 								required
@@ -244,7 +251,7 @@ function Dock({
 					</>
 				)}
 				<Composer
-					label={target.kind === 'reply' ? '回复内容' : '内容'}
+					label={target.kind === 'reply' ? t`回复内容` : t`内容`}
 					hideLabel={target.kind === 'reply'}
 					required
 					maxLength={limits?.postBodyMax}
@@ -254,9 +261,13 @@ function Dock({
 					fill
 				/>
 				<div className="flex shrink-0 items-center justify-between gap-2">
-					<span className="text-ink-weak text-meta max-sm:hidden">Ctrl+Enter 发布</span>
+					<span className="text-ink-weak text-meta max-sm:hidden">
+						<Trans>Ctrl+Enter 发布</Trans>
+					</span>
 					<Button tone="primary" type="submit" isPending={busy} className="ml-auto">
-						{target.kind === 'reply' ? '回复' : '发布'}
+						{target.kind === 'reply'
+							? t({ message: '回复', context: 'verb' })
+							: t({ message: '发布', context: 'verb' })}
 					</Button>
 				</div>
 			</fetcher.Form>

@@ -1,4 +1,4 @@
-import { parseThreadRef, type CategoryDto, type Role, type UserDto } from '@pluxum/domain'
+import { parseThreadRef, type CategoryDto, type UserDto } from '@pluxum/domain'
 import { msg } from '@lingui/core/macro'
 import { CalendarDays, MessagesSquare } from 'lucide-react'
 import { useState } from 'react'
@@ -11,6 +11,7 @@ import {
 	useRouteLoaderData,
 	useSearchParams,
 } from 'react-router'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import type { Route } from './+types/user'
 import type { loader as stageLoader } from './forum-stage'
@@ -46,14 +47,8 @@ import {
 } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
 import { ProfileSlots, UserHeaderSlots } from '../slots/slots'
+import { ROLE_LABELS } from '../lib/roles'
 import { pageTitle } from '../lib/site'
-
-const ROLE_LABELS: Readonly<Record<Role, string>> = {
-	guest: '游客',
-	member: '成员',
-	moderator: '版主',
-	admin: '管理员',
-}
 
 /** `?tab=notes` lists the member's notes instead of their topics; threads opened beside keep it. */
 const PROFILE_CARRY = ['tab'] as const
@@ -112,11 +107,13 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function UserProfile({ loaderData, actionData }: Route.ComponentProps) {
+	const { t, i18n } = useLingui()
 	const { user, roles, createdAt, threadCount, noteCount, postCount, threads, can } = loaderData
 	const [searchParams] = useSearchParams()
 	const tab = searchParams.get('tab') === 'notes' ? 'notes' : 'topics'
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	// The profile identity the edit form was opened for. A saved change differs from it, closing it.
+	const userName = user.displayName
 	const profileIdentity = `${user.handle}:${user.displayName}`
 	const [renamingFrom, setRenamingFrom] = useState<string | undefined>(undefined)
 	const renaming = renamingFrom === profileIdentity
@@ -128,7 +125,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 	const categories = useRouteLoaderData<typeof stageLoader>('routes/forum-stage')?.categories
 
 	return (
-		<StageSplit label={`${user.displayName} 的主页`} short={user.displayName}>
+		<StageSplit label={t`${userName} 的主页`} short={user.displayName}>
 			{(detailOpen) =>
 				detailOpen ? (
 					<>
@@ -138,7 +135,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 							<div className="min-w-0 flex-1 leading-tight">
 								<p className="text-ink-strong truncate font-bold">{user.displayName}</p>
 								<p className="text-ink-weak text-meta tabular-nums">
-									{tab === 'notes' ? `${noteCount} 动态` : `${threadCount} 主题`}
+									{tab === 'notes' ? t`${noteCount} 动态` : t`${threadCount} 主题`}
 								</p>
 							</div>
 							<FoldListButton />
@@ -154,7 +151,9 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 					<>
 						{/* The pane's head (wide screens); the card right below says whose page it is. */}
 						<PaneBar>
-							<p className="text-ink-strong text-heading font-bold">主页</p>
+							<p className="text-ink-strong text-heading font-bold">
+								<Trans>主页</Trans>
+							</p>
 						</PaneBar>
 						<Panel className="mb-6 flex flex-wrap items-start gap-4 px-4 py-4">
 							<UserAvatar user={user} size="xl" />
@@ -177,19 +176,23 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 											<span className="text-ink-weak font-mono text-meta">@{user.handle}</span>
 											{shownRoles.map((role) => (
 												<Tag key={role} tone="accent">
-													{ROLE_LABELS[role]}
+													{i18n._(ROLE_LABELS[role])}
 												</Tag>
 											))}
-											{isSelf && <Tag>我</Tag>}
+											{isSelf && (
+												<Tag>
+													<Trans>我</Trans>
+												</Tag>
+											)}
 										</div>
 										<p className="text-ink-weak mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta">
 											<span className="flex items-center gap-1">
 												<CalendarDays aria-hidden size={12} />
-												加入于 <Timestamp iso={createdAt} />
+												<Trans>加入于</Trans> <Timestamp iso={createdAt} />
 											</span>
-											<span className="tabular-nums">{threadCount} 主题</span>
-											<span className="tabular-nums">{noteCount} 动态</span>
-											<span className="tabular-nums">{postCount} 回复</span>
+											<span className="tabular-nums">{t`${threadCount} 主题`}</span>
+											<span className="tabular-nums">{t`${noteCount} 动态`}</span>
+											<span className="tabular-nums">{t`${postCount} 回复`}</span>
 										</p>
 										<UserHeaderSlots user={user} />
 									</>
@@ -197,7 +200,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 							</div>
 							{can.edit && !renaming && (
 								<Button tone="ghost" size="sm" onPress={() => setRenamingFrom(profileIdentity)}>
-									编辑资料
+									<Trans>编辑资料</Trans>
 								</Button>
 							)}
 						</Panel>
@@ -223,12 +226,17 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 
 /** Topics or notes: two links, so each list is a URL of its own. */
 function ProfileListTabs({ user, tab }: { user: UserDto; tab: 'topics' | 'notes' }) {
+	const { t } = useLingui()
 	const items = [
-		{ id: 'topics', label: '主题', to: `/u/${user.handle}` },
-		{ id: 'notes', label: '动态', to: `/u/${user.handle}?tab=notes` },
+		{ id: 'topics', label: t({ message: '主题', context: 'thread' }), to: `/u/${user.handle}` },
+		{
+			id: 'notes',
+			label: t({ message: '动态', context: 'tab: notes' }),
+			to: `/u/${user.handle}?tab=notes`,
+		},
 	] as const
 	return (
-		<nav aria-label="发布的内容" className="mb-2 flex items-center gap-4">
+		<nav aria-label={t`发布的内容`} className="mb-2 flex items-center gap-4">
 			{items.map((item) => (
 				<StageLink
 					key={item.id}
@@ -258,12 +266,13 @@ function UserThreads({
 	activeId: string | undefined
 	detail: (threadId: string) => string
 }) {
+	const { t } = useLingui()
 	return (
 		<>
 			{threads.items.length === 0 ? (
 				<EmptyState
 					icon={MessagesSquare}
-					title={threads.total === 0 ? '还没有发布过内容' : '这一页没有内容'}
+					title={threads.total === 0 ? t`还没有发布过内容` : t`这一页没有内容`}
 				/>
 			) : (
 				<Panel as="ul" className="divide-line divide-y">
@@ -314,6 +323,7 @@ function RenameUser({
 	error: string | undefined
 	onCancel: () => void
 }) {
+	const { t } = useLingui()
 	const submitting = useNavigation().state === 'submitting'
 	const openThread = useParams().id
 	return (
@@ -323,7 +333,7 @@ function RenameUser({
 			<div className="grid gap-3 sm:grid-cols-2">
 				<TextInputField
 					name="displayName"
-					label="昵称"
+					label={t`昵称`}
 					required
 					maxLength={max}
 					defaultValue={name}
@@ -331,7 +341,7 @@ function RenameUser({
 				/>
 				<TextInputField
 					name="handle"
-					label="用户名"
+					label={t`用户名`}
 					required
 					maxLength={handleMax}
 					defaultValue={userHandle}
@@ -339,10 +349,10 @@ function RenameUser({
 			</div>
 			<div className="flex justify-end gap-2">
 				<Button tone="ghost" onPress={onCancel}>
-					取消
+					<Trans>取消</Trans>
 				</Button>
 				<Button tone="primary" type="submit" isPending={submitting}>
-					保存资料
+					<Trans>保存资料</Trans>
 				</Button>
 			</div>
 		</Form>

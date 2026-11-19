@@ -2,6 +2,7 @@ import type { ThreadDetailDto, UserDto, UserProfileDto } from '@pluxum/domain'
 import { MessageSquare } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Popover } from 'react-aria-components'
+import { useLingui } from '@lingui/react/macro'
 
 import { withoutLeadingTitle } from '../../lib/post-html'
 import { excerptOf, previewTarget, type PreviewTarget } from '../../lib/preview'
@@ -10,7 +11,8 @@ import { UserHeaderSlots } from '../../slots/slots'
 type Card =
 	| Readonly<{
 			kind: 'thread'
-			title: string
+			/** Null for a note: it has no title and is named by its author. */
+			title: string | null
 			category: string
 			author: string
 			replies: number
@@ -56,11 +58,7 @@ async function loadCard(target: PreviewTarget): Promise<Card | null> {
 	if (detail === null) return null
 	return {
 		kind: 'thread',
-		// A note has no title: it is named by its author.
-		title:
-			detail.thread.kind === 'note'
-				? `${detail.thread.author.displayName} 的动态`
-				: detail.thread.title,
+		title: detail.thread.kind === 'note' ? null : detail.thread.title,
 		category: detail.category.name,
 		author: detail.thread.author.displayName,
 		replies: detail.thread.replyCount,
@@ -93,6 +91,7 @@ function cardFor(target: PreviewTarget): Promise<Card | null> {
  * which cannot hover, are left alone.
  */
 export function HoverCards() {
+	const { t } = useLingui()
 	const [open, setOpen] = useState<{ anchor: HTMLAnchorElement; target: PreviewTarget } | null>(
 		null,
 	)
@@ -151,6 +150,11 @@ export function HoverCards() {
 
 	const shown = card !== null && card.key === key ? card.value : null
 	if (open === null || shown === null) return null
+	// Named locals: a member expression inside `t` would become an anonymous `{0}` placeholder.
+	const noteAuthor = shown.kind === 'thread' ? shown.author : ''
+	const floor = shown.kind === 'thread' ? shown.floor : null
+	const threads = shown.kind === 'user' ? shown.threads : 0
+	const posts = shown.kind === 'user' ? shown.posts : 0
 	return (
 		<Popover
 			isOpen
@@ -163,7 +167,7 @@ export function HoverCards() {
 		>
 			<div
 				role="dialog"
-				aria-label="链接预览"
+				aria-label={t`链接预览`}
 				className="flex flex-col gap-1.5 p-3"
 				onMouseEnter={() => clearTimeout(timer.current)}
 				onMouseLeave={() => {
@@ -172,7 +176,9 @@ export function HoverCards() {
 			>
 				{shown.kind === 'thread' ? (
 					<>
-						<p className="text-ink-strong leading-snug font-bold break-words">{shown.title}</p>
+						<p className="text-ink-strong leading-snug font-bold break-words">
+							{shown.title ?? t`${noteAuthor} 的动态`}
+						</p>
 						<p className="text-ink-weak flex flex-wrap items-center gap-x-2 text-meta">
 							<span>{shown.category}</span>
 							<span aria-hidden>·</span>
@@ -181,7 +187,7 @@ export function HoverCards() {
 								<MessageSquare aria-hidden size={12} />
 								{shown.replies}
 							</span>
-							{shown.floor !== null && <span>指向第 {shown.floor} 楼</span>}
+							{floor !== null && <span>{t`指向第 ${floor} 楼`}</span>}
 						</p>
 						{shown.excerpt !== '' && (
 							<p className="text-ink line-clamp-4 leading-relaxed break-words">{shown.excerpt}</p>
@@ -191,7 +197,7 @@ export function HoverCards() {
 					<>
 						<p className="text-ink-strong font-bold">{shown.user.displayName}</p>
 						<p className="text-ink-weak text-meta tabular-nums">
-							@{shown.user.handle} · {shown.threads} 主题 · {shown.posts} 回复
+							@{shown.user.handle} · {t`${threads} 主题`} · {t`${posts} 回复`}
 						</p>
 						<UserHeaderSlots user={shown.user} compact />
 					</>

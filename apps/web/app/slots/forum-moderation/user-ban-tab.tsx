@@ -2,6 +2,8 @@ import type { UserBanStatusDto, UserProfileDto } from '@pluxum/domain'
 import { Ban, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useFetcher, useRouteLoaderData } from 'react-router'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import { Button } from '../../components/ui/button'
 import { NativeSelect } from '../../components/ui/field'
@@ -13,11 +15,11 @@ const EXT_ID = 'forum-moderation'
 const REASON_MAX = 500
 
 const DURATION_OPTIONS = [
-	{ value: '', label: '永久封禁' },
-	{ value: '1', label: '1 小时' },
-	{ value: '24', label: '24 小时' },
-	{ value: '168', label: '7 天' },
-	{ value: '720', label: '30 天' },
+	{ value: '', label: msg`永久封禁` },
+	{ value: '1', label: msg`1 小时` },
+	{ value: '24', label: msg`24 小时` },
+	{ value: '168', label: msg`7 天` },
+	{ value: '720', label: msg`30 天` },
 ] as const
 
 /** Parses untrusted `user.ext['forum-moderation']` data into a normalized `UserBanStatusDto`. */
@@ -40,6 +42,7 @@ export function banStatusOf(value: unknown): UserBanStatusDto {
 
 /** `user.profile.tabs`: displays active ban badge and staff ban/unban controls on non-self profiles. */
 export function UserBanTab({ profile }: { profile: UserProfileDto }) {
+	const { t } = useLingui()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
 	const banStatus = banStatusOf(profile.ext[EXT_ID])
 	const viewerRoles = viewer?.roles ?? []
@@ -55,7 +58,9 @@ export function UserBanTab({ profile }: { profile: UserProfileDto }) {
 	return (
 		<section aria-labelledby="moderation-status-heading">
 			<SectionLabel>
-				<span id="moderation-status-heading">账号状态</span>
+				<span id="moderation-status-heading">
+					<Trans>账号状态</Trans>
+				</span>
 			</SectionLabel>
 			<Panel className="flex flex-col gap-3 px-4 py-3">
 				<div className="flex flex-wrap items-center justify-between gap-2">
@@ -63,24 +68,28 @@ export function UserBanTab({ profile }: { profile: UserProfileDto }) {
 						{banStatus.banned ? (
 							<>
 								<Tag tone="danger" icon={Ban}>
-									已封禁
+									<Trans>已封禁</Trans>
 								</Tag>
 								<span className="text-ink-weak text-meta">
 									{banStatus.expiresAt != null ? (
 										<>
-											封禁至 <Timestamp iso={banStatus.expiresAt} />
+											<Trans>封禁至</Trans> <Timestamp iso={banStatus.expiresAt} />
 										</>
 									) : (
-										'永久封禁'
+										t`永久封禁`
 									)}
 								</span>
 							</>
 						) : (
 							<>
 								<Tag tone="success" icon={ShieldCheck}>
-									正常
+									<Trans>正常</Trans>
 								</Tag>
-								{isTargetAdmin && <span className="text-ink-weak text-meta">管理员不可封禁</span>}
+								{isTargetAdmin && (
+									<span className="text-ink-weak text-meta">
+										<Trans>管理员不可封禁</Trans>
+									</span>
+								)}
 							</>
 						)}
 					</div>
@@ -88,7 +97,9 @@ export function UserBanTab({ profile }: { profile: UserProfileDto }) {
 
 				{banStatus.banned && banStatus.reason !== undefined && (
 					<p className="border-line bg-control text-ink rounded-[2px] border px-3 py-2 text-ui break-words">
-						<span className="text-ink-weak">封禁原因：</span>
+						<span className="text-ink-weak">
+							<Trans>封禁原因：</Trans>
+						</span>
 						{banStatus.reason}
 					</p>
 				)}
@@ -105,6 +116,7 @@ export function UserBanTab({ profile }: { profile: UserProfileDto }) {
 }
 
 function BanForm({ userId }: { userId: string }) {
+	const { t, i18n } = useLingui()
 	const fetcher = useFetcher<ExtActionResult>()
 	const [reason, setReason] = useState('')
 	const [duration, setDuration] = useState('')
@@ -139,7 +151,9 @@ function BanForm({ userId }: { userId: string }) {
 			<FormError message={error} />
 			<div className="flex flex-wrap items-end gap-2">
 				<label className="flex min-w-0 flex-1 basis-52 flex-col gap-1">
-					<span className="text-ink-weak text-meta">封禁原因</span>
+					<span className="text-ink-weak text-meta">
+						<Trans>封禁原因</Trans>
+					</span>
 					<input
 						type="text"
 						value={reason}
@@ -150,15 +164,17 @@ function BanForm({ userId }: { userId: string }) {
 					/>
 				</label>
 				<label className="flex flex-col gap-1">
-					<span className="text-ink-weak text-meta">封禁时长</span>
+					<span className="text-ink-weak text-meta">
+						<Trans>封禁时长</Trans>
+					</span>
 					<NativeSelect
 						value={duration}
 						onChange={(event) => setDuration(event.currentTarget.value)}
-						aria-label="封禁时长"
+						aria-label={t`封禁时长`}
 					>
 						{DURATION_OPTIONS.map((option) => (
 							<option key={option.value} value={option.value}>
-								{option.label}
+								{i18n._(option.label)}
 							</option>
 						))}
 					</NativeSelect>
@@ -170,7 +186,7 @@ function BanForm({ userId }: { userId: string }) {
 					isPending={submitting}
 					isDisabled={reason.trim().length === 0 || submitting}
 				>
-					封禁账号
+					<Trans>封禁账号</Trans>
 				</Button>
 			</div>
 		</form>
@@ -206,7 +222,9 @@ function UnbanForm({ userId }: { userId: string }) {
 			<FormError message={error} />
 			<div className="flex flex-wrap items-end gap-2">
 				<label className="flex min-w-0 flex-1 basis-52 flex-col gap-1">
-					<span className="text-ink-weak text-meta">解封备注（可选）</span>
+					<span className="text-ink-weak text-meta">
+						<Trans>解封备注（可选）</Trans>
+					</span>
 					<input
 						type="text"
 						value={note}
@@ -216,7 +234,7 @@ function UnbanForm({ userId }: { userId: string }) {
 					/>
 				</label>
 				<Button tone="secondary" size="md" type="submit" isPending={submitting}>
-					解除封禁
+					<Trans>解除封禁</Trans>
 				</Button>
 			</div>
 		</form>

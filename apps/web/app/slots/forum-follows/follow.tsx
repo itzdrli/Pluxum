@@ -2,6 +2,9 @@ import type { CategoryDto, UserDto, UserProfileDto } from '@pluxum/domain'
 import { BellRing, UserCheck, UserPlus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useFetcher, useRouteLoaderData } from 'react-router'
+import type { I18n } from '@lingui/core'
+import { t as tm } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import { Button } from '../../components/ui/button'
 import { FormError, Panel, SectionLabel } from '../../components/ui/display'
@@ -70,27 +73,32 @@ function FollowButton({
 	followed,
 	onPress,
 	label,
+	unfollowLabel,
 }: {
 	followed: boolean
 	onPress: () => void
 	label: string
+	/** Names the undo, e.g. 取消关注; a separate message because words cannot be glued per language. */
+	unfollowLabel: string
 }) {
+	const { t } = useLingui()
 	return (
 		<Button
 			tone={followed ? 'secondary' : 'primary'}
 			size="sm"
 			aria-pressed={followed}
-			{...{ title: followed ? `取消${label}` : label }}
+			{...{ title: followed ? unfollowLabel : label }}
 			onPress={onPress}
 		>
 			{followed ? <UserCheck aria-hidden /> : <UserPlus aria-hidden />}
-			{followed ? '已关注' : label}
+			{followed ? t`已关注` : label}
 		</Button>
 	)
 }
 
 /** `user.header`: how many people a member follows and has as followers, and the follow button. */
 export function UserFollow({ user, compact }: { user: UserDto; compact: boolean }) {
+	const { t } = useLingui()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
 	const summary = summaryOf(user.ext?.[EXT_ID])
 	const { shown, error, toggle } = useFollow(
@@ -105,16 +113,18 @@ export function UserFollow({ user, compact }: { user: UserDto; compact: boolean 
 			className={`text-ink-weak flex flex-wrap items-center gap-x-3 gap-y-2 text-meta ${compact ? 'mt-1' : 'mt-3'}`}
 		>
 			<span className="tabular-nums">
-				<span className="text-ink-strong font-bold">{summary.following}</span> 关注
+				<span className="text-ink-strong font-bold">{summary.following}</span>{' '}
+				<Trans context="count of people one follows">关注</Trans>
 			</span>
 			<span className="tabular-nums">
-				<span className="text-ink-strong font-bold">{shown.followers}</span> 粉丝
+				<span className="text-ink-strong font-bold">{shown.followers}</span> <Trans>粉丝</Trans>
 			</span>
 			{canFollow && (
 				<span className={compact ? 'ml-auto' : ''}>
 					<FollowButton
 						followed={shown.followed}
-						label="关注"
+						label={t({ message: '关注', context: 'verb' })}
+						unfollowLabel={t`取消关注`}
 						onPress={() => toggle(!shown.followed)}
 					/>
 				</span>
@@ -130,6 +140,7 @@ export function UserFollow({ user, compact }: { user: UserDto; compact: boolean 
 
 /** `category.header`: follow a category, so its new threads come up in 「关注」. */
 export function CategoryFollow({ category }: { category: CategoryDto }) {
+	const { t } = useLingui()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
 	const [loaded, setLoaded] = useState<FollowState | null>(null)
 	useEffect(() => {
@@ -155,16 +166,18 @@ export function CategoryFollow({ category }: { category: CategoryDto }) {
 	if (shown === null) return null
 	const signedIn = viewer?.user != null
 	if (!signedIn && shown.followers === 0) return null
+	const followers = shown.followers
 	return (
 		<div className="text-ink-weak mb-4 flex flex-wrap items-center gap-3 text-meta">
 			{signedIn && (
 				<FollowButton
 					followed={shown.followed}
-					label="关注版块"
+					label={t`关注版块`}
+					unfollowLabel={t`取消关注版块`}
 					onPress={() => toggle(!shown.followed)}
 				/>
 			)}
-			{shown.followers > 0 && <span className="tabular-nums">{shown.followers} 人关注</span>}
+			{shown.followers > 0 && <span className="tabular-nums">{t`${followers} 人关注`}</span>}
 			{error !== undefined && (
 				<span role="alert" className="text-danger">
 					{error}
@@ -174,9 +187,12 @@ export function CategoryFollow({ category }: { category: CategoryDto }) {
 	)
 }
 
-async function callSettings(input?: {
-	notify: boolean
-}): Promise<Readonly<{ ok: true; notify: boolean }> | Readonly<{ ok: false; error: string }>> {
+async function callSettings(
+	i18n: I18n,
+	input?: {
+		notify: boolean
+	},
+): Promise<Readonly<{ ok: true; notify: boolean }> | Readonly<{ ok: false; error: string }>> {
 	try {
 		const response = await fetch(
 			`/api/forum/ext/${EXT_ID}/${input === undefined ? 'settings' : 'preference'}`,
@@ -198,14 +214,15 @@ async function callSettings(input?: {
 		) {
 			return { ok: true, notify: body.notify }
 		}
-		return { ok: false, error: '操作失败，请稍后再试。' }
+		return { ok: false, error: tm(i18n)`操作失败，请稍后再试。` }
 	} catch {
-		return { ok: false, error: '网络错误，请稍后再试。' }
+		return { ok: false, error: tm(i18n)`网络错误，请稍后再试。` }
 	}
 }
 
 /** `user.profile.tabs` (own profile only): whether gaining a follower sends a notice. */
 export function FollowSettings({ profile }: { profile: UserProfileDto }) {
+	const { i18n } = useLingui()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
 	const isSelf = viewer?.user?.id === profile.user.id
 	const [notify, setNotify] = useState<boolean | null>(null)
@@ -216,20 +233,20 @@ export function FollowSettings({ profile }: { profile: UserProfileDto }) {
 		if (!isSelf) return undefined
 		let live = true
 		void (async () => {
-			const outcome = await callSettings()
+			const outcome = await callSettings(i18n)
 			if (live && outcome.ok) setNotify(outcome.notify)
 		})()
 		return () => {
 			live = false
 		}
-	}, [isSelf])
+	}, [isSelf, i18n])
 
 	if (!isSelf || notify === null) return null
 
 	async function toggle(next: boolean) {
 		setBusy(true)
 		setError(undefined)
-		const outcome = await callSettings({ notify: next })
+		const outcome = await callSettings(i18n, { notify: next })
 		setBusy(false)
 		if (outcome.ok) setNotify(outcome.notify)
 		else setError(outcome.error)
@@ -238,7 +255,9 @@ export function FollowSettings({ profile }: { profile: UserProfileDto }) {
 	return (
 		<section aria-labelledby="follow-settings-heading">
 			<SectionLabel>
-				<span id="follow-settings-heading">关注提醒</span>
+				<span id="follow-settings-heading">
+					<Trans>关注提醒</Trans>
+				</span>
 			</SectionLabel>
 			<Panel className="flex flex-col gap-3 px-4 py-3">
 				<FormError message={error} />
@@ -251,7 +270,9 @@ export function FollowSettings({ profile }: { profile: UserProfileDto }) {
 						onChange={(event) => void toggle(event.currentTarget.checked)}
 					/>
 					<BellRing aria-hidden className="text-ink-weak size-4" />
-					<span>有人关注我时通知我</span>
+					<span>
+						<Trans>有人关注我时通知我</Trans>
+					</span>
 				</label>
 			</Panel>
 		</section>

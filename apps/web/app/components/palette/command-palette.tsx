@@ -19,6 +19,7 @@ import {
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { Dialog, Modal, ModalOverlay } from 'react-aria-components'
 import { useRouteLoaderData } from 'react-router'
+import { useLingui } from '@lingui/react/macro'
 
 import type { loader as rootLoader } from '../../root'
 import { parsePaletteQuery, rank } from '../../lib/palette'
@@ -123,6 +124,7 @@ export function PaletteProvider({ children }: { children: React.ReactNode }) {
 }
 
 function CommandPalette({ initial, onClose }: { initial: string; onClose: () => void }) {
+	const { t } = useLingui()
 	const meta: MetaDto | null | undefined = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const navigate = useStageNavigate()
 	const dock = useDock()
@@ -183,15 +185,20 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 		[navigate, onClose],
 	)
 
-	const sections = useMemo(() => {
+	// Not memoized: the labels depend on the language, and ranking this few items per keystroke is cheap.
+	const sections = (() => {
 		const categories = loaded?.categories ?? []
 		const categoryName = new Map(categories.map((category) => [category.id, category.name]))
 		const signedIn = meta?.viewer.user != null
+		const goTitle = t`前往`
+		const categoryTitle = t`版块`
+		const threadTitle = t({ message: '主题', context: 'thread' })
+		const commandTitle = t`命令`
 		const commands: Item[] = [
 			{
 				id: 'home',
-				section: '前往',
-				label: '概览',
+				section: goTitle,
+				label: t`概览`,
 				keywords: ['首页', 'home'],
 				icon: LayoutGrid,
 				run: () => go('/'),
@@ -205,23 +212,26 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 				run: () => go(command.href, command.external),
 			})),
 			...(signedIn
-				? categories.map((category): Item => ({
-						id: `new.${category.id}`,
-						section: '发布',
-						label: `发布新主题 · ${category.name}`,
-						keywords: ['新主题', '发帖', 'new thread', category.name],
-						icon: FilePlus2,
-						run: () => {
-							onClose()
-							dock.openThread(category.slug)
-						},
-					}))
+				? categories.map((category): Item => {
+						const name = category.name
+						return {
+							id: `new.${category.id}`,
+							section: t`发布`,
+							label: t`发布新主题 · ${name}`,
+							keywords: ['新主题', '发帖', 'new thread', category.name],
+							icon: FilePlus2,
+							run: () => {
+								onClose()
+								dock.openThread(category.slug)
+							},
+						}
+					})
 				: meta?.auth.loginAvailable === true
 					? [
 							{
 								id: 'login',
-								section: '账号',
-								label: '登录',
+								section: t`账号`,
+								label: t`登录`,
 								keywords: ['sign in'],
 								icon: LogIn,
 								run: () => {
@@ -232,30 +242,37 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 							} satisfies Item,
 						]
 					: []),
-			...THEMES.map((theme): Item => ({
-				id: `theme.${theme.id}`,
-				section: '切换主题',
-				label: `切换主题 · ${theme.label}`,
-				keywords: ['主题', 'theme', theme.dark ? '暗色' : '亮色'],
-				icon: PaletteIcon,
-				run: () => {
-					onClose()
-					chooseTheme(theme.id)
-				},
-			})),
+			...THEMES.map((theme): Item => {
+				const themeName = theme.label
+				return {
+					id: `theme.${theme.id}`,
+					section: t`切换主题`,
+					label: t`切换主题 · ${themeName}`,
+					// Search aliases: both languages find the command whatever the interface language.
+					keywords: ['主题', 'theme', theme.dark ? '暗色' : '亮色', theme.dark ? 'dark' : 'light'],
+					icon: PaletteIcon,
+					run: () => {
+						onClose()
+						chooseTheme(theme.id)
+					},
+				}
+			}),
 		]
-		const categoryItems: Item[] = categories.map((category) => ({
-			id: `cat.${category.id}`,
-			section: '版块',
-			label: category.name,
-			hint: `${category.threadCount} 主题`,
-			keywords: [category.slug],
-			icon: Hash,
-			run: () => go(`/c/${category.slug}`),
-		}))
+		const categoryItems: Item[] = categories.map((category) => {
+			const threadCount = category.threadCount
+			return {
+				id: `cat.${category.id}`,
+				section: categoryTitle,
+				label: category.name,
+				hint: t`${threadCount} 主题`,
+				keywords: [category.slug],
+				icon: Hash,
+				run: () => go(`/c/${category.slug}`),
+			}
+		})
 		const threadItems: Item[] = (searching ? hits : []).map((hit) => ({
 			id: `hit.${hit.threadId}`,
-			section: '主题',
+			section: threadTitle,
 			label: hit.title,
 			hint: categoryName.get(hit.categoryId),
 			icon: MessageSquare,
@@ -265,22 +282,22 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 			rank(items, parsed.text, (item) => item).slice(0, limit)
 		const result: Array<{ title: string; items: Item[] }> = []
 		if (parsed.mode === 'commands') {
-			result.push({ title: '命令', items: matching(commands, 40) })
+			result.push({ title: commandTitle, items: matching(commands, 40) })
 		} else if (parsed.mode === 'categories') {
-			result.push({ title: '版块', items: matching(categoryItems, 40) })
+			result.push({ title: categoryTitle, items: matching(categoryItems, 40) })
 		} else if (parsed.text === '') {
-			result.push({ title: '前往', items: commands.filter((item) => item.section === '前往') })
-			result.push({ title: '版块', items: categoryItems })
+			result.push({ title: goTitle, items: commands.filter((item) => item.section === goTitle) })
+			result.push({ title: categoryTitle, items: categoryItems })
 		} else {
 			// Typed text: commands that match the line itself, then categories, then threads.
-			result.push({ title: '命令', items: matching(commands, 5) })
-			result.push({ title: '版块', items: matching(categoryItems, 4) })
-			result.push({ title: '主题', items: threadItems })
+			result.push({ title: commandTitle, items: matching(commands, 5) })
+			result.push({ title: categoryTitle, items: matching(categoryItems, 4) })
+			result.push({ title: threadTitle, items: threadItems })
 		}
 		return result.filter((section) => section.items.length > 0)
-	}, [loaded, meta, hits, searching, parsed.mode, parsed.text, go, onClose, dock])
+	})()
 
-	const flat = useMemo(() => sections.flatMap((section) => section.items), [sections])
+	const flat = sections.flatMap((section) => section.items)
 	const activeId = flat[Math.min(active, flat.length - 1)]?.id
 
 	const onKeyDown = (event: React.KeyboardEvent) => {
@@ -305,7 +322,7 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 		>
 			<Modal className="palette-modal w-full max-w-[640px] outline-none">
 				<Dialog
-					aria-label="命令面板"
+					aria-label={t`命令面板`}
 					className="border-line bg-panel shadow-overlay flex max-h-[70dvh] flex-col overflow-hidden rounded-[2px] border outline-none"
 				>
 					<div className="border-line-soft flex items-center gap-2.5 border-b px-3.5">
@@ -316,14 +333,14 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 							aria-expanded
 							aria-controls="palette-list"
 							aria-activedescendant={activeId === undefined ? undefined : `palette-${activeId}`}
-							aria-label="搜索主题、版块或输入命令"
+							aria-label={t`搜索主题、版块或输入命令`}
 							value={query}
 							onChange={(event) => {
 								setQuery(event.target.value)
 								setActive(0)
 							}}
 							onKeyDown={onKeyDown}
-							placeholder="搜索主题 · > 命令 · # 版块"
+							placeholder={t`搜索主题 · > 命令 · # 版块`}
 							className="text-ink-strong placeholder:text-ink-weak/60 h-12 min-w-0 flex-1 bg-transparent text-heading outline-none"
 						/>
 						<kbd className="border-line text-ink-weak hidden h-5 items-center rounded-[2px] border px-1.5 font-mono text-micro sm:inline-flex">
@@ -333,7 +350,7 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 					<div id="palette-list" role="listbox" className="min-h-0 flex-1 overflow-y-auto py-1.5">
 						{flat.length === 0 ? (
 							<p className="text-ink-weak px-4 py-8 text-center">
-								{loaded === null ? '加载中…' : '没有匹配的内容'}
+								{loaded === null ? t`加载中…` : t`没有匹配的内容`}
 							</p>
 						) : (
 							sections.map((section) => (
@@ -370,11 +387,11 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 						)}
 					</div>
 					<div className="border-line-soft text-ink-weak flex items-center gap-4 border-t px-3.5 py-2 text-meta max-sm:hidden">
-						<span>↑↓ 选择</span>
-						<span>↵ 执行</span>
+						<span>↑↓ {t`选择`}</span>
+						<span>↵ {t`执行`}</span>
 						<span className="ml-auto">
-							<span className="text-ink">&gt;</span> 命令 <span className="text-ink ml-2">#</span>{' '}
-							版块
+							<span className="text-ink">&gt;</span> {t`命令`}{' '}
+							<span className="text-ink ml-2">#</span> {t`版块`}
 						</span>
 					</div>
 				</Dialog>

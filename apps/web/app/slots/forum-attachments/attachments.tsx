@@ -1,5 +1,6 @@
 import type { PostDto } from '@pluxum/domain'
 import { Download, FileText } from 'lucide-react'
+import { useLingui } from '@lingui/react/macro'
 
 import { attachmentsOf, EXT_ID, formatSize } from './shared'
 
@@ -8,6 +9,7 @@ import { attachmentsOf, EXT_ID, formatSize } from './shared'
  * and download cards for other files. A click on a preview opens the post's image viewer.
  */
 export function AttachmentsFooter({ post }: { post: PostDto }) {
+	const { t } = useLingui()
 	const items = attachmentsOf(post.ext[EXT_ID])
 	if (post.deleted || items.length === 0) return null
 	// Images the text already shows in place are not repeated here.
@@ -19,7 +21,7 @@ export function AttachmentsFooter({ post }: { post: PostDto }) {
 	return (
 		<div className="flex flex-col gap-2 px-4 pb-3" data-testid="post-attachments" data-lightbox>
 			{images.length > 0 && (
-				<ul className="flex flex-wrap gap-2" aria-label="图片">
+				<ul className="flex flex-wrap gap-2" aria-label={t`图片`}>
 					{images.map((image) => (
 						<li key={image.id}>
 							<a
@@ -42,7 +44,7 @@ export function AttachmentsFooter({ post }: { post: PostDto }) {
 				</ul>
 			)}
 			{files.length > 0 && (
-				<ul className="flex flex-col gap-1.5 sm:max-w-md" aria-label="附件">
+				<ul className="flex flex-col gap-1.5 sm:max-w-md" aria-label={t`附件`}>
 					{files.map((file) => (
 						<li key={file.id}>
 							<a

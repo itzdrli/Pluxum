@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { Dialog, Heading, Modal, ModalOverlay } from 'react-aria-components'
+import { useLingui } from '@lingui/react/macro'
 
 import { IconButton } from './button'
 
@@ -22,6 +23,7 @@ export function BottomSheet({
 	bodyClassName?: string
 	children: React.ReactNode | ((close: () => void) => React.ReactNode)
 }) {
+	const { t } = useLingui()
 	return (
 		<ModalOverlay
 			isOpen={isOpen}
@@ -41,7 +43,7 @@ export function BottomSheet({
 								>
 									{title}
 								</Heading>
-								<IconButton label="关闭" tone="ghost" size="sm" onPress={close}>
+								<IconButton label={t`关闭`} tone="ghost" size="sm" onPress={close}>
 									<X aria-hidden />
 								</IconButton>
 							</div>

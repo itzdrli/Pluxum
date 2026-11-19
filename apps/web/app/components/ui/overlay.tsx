@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react'
 import { Ellipsis } from 'lucide-react'
 import { useRef } from 'react'
 import { Form } from 'react-router'
+import { Trans } from '@lingui/react/macro'
 
 import { Button, type ButtonSize } from './button'
 
@@ -108,7 +109,7 @@ export function ConfirmDialog({
 									<input key={name} type="hidden" name={name} value={value} />
 								))}
 								<Button tone="ghost" onPress={() => onOpenChange(false)}>
-									取消
+									<Trans>取消</Trans>
 								</Button>
 								{/* The submit event fires synchronously, so the dialog may close right after. */}
 								<Button

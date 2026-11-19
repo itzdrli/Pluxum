@@ -23,9 +23,11 @@ import type {
 	UserDto,
 	UserProfileDto,
 } from '@pluxum/domain'
+import { t } from '@lingui/core/macro'
 import { data } from 'react-router'
 
 import type { feedQuery } from './home'
+import { i18nFromRequest } from './i18n.server'
 
 const DEFAULT_API_INTERNAL = 'http://127.0.0.1:5173'
 
@@ -37,7 +39,10 @@ export type ApiResult<T> =
 	| Readonly<{ ok: true; value: T }>
 	| Readonly<{ ok: false; status: number; error: ApiError }>
 
-const UNAVAILABLE: ApiError = { code: 'internal', message: '论坛服务暂时不可用' }
+/** The failure when the API cannot be reached or answers nonsense, worded in the visitor's language. */
+async function unavailableOf(request: Request): Promise<ApiError> {
+	return { code: 'internal', message: t(await i18nFromRequest(request))`论坛服务暂时不可用` }
+}
 
 const ERROR_CODES = [
 	'invalid',
@@ -50,11 +55,12 @@ const ERROR_CODES = [
 	'internal',
 ] as const satisfies ReadonlyArray<ApiError['code']>
 
-function apiErrorOf(body: unknown): ApiError {
-	if (typeof body !== 'object' || body === null || !('error' in body)) return UNAVAILABLE
+/** The API's own error, or null when the body is not one. */
+function apiErrorOf(body: unknown): ApiError | null {
+	if (typeof body !== 'object' || body === null || !('error' in body)) return null
 	const error: unknown = body.error
-	if (typeof error !== 'object' || error === null) return UNAVAILABLE
-	if (!('message' in error) || typeof error.message !== 'string') return UNAVAILABLE
+	if (typeof error !== 'object' || error === null) return null
+	if (!('message' in error) || typeof error.message !== 'string') return null
 	const reported: unknown = 'code' in error ? error.code : undefined
 	// An unknown code only loses its specific handling; the message is still the API's own.
 	const code = ERROR_CODES.find((known) => known === reported) ?? 'internal'
@@ -86,11 +92,17 @@ async function call<T>(request: Request, path: string, init: CallInit = {}): Pro
 		})
 	} catch (error) {
 		if (request.signal.aborted) throw error
-		return { ok: false, status: 502, error: UNAVAILABLE }
+		return { ok: false, status: 502, error: await unavailableOf(request) }
 	}
 	// 204 (a delete) has no body; it reads as null.
 	const body: unknown = await response.json().catch(() => null)
-	if (!response.ok) return { ok: false, status: response.status, error: apiErrorOf(body) }
+	if (!response.ok) {
+		return {
+			ok: false,
+			status: response.status,
+			error: apiErrorOf(body) ?? (await unavailableOf(request)),
+		}
+	}
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- forum-api validates every success response against the schema these DTO types mirror; this is the one place that trust is stated.
 	return { ok: true, value: body as T }
 }

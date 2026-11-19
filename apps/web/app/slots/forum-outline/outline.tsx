@@ -1,6 +1,7 @@
 import type { ThreadDto } from '@pluxum/domain'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import { Timestamp } from '../../components/ui/display'
 
@@ -55,6 +56,7 @@ export function OutlineSidebar({ thread }: { thread: ThreadDto }) {
 }
 
 function Timeline() {
+	const { t } = useLingui()
 	const [floors, setFloors] = useState<readonly Floor[]>([])
 	const [active, setActive] = useState(0)
 	const list = useRef<HTMLUListElement>(null)
@@ -108,8 +110,10 @@ function Timeline() {
 
 	if (floors.length < 2) return null
 	return (
-		<nav aria-label="楼层时间线" className="flex flex-col gap-2">
-			<p className="section-label">楼层</p>
+		<nav aria-label={t`楼层时间线`} className="flex flex-col gap-2">
+			<p className="section-label">
+				<Trans>楼层</Trans>
+			</p>
 			<ul
 				ref={list}
 				className="before:bg-line relative flex max-h-[calc(100dvh-10rem)] flex-col overflow-y-auto before:absolute before:top-2 before:bottom-2 before:left-[3px] before:w-px"

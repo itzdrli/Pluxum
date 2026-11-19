@@ -1,7 +1,9 @@
 import { isEntityId, parseFloorNumber } from '@pluxum/domain'
 import { data, redirect } from 'react-router'
+import { t } from '@lingui/core/macro'
 
 import type { Route } from './+types/thread-shortlink'
+import { i18nFromRequest } from '../lib/i18n.server'
 import { forumApi, orThrow } from '../lib/forum-api.server'
 
 // Shortlink `/t/:id` resolves the thread's canonical category slug and ref, then redirects into
@@ -19,7 +21,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		const located = orThrow(await forumApi.postLocation(request, params.floor))
 		if (located.threadRef === detail.thread.ref) floor = located.postNumber
 	}
-	if (floor === null) throw data('楼层不存在。', { status: 404 })
+	if (floor === null) throw data(t(await i18nFromRequest(request))`楼层不存在。`, { status: 404 })
 	const shown = orThrow(await forumApi.floorLocation(request, detail.thread.ref, floor))
 	if (shown.page > 1) url.searchParams.set('page', String(shown.page))
 	else url.searchParams.delete('page')

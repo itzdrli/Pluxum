@@ -1,6 +1,8 @@
 import type { NotificationDto } from '@pluxum/domain'
 import { Bell, BellOff, LogIn } from 'lucide-react'
 import { data, Form, useFetcher, useNavigation } from 'react-router'
+import { t as tm } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import type { Route } from './+types/notifications'
 import { UserAvatar } from '../components/forum/user-avatar'
@@ -19,6 +21,8 @@ import { Pager } from '../components/ui/pager'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { defineStage } from '../lib/stage'
 import { resolveNotificationHref } from '../slots/forum-notifications/href'
+import { i18nOfRoot } from '../lib/i18n'
+import { i18nFromRequest } from '../lib/i18n.server'
 import { pageTitle } from '../lib/site'
 
 export { resolveNotificationHref }
@@ -41,7 +45,7 @@ export function parseNotificationsUrl(url: URL): ParsedNotificationsUrl {
 export const handle = defineStage({ layer: 'page', nav: true })
 
 export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
-	return [{ title: pageTitle(matches[0].loaderData, '通知') }]
+	return [{ title: pageTitle(matches[0].loaderData, tm(i18nOfRoot(matches[0].loaderData))`通知`) }]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -133,12 +137,17 @@ export async function action({ request }: Route.ActionArgs) {
 		return success
 	}
 
-	const failure: ActionResponse = { ok: false, error: '不支持的通知操作' }
+	const failure: ActionResponse = {
+		ok: false,
+		error: tm(await i18nFromRequest(request))`不支持的通知操作`,
+	}
 	return data(failure, { status: 400 })
 }
 
 export default function NotificationsRoute({ loaderData, actionData }: Route.ComponentProps) {
+	const { t } = useLingui()
 	const { available, loggedIn, loginAvailable, unreadOnly, notifications } = loaderData
+	const total = notifications?.total ?? 0
 	const navigation = useNavigation()
 	const isMarkingAll =
 		navigation.state === 'submitting' && navigation.formData?.get('intent') === 'mark-all-read'
@@ -146,8 +155,8 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 	if (!available) {
 		return (
 			<>
-				<PageHeader title="通知" />
-				<EmptyState icon={BellOff} title="通知功能未启用" />
+				<PageHeader title={t`通知`} />
+				<EmptyState icon={BellOff} title={t`通知功能未启用`} />
 			</>
 		)
 	}
@@ -155,10 +164,10 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 	if (!loggedIn || notifications === null) {
 		return (
 			<>
-				<PageHeader title="通知" />
+				<PageHeader title={t`通知`} />
 				<EmptyState
 					icon={LogIn}
-					title="请先登录"
+					title={t`请先登录`}
 					action={
 						loginAvailable ? (
 							<ButtonAnchor
@@ -166,7 +175,7 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 								tone="primary"
 								size="sm"
 							>
-								登录
+								<Trans>登录</Trans>
 							</ButtonAnchor>
 						) : undefined
 					}
@@ -178,12 +187,12 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 	return (
 		<>
 			<PageHeader
-				title="通知"
+				title={t`通知`}
 				actions={
 					<div className="flex flex-wrap items-center gap-2">
 						<div
 							role="group"
-							aria-label="通知筛选"
+							aria-label={t`通知筛选`}
 							className="border-line bg-panel inline-flex rounded-[2px] border p-0.5 text-meta"
 						>
 							<StageLink
@@ -194,7 +203,7 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 										: 'text-ink-weak hover:text-ink-strong'
 								}`}
 							>
-								全部
+								<Trans>全部</Trans>
 							</StageLink>
 							<StageLink
 								to="/notifications?unread=1"
@@ -204,7 +213,9 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 										: 'text-ink-weak hover:text-ink-strong'
 								}`}
 							>
-								<span>未读</span>
+								<span>
+									<Trans>未读</Trans>
+								</span>
 								{notifications.unreadCount > 0 && (
 									<span className="tabular-nums">({notifications.unreadCount})</span>
 								)}
@@ -215,7 +226,7 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 							<Form method="post">
 								<input type="hidden" name="intent" value="mark-all-read" />
 								<Button tone="secondary" size="sm" type="submit" isPending={isMarkingAll}>
-									全部标为已读
+									<Trans>全部标为已读</Trans>
 								</Button>
 							</Form>
 						)}
@@ -232,11 +243,11 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 			{notifications.items.length === 0 ? (
 				<EmptyState
 					icon={Bell}
-					title={unreadOnly ? '没有未读通知' : '暂时还没有收到通知'}
+					title={unreadOnly ? t`没有未读通知` : t`暂时还没有收到通知`}
 					action={
 						unreadOnly ? (
 							<ButtonLink to="/notifications" tone="secondary" size="sm">
-								查看全部通知
+								<Trans>查看全部通知</Trans>
 							</ButtonLink>
 						) : undefined
 					}
@@ -244,7 +255,7 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 			) : (
 				<section>
 					<SectionLabel>
-						{unreadOnly ? `未读通知 · ${notifications.total}` : `全部通知 · ${notifications.total}`}
+						{unreadOnly ? t`未读通知 · ${total}` : t`全部通知 · ${total}`}
 					</SectionLabel>
 					<Panel as="ol" className="divide-line divide-y">
 						{notifications.items.map((item) => (
@@ -301,7 +312,11 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 
 				<div className="min-w-0 flex-1">
 					<div className="flex flex-wrap items-center gap-2">
-						{!isRead && <Tag tone="accent">未读</Tag>}
+						{!isRead && (
+							<Tag tone="accent">
+								<Trans>未读</Trans>
+							</Tag>
+						)}
 						{href !== null ? (
 							<StageLink
 								to={href}
@@ -346,7 +361,7 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 			<div className="flex shrink-0 items-center gap-1.5 self-end sm:self-center">
 				{href !== null && (
 					<ButtonLink to={href} tone="ghost" size="sm" onClick={markReadOnJump}>
-						查看帖子
+						<Trans>查看帖子</Trans>
 					</ButtonLink>
 				)}
 				{!isRead && (
@@ -354,7 +369,7 @@ function NotificationRow({ item }: { item: NotificationDto }) {
 						<input type="hidden" name="intent" value="mark-read" />
 						<input type="hidden" name="id" value={item.id} />
 						<Button tone="ghost" size="sm" type="submit" isPending={isMarking}>
-							标为已读
+							<Trans>标为已读</Trans>
 						</Button>
 					</fetcher.Form>
 				)}

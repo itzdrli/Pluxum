@@ -1,4 +1,5 @@
 import { isUiSlot } from '@pluxum/domain'
+import { createI18n } from '../app/lib/i18n'
 import { describe, expect, it } from 'vitest'
 
 import { buildPageHref } from '../app/components/ui/pager'
@@ -13,6 +14,8 @@ import {
 	resolveReportTargetHref,
 } from '../app/routes/moderation'
 import { banStatusOf } from '../app/slots/forum-moderation/user-ban-tab'
+
+const i18n = createI18n('zh-CN')
 
 describe('moderation route, slots & API helpers', () => {
 	it('recognizes post.actions and user.profile.tabs as valid UiSlots', () => {
@@ -87,15 +90,15 @@ describe('moderation route, slots & API helpers', () => {
 	})
 
 	it('maps audit log actions to localized badge labels and preserves filter params across pages', () => {
-		expect(formatModerationLogAction('user.banned')).toEqual({
+		expect(formatModerationLogAction(i18n, 'user.banned')).toEqual({
 			label: '封禁账号',
 			tone: 'danger',
 		})
-		expect(formatModerationLogAction('report.resolved_deleted')).toEqual({
+		expect(formatModerationLogAction(i18n, 'report.resolved_deleted')).toEqual({
 			label: '处理并删除内容',
 			tone: 'danger',
 		})
-		expect(formatModerationLogAction('custom.event')).toEqual({
+		expect(formatModerationLogAction(i18n, 'custom.event')).toEqual({
 			label: 'custom.event',
 			tone: 'neutral',
 		})

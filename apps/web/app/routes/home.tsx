@@ -10,6 +10,8 @@ import {
 	useRouteLoaderData,
 	useSearchParams,
 } from 'react-router'
+import { Trans, useLingui } from '@lingui/react/macro'
+import { t as tm } from '@lingui/core/macro'
 
 import type { Route } from './+types/home'
 import { NoteCard, NoteComposer } from '../components/forum/note-card'
@@ -22,6 +24,7 @@ import { EmptyState, FormError, Panel, TabIndicator } from '../components/ui/dis
 import { Pager } from '../components/ui/pager'
 import { TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
+import { i18nFromRequest } from '../lib/i18n.server'
 import {
 	feedQuery,
 	HOME_PAGE_SIZE,
@@ -66,10 +69,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 // Posts a note (`intent=note`) or creates a category; the API decides whether the visitor may.
 export async function action({ request }: Route.ActionArgs) {
+	const i18n = await i18nFromRequest(request)
 	const form = await request.formData()
 	if (textField(form, 'intent') === 'note') {
 		const stream = orThrow(await forumApi.meta(request)).stream
-		if (stream === null) return data({ noteError: '动态暂时不可用。' }, { status: 404 })
+		if (stream === null) return data({ noteError: tm(i18n)`动态暂时不可用。` }, { status: 404 })
 		const result = await forumApi.createThread(request, {
 			categoryId: stream.id,
 			title: '',
@@ -90,6 +94,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
+	const { t } = useLingui()
 	const { categories, recentThreads, community, feed } = loaderData
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const canManage = root?.meta?.viewer.can.manageCategories === true
@@ -105,6 +110,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 	const canPostNote = root?.meta?.viewer.can.postNote === true
 	const followingAvailable = root?.meta?.viewer.following.available === true
 
+	const categoryCount = categories.length
 	const totalThreads = categories.reduce((sum, cat) => sum + cat.threadCount, 0)
 	const totalPosts = categories.reduce((sum, cat) => sum + cat.postCount, 0)
 
@@ -121,25 +127,25 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 		<>
 			{/* Phones: two tabs instead of two columns; the page title would only repeat them. */}
 			<div className="border-line -mx-4 flex items-center gap-5 border-b px-4 lg:hidden">
-				<div role="tablist" aria-label="首页内容切换" className="flex items-center gap-5">
+				<div role="tablist" aria-label={t`首页内容切换`} className="flex items-center gap-5">
 					{/* Not 「最新」: that is also one of the feed's orderings right below. */}
 					<HomeTab
 						selected={mobileTab === 'recent'}
 						onSelect={() => withViewTransition(() => setMobileTab('recent'))}
 					>
-						讨论
+						<Trans>讨论</Trans>
 					</HomeTab>
 					<HomeTab
 						selected={mobileTab === 'categories'}
 						onSelect={() => withViewTransition(() => setMobileTab('categories'))}
 					>
-						版块
+						<Trans>版块</Trans>
 					</HomeTab>
 				</div>
 				{/* Only beside the categories, so it is never mistaken for 「发布主题」 under the feed tab. */}
 				{canManage && !showForm && mobileTab === 'categories' && (
 					<IconButton
-						label="新建版块"
+						label={t`新建版块`}
 						className="ml-auto"
 						onPress={() => {
 							setMobileTab('categories')
@@ -162,11 +168,13 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 							mobileTab === 'recent' ? '' : 'max-lg:hidden'
 						}`}
 					>
-						<h1 className="text-ink-strong mr-4 text-heading font-bold max-lg:hidden">概览</h1>
+						<h1 className="text-ink-strong mr-4 text-heading font-bold max-lg:hidden">
+							<Trans>概览</Trans>
+						</h1>
 						<FeedTabs feed={feed} following={followingAvailable} />
 						<div className="flex items-center gap-3 lg:ml-auto">
 							<span className="text-ink-weak text-meta tabular-nums max-lg:hidden xl:hidden">
-								{categories.length} 版块 · {totalThreads} 主题 · {totalPosts} 帖子
+								{t`${categoryCount} 版块`} · {t`${totalThreads} 主题`} · {t`${totalPosts} 帖子`}
 							</span>
 							{signedIn && <NewThreadMenu categories={categories} />}
 						</div>
@@ -179,7 +187,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 						/>
 					)}
 					<section
-						aria-label="最新活跃讨论"
+						aria-label={t`最新活跃讨论`}
 						className={mobileTab === 'recent' ? '' : 'max-lg:hidden'}
 					>
 						{!signedIn && <GuestWelcome root={root} />}
@@ -201,11 +209,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 							feed.tab === 'following' ? (
 								<EmptyState
 									icon={UserRoundPlus}
-									title="还没有关注的内容"
-									hint="在用户主页或版块页点「关注」，就能在这里看到那里的新帖。"
+									title={t`还没有关注的内容`}
+									hint={t`在用户主页或版块页点「关注」，就能在这里看到那里的新帖。`}
 								/>
 							) : (
-								<EmptyState icon={MessagesSquare} title="还没有讨论" />
+								<EmptyState icon={MessagesSquare} title={t`还没有讨论`} />
 							)
 						) : (
 							// The same rows as a category's list; the overview's mix of categories shows each row's.
@@ -242,11 +250,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 					</section>
 
 					<section
-						aria-label="版块"
+						aria-label={t`版块`}
 						className={mobileTab === 'categories' ? 'lg:hidden' : 'hidden'}
 					>
 						{categories.length === 0 ? (
-							<EmptyState icon={LayoutList} title="还没有版块" />
+							<EmptyState icon={LayoutList} title={t`还没有版块`} />
 						) : (
 							<Panel
 								as="ul"
@@ -280,16 +288,20 @@ function CommunityPanel({
 	threads: number
 	posts: number
 }) {
+	const { t } = useLingui()
+	const days = community.days
 	return (
 		// Above the feed's pane head, whose band runs under this column: the heading sits in that band.
-		<aside aria-label="社区" className="min-w-0 max-xl:hidden xl:sticky xl:top-0 xl:z-20">
-			<h2 className="section-label mb-5 flex h-[var(--h-pane-bar)] items-center">社区</h2>
+		<aside aria-label={t`社区`} className="min-w-0 max-xl:hidden xl:sticky xl:top-0 xl:z-20">
+			<h2 className="section-label mb-5 flex h-[var(--h-pane-bar)] items-center">
+				<Trans>社区</Trans>
+			</h2>
 			<Panel className="flex flex-col divide-y divide-line">
 				<dl className="grid grid-cols-3 gap-2 px-4 py-4 text-center">
 					{[
-						['成员', community.members],
-						['主题', threads],
-						['帖子', posts],
+						[t`成员`, community.members],
+						[t({ message: '主题', context: 'thread' }), threads],
+						[t`帖子`, posts],
 					].map(([label, value]) => (
 						<div key={label}>
 							<dd className="text-ink-strong text-heading font-bold tabular-nums">{value}</dd>
@@ -298,14 +310,14 @@ function CommunityPanel({
 					))}
 				</dl>
 				{community.activeMembers.length > 0 && (
-					<MemberList title={`近 ${community.days} 天活跃`}>
+					<MemberList title={t`近 ${days} 天活跃`}>
 						{community.activeMembers.map(({ user, posts: total }) => (
-							<MemberRow key={user.id} user={user} note={`${total} 帖`} />
+							<MemberRow key={user.id} user={user} note={t`${total} 帖`} />
 						))}
 					</MemberList>
 				)}
 				{community.newMembers.length > 0 && (
-					<MemberList title="新加入">
+					<MemberList title={t`新加入`}>
 						{community.newMembers.map((user) => (
 							<MemberRow key={user.id} user={user} />
 						))}
@@ -348,8 +360,9 @@ function MemberRow({ user, note }: { user: UserDto; note?: string }) {
  * plugin runs and the reader is signed in.
  */
 function FeedTabs({ feed, following }: { feed: HomeFeed; following: boolean }) {
+	const { t, i18n } = useLingui()
 	return (
-		<nav aria-label="信息流" className="flex items-center gap-4">
+		<nav aria-label={t`信息流`} className="flex items-center gap-4">
 			{HOME_TABS.filter((tab) => tab.id !== 'following' || following).map((tab) => (
 				<StageLink
 					key={tab.id}
@@ -362,7 +375,7 @@ function FeedTabs({ feed, following }: { feed: HomeFeed; following: boolean }) {
 							: 'text-ink-weak hover:text-ink-strong'
 					}`}
 				>
-					{tab.label}
+					{i18n._(tab.label)}
 					{tab.id === feed.tab && <TabIndicator name="sort-tab" />}
 				</StageLink>
 			))}
@@ -372,8 +385,9 @@ function FeedTabs({ feed, following }: { feed: HomeFeed; following: boolean }) {
 
 /** 「最新」's second choice, above its list: by latest reply (the default) or by start. */
 function LatestOrderToggle({ feed }: { feed: HomeFeed }) {
+	const { t, i18n } = useLingui()
 	return (
-		<nav aria-label="排序" className="text-meta mb-3 flex items-center gap-1">
+		<nav aria-label={t`排序`} className="text-meta mb-3 flex items-center gap-1">
 			{LATEST_ORDERS.map((order) => (
 				<StageLink
 					key={order.id}
@@ -386,7 +400,7 @@ function LatestOrderToggle({ feed }: { feed: HomeFeed }) {
 							: 'text-ink-weak hover:text-ink-strong'
 					}`}
 				>
-					{order.label}
+					{i18n._(order.label)}
 				</StageLink>
 			))}
 		</nav>
@@ -395,17 +409,18 @@ function LatestOrderToggle({ feed }: { feed: HomeFeed }) {
 
 /** "发布主题" from the overview: pick the category, then write in its new-thread pane. */
 function NewThreadMenu({ categories }: { categories: readonly CategoryDto[] }) {
+	const { t } = useLingui()
 	const dock = useDock()
 	if (categories.length === 0) return null
 	return (
 		<Dropdown>
 			<Dropdown.Trigger className="button button--primary button--sm">
 				<Plus aria-hidden />
-				发布主题
+				<Trans>发布主题</Trans>
 			</Dropdown.Trigger>
 			<Dropdown.Popover placement="bottom end" className="min-w-40">
 				<Dropdown.Menu
-					aria-label="选择版块"
+					aria-label={t`选择版块`}
 					onAction={(key) => {
 						const slug = categories.find((category) => category.id === key)?.slug
 						if (slug !== undefined) dock.openThread(slug)
@@ -431,11 +446,13 @@ function GuestWelcome({
 }: {
 	root: ReturnType<typeof useRouteLoaderData<typeof rootLoader>>
 }) {
+	const { t } = useLingui()
 	const site = siteOf(root)
+	const siteName = site.name
 	if (site.tagline === '') return null
 	return (
 		<Panel as="section" className="mb-4 p-4">
-			<p className="text-ink-strong text-title font-bold">欢迎来到 {site.name}</p>
+			<p className="text-ink-strong text-title font-bold">{t`欢迎来到 ${siteName}`}</p>
 			<p className="text-ink-weak mt-0.5 break-words">{site.tagline}</p>
 		</Panel>
 	)
@@ -468,12 +485,15 @@ function HomeTab({
 
 /** A category in the phone tab: tile, name with its one-line description, and its thread count. */
 function CategoryItem({ category }: { category: CategoryDto }) {
+	const { t } = useLingui()
+	const threadCount = category.threadCount
+	const postCount = category.postCount
 	return (
 		<li>
 			<StageLink
 				to={`/c/${category.slug}`}
 				prefetch="intent"
-				title={`${category.threadCount} 主题 · ${category.postCount} 帖子`}
+				title={`${t`${threadCount} 主题`} · ${t`${postCount} 帖子`}`}
 				className="hover:bg-hover active:bg-pressed flex items-center gap-3 px-3 py-2.5 transition-colors"
 			>
 				{/* The name's first character on the control tone: told apart at a glance, no extra hue. */}
@@ -492,7 +512,10 @@ function CategoryItem({ category }: { category: CategoryDto }) {
 				<span className="text-ink-weak flex shrink-0 items-center gap-1 text-meta tabular-nums">
 					<MessagesSquare aria-hidden size={12} />
 					{category.threadCount}
-					<span className="sr-only"> 主题</span>
+					<span className="sr-only">
+						{' '}
+						<Trans context="thread">主题</Trans>
+					</span>
 				</span>
 			</StageLink>
 		</li>
@@ -508,36 +531,39 @@ function NewCategory({
 	nameMax: number | undefined
 	onCancel: () => void
 }) {
+	const { t } = useLingui()
 	const submitting = useNavigation().state === 'submitting'
 	return (
 		<Panel as="section" className="mb-4 p-4">
-			<h3 className="text-ink-strong mb-3 font-bold">新建版块</h3>
+			<h3 className="text-ink-strong mb-3 font-bold">
+				<Trans>新建版块</Trans>
+			</h3>
 			<Form method="post" className="flex flex-col gap-3">
 				<FormError message={error} />
 				<div className="grid gap-3">
 					<TextInputField
 						name="name"
-						label="名称"
+						label={t`名称`}
 						required
 						maxLength={nameMax}
-						placeholder="综合讨论"
+						placeholder={t`综合讨论`}
 						autoFocus
 					/>
 					<TextInputField
 						name="slug"
-						label="标识"
-						hint="留空则按名称生成"
+						label={t`标识`}
+						hint={t`留空则按名称生成`}
 						placeholder="general"
 						pattern="[a-z0-9]+(-[a-z0-9]+)*"
 					/>
 				</div>
-				<TextInputField name="description" label="简介" />
+				<TextInputField name="description" label={t`简介`} />
 				<div className="flex justify-end gap-2">
 					<Button tone="ghost" onPress={onCancel}>
-						取消
+						<Trans>取消</Trans>
 					</Button>
 					<Button tone="primary" type="submit" isPending={submitting}>
-						创建版块
+						<Trans>创建版块</Trans>
 					</Button>
 				</div>
 			</Form>

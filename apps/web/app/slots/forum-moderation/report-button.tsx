@@ -1,6 +1,8 @@
 import { Modal } from '@heroui/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useFetcher, useRouteLoaderData } from 'react-router'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import { Button } from '../../components/ui/button'
 import { FormError } from '../../components/ui/display'
@@ -12,14 +14,15 @@ const EXT_ID = 'forum-moderation'
 const REASON_MAX = 500
 
 const PRESET_REASONS = [
-	'垃圾广告或恶意推广',
-	'人身攻击或骚扰',
-	'违法或不当内容',
-	'恶意灌水或偏离主题',
+	msg`垃圾广告或恶意推广`,
+	msg`人身攻击或骚扰`,
+	msg`违法或不当内容`,
+	msg`恶意灌水或偏离主题`,
 ] as const
 
 /** `post.actions`: a "举报" item in the post's menu for signed-in members, and its dialog. */
 export function ReportAction({ post, setMenuItems }: SlotProps['post.actions']) {
+	const { t, i18n } = useLingui()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
 	const fetcher = useFetcher<ExtActionResult>()
 	const [open, setOpen] = useState(false)
@@ -47,10 +50,10 @@ export function ReportAction({ post, setMenuItems }: SlotProps['post.actions']) 
 		}
 		setMenuItems([
 			succeeded
-				? { id: 'report', label: '已举报', disabled: true, onAction: () => undefined }
-				: { id: 'report', label: '举报', onAction: openDialog },
+				? { id: 'report', label: t`已举报`, disabled: true, onAction: () => undefined }
+				: { id: 'report', label: t`举报`, onAction: openDialog },
 		])
-	}, [available, succeeded, openDialog, setMenuItems])
+	}, [available, succeeded, openDialog, setMenuItems, t])
 
 	if (!available) return null
 
@@ -70,13 +73,14 @@ export function ReportAction({ post, setMenuItems }: SlotProps['post.actions']) 
 						<Modal.Dialog>
 							<Modal.Header>
 								<Modal.Heading className="text-ink-strong text-heading font-bold">
-									举报内容
+									<Trans>举报内容</Trans>
 								</Modal.Heading>
 							</Modal.Header>
 							<Modal.Body className="flex flex-col gap-3">
 								<FormError message={error} />
 								<div className="flex flex-wrap gap-1.5">
-									{PRESET_REASONS.map((preset) => {
+									{PRESET_REASONS.map((descriptor) => {
+										const preset = i18n._(descriptor)
 										const selected = reason.trim() === preset
 										return (
 											<button
@@ -95,7 +99,9 @@ export function ReportAction({ post, setMenuItems }: SlotProps['post.actions']) 
 									})}
 								</div>
 								<label className="flex flex-col gap-1">
-									<span className="text-ink-weak text-meta">原因</span>
+									<span className="text-ink-weak text-meta">
+										<Trans>原因</Trans>
+									</span>
 									<textarea
 										value={reason}
 										onChange={(event) => setReason(event.currentTarget.value)}
@@ -114,7 +120,7 @@ export function ReportAction({ post, setMenuItems }: SlotProps['post.actions']) 
 										setOpen(false)
 									}}
 								>
-									取消
+									<Trans>取消</Trans>
 								</Button>
 								<Button
 									tone="danger"
@@ -133,7 +139,7 @@ export function ReportAction({ post, setMenuItems }: SlotProps['post.actions']) 
 										)
 									}}
 								>
-									提交举报
+									<Trans>提交举报</Trans>
 								</Button>
 							</Modal.Footer>
 						</Modal.Dialog>

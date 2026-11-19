@@ -7,17 +7,232 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: zh-CN\n"
 
+#: app/routes/moderation.tsx
+msgid "· 备注：{resolutionNote}"
+msgstr "· 备注：{resolutionNote}"
+
+#: app/routes/moderation.tsx
+msgid "· 被举报作者："
+msgstr "· 被举报作者："
+
+#: app/slots/forum-attachments/upload.tsx
+msgid "“{tooLargeName}”超过 {maxSize}。"
+msgstr "“{tooLargeName}”超过 {maxSize}。"
+
+#: app/slots/forum-attachments/upload.tsx
+msgid "{accepted}，单个不超过 {maxSize}"
+msgstr "{accepted}，单个不超过 {maxSize}"
+
+#: app/routes/thread.tsx
+msgid "{author} 的动态"
+msgstr "{author} 的动态"
+
+#: app/routes/home.tsx
+msgid "{categoryCount} 版块"
+msgstr "{categoryCount} 版块"
+
+#: app/routes/category.tsx
+msgid "{categoryName} 主题列表"
+msgstr "{categoryName} 主题列表"
+
+#: app/lib/format.ts
+msgid "{days, plural, other {#天前}}"
+msgstr "{days, plural, other {#天前}}"
+
+#: app/lib/format.ts
+msgid "{days, plural, other {#天后}}"
+msgstr "{days, plural, other {#天后}}"
+
+#: app/slots/forum-follows/follow.tsx
+msgid "{followers} 人关注"
+msgstr "{followers} 人关注"
+
+#: app/routes/search.tsx
+msgid "{hitAuthor} 的动态"
+msgstr "{hitAuthor} 的动态"
+
+#: app/lib/format.ts
+msgid "{hours, plural, other {#小时前}}"
+msgstr "{hours, plural, other {#小时前}}"
+
+#: app/lib/format.ts
+msgid "{hours, plural, other {#小时后}}"
+msgstr "{hours, plural, other {#小时后}}"
+
 #: app/components/shell/theme-picker.tsx
 msgid "{label}（{mode}）"
 msgstr "{label}（{mode}）"
 
+#: app/lib/format.ts
+msgid "{minutes, plural, other {#分钟前}}"
+msgstr "{minutes, plural, other {#分钟前}}"
+
+#: app/lib/format.ts
+msgid "{minutes, plural, other {#分钟后}}"
+msgstr "{minutes, plural, other {#分钟后}}"
+
+#: app/components/forum/rows.tsx
+#: app/components/hover/hover-cards.tsx
+#: app/routes/thread.tsx
+msgid "{noteAuthor} 的动态"
+msgstr "{noteAuthor} 的动态"
+
+#: app/routes/user.tsx
+msgid "{noteCount} 动态"
+msgstr "{noteCount} 动态"
+
+#: app/routes/user.tsx
+msgid "{postCount} 回复"
+msgstr "{postCount} 回复"
+
+#: app/components/forum/rows.tsx
+#: app/routes/home.tsx
+msgid "{postCount} 帖子"
+msgstr "{postCount} 帖子"
+
+#: app/components/hover/hover-cards.tsx
+msgid "{posts} 回复"
+msgstr "{posts} 回复"
+
+#: app/routes/thread.tsx
+msgid "{replyCount} 回复"
+msgstr "{replyCount} 回复"
+
+#: app/lib/format.ts
+msgid "{seconds, plural, other {#秒前}}"
+msgstr "{seconds, plural, other {#秒前}}"
+
+#: app/lib/format.ts
+msgid "{seconds, plural, other {#秒后}}"
+msgstr "{seconds, plural, other {#秒后}}"
+
 #: app/components/shell/shell.tsx
+#: app/routes/forum-stage.tsx
 msgid "{siteName} 首页"
 msgstr "{siteName} 首页"
+
+#: app/components/forum/rows.tsx
+#: app/components/palette/command-palette.tsx
+#: app/routes/home.tsx
+#: app/routes/user.tsx
+msgid "{threadCount} 主题"
+msgstr "{threadCount} 主题"
+
+#: app/components/hover/hover-cards.tsx
+msgid "{threads} 主题"
+msgstr "{threads} 主题"
+
+#: app/routes/home.tsx
+msgid "{total} 帖"
+msgstr "{total} 帖"
+
+#: app/routes/home.tsx
+msgid "{totalPosts} 帖子"
+msgstr "{totalPosts} 帖子"
+
+#: app/routes/home.tsx
+msgid "{totalThreads} 主题"
+msgstr "{totalThreads} 主题"
+
+#: app/slots/forum-notifications/bell.tsx
+msgid "{unreadCount} 条未读"
+msgstr "{unreadCount} 条未读"
+
+#: app/routes/user.tsx
+msgid "{userName} 的主页"
+msgstr "{userName} 的主页"
+
+#: app/lib/format.ts
+msgid "{weeks, plural, other {#周前}}"
+msgstr "{weeks, plural, other {#周前}}"
+
+#: app/lib/format.ts
+msgid "{weeks, plural, other {#周后}}"
+msgstr "{weeks, plural, other {#周后}}"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "1 小时"
+msgstr "1 小时"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "24 小时"
+msgstr "24 小时"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "30 天"
+msgstr "30 天"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "7 天"
+msgstr "7 天"
+
+#: app/components/dock/composer-dock.tsx
+msgid "Ctrl+Enter 发布"
+msgstr "Ctrl+Enter 发布"
+
+#: app/components/composer/composer.tsx
+msgid "Markdown 源码"
+msgstr "Markdown 源码"
+
+#: app/slots/forum-attachments/avatar.tsx
+msgid "PNG、JPEG、WebP 或 GIF"
+msgstr "PNG、JPEG、WebP 或 GIF"
+
+#: app/slots/forum-solved/solved.tsx
+msgid "一位成员"
+msgstr "一位成员"
+
+#: app/routes/thread-new.tsx
+msgid "一句话说清楚要讨论什么"
+msgstr "一句话说清楚要讨论什么"
+
+#: app/components/ui/lightbox.tsx
+msgid "上一张"
+msgstr "上一张"
+
+#: app/components/ui/pager.tsx
+msgid "上一页"
+msgstr "上一页"
+
+#: app/slots/forum-attachments/upload.tsx
+msgid "上传中…"
+msgstr "上传中…"
+
+#: app/slots/forum-attachments/upload.tsx
+msgid "上传失败，请稍后再试。"
+msgstr "上传失败，请稍后再试。"
+
+#: app/slots/forum-attachments/avatar.tsx
+msgid "上传头像"
+msgstr "上传头像"
+
+#: app/components/ui/lightbox.tsx
+msgid "下一张"
+msgstr "下一张"
+
+#: app/components/ui/pager.tsx
+msgid "下一页"
+msgstr "下一页"
+
+#: app/components/ui/lightbox.tsx
+msgid "下载原图"
+msgstr "下载原图"
+
+#: app/routes/moderation.tsx
+msgid "不支持的审核操作"
+msgstr "不支持的审核操作"
+
+#: app/routes/notifications.tsx
+msgid "不支持的通知操作"
+msgstr "不支持的通知操作"
 
 #: app/components/shell/user-menu.tsx
 msgid "个人资料"
 msgstr "个人资料"
+
+#: app/routes/user.tsx
+msgid "主页"
+msgstr "主页"
 
 #: app/components/shell/theme-picker.tsx
 #: app/components/shell/user-menu.tsx
@@ -25,15 +240,38 @@ msgctxt "colour theme"
 msgid "主题"
 msgstr "主题"
 
+#: app/components/forum/rows.tsx
+#: app/components/palette/command-palette.tsx
+#: app/routes/home.tsx
+#: app/routes/search.tsx
+#: app/routes/user.tsx
+msgctxt "thread"
+msgid "主题"
+msgstr "主题"
+
+#: app/routes/moderation.tsx
+msgid "主题 #{targetRef}"
+msgstr "主题 #{targetRef}"
+
 #: app/components/shell/user-menu.tsx
 msgid "主题与语言"
 msgstr "主题与语言"
 
+#: app/routes/moderation.tsx
+msgid "主题举报"
+msgstr "主题举报"
+
+#: app/routes/thread.tsx
+msgid "主题侧栏"
+msgstr "主题侧栏"
+
 #: app/components/shell/mobile-stage-bar.tsx
+#: app/routes/thread.tsx
 msgid "主题已锁定"
 msgstr "主题已锁定"
 
 #: app/components/shell/mobile-stage-bar.tsx
+#: app/routes/thread.tsx
 msgid "主题已锁定，仅版主可回复"
 msgstr "主题已锁定，仅版主可回复"
 
@@ -42,14 +280,179 @@ msgid "主题快捷栏"
 msgstr "主题快捷栏"
 
 #: app/components/shell/mobile-stage-bar.tsx
+#: app/routes/thread.tsx
 msgid "主题操作"
 msgstr "主题操作"
+
+#: app/slots/forum-moderation/report-button.tsx
+msgid "举报"
+msgstr "举报"
+
+#: app/routes/moderation.tsx
+msgid "举报人："
+msgstr "举报人："
+
+#: app/slots/forum-moderation/report-button.tsx
+msgid "举报内容"
+msgstr "举报内容"
+
+#: app/routes/moderation.tsx
+msgid "举报列表"
+msgstr "举报列表"
+
+#: app/routes/moderation.tsx
+msgid "举报状态筛选"
+msgstr "举报状态筛选"
+
+#: app/routes/moderation.tsx
+msgid "举报队列"
+msgstr "举报队列"
 
 #: app/components/shell/theme-picker.tsx
 msgid "亮色"
 msgstr "亮色"
 
+#: app/slots/forum-reactions/reactions.tsx
+msgid "人点赞"
+msgstr "人点赞"
+
+#: app/slots/forum-reactions/reactions.tsx
+msgid "人觉得有用"
+msgstr "人觉得有用"
+
+#: app/slots/forum-moderation/report-button.tsx
+msgid "人身攻击或骚扰"
+msgstr "人身攻击或骚扰"
+
+#: app/routes/search.tsx
+msgid "仅看主题"
+msgstr "仅看主题"
+
+#: app/components/composer/rich-editor.tsx
+msgid "代码块"
+msgstr "代码块"
+
+#: app/components/ui/display.tsx
+msgid "位置"
+msgstr "位置"
+
+#: app/routes/thread-new.tsx
+msgid "你没有在这个版块发布主题的权限。"
+msgstr "你没有在这个版块发布主题的权限。"
+
+#: app/components/forum/post.tsx
+msgid "保存"
+msgstr "保存"
+
+#: app/routes/thread.tsx
+msgid "保存标题"
+msgstr "保存标题"
+
+#: app/routes/user.tsx
+msgid "保存资料"
+msgstr "保存资料"
+
+#: app/routes/home.tsx
+msgid "信息流"
+msgstr "信息流"
+
+#: app/routes/thread.tsx
+msgid "修改标题"
+msgstr "修改标题"
+
+#: app/components/dock/composer-dock.tsx
+msgid "全屏"
+msgstr "全屏"
+
+#: app/routes/moderation.tsx
+#: app/routes/notifications.tsx
+msgid "全部"
+msgstr "全部"
+
+#: app/slots/forum-notifications/bell.tsx
+msgid "全部已读"
+msgstr "全部已读"
+
+#: app/routes/notifications.tsx
+msgid "全部标为已读"
+msgstr "全部标为已读"
+
+#: app/routes/search.tsx
+msgid "全部版块"
+msgstr "全部版块"
+
+#: app/routes/notifications.tsx
+msgid "全部通知 · {total}"
+msgstr "全部通知 · {total}"
+
+#: app/routes/moderation.tsx
+msgid "共 {queueTotal} 条"
+msgstr "共 {queueTotal} 条"
+
+#: app/slots/forum-follows/follow.tsx
+msgctxt "count of people one follows"
+msgid "关注"
+msgstr "关注"
+
+#: app/lib/home.ts
+msgctxt "home feed tab"
+msgid "关注"
+msgstr "关注"
+
+#: app/slots/forum-follows/follow.tsx
+msgctxt "verb"
+msgid "关注"
+msgstr "关注"
+
+#: app/slots/forum-follows/follow.tsx
+msgid "关注提醒"
+msgstr "关注提醒"
+
+#: app/slots/forum-follows/follow.tsx
+msgid "关注版块"
+msgstr "关注版块"
+
+#: app/components/dock/composer-dock.tsx
+#: app/components/ui/bottom-sheet.tsx
+#: app/components/ui/lightbox.tsx
+msgid "关闭"
+msgstr "关闭"
+
+#: app/routes/thread.tsx
+msgid "关闭主题"
+msgstr "关闭主题"
+
+#: app/routes/thread-new.tsx
+msgid "关闭发布主题"
+msgstr "关闭发布主题"
+
+#: app/components/dock/composer-dock.tsx
+#: app/routes/thread-new.tsx
+msgid "内容"
+msgstr "内容"
+
+#: app/components/forum/rows.tsx
+msgid "最后回复"
+msgstr "最后回复"
+
+#: app/components/dock/composer-dock.tsx
+msgid "最小化"
+msgstr "最小化"
+
+#: app/lib/home.ts
+msgid "最新"
+msgstr "最新"
+
+#: app/routes/home.tsx
+msgid "最新活跃讨论"
+msgstr "最新活跃讨论"
+
+#: app/lib/home.ts
+msgid "最近回复"
+msgstr "最近回复"
+
 #: app/components/shell/mobile-stage-bar.tsx
+#: app/routes/thread.tsx
 msgid "写下你的回复"
 msgstr "写下你的回复"
 
@@ -61,6 +464,26 @@ msgstr "写回复…"
 msgid "出错了"
 msgstr "出错了"
 
+#: app/components/forum/note-card.tsx
+msgid "分享点什么…"
+msgstr "分享点什么…"
+
+#: app/components/composer/rich-editor.tsx
+msgid "分隔线"
+msgstr "分隔线"
+
+#: app/components/ui/pager.tsx
+msgid "分页"
+msgstr "分页"
+
+#: app/components/palette/command-palette.tsx
+msgid "切换主题"
+msgstr "切换主题"
+
+#: app/components/palette/command-palette.tsx
+msgid "切换主题 · {themeName}"
+msgstr "切换主题 · {themeName}"
+
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "切换版块"
 msgstr "切换版块"
@@ -68,6 +491,132 @@ msgstr "切换版块"
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "切换版块，当前：{categoryName}"
 msgstr "切换版块，当前：{categoryName}"
+
+#: app/lib/format.ts
+msgid "刚刚"
+msgstr "刚刚"
+
+#: app/components/dock/composer-dock.tsx
+msgid "创作抽屉"
+msgstr "创作抽屉"
+
+#: app/routes/home.tsx
+msgid "创建版块"
+msgstr "创建版块"
+
+#: app/components/forum/post.tsx
+msgid "删除"
+msgstr "删除"
+
+#: app/routes/thread.tsx
+msgid "删除主题"
+msgstr "删除主题"
+
+#: app/components/composer/rich-editor.tsx
+msgid "删除列"
+msgstr "删除列"
+
+#: app/components/composer/rich-editor.tsx
+msgid "删除线"
+msgstr "删除线"
+
+#: app/components/composer/rich-editor.tsx
+msgid "删除行"
+msgstr "删除行"
+
+#: app/components/composer/rich-editor.tsx
+msgid "删除表格"
+msgstr "删除表格"
+
+#: app/routes/thread.tsx
+msgid "删除这个主题？"
+msgstr "删除这个主题？"
+
+#: app/components/forum/post.tsx
+msgid "删除这条回复？"
+msgstr "删除这条回复？"
+
+#: app/components/palette/command-palette.tsx
+msgid "前往"
+msgstr "前往"
+
+#: app/routes/user.tsx
+msgid "加入于"
+msgstr "加入于"
+
+#: app/components/forum/post.tsx
+#: app/components/palette/command-palette.tsx
+#: app/slots/forum-notifications/bell.tsx
+msgid "加载中…"
+msgstr "加载中…"
+
+#: app/components/forum/post.tsx
+msgid "加载失败，请重试。"
+msgstr "加载失败，请重试。"
+
+#: app/routes/search.tsx
+#: app/routes/user.tsx
+msgctxt "tab: notes"
+msgid "动态"
+msgstr "动态"
+
+#: app/components/forum/note-card.tsx
+msgid "动态内容"
+msgstr "动态内容"
+
+#: app/routes/home.tsx
+msgid "动态暂时不可用。"
+msgstr "动态暂时不可用。"
+
+#: app/components/dock/composer-dock.tsx
+msgid "半屏"
+msgstr "半屏"
+
+#: app/slots/forum-moderation/report-button.tsx
+msgid "原因"
+msgstr "原因"
+
+#: app/slots/forum-mail/mail-settings.tsx
+msgid "发到 <0>{email}</0>"
+msgstr "发到 <0>{email}</0>"
+
+#: app/routes/thread.tsx
+msgid "发到版块"
+msgstr "发到版块"
+
+#: app/components/forum/note-card.tsx
+msgid "发动态"
+msgstr "发动态"
+
+#: app/components/palette/command-palette.tsx
+msgid "发布"
+msgstr "发布"
+
+#: app/components/dock/composer-dock.tsx
+#: app/components/forum/note-card.tsx
+#: app/routes/thread-new.tsx
+msgctxt "verb"
+msgid "发布"
+msgstr "发布"
+
+#: app/components/dock/composer-dock.tsx
+#: app/routes/category.tsx
+#: app/routes/home.tsx
+#: app/routes/thread-new.tsx
+msgid "发布主题"
+msgstr "发布主题"
+
+#: app/routes/thread-new.tsx
+msgid "发布到「{categoryName}」"
+msgstr "发布到「{categoryName}」"
+
+#: app/components/palette/command-palette.tsx
+msgid "发布新主题 · {name}"
+msgstr "发布新主题 · {name}"
+
+#: app/routes/user.tsx
+msgid "发布的内容"
+msgstr "发布的内容"
 
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "发帖"
@@ -78,61 +627,682 @@ msgid "发生了意外错误。"
 msgstr "发生了意外错误。"
 
 #: app/components/shell/mobile-stage-bar.tsx
+#: app/routes/thread.tsx
 msgid "发表回复"
 msgstr "发表回复"
 
+#: app/components/composer/rich-editor.tsx
+#: app/components/forum/post.tsx
 #: app/components/shell/mobile-stage-bar.tsx
+#: app/components/ui/overlay.tsx
+#: app/routes/home.tsx
+#: app/routes/thread-new.tsx
+#: app/routes/thread.tsx
+#: app/routes/user.tsx
+#: app/slots/forum-moderation/report-button.tsx
 msgid "取消"
 msgstr "取消"
+
+#: app/slots/forum-reactions/reactions.tsx
+msgid "取消「有用」"
+msgstr "取消「有用」"
+
+#: app/slots/forum-follows/follow.tsx
+msgid "取消关注"
+msgstr "取消关注"
+
+#: app/slots/forum-follows/follow.tsx
+msgid "取消关注版块"
+msgstr "取消关注版块"
+
+#: app/slots/forum-reactions/reactions.tsx
+msgid "取消点赞"
+msgstr "取消点赞"
+
+#: app/routes/thread.tsx
+msgid "取消置顶"
+msgstr "取消置顶"
+
+#: app/slots/forum-solved/solved.tsx
+msgid "取消采纳"
+msgstr "取消采纳"
+
+#: app/routes/home.tsx
+msgid "名称"
+msgstr "名称"
+
+#: app/components/composer/composer.tsx
+msgid "含表格或图片，切到富文本会改变它们。"
+msgstr "含表格或图片，切到富文本会改变它们。"
+
+#: app/components/palette/command-palette.tsx
+msgid "命令"
+msgstr "命令"
+
+#: app/components/palette/command-palette.tsx
+msgid "命令面板"
+msgstr "命令面板"
 
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "回到顶部"
 msgstr "回到顶部"
 
+#: app/components/forum/rows.tsx
+#: app/routes/search.tsx
+#: app/routes/thread.tsx
+msgctxt "noun"
+msgid "回复"
+msgstr "回复"
+
+#: app/components/forum/post.tsx
+msgctxt "replying to a user"
+msgid "回复"
+msgstr "回复"
+
+#: app/components/dock/composer-dock.tsx
+#: app/components/forum/note-card.tsx
+#: app/components/forum/post.tsx
+#: app/routes/thread.tsx
+msgctxt "verb"
+msgid "回复"
+msgstr "回复"
+
+#: app/components/dock/composer-dock.tsx
+msgid "回复 · {replyTo}"
+msgstr "回复 · {replyTo}"
+
+#: app/components/forum/post.tsx
+msgid "回复 {targetName}"
+msgstr "回复 {targetName}"
+
+#: app/routes/thread.tsx
+msgid "回复（R）"
+msgstr "回复（R）"
+
+#: app/components/dock/composer-dock.tsx
 #: app/components/shell/mobile-stage-bar.tsx
+#: app/routes/thread.tsx
 msgid "回复内容"
 msgstr "回复内容"
 
+#: app/components/forum/post.tsx
+msgid "回复第 {number} 楼"
+msgstr "回复第 {number} 楼"
+
+#: app/components/ui/lightbox.tsx
+#: app/slots/forum-attachments/attachments.tsx
+#: app/slots/forum-attachments/shared.ts
+msgid "图片"
+msgstr "图片"
+
+#: app/slots/forum-attachments/avatar.tsx
+msgid "图片太大了，头像不能超过 {maxSize}。"
+msgstr "图片太大了，头像不能超过 {maxSize}。"
+
+#: app/components/composer/rich-editor.tsx
+msgid "在下方插入行"
+msgstr "在下方插入行"
+
+#: app/components/composer/rich-editor.tsx
+msgid "在右侧插入列"
+msgstr "在右侧插入列"
+
+#: app/routes/home.tsx
+msgid "在用户主页或版块页点「关注」，就能在这里看到那里的新帖。"
+msgstr "在用户主页或版块页点「关注」，就能在这里看到那里的新帖。"
+
+#: app/slots/forum-moderation/report-button.tsx
+msgid "垃圾广告或恶意推广"
+msgstr "垃圾广告或恶意推广"
+
+#: app/routes/moderation.tsx
+msgid "处理举报"
+msgstr "处理举报"
+
+#: app/routes/moderation.tsx
+msgid "处理备注"
+msgstr "处理备注"
+
+#: app/routes/moderation.tsx
+msgid "处理并删除主题"
+msgstr "处理并删除主题"
+
+#: app/routes/moderation.tsx
+msgid "处理并删除内容"
+msgstr "处理并删除内容"
+
+#: app/routes/moderation.tsx
+msgid "备注（可选）"
+msgstr "备注（可选）"
+
+#: app/components/forum/post.tsx
+msgid "复制本楼链接"
+msgstr "复制本楼链接"
+
+#: app/routes/thread.tsx
+msgid "复制短链"
+msgstr "复制短链"
+
+#: app/components/forum/post.tsx
+msgid "复制链接"
+msgstr "复制链接"
+
+#: app/slots/forum-attachments/avatar.tsx
+msgid "头像"
+msgstr "头像"
+
 #: app/components/shell/user-menu.tsx
+#: app/routes/forum-stage.tsx
+#: app/routes/moderation.tsx
 msgid "审核"
 msgstr "审核"
 
-#: app/components/shell/user-menu.tsx
+#: app/routes/moderation.tsx
+msgid "审核功能未启用"
+msgstr "审核功能未启用"
+
+#: app/routes/moderation.tsx
+msgid "审核日志"
+msgstr "审核日志"
+
+#: app/routes/moderation.tsx
+msgid "审核视图"
+msgstr "审核视图"
+
+#: app/routes/moderation.tsx
+msgid "审核队列"
+msgstr "审核队列"
+
+#: app/components/composer/composer.tsx
+msgid "富文本"
+msgstr "富文本"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "封禁原因"
+msgstr "封禁原因"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "封禁原因："
+msgstr "封禁原因："
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "封禁时长"
+msgstr "封禁时长"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "封禁至"
+msgstr "封禁至"
+
+#: app/routes/moderation.tsx
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "封禁账号"
+msgstr "封禁账号"
+
+#: app/components/composer/rich-editor.tsx
+msgid "小标题"
+msgstr "小标题"
+
+#: app/components/dock/composer-dock.tsx
+msgid "展开"
+msgstr "展开"
+
+#: app/components/stage/stage.tsx
+msgid "展开主题列表（[）"
+msgstr "展开主题列表（[）"
+
+#: app/routes/forum-stage.tsx
+msgid "展开侧栏（\\）"
+msgstr "展开侧栏（\\）"
+
+#: app/components/forum/note-card.tsx
+msgid "展开全文"
+msgstr "展开全文"
+
+#: app/components/forum/post.tsx
+msgid "展开剩余 {hidden} 条回复"
+msgstr "展开剩余 {hidden} 条回复"
+
+#: app/slots/forum-moderation/report-button.tsx
+msgid "已举报"
+msgstr "已举报"
+
+#: app/slots/forum-follows/follow.tsx
+msgid "已关注"
+msgstr "已关注"
+
+#: app/routes/moderation.tsx
+msgid "已处理"
+msgstr "已处理"
+
+#: app/routes/thread.tsx
+msgid "已复制短链"
+msgstr "已复制短链"
+
+#: app/components/forum/post.tsx
+msgid "已复制链接"
+msgstr "已复制链接"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "已封禁"
+msgstr "已封禁"
+
+#: app/components/forum/post.tsx
+msgid "已编辑"
+msgstr "已编辑"
+
+#: app/slots/forum-solved/solved.tsx
+msgid "已解决"
+msgstr "已解决"
+
+#: app/slots/forum-solved/solved.tsx
+msgid "已采纳的答案"
+msgstr "已采纳的答案"
+
+#: app/components/forum/rows.tsx
+msgid "已锁定"
+msgstr "已锁定"
+
+#: app/routes/moderation.tsx
+msgid "已驳回"
+msgstr "已驳回"
+
+#: app/components/forum/rows.tsx
+#: app/routes/home.tsx
+msgid "帖子"
+msgstr "帖子"
+
+#: app/routes/moderation.tsx
+msgid "帖子举报"
+msgstr "帖子举报"
+
+#: app/components/composer/rich-editor.tsx
+msgid "引用"
+msgstr "引用"
+
+#: app/routes/moderation.tsx
+msgid "当前筛选下没有举报记录"
+msgstr "当前筛选下没有举报记录"
+
+#: app/routes/moderation.tsx
+msgid "待处理"
+msgstr "待处理"
+
+#: app/slots/forum-moderation/report-button.tsx
+msgid "恶意灌水或偏离主题"
+msgstr "恶意灌水或偏离主题"
+
+#: app/lib/roles.ts
+#: app/routes/home.tsx
 msgid "成员"
 msgstr "成员"
 
+#: app/routes/user.tsx
+msgid "我"
+msgstr "我"
+
+#: app/routes/thread.tsx
+msgid "所有回复会一并删除。"
+msgstr "所有回复会一并删除。"
+
+#: app/components/palette/command-palette.tsx
+msgid "执行"
+msgstr "执行"
+
+#: app/components/hover/hover-cards.tsx
+msgid "指向第 {floor} 楼"
+msgstr "指向第 {floor} 楼"
+
+#: app/routes/search.tsx
+msgid "按版块筛选"
+msgstr "按版块筛选"
+
+#: app/routes/home.tsx
+msgid "排序"
+msgstr "排序"
+
+#: app/routes/moderation.tsx
+#: app/slots/forum-moderation/report-button.tsx
+msgid "提交举报"
+msgstr "提交举报"
+
+#: app/slots/forum-mentions/editor.ts
+msgid "提到的人"
+msgstr "提到的人"
+
+#: app/components/composer/rich-editor.tsx
+msgid "插入表格"
+msgstr "插入表格"
+
 #: app/components/shell/site-footer.tsx
+#: app/routes/search.tsx
 msgid "搜索"
 msgstr "搜索"
+
+#: app/routes/search.tsx
+msgid "搜索“{query}”"
+msgstr "搜索“{query}”"
+
+#: app/components/palette/command-palette.tsx
+msgid "搜索主题 · > 命令 · # 版块"
+msgstr "搜索主题 · > 命令 · # 版块"
+
+#: app/components/palette/command-palette.tsx
+msgid "搜索主题、版块或输入命令"
+msgstr "搜索主题、版块或输入命令"
+
+#: app/routes/search.tsx
+msgid "搜索主题或回复…"
+msgstr "搜索主题或回复…"
+
+#: app/routes/search.tsx
+msgid "搜索关键词"
+msgstr "搜索关键词"
+
+#: app/routes/search.tsx
+msgid "搜索功能未启用"
+msgstr "搜索功能未启用"
+
+#: app/components/palette/palette-trigger.tsx
+msgid "搜索或输入命令"
+msgstr "搜索或输入命令"
+
+#: app/routes/search.tsx
+msgid "搜索结果"
+msgstr "搜索结果"
+
+#: app/components/composer/rich-editor.tsx
+msgid "撤销"
+msgstr "撤销"
+
+#: app/slots/forum-attachments/avatar.tsx
+#: app/slots/forum-attachments/shared.ts
+#: app/slots/forum-follows/follow.tsx
+#: app/slots/forum-mail/mail-settings.tsx
+msgid "操作失败，请稍后再试。"
+msgstr "操作失败，请稍后再试。"
+
+#: app/components/composer/composer.tsx
+msgid "支持 Markdown"
+msgstr "支持 Markdown"
+
+#: app/components/forum/note-card.tsx
+#: app/components/forum/post.tsx
+msgid "收起"
+msgstr "收起"
+
+#: app/components/stage/stage.tsx
+msgid "收起主题列表（[）"
+msgstr "收起主题列表（[）"
+
+#: app/routes/forum-stage.tsx
+msgid "收起侧栏（\\）"
+msgstr "收起侧栏（\\）"
+
+#: app/slots/forum-attachments/shared.ts
+msgid "文件太大了。"
+msgstr "文件太大了。"
+
+#: app/components/composer/rich-editor.tsx
+msgid "斜体"
+msgstr "斜体"
+
+#: app/routes/home.tsx
+msgid "新加入"
+msgstr "新加入"
+
+#: app/lib/home.ts
+msgid "新发布"
+msgstr "新发布"
+
+#: app/routes/forum-stage.tsx
+#: app/routes/home.tsx
+msgid "新建版块"
+msgstr "新建版块"
+
+#: app/components/composer/rich-editor.tsx
+msgid "无序列表"
+msgstr "无序列表"
+
+#: app/routes/user.tsx
+msgid "昵称"
+msgstr "昵称"
+
+#: app/routes/moderation.tsx
+msgid "暂无审核日志"
+msgstr "暂无审核日志"
+
+#: app/routes/notifications.tsx
+msgid "暂时还没有收到通知"
+msgstr "暂时还没有收到通知"
+
+#: app/slots/forum-notifications/bell.tsx
+msgid "暂时还没有收到通知。"
+msgstr "暂时还没有收到通知。"
 
 #: app/components/shell/theme-picker.tsx
 msgid "暗色"
 msgstr "暗色"
 
+#: app/slots/forum-attachments/avatar.tsx
+msgid "更换头像"
+msgstr "更换头像"
+
+#: app/slots/forum-follows/follow.tsx
+msgid "有人关注我时通知我"
+msgstr "有人关注我时通知我"
+
+#: app/slots/forum-mail/mail-settings.tsx
+msgid "有人回复或提到我时发邮件给我"
+msgstr "有人回复或提到我时发邮件给我"
+
+#: app/components/composer/rich-editor.tsx
+msgid "有序列表"
+msgstr "有序列表"
+
+#: app/components/forum/rows.tsx
+msgid "有未读内容"
+msgstr "有未读内容"
+
+#: app/slots/forum-reactions/reactions.tsx
+msgid "有用"
+msgstr "有用"
+
 #: app/components/shell/user-menu.tsx
 msgid "未登录"
 msgstr "未登录"
 
-#: app/components/shell/user-menu.tsx
+#: app/routes/thread.tsx
+msgid "未知的操作。"
+msgstr "未知的操作。"
+
+#: app/routes/notifications.tsx
+#: app/slots/forum-notifications/bell.tsx
+msgid "未读"
+msgstr "未读"
+
+#: app/routes/notifications.tsx
+msgid "未读通知 · {total}"
+msgstr "未读通知 · {total}"
+
+#: app/components/forum/note-card.tsx
+msgid "条回复"
+msgstr "条回复"
+
+#: app/routes/category.tsx
+msgid "来发布第一个主题吧。"
+msgstr "来发布第一个主题吧。"
+
+#: app/slots/forum-mentions/editor.ts
+msgid "查找中…"
+msgstr "查找中…"
+
+#: app/routes/notifications.tsx
+#: app/slots/forum-notifications/bell.tsx
+msgid "查看全部通知"
+msgstr "查看全部通知"
+
+#: app/routes/notifications.tsx
+msgid "查看帖子"
+msgstr "查看帖子"
+
+#: app/routes/moderation.tsx
+msgid "查看目标"
+msgstr "查看目标"
+
+#: app/routes/notifications.tsx
+msgid "标为已读"
+msgstr "标为已读"
+
+#: app/routes/moderation.tsx
+msgid "标记已处理"
+msgstr "标记已处理"
+
+#: app/routes/home.tsx
+msgid "标识"
+msgstr "标识"
+
+#: app/components/composer/rich-editor.tsx
+#: app/components/dock/composer-dock.tsx
+#: app/routes/thread-new.tsx
+#: app/routes/thread.tsx
+msgid "标题"
+msgstr "标题"
+
+#: app/components/composer/rich-editor.tsx
+msgid "格式"
+msgstr "格式"
+
+#: app/components/forum/post.tsx
+msgid "楼主"
+msgstr "楼主"
+
+#: app/slots/forum-outline/outline.tsx
+msgid "楼层"
+msgstr "楼层"
+
+#: app/routes/thread-shortlink.ts
+msgid "楼层不存在。"
+msgstr "楼层不存在。"
+
+#: app/slots/forum-outline/outline.tsx
+msgid "楼层时间线"
+msgstr "楼层时间线"
+
+#: app/components/palette/command-palette.tsx
+#: app/routes/forum-stage.tsx
+#: app/routes/home.tsx
+msgid "概览"
+msgstr "概览"
+
+#: app/routes/home.tsx
+msgid "欢迎来到 {siteName}"
+msgstr "欢迎来到 {siteName}"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "正常"
+msgstr "正常"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "永久封禁"
+msgstr "永久封禁"
+
+#: app/components/palette/command-palette.tsx
+msgid "没有匹配的内容"
+msgstr "没有匹配的内容"
+
+#: app/routes/moderation.tsx
+msgid "没有待处理的举报"
+msgstr "没有待处理的举报"
+
+#: app/routes/search.tsx
+msgid "没有找到匹配的内容"
+msgstr "没有找到匹配的内容"
+
+#: app/slots/forum-mentions/editor.ts
+msgid "没有找到这个人"
+msgstr "没有找到这个人"
+
+#: app/routes/notifications.tsx
+msgid "没有未读通知"
+msgstr "没有未读通知"
+
+#: app/routes/moderation.tsx
+msgid "没有权限访问审核队列"
+msgstr "没有权限访问审核队列"
+
+#: app/lib/roles.ts
 msgid "游客"
 msgstr "游客"
 
-#: app/components/shell/user-menu.tsx
+#: app/slots/forum-reactions/reactions.tsx
+msgid "点赞"
+msgstr "点赞"
+
+#: app/lib/home.ts
+msgid "热门"
+msgstr "热门"
+
+#: app/lib/roles.ts
 msgid "版主"
 msgstr "版主"
 
+#: app/components/dock/composer-dock.tsx
+#: app/components/palette/command-palette.tsx
 #: app/components/shell/site-footer.tsx
+#: app/routes/forum-stage.tsx
+#: app/routes/home.tsx
+#: app/routes/thread.tsx
 msgid "版块"
 msgstr "版块"
+
+#: app/routes/forum-stage.tsx
+msgid "版块导航"
+msgstr "版块导航"
 
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "版块快捷栏"
 msgstr "版块快捷栏"
 
+#: app/routes/user.tsx
+msgid "用户名"
+msgstr "用户名"
+
+#: app/routes/moderation.tsx
+msgid "由 <0>{resolverName}</0> 处理"
+msgstr "由 <0>{resolverName}</0> 处理"
+
+#: app/routes/moderation.tsx
+msgid "由 <0>{resolverName}</0> 驳回"
+msgstr "由 <0>{resolverName}</0> 驳回"
+
+#: app/routes/moderation.tsx
+msgid "由管理人员处理"
+msgstr "由管理人员处理"
+
+#: app/routes/moderation.tsx
+msgid "由管理人员驳回"
+msgstr "由管理人员驳回"
+
+#: app/routes/home.tsx
+msgid "留空则按名称生成"
+msgstr "留空则按名称生成"
+
+#: app/components/palette/command-palette.tsx
 #: app/components/shell/mobile-stage-bar.tsx
 #: app/components/shell/user-menu.tsx
+#: app/routes/moderation.tsx
+#: app/routes/notifications.tsx
+#: app/routes/thread.tsx
 msgid "登录"
 msgstr "登录"
+
+#: app/routes/thread.tsx
+msgid "登录后参与讨论。"
+msgstr "登录后参与讨论。"
+
+#: app/routes/category.tsx
+msgid "登录后发布"
+msgstr "登录后发布"
 
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "登录后回复"
@@ -146,19 +1316,170 @@ msgstr "登录服务暂时不可用，请稍后再试。"
 msgid "登录没有完成，请重试。"
 msgstr "登录没有完成，请重试。"
 
+#: app/slots/forum-mail/mail-settings.tsx
+msgid "登录账号没有已验证的邮箱，收不到邮件提醒。"
+msgstr "登录账号没有已验证的邮箱，收不到邮件提醒。"
+
+#: app/components/forum/note-card.tsx
+msgctxt "screen-reader suffix after a note's time"
+msgid "的动态"
+msgstr "的动态"
+
+#: app/routes/moderation.tsx
+msgid "目标用户："
+msgstr "目标用户："
+
+#: app/components/composer/rich-editor.tsx
+msgid "确定"
+msgstr "确定"
+
+#: app/routes/home.tsx
+msgid "社区"
+msgstr "社区"
+
+#: app/routes/thread.tsx
+msgid "移到版块"
+msgstr "移到版块"
+
+#: app/routes/thread.tsx
+msgid "移动"
+msgstr "移动"
+
+#: app/routes/thread.tsx
+msgid "移动到其他版块"
+msgstr "移动到其他版块"
+
+#: app/slots/forum-attachments/avatar.tsx
+msgid "移除"
+msgstr "移除"
+
+#: app/components/composer/rich-editor.tsx
+msgid "移除链接"
+msgstr "移除链接"
+
 #: app/components/shell/site-footer.tsx
 msgid "站内"
 msgstr "站内"
 
-#: app/components/shell/user-menu.tsx
+#: app/components/forum/post.tsx
+msgid "第 {number} 楼的操作"
+msgstr "第 {number} 楼的操作"
+
+#: app/components/forum/post.tsx
+msgid "第 {number} 楼的链接"
+msgstr "第 {number} 楼的链接"
+
+#: app/components/forum/post.tsx
+msgid "第 {replyNumber} 楼的操作"
+msgstr "第 {replyNumber} 楼的操作"
+
+#: app/routes/home.tsx
+msgid "简介"
+msgstr "简介"
+
+#: app/lib/roles.ts
 msgid "管理员"
 msgstr "管理员"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "管理员不可封禁"
+msgstr "管理员不可封禁"
+
+#: app/slots/forum-follows/follow.tsx
+msgid "粉丝"
+msgstr "粉丝"
+
+#: app/components/composer/rich-editor.tsx
+msgid "粗体"
+msgstr "粗体"
+
+#: app/routes/home.tsx
+msgid "综合讨论"
+msgstr "综合讨论"
+
+#: app/components/forum/post.tsx
+msgid "编辑"
+msgstr "编辑"
+
+#: app/components/forum/post.tsx
+msgid "编辑于 {editedAt}"
+msgstr "编辑于 {editedAt}"
+
+#: app/components/forum/post.tsx
+msgid "编辑于 {replyEditedAt}"
+msgstr "编辑于 {replyEditedAt}"
+
+#: app/components/forum/post.tsx
+msgid "编辑内容"
+msgstr "编辑内容"
+
+#: app/routes/user.tsx
+msgid "编辑资料"
+msgstr "编辑资料"
+
+#: app/slots/forum-attachments/shared.ts
+#: app/slots/forum-follows/follow.tsx
+#: app/slots/forum-mail/mail-settings.tsx
+msgid "网络错误，请稍后再试。"
+msgstr "网络错误，请稍后再试。"
+
+#: app/components/forum/rows.tsx
+msgid "置顶"
+msgstr "置顶"
+
+#: app/routes/thread.tsx
+msgctxt "menu action"
+msgid "置顶"
+msgstr "置顶"
+
+#: app/components/composer/rich-editor.tsx
+msgid "行内代码"
+msgstr "行内代码"
+
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "解封备注（可选）"
+msgstr "解封备注（可选）"
+
+#: app/routes/moderation.tsx
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "解除封禁"
+msgstr "解除封禁"
+
+#: app/routes/thread.tsx
+msgid "解除锁定"
+msgstr "解除锁定"
+
+#: app/routes/home.tsx
+msgid "讨论"
+msgstr "讨论"
+
+#: app/lib/forum-api.server.ts
+msgid "论坛服务暂时不可用"
+msgstr "论坛服务暂时不可用"
 
 #: app/components/shell/locale-switcher.tsx
 #: app/components/shell/user-menu.tsx
 msgid "语言"
 msgstr "语言"
 
+#: app/routes/moderation.tsx
+#: app/routes/notifications.tsx
+msgid "请先登录"
+msgstr "请先登录"
+
+#: app/routes/ext-action.ts
+msgid "请求内容无法解析。"
+msgstr "请求内容无法解析。"
+
+#: app/slots/forum-attachments/avatar.tsx
+msgid "请选择图片文件。"
+msgstr "请选择图片文件。"
+
+#: app/slots/forum-attachments/upload.tsx
+msgid "读取文件失败。"
+msgstr "读取文件失败。"
+
+#: app/components/palette/command-palette.tsx
 #: app/components/shell/user-menu.tsx
 msgid "账号"
 msgstr "账号"
@@ -167,6 +1488,10 @@ msgstr "账号"
 msgid "账号：{name}"
 msgstr "账号：{name}"
 
+#: app/slots/forum-moderation/user-ban-tab.tsx
+msgid "账号状态"
+msgstr "账号状态"
+
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "跳到最新回复"
 msgstr "跳到最新回复"
@@ -174,6 +1499,22 @@ msgstr "跳到最新回复"
 #: app/components/shell/shell.tsx
 msgid "跳到正文"
 msgstr "跳到正文"
+
+#: app/routes/thread.tsx
+msgid "转为主题帖"
+msgstr "转为主题帖"
+
+#: app/routes/thread.tsx
+msgid "转为主题帖后，正文和回复都会保留。"
+msgstr "转为主题帖后，正文和回复都会保留。"
+
+#: app/routes/search.tsx
+msgid "输入关键词开始搜索"
+msgstr "输入关键词开始搜索"
+
+#: app/routes/home.tsx
+msgid "近 {days} 天活跃"
+msgstr "近 {days} 天活跃"
 
 #: app/lib/stage.ts
 msgid "返回"
@@ -196,6 +1537,49 @@ msgstr "返回结果"
 msgid "返回首页"
 msgstr "返回首页"
 
+#: app/routes/home.tsx
+msgid "还没有关注的内容"
+msgstr "还没有关注的内容"
+
+#: app/routes/category.tsx
+msgid "还没有动态"
+msgstr "还没有动态"
+
+#: app/routes/user.tsx
+msgid "还没有发布过内容"
+msgstr "还没有发布过内容"
+
+#: app/routes/forum-stage.tsx
+#: app/routes/home.tsx
+msgid "还没有版块"
+msgstr "还没有版块"
+
+#: app/routes/home.tsx
+msgid "还没有讨论"
+msgstr "还没有讨论"
+
+#: app/routes/category.tsx
+#: app/routes/thread.tsx
+#: app/routes/user.tsx
+msgid "这一页没有内容"
+msgstr "这一页没有内容"
+
+#: app/routes/category.tsx
+msgid "这个版块还没有主题"
+msgstr "这个版块还没有主题"
+
+#: app/slots/forum-attachments/avatar.tsx
+msgid "这张图片无法读取。"
+msgstr "这张图片无法读取。"
+
+#: app/components/forum/post.tsx
+msgid "这条回复已被删除。"
+msgstr "这条回复已被删除。"
+
+#: app/slots/forum-moderation/report-button.tsx
+msgid "违法或不当内容"
+msgstr "违法或不当内容"
+
 #: app/components/shell/user-menu.tsx
 msgid "退出"
 msgstr "退出"
@@ -204,6 +1588,70 @@ msgstr "退出"
 msgid "退出所有设备"
 msgstr "退出所有设备"
 
+#: app/components/palette/command-palette.tsx
+msgid "选择"
+msgstr "选择"
+
+#: app/routes/home.tsx
+msgid "选择版块"
+msgstr "选择版块"
+
+#: app/routes/forum-stage.tsx
+#: app/routes/notifications.tsx
+#: app/slots/forum-notifications/bell.tsx
+msgid "通知"
+msgstr "通知"
+
+#: app/slots/forum-notifications/bell.tsx
+msgid "通知（{unread} 条未读）"
+msgstr "通知（{unread} 条未读）"
+
+#: app/routes/notifications.tsx
+msgid "通知功能未启用"
+msgstr "通知功能未启用"
+
+#: app/slots/forum-notifications/bell.tsx
+msgid "通知暂时无法加载。"
+msgstr "通知暂时无法加载。"
+
+#: app/routes/notifications.tsx
+msgid "通知筛选"
+msgstr "通知筛选"
+
+#: app/slots/forum-mail/mail-settings.tsx
+msgid "邮件提醒"
+msgstr "邮件提醒"
+
+#: app/slots/forum-solved/solved.tsx
+msgid "采纳为答案"
+msgstr "采纳为答案"
+
+#: app/components/composer/rich-editor.tsx
+msgid "重做"
+msgstr "重做"
+
+#: app/components/composer/rich-editor.tsx
+msgid "链接"
+msgstr "链接"
+
+#: app/components/composer/rich-editor.tsx
+msgid "链接地址"
+msgstr "链接地址"
+
+#: app/components/hover/hover-cards.tsx
+msgid "链接预览"
+msgstr "链接预览"
+
+#: app/routes/thread.tsx
+msgctxt "menu action"
+msgid "锁定"
+msgstr "锁定"
+
+#: app/slots/forum-attachments/attachments.tsx
+#: app/slots/forum-attachments/upload.tsx
+msgid "附件"
+msgstr "附件"
+
 #: app/components/shell/site-footer.tsx
 msgid "页脚链接"
 msgstr "页脚链接"
@@ -211,3 +1659,15 @@ msgstr "页脚链接"
 #: app/root.tsx
 msgid "页面不存在。"
 msgstr "页面不存在。"
+
+#: app/routes/home.tsx
+msgid "首页内容切换"
+msgstr "首页内容切换"
+
+#: app/routes/moderation.tsx
+msgid "驳回"
+msgstr "驳回"
+
+#: app/routes/moderation.tsx
+msgid "驳回举报"
+msgstr "驳回举报"

@@ -2,6 +2,7 @@ import type { UserProfileDto } from '@pluxum/domain'
 import { ImageUp } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useRevalidator } from 'react-router'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import { Button } from '../../components/ui/button'
 import { Panel, SectionLabel } from '../../components/ui/display'
@@ -48,6 +49,7 @@ async function squareAvatar(file: File): Promise<Blob> {
 
 /** `user.profile.tabs`: changing or removing the avatar, for whoever may edit the profile. */
 export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
+	const { t, i18n } = useLingui()
 	const input = useRef<HTMLInputElement>(null)
 	const revalidator = useRevalidator()
 	const [busy, setBusy] = useState<'upload' | 'remove' | null>(null)
@@ -56,6 +58,7 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 	if (!profile.can.edit) return null
 	const hasAvatar = avatarUrlOf(profile.user) !== undefined
 	const userId = profile.user.id
+	const maxSize = formatSize(limits.avatarMaxBytes)
 
 	async function run(kind: 'upload' | 'remove', work: () => Promise<string | null>) {
 		setError(null)
@@ -65,7 +68,7 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 			if (failure === null) await revalidator.revalidate()
 			else setError(failure)
 		} catch {
-			setError(kind === 'upload' ? '这张图片无法读取。' : '操作失败，请稍后再试。')
+			setError(kind === 'upload' ? t`这张图片无法读取。` : t`操作失败，请稍后再试。`)
 		} finally {
 			setBusy(null)
 		}
@@ -73,12 +76,12 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 
 	function upload(file: File) {
 		void run('upload', async () => {
-			if (!file.type.startsWith('image/')) return '请选择图片文件。'
+			if (!file.type.startsWith('image/')) return t`请选择图片文件。`
 			const image = await squareAvatar(file)
 			if (image.size > limits.avatarMaxBytes) {
-				return `图片太大了，头像不能超过 ${formatSize(limits.avatarMaxBytes)}。`
+				return t`图片太大了，头像不能超过 ${maxSize}。`
 			}
-			const result = await callAction('upload-avatar', {
+			const result = await callAction(i18n, 'upload-avatar', {
 				userId,
 				filename: `avatar.${image.type === 'image/webp' ? 'webp' : 'png'}`,
 				contentType: image.type,
@@ -90,7 +93,7 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 
 	function remove() {
 		void run('remove', async () => {
-			const result = await callAction('delete-avatar', { userId })
+			const result = await callAction(i18n, 'delete-avatar', { userId })
 			return result.ok ? null : result.error
 		})
 	}
@@ -98,10 +101,14 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 	return (
 		<section aria-labelledby="avatar-heading">
 			<SectionLabel>
-				<span id="avatar-heading">头像</span>
+				<span id="avatar-heading">
+					<Trans>头像</Trans>
+				</span>
 			</SectionLabel>
 			<Panel className="flex flex-wrap items-center gap-3 px-4 py-3">
-				<p className="text-ink-weak min-w-0 flex-1 basis-48 text-meta">PNG、JPEG、WebP 或 GIF</p>
+				<p className="text-ink-weak min-w-0 flex-1 basis-48 text-meta">
+					<Trans>PNG、JPEG、WebP 或 GIF</Trans>
+				</p>
 				<input
 					ref={input}
 					type="file"
@@ -122,7 +129,7 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 							isDisabled={busy !== null}
 							onPress={remove}
 						>
-							移除
+							<Trans>移除</Trans>
 						</Button>
 					)}
 					<Button
@@ -132,7 +139,7 @@ export function AvatarEditor({ profile }: { profile: UserProfileDto }) {
 						onPress={() => input.current?.click()}
 					>
 						<ImageUp aria-hidden />
-						{hasAvatar ? '更换头像' : '上传头像'}
+						{hasAvatar ? t`更换头像` : t`上传头像`}
 					</Button>
 				</div>
 				{error !== null && (

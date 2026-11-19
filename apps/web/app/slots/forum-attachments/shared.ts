@@ -1,5 +1,7 @@
 import type { UserDto } from '@pluxum/domain'
 import { useEffect, useState } from 'react'
+import type { I18n } from '@lingui/core'
+import { t } from '@lingui/core/macro'
 
 export const EXT_ID = 'forum-attachments'
 
@@ -125,7 +127,9 @@ export function base64Of(blob: Blob): Promise<string> {
 			const result = typeof reader.result === 'string' ? reader.result : ''
 			resolve(result.slice(result.indexOf(',') + 1))
 		})
-		reader.addEventListener('error', () => reject(reader.error ?? new Error('读取文件失败')))
+		reader.addEventListener('error', () =>
+			reject(reader.error ?? new Error('Failed to read the file')),
+		)
 		reader.readAsDataURL(blob)
 	})
 }
@@ -138,7 +142,7 @@ export type CallResult =
  * Calls one of the plugin's actions straight through the same-origin API forwarder. Uploads use
  * this instead of a route action: the answer (the new file's link) is needed right here.
  */
-export async function callAction(action: string, input: unknown): Promise<CallResult> {
+export async function callAction(i18n: I18n, action: string, input: unknown): Promise<CallResult> {
 	let response: Response
 	try {
 		response = await fetch(`/api/forum/ext/${EXT_ID}/${action}`, {
@@ -147,7 +151,7 @@ export async function callAction(action: string, input: unknown): Promise<CallRe
 			body: JSON.stringify(input),
 		})
 	} catch {
-		return { ok: false, error: '网络错误，请稍后再试。' }
+		return { ok: false, error: t(i18n)`网络错误，请稍后再试。` }
 	}
 	const body: unknown = await response.json().catch(() => null)
 	if (response.ok) return { ok: true, value: body }
@@ -158,8 +162,8 @@ export async function callAction(action: string, input: unknown): Promise<CallRe
 			typeof error === 'string'
 				? error
 				: response.status === 413
-					? '文件太大了。'
-					: '操作失败，请稍后再试。',
+					? t(i18n)`文件太大了。`
+					: t(i18n)`操作失败，请稍后再试。`,
 	}
 }
 
@@ -192,8 +196,8 @@ export function acceptedFiles(limits: UploadLimits): string {
 		.join(',')
 }
 
-/** "图片、PDF、ZIP" for the allowed document types. */
-export function acceptedLabel(limits: UploadLimits): string {
+/** "图片、PDF和ZIP" (images, PDF and ZIP) for the allowed document types. */
+export function acceptedLabel(i18n: I18n, limits: UploadLimits): string {
 	const names: Readonly<Record<string, string>> = {
 		'application/pdf': 'PDF',
 		'application/zip': 'ZIP',
@@ -202,5 +206,8 @@ export function acceptedLabel(limits: UploadLimits): string {
 		'text/markdown': 'Markdown',
 		'text/csv': 'CSV',
 	}
-	return ['图片', ...limits.documentTypes.map((type) => names[type] ?? type)].join('、')
+	return new Intl.ListFormat(i18n.locale, { type: 'conjunction', style: 'narrow' }).format([
+		t(i18n)`图片`,
+		...limits.documentTypes.map((type) => names[type] ?? type),
+	])
 }

@@ -1,10 +1,16 @@
 import type { PostDto, ThreadDto } from '@pluxum/domain'
+import { I18nProvider } from '@lingui/react'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
+import { createI18n } from '../app/lib/i18n'
+import { loadMessages } from '../app/lib/i18n.server'
 import { AcceptedMark, SolutionPin, SolvedBadge } from '../app/slots/forum-solved/solved'
+
+const zh = createI18n('zh-CN')
+const en = createI18n('en', await loadMessages('en'))
 
 const author = { id: 'u1', handle: 'bob', displayName: 'Bob' }
 
@@ -52,10 +58,21 @@ const SOLVED = {
 	},
 }
 
-const html = (element: ReturnType<typeof createElement>) =>
-	renderToStaticMarkup(createElement(MemoryRouter, { initialEntries: ['/t/1001'] }, element))
+const html = (element: ReturnType<typeof createElement>, i18n = zh) =>
+	renderToStaticMarkup(
+		createElement(
+			I18nProvider,
+			{ i18n },
+			createElement(MemoryRouter, { initialEntries: ['/t/1001'] }, element),
+		),
+	)
 
 describe('forum-solved slots', () => {
+	it('speaks the interface language', () => {
+		expect(html(createElement(SolvedBadge, { thread: thread(SOLVED) }), en)).toContain('Solved')
+		expect(html(createElement(AcceptedMark, { post: post(3, SOLVED) }), en)).not.toContain('已采纳')
+	})
+
 	it('badges solved threads only', () => {
 		expect(html(createElement(SolvedBadge, { thread: thread(SOLVED) }))).toContain('已解决')
 		expect(html(createElement(SolvedBadge, { thread: thread() }))).toBe('')

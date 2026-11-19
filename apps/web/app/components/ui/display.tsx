@@ -1,6 +1,7 @@
 import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useState, useSyncExternalStore } from 'react'
+import { useLingui } from '@lingui/react/macro'
 
 import { formatDateTime, formatHumanTime } from '../../lib/format'
 import { StageLink } from '../stage/stage'
@@ -126,16 +127,17 @@ function subscribeToClock(listener: () => void) {
 
 /** A moment as people say it (`3分钟前`, `3月2日`); hover for the exact minute. */
 export function Timestamp({ iso, className }: { iso: string; className?: string }) {
+	const { i18n } = useLingui()
 	const now = useSyncExternalStore(subscribeToClock, () => clock, Date.now)
 	return (
 		// The server and the browser read the clock at different moments, so their words may differ.
 		<time
 			dateTime={iso}
-			title={formatDateTime(iso)}
+			title={formatDateTime(iso, i18n.locale)}
 			suppressHydrationWarning
 			className={`tabular-nums ${className ?? ''}`}
 		>
-			{formatHumanTime(iso, now)}
+			{formatHumanTime(iso, now, i18n)}
 		</time>
 	)
 }
@@ -148,9 +150,10 @@ export function Crumbs({
 	/** Placement; the default leaves room under a breadcrumb that opens a page. */
 	className?: string
 }) {
+	const { t } = useLingui()
 	return (
 		<nav
-			aria-label="位置"
+			aria-label={t`位置`}
 			className={`text-ink-weak flex min-w-0 items-center gap-1.5 text-meta ${className}`}
 		>
 			{items.map((item, index) => (

@@ -27,6 +27,9 @@ import {
 	Undo2,
 } from 'lucide-react'
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import { composerExtensions, markdownOf } from './markdown'
 
@@ -49,7 +52,7 @@ export function roundTrip(source: string, extra: Extensions = []): string {
 
 type Tool = Readonly<{
 	id: string
-	label: string
+	label: MessageDescriptor
 	icon: LucideIcon
 	run: (editor: Editor) => void
 	/** Whether the format applies at the cursor; tools without it are plain actions. */
@@ -61,28 +64,28 @@ const TOOL_GROUPS: readonly (readonly Tool[])[] = [
 	[
 		{
 			id: 'bold',
-			label: '粗体',
+			label: msg`粗体`,
 			icon: Bold,
 			run: (editor) => editor.chain().focus().toggleBold().run(),
 			active: (editor) => editor.isActive('bold'),
 		},
 		{
 			id: 'italic',
-			label: '斜体',
+			label: msg`斜体`,
 			icon: Italic,
 			run: (editor) => editor.chain().focus().toggleItalic().run(),
 			active: (editor) => editor.isActive('italic'),
 		},
 		{
 			id: 'strike',
-			label: '删除线',
+			label: msg`删除线`,
 			icon: Strikethrough,
 			run: (editor) => editor.chain().focus().toggleStrike().run(),
 			active: (editor) => editor.isActive('strike'),
 		},
 		{
 			id: 'code',
-			label: '行内代码',
+			label: msg`行内代码`,
 			icon: Code,
 			run: (editor) => editor.chain().focus().toggleCode().run(),
 			active: (editor) => editor.isActive('code'),
@@ -91,55 +94,55 @@ const TOOL_GROUPS: readonly (readonly Tool[])[] = [
 	[
 		{
 			id: 'h2',
-			label: '标题',
+			label: msg`标题`,
 			icon: Heading2,
 			run: (editor) => editor.chain().focus().toggleHeading({ level: 2 }).run(),
 			active: (editor) => editor.isActive('heading', { level: 2 }),
 		},
 		{
 			id: 'h3',
-			label: '小标题',
+			label: msg`小标题`,
 			icon: Heading3,
 			run: (editor) => editor.chain().focus().toggleHeading({ level: 3 }).run(),
 			active: (editor) => editor.isActive('heading', { level: 3 }),
 		},
 		{
 			id: 'bullet-list',
-			label: '无序列表',
+			label: msg`无序列表`,
 			icon: List,
 			run: (editor) => editor.chain().focus().toggleBulletList().run(),
 			active: (editor) => editor.isActive('bulletList'),
 		},
 		{
 			id: 'ordered-list',
-			label: '有序列表',
+			label: msg`有序列表`,
 			icon: ListOrdered,
 			run: (editor) => editor.chain().focus().toggleOrderedList().run(),
 			active: (editor) => editor.isActive('orderedList'),
 		},
 		{
 			id: 'blockquote',
-			label: '引用',
+			label: msg`引用`,
 			icon: TextQuote,
 			run: (editor) => editor.chain().focus().toggleBlockquote().run(),
 			active: (editor) => editor.isActive('blockquote'),
 		},
 		{
 			id: 'code-block',
-			label: '代码块',
+			label: msg`代码块`,
 			icon: SquareCode,
 			run: (editor) => editor.chain().focus().toggleCodeBlock().run(),
 			active: (editor) => editor.isActive('codeBlock'),
 		},
 		{
 			id: 'rule',
-			label: '分隔线',
+			label: msg`分隔线`,
 			icon: Minus,
 			run: (editor) => editor.chain().focus().setHorizontalRule().run(),
 		},
 		{
 			id: 'table',
-			label: '插入表格',
+			label: msg`插入表格`,
 			icon: Table,
 			run: (editor) =>
 				editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
@@ -149,14 +152,14 @@ const TOOL_GROUPS: readonly (readonly Tool[])[] = [
 	[
 		{
 			id: 'undo',
-			label: '撤销',
+			label: msg`撤销`,
 			icon: Undo2,
 			run: (editor) => editor.chain().focus().undo().run(),
 			enabled: (editor) => editor.can().undo(),
 		},
 		{
 			id: 'redo',
-			label: '重做',
+			label: msg`重做`,
 			icon: Redo2,
 			run: (editor) => editor.chain().focus().redo().run(),
 			enabled: (editor) => editor.can().redo(),
@@ -168,33 +171,33 @@ const TOOL_GROUPS: readonly (readonly Tool[])[] = [
 const TABLE_TOOLS: readonly Tool[] = [
 	{
 		id: 'row-after',
-		label: '在下方插入行',
+		label: msg`在下方插入行`,
 		icon: BetweenHorizontalEnd,
 		run: (editor) => editor.chain().focus().addRowAfter().run(),
 	},
 	{
 		id: 'column-after',
-		label: '在右侧插入列',
+		label: msg`在右侧插入列`,
 		icon: BetweenVerticalEnd,
 		run: (editor) => editor.chain().focus().addColumnAfter().run(),
 	},
 	{
 		id: 'row-delete',
-		label: '删除行',
+		label: msg`删除行`,
 		icon: TableRowsSplit,
 		run: (editor) => editor.chain().focus().deleteRow().run(),
 		enabled: (editor) => editor.can().deleteRow(),
 	},
 	{
 		id: 'column-delete',
-		label: '删除列',
+		label: msg`删除列`,
 		icon: TableColumnsSplit,
 		run: (editor) => editor.chain().focus().deleteColumn().run(),
 		enabled: (editor) => editor.can().deleteColumn(),
 	},
 	{
 		id: 'table-delete',
-		label: '删除表格',
+		label: msg`删除表格`,
 		icon: Trash2,
 		run: (editor) => editor.chain().focus().deleteTable().run(),
 	},
@@ -284,6 +287,7 @@ export function RichEditor({
 	/** Contributed by running extensions (`composer.editor`); read once, when the editor starts. */
 	extensions?: Extensions
 }) {
+	const { t, i18n } = useLingui()
 	// The editor is created once; these refs let its callbacks reach the latest props.
 	const changed = useRef(onChange)
 	const submit = useRef(onSubmit)
@@ -382,7 +386,7 @@ export function RichEditor({
 
 	return (
 		<div className="composer" style={rowsStyle(rows)}>
-			<div className="composer-toolbar" role="toolbar" aria-label="格式">
+			<div className="composer-toolbar" role="toolbar" aria-label={t`格式`}>
 				{TOOL_GROUPS.map((group, index) => (
 					<div
 						key={group[0]?.id}
@@ -391,7 +395,7 @@ export function RichEditor({
 						{group.map((tool) => (
 							<ToolButton
 								key={tool.id}
-								label={tool.label}
+								label={i18n._(tool.label)}
 								icon={tool.icon}
 								active={state.active.includes(tool.id)}
 								disabled={state.disabled.includes(tool.id)}
@@ -399,7 +403,7 @@ export function RichEditor({
 							/>
 						))}
 						{index === 0 && (
-							<ToolButton label="链接" icon={LinkIcon} active={state.link} onClick={openLink} />
+							<ToolButton label={t`链接`} icon={LinkIcon} active={state.link} onClick={openLink} />
 						)}
 					</div>
 				))}
@@ -408,7 +412,7 @@ export function RichEditor({
 						{TABLE_TOOLS.map((tool) => (
 							<ToolButton
 								key={tool.id}
-								label={tool.label}
+								label={i18n._(tool.label)}
 								icon={tool.icon}
 								disabled={state.disabled.includes(tool.id)}
 								onClick={() => tool.run(editor)}
@@ -423,7 +427,7 @@ export function RichEditor({
 						type="text"
 						inputMode="url"
 						className="input min-w-0 flex-1"
-						aria-label="链接地址"
+						aria-label={t`链接地址`}
 						placeholder="https://"
 						value={linkDraft}
 						autoFocus
@@ -440,11 +444,11 @@ export function RichEditor({
 						}}
 					/>
 					<button type="button" className="button button--secondary button--sm" onClick={applyLink}>
-						确定
+						<Trans>确定</Trans>
 					</button>
 					{state.link && (
 						<button type="button" className="button button--ghost button--sm" onClick={removeLink}>
-							移除链接
+							<Trans>移除链接</Trans>
 						</button>
 					)}
 					<button
@@ -452,7 +456,7 @@ export function RichEditor({
 						className="button button--ghost button--sm"
 						onClick={() => setLinkDraft(null)}
 					>
-						取消
+						<Trans>取消</Trans>
 					</button>
 				</div>
 			)}

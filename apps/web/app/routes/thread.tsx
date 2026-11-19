@@ -11,6 +11,9 @@ import {
 	useRouteLoaderData,
 	useSubmit,
 } from 'react-router'
+import type { I18n } from '@lingui/core'
+import { t as tm } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import type { Route } from './+types/thread'
 import { Composer } from '../components/composer/composer'
@@ -47,26 +50,32 @@ import {
 	ThreadViewSlots,
 	useHasFilledSlot,
 } from '../slots/slots'
+import { i18nOfRoot } from '../lib/i18n'
+import { i18nFromRequest } from '../lib/i18n.server'
 import { pageTitle } from '../lib/site'
 
 // Mounted under every list route (category, search, profile); the list decides where closing goes.
 export const handle = defineStage({ layer: 'detail' })
 
 /** A note has no title: its page is named by the start of what it says. */
-function headingOf(thread: ThreadDto, opening: PostDto | undefined): string {
+function headingOf(i18n: I18n, thread: ThreadDto, opening: PostDto | undefined): string {
 	if (thread.kind === 'topic') return thread.title
 	const text = opening?.body.replaceAll(/\s+/g, ' ').trim() ?? ''
-	if (text === '') return `${thread.author.displayName} 的动态`
+	if (text === '') {
+		const author = thread.author.displayName
+		return tm(i18n)`${author} 的动态`
+	}
 	const chars = Array.from(text)
 	return chars.length > 30 ? `${chars.slice(0, 30).join('')}…` : text
 }
 
 export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
 	const root = matches[0].loaderData
+	const i18n = i18nOfRoot(root)
 	if (!loaderData) return [{ title: pageTitle(root) }]
 	const opening = loaderData.posts.items.find((post) => post.number === 1)
 	return [
-		{ title: pageTitle(root, headingOf(loaderData.thread, opening)) },
+		{ title: pageTitle(root, headingOf(i18n, loaderData.thread, opening)) },
 		{
 			tagName: 'link',
 			rel: 'canonical',
@@ -128,6 +137,7 @@ function failed(
 
 // Every change to a thread posts here with an `intent`; the API decides what the visitor may do.
 export async function action({ request, params }: Route.ActionArgs) {
+	const i18n = await i18nFromRequest(request)
 	const form = await request.formData()
 	const intent = textField(form, 'intent') || 'reply'
 	const postId = textField(form, 'postId')
@@ -190,12 +200,15 @@ export async function action({ request, params }: Route.ActionArgs) {
 			return redirect(`${listPathOf(url.pathname)}${url.search}`)
 		}
 		default:
-			return failed(intent, { status: 400, error: { message: '未知的操作。' } })
+			return failed(intent, { status: 400, error: { message: tm(i18n)`未知的操作。` } })
 	}
 }
 
 export default function Thread({ loaderData, actionData }: Route.ComponentProps) {
+	const { t, i18n } = useLingui()
 	const { thread, category, posts, can } = loaderData
+	const noteAuthor = thread.author.displayName
+	const replyCount = thread.replyCount
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const dock = useDock()
 	const submit = useSubmit()
@@ -219,7 +232,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const isNote = thread.kind === 'note'
 	const threadContext = useMemo(() => ({ thread, can }), [thread, can])
 	const opening = posts.items.find((post) => post.number === 1)
-	const heading = headingOf(thread, opening)
+	const heading = headingOf(i18n, thread, opening)
 	const [confirmingDelete, setConfirmingDelete] = useState(false)
 	const [copiedFor, setCopiedFor] = useState<string | undefined>(undefined)
 	const copied = copiedFor === thread.ref
@@ -279,7 +292,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const menu: MenuItem[] = [
 		{
 			id: 'copy-link',
-			label: '复制短链',
+			label: t`复制短链`,
 			onAction: () => {
 				void navigator.clipboard?.writeText(`${window.location.origin}/t/${thread.ref}`)
 				setCopiedFor(thread.ref)
@@ -290,12 +303,12 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 		},
 	]
 	if (can.edit && !isNote) {
-		menu.push({ id: 'rename', label: '修改标题', onAction: () => setRenaming(true) })
+		menu.push({ id: 'rename', label: t`修改标题`, onAction: () => setRenaming(true) })
 	}
 	if (can.move && boards.some((board) => board.id !== thread.categoryId)) {
 		menu.push({
 			id: 'move',
-			label: isNote ? '转为主题帖' : '移动到其他版块',
+			label: isNote ? t`转为主题帖` : t`移动到其他版块`,
 			onAction: () => setMoving(true),
 		})
 	}
@@ -304,23 +317,23 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			thread.pinned
 				? {
 						id: 'unpin',
-						label: '取消置顶',
+						label: t`取消置顶`,
 						onAction: () => submit({ intent: 'unpin' }, { method: 'post' }),
 					}
 				: {
 						id: 'pin',
-						label: '置顶',
+						label: t({ message: '置顶', context: 'menu action' }),
 						onAction: () => submit({ intent: 'pin' }, { method: 'post' }),
 					},
 			thread.locked
 				? {
 						id: 'unlock',
-						label: '解除锁定',
+						label: t`解除锁定`,
 						onAction: () => submit({ intent: 'unlock' }, { method: 'post' }),
 					}
 				: {
 						id: 'lock',
-						label: '锁定',
+						label: t({ message: '锁定', context: 'menu action' }),
 						onAction: () => submit({ intent: 'lock' }, { method: 'post' }),
 					},
 		)
@@ -328,7 +341,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	if (can.delete) {
 		menu.push({
 			id: 'delete',
-			label: '删除主题',
+			label: t`删除主题`,
 			icon: Trash2,
 			danger: true,
 			onAction: () => setConfirmingDelete(true),
@@ -349,7 +362,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 					tone="ghost"
 					size="sm"
 					data-shortcut="reply"
-					{...{ title: '回复（R）' }}
+					{...{ title: t`回复（R）` }}
 					onPress={() =>
 						dock.openReply({
 							threadId: thread.id,
@@ -359,15 +372,15 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 					}
 				>
 					<Reply aria-hidden />
-					回复
+					<Trans context="verb">回复</Trans>
 				</Button>
 			)}
-			<ActionMenu label="主题操作" items={menu} size="md" />
+			<ActionMenu label={t`主题操作`} items={menu} size="md" />
 			<ButtonLink
 				to={closeHref}
 				tone="ghost"
-				aria-label="关闭主题"
-				title="关闭主题"
+				aria-label={t`关闭主题`}
+				title={t`关闭主题`}
 				className="button--icon-only"
 			>
 				<X aria-hidden />
@@ -386,7 +399,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 					<Crumbs
 						className="min-w-0 flex-1"
 						items={[
-							{ label: '版块', to: '/' },
+							{ label: t`版块`, to: '/' },
 							{ label: category.name, to: `/c/${category.slug}` },
 						]}
 					/>
@@ -420,7 +433,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			) : (
 				<PageHeader
 					bar={false}
-					title={isNote ? `${thread.author.displayName} 的动态` : thread.title}
+					title={isNote ? t`${noteAuthor} 的动态` : thread.title}
 					meta={
 						<>
 							<StageLink
@@ -433,11 +446,13 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 							<ThreadFlags thread={thread} />
 							<span className="flex items-center gap-1 tabular-nums">
 								<MessageSquare aria-hidden size={12} />
-								{thread.replyCount} 回复
+								{t`${replyCount} 回复`}
 							</span>
 							{copied && (
 								<span role="status">
-									<Tag tone="accent">已复制短链</Tag>
+									<Tag tone="accent">
+										<Trans>已复制短链</Trans>
+									</Tag>
 								</span>
 							)}
 						</>
@@ -446,7 +461,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			)}
 			{threadError !== undefined && !renaming && !moving && <FormError message={threadError} />}
 			{posts.items.length === 0 ? (
-				<EmptyState icon={MessageSquare} title="这一页没有内容" />
+				<EmptyState icon={MessageSquare} title={t`这一页没有内容`} />
 			) : (
 				<ThreadContext.Provider value={threadContext}>
 					<ol className="border-line mt-5 flex flex-col gap-4 max-lg:-mx-4 max-lg:gap-0 max-lg:border-t">
@@ -498,9 +513,9 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			<ConfirmDialog
 				isOpen={confirmingDelete}
 				onOpenChange={setConfirmingDelete}
-				title="删除这个主题？"
-				body="所有回复会一并删除。"
-				confirmLabel="删除主题"
+				title={t`删除这个主题？`}
+				body={t`所有回复会一并删除。`}
+				confirmLabel={t`删除主题`}
 				fields={{ intent: 'delete-thread' }}
 			/>
 		</>
@@ -515,7 +530,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 				<div className="grid 2xl:grid-cols-[minmax(0,1fr)_auto] group-data-[focus=true]/detail:xl:grid-cols-[minmax(0,1fr)_auto]">
 					<div className="min-w-0">{mainContent}</div>
 					<aside
-						aria-label="主题侧栏"
+						aria-label={t`主题侧栏`}
 						className="hidden w-[240px] min-w-0 flex-col gap-4 self-start empty:hidden! lg:sticky lg:top-[calc(var(--h-pane-bar)+12px)] 2xl:ml-6 2xl:flex group-data-[focus=true]/detail:xl:ml-6 group-data-[focus=true]/detail:xl:flex"
 					>
 						<ThreadSidebarSlots thread={thread} />
@@ -550,6 +565,7 @@ function MoveThread({
 	error: string | undefined
 	onCancel: () => void
 }) {
+	const { t } = useLingui()
 	const submitting = useNavigation().formData?.get('intent') === 'move'
 	const isNote = thread.kind === 'note'
 	return (
@@ -558,7 +574,7 @@ function MoveThread({
 			<FormError message={error} />
 			<label className="flex flex-col gap-1.5">
 				<span className="text-ink-strong text-ui font-bold">
-					{isNote ? '发到版块' : '移到版块'}
+					{isNote ? t`发到版块` : t`移到版块`}
 				</span>
 				<NativeSelect name="categoryId" required defaultValue={boards[0]?.id}>
 					{boards.map((board) => (
@@ -570,19 +586,19 @@ function MoveThread({
 			</label>
 			<TextInputField
 				name="title"
-				label="标题"
+				label={t`标题`}
 				required={isNote}
 				maxLength={titleMax}
 				defaultValue={isNote ? '' : thread.title}
-				hint={isNote ? '转为主题帖后，正文和回复都会保留。' : undefined}
+				hint={isNote ? t`转为主题帖后，正文和回复都会保留。` : undefined}
 				autoFocus
 			/>
 			<div className="flex justify-end gap-2">
 				<Button tone="ghost" onPress={onCancel}>
-					取消
+					<Trans>取消</Trans>
 				</Button>
 				<Button tone="primary" type="submit" isPending={submitting}>
-					{isNote ? '转为主题帖' : '移动'}
+					{isNote ? t`转为主题帖` : t`移动`}
 				</Button>
 			</div>
 		</Form>
@@ -600,6 +616,7 @@ function RenameThread({
 	error: string | undefined
 	onCancel: () => void
 }) {
+	const { t } = useLingui()
 	const submitting = useNavigation().formData?.get('intent') === 'rename'
 	return (
 		<Form method="post" className="mb-5 flex flex-col gap-3">
@@ -607,7 +624,7 @@ function RenameThread({
 			<FormError message={error} />
 			<TextInputField
 				name="title"
-				label="标题"
+				label={t`标题`}
 				required
 				maxLength={max}
 				defaultValue={title}
@@ -615,10 +632,10 @@ function RenameThread({
 			/>
 			<div className="flex justify-end gap-2">
 				<Button tone="ghost" onPress={onCancel}>
-					取消
+					<Trans>取消</Trans>
 				</Button>
 				<Button tone="primary" type="submit" isPending={submitting}>
-					保存标题
+					<Trans>保存标题</Trans>
 				</Button>
 			</div>
 		</Form>
@@ -638,21 +655,24 @@ function ReplyArea({
 	error: string | undefined
 	bodyMax: number | undefined
 }) {
+	const { t } = useLingui()
 	const submitting = useNavigation().formData?.get('intent') === 'reply'
 	if (!canReply) {
 		if (locked) {
 			return (
 				<Notice icon={Lock} className="mt-6 max-lg:hidden">
-					主题已锁定
+					<Trans>主题已锁定</Trans>
 				</Notice>
 			)
 		}
 		return (
 			<Panel className="mt-8 flex flex-wrap items-center justify-between gap-4 px-5 py-4 max-lg:hidden">
-				<span className="text-ink">登录后参与讨论。</span>
+				<span className="text-ink">
+					<Trans>登录后参与讨论。</Trans>
+				</span>
 				{loginHref !== undefined && (
 					<ButtonAnchor href={loginHref} tone="primary">
-						登录
+						<Trans>登录</Trans>
 					</ButtonAnchor>
 				)}
 			</Panel>
@@ -660,26 +680,30 @@ function ReplyArea({
 	}
 	return (
 		<Panel as="section" className="mt-6 p-5 max-lg:hidden">
-			<h2 className="section-label mb-3">回复</h2>
+			<h2 className="section-label mb-3">
+				<Trans context="noun">回复</Trans>
+			</h2>
 			<Form method="post" className="flex flex-col gap-3">
 				<input type="hidden" name="intent" value="reply" />
 				{locked && (
 					// Only moderators reach the form of a locked thread.
-					<Notice icon={Lock}>主题已锁定，仅版主可回复</Notice>
+					<Notice icon={Lock}>
+						<Trans>主题已锁定，仅版主可回复</Trans>
+					</Notice>
 				)}
 				<FormError message={error} />
 				<Composer
-					label="回复内容"
+					label={t`回复内容`}
 					hideLabel
 					required
 					maxLength={bodyMax}
 					rows={5}
-					placeholder="写下你的回复"
+					placeholder={t`写下你的回复`}
 					deferRich
 				/>
 				<div className="flex justify-end">
 					<Button type="submit" tone="primary" isPending={submitting}>
-						发表回复
+						<Trans>发表回复</Trans>
 					</Button>
 				</div>
 			</Form>

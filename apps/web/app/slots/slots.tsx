@@ -10,6 +10,8 @@ import type {
 import type { Extensions } from '@tiptap/core'
 import { useCallback, useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { useRouteLoaderData } from 'react-router'
+import type { I18n } from '@lingui/core'
+import { useLingui } from '@lingui/react/macro'
 
 import type { MenuItem } from '../components/ui/overlay'
 import type { loader as rootLoader } from '../root'
@@ -113,7 +115,7 @@ const EXTENSIONS: Readonly<Record<string, SlotComponents>> = {
  * the editor's document. Each entry is loaded on demand together with the editor, so none of it
  * reaches pages without a text box.
  */
-export type ComposerEditorExtension = Readonly<{ extensions: () => Extensions }>
+export type ComposerEditorExtension = Readonly<{ extensions: (i18n: I18n) => Extensions }>
 
 const EDITOR_EXTENSIONS: Readonly<Record<string, () => Promise<ComposerEditorExtension>>> = {
 	'forum-mentions': () => import('./forum-mentions/editor').then((module) => module.mentionsEditor),
@@ -124,6 +126,7 @@ export function useComposerEditorExtensions(): Readonly<{
 	key: string
 	load: () => Promise<Extensions>
 }> {
+	const { i18n } = useLingui()
 	const filled = useRouteLoaderData<typeof rootLoader>('root')?.meta?.uiSlots ?? []
 	const ids = filled
 		.filter((entry) => entry.slot === 'composer.editor' && entry.extId in EDITOR_EXTENSIONS)
@@ -139,7 +142,7 @@ export function useComposerEditorExtensions(): Readonly<{
 						.filter(Boolean)
 						.map(async (id) => {
 							try {
-								return (await EDITOR_EXTENSIONS[id]?.())?.extensions() ?? []
+								return (await EDITOR_EXTENSIONS[id]?.())?.extensions(i18n) ?? []
 							} catch {
 								// An extension that fails to load leaves the editor without it.
 								return []
@@ -149,7 +152,7 @@ export function useComposerEditorExtensions(): Readonly<{
 				return loaded.flat()
 			},
 		}),
-		[key],
+		[key, i18n],
 	)
 }
 

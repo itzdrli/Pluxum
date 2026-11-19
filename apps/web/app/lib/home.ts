@@ -2,18 +2,19 @@
 // choice of order (latest activity, or newly started).
 
 import type { ViewerDto } from '@pluxum/domain'
+import { msg } from '@lingui/core/macro'
 
 export const HOME_TABS = [
-	{ id: 'following', label: '关注' },
-	{ id: 'hot', label: '热门' },
-	{ id: 'latest', label: '最新' },
+	{ id: 'following', label: msg({ message: '关注', context: 'home feed tab' }) },
+	{ id: 'hot', label: msg`热门` },
+	{ id: 'latest', label: msg`最新` },
 ] as const
 
 export type HomeTab = (typeof HOME_TABS)[number]['id']
 
 export const LATEST_ORDERS = [
-	{ id: 'active', label: '最近回复' },
-	{ id: 'new', label: '新发布' },
+	{ id: 'active', label: msg`最近回复` },
+	{ id: 'new', label: msg`新发布` },
 ] as const
 
 export type LatestOrder = (typeof LATEST_ORDERS)[number]['id']

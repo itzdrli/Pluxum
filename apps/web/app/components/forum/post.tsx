@@ -2,6 +2,7 @@ import type { PageDto, PostDto } from '@pluxum/domain'
 import { ChevronDown, ChevronUp, MessageSquareReply, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Form, Link, useActionData, useNavigation } from 'react-router'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import { withoutLeadingTitle } from '../../lib/post-html'
 import { PostFooterSlots, usePostMenuSlots } from '../../slots/slots'
@@ -40,6 +41,7 @@ export function PostCard({
 	/** Whether the viewer may answer inside this floor. */
 	canReply?: boolean
 }) {
+	const { t } = useLingui()
 	// Who the floor's reply box answers (the floor or one reply in it), opened at a reply count.
 	// Posting changes the count, which closes the box.
 	const [answering, setAnswering] = useState<Readonly<{ post: PostDto; total: number }> | null>(
@@ -57,11 +59,12 @@ export function PostCard({
 	const lightbox = useLightbox()
 	const [copied, setCopied] = useState(false)
 	const ext = usePostMenuSlots(post)
+	const editedAt = post.editedAt ?? ''
 	// Order: share, then what extensions add (report), then the author's own edit and delete.
 	const items: MenuItem[] = [
 		{
 			id: 'copy-link',
-			label: '复制本楼链接',
+			label: t`复制本楼链接`,
 			onAction: () => {
 				const url = new URL(window.location.href)
 				url.hash = `post-${post.number}`
@@ -73,12 +76,12 @@ export function PostCard({
 		...ext.items,
 	]
 	if (!post.deleted && post.can.edit) {
-		items.push({ id: 'edit', label: '编辑', icon: Pencil, onAction: () => setEditing(true) })
+		items.push({ id: 'edit', label: t`编辑`, icon: Pencil, onAction: () => setEditing(true) })
 	}
 	if (!post.deleted && post.can.delete && !opening) {
 		items.push({
 			id: 'delete',
-			label: '删除',
+			label: t`删除`,
 			icon: Trash2,
 			danger: true,
 			onAction: () => setConfirming(true),
@@ -115,22 +118,26 @@ export function PostCard({
 						>
 							{post.author.displayName}
 						</Link>
-						{byThreadAuthor && number > 1 && <Tag>楼主</Tag>}
+						{byThreadAuthor && number > 1 && (
+							<Tag>
+								<Trans>楼主</Trans>
+							</Tag>
+						)}
 					</div>
 					<div className="text-ink-weak flex items-center gap-1.5 text-meta">
 						<Timestamp iso={post.createdAt} />
 						{post.editedAt !== null && !post.deleted && (
-							<span title={`编辑于 ${post.editedAt}`}>· 已编辑</span>
+							<span title={t`编辑于 ${editedAt}`}>· {t`已编辑`}</span>
 						)}
 						<span aria-hidden>·</span>
 						<a
 							href={`#post-${post.number}`}
 							className="hover:text-ink-strong tabular-nums"
-							aria-label={`第 ${number} 楼的链接`}
+							aria-label={t`第 ${number} 楼的链接`}
 						>
 							#{number}
 						</a>
-						{copied && <span role="status">· 已复制链接</span>}
+						{copied && <span role="status">· {t`已复制链接`}</span>}
 					</div>
 				</div>
 				{nested && canReply && !post.deleted && (
@@ -138,18 +145,22 @@ export function PostCard({
 						tone="ghost"
 						size="sm"
 						className="text-ink-weak"
-						aria-label={`回复第 ${number} 楼`}
+						aria-label={t`回复第 ${number} 楼`}
 						onPress={() => answerTo(post)}
 					>
 						<MessageSquareReply aria-hidden />
-						<span className="max-sm:sr-only">回复</span>
+						<span className="max-sm:sr-only">
+							<Trans context="verb">回复</Trans>
+						</span>
 					</Button>
 				)}
-				<ActionMenu label={`第 ${number} 楼的操作`} items={items} />
+				<ActionMenu label={t`第 ${number} 楼的操作`} items={items} />
 				{ext.slots}
 			</div>
 			{post.deleted ? (
-				<p className="text-ink-weak px-4 pt-3 pb-5 italic lg:px-5">这条回复已被删除。</p>
+				<p className="text-ink-weak px-4 pt-3 pb-5 italic lg:px-5">
+					<Trans>这条回复已被删除。</Trans>
+				</p>
 			) : editing ? (
 				<EditPost post={post} bodyMax={bodyMax} onDone={() => setEditing(false)} />
 			) : (
@@ -177,8 +188,8 @@ export function PostCard({
 			<ConfirmDialog
 				isOpen={confirming}
 				onOpenChange={setConfirming}
-				title="删除这条回复？"
-				confirmLabel="删除"
+				title={t`删除这条回复？`}
+				confirmLabel={t`删除`}
 				fields={{ intent: 'delete-post', postId: post.id }}
 			/>
 		</li>
@@ -224,6 +235,7 @@ function FloorReplies({
 	onAnswer: (target: PostDto) => void
 	onCancelAnswer: () => void
 }) {
+	const { t } = useLingui()
 	// The whole list once fetched; null shows the replies the page came with.
 	const [fetched, setFetched] = useState<PostDto[] | null>(null)
 	const [loading, setLoading] = useState(false)
@@ -294,7 +306,7 @@ function FloorReplies({
 							onClick={() => void fetchAll()}
 						>
 							<ChevronDown aria-hidden size={14} />
-							{loading ? '加载中…' : `展开剩余 ${hidden} 条回复`}
+							{loading ? t`加载中…` : t`展开剩余 ${hidden} 条回复`}
 						</button>
 					) : (
 						<button
@@ -303,10 +315,14 @@ function FloorReplies({
 							onClick={() => setFetched(null)}
 						>
 							<ChevronUp aria-hidden size={14} />
-							收起
+							<Trans>收起</Trans>
 						</button>
 					)}
-					{failed && <span className="text-danger">加载失败，请重试。</span>}
+					{failed && (
+						<span className="text-danger">
+							<Trans>加载失败，请重试。</Trans>
+						</span>
+					)}
 				</div>
 			)}
 			{answer !== null && (
@@ -336,14 +352,17 @@ function FloorReply({
 	bodyMax: number | undefined
 	onAnswer: () => void
 }) {
+	const { t } = useLingui()
 	const [editingFrom, setEditingFrom] = useState<string | null | undefined>(undefined)
 	const editing = editingFrom !== undefined && editingFrom === reply.editedAt
 	const [confirming, setConfirming] = useState(false)
 	const ext = usePostMenuSlots(reply)
+	const replyEditedAt = reply.editedAt ?? ''
+	const replyNumber = reply.number
 	const items: MenuItem[] = [
 		{
 			id: 'copy-link',
-			label: '复制链接',
+			label: t`复制链接`,
 			onAction: () => {
 				const url = new URL(window.location.href)
 				url.hash = `post-${reply.number}`
@@ -355,7 +374,7 @@ function FloorReply({
 	if (reply.can.edit) {
 		items.push({
 			id: 'edit',
-			label: '编辑',
+			label: t`编辑`,
 			icon: Pencil,
 			onAction: () => setEditingFrom(reply.editedAt),
 		})
@@ -363,7 +382,7 @@ function FloorReply({
 	if (reply.can.delete) {
 		items.push({
 			id: 'delete',
-			label: '删除',
+			label: t`删除`,
 			icon: Trash2,
 			danger: true,
 			onAction: () => setConfirming(true),
@@ -385,10 +404,16 @@ function FloorReply({
 						>
 							{reply.author.displayName}
 						</Link>
-						{byThreadAuthor && <Tag>楼主</Tag>}
+						{byThreadAuthor && (
+							<Tag>
+								<Trans>楼主</Trans>
+							</Tag>
+						)}
 						{reply.replyTo !== null && (
 							<>
-								<span className="text-ink-weak">回复</span>
+								<span className="text-ink-weak">
+									<Trans context="replying to a user">回复</Trans>
+								</span>
 								<Link
 									to={`/u/${reply.replyTo.handle}`}
 									viewTransition
@@ -415,7 +440,9 @@ function FloorReply({
 					)}
 					<div className="text-ink-weak mt-0.5 flex items-center gap-2 text-meta">
 						<Timestamp iso={reply.createdAt} />
-						{reply.editedAt !== null && <span title={`编辑于 ${reply.editedAt}`}>· 已编辑</span>}
+						{reply.editedAt !== null && (
+							<span title={t`编辑于 ${replyEditedAt}`}>· {t`已编辑`}</span>
+						)}
 						<a href={`#post-${reply.number}`} className="hover:text-ink-strong tabular-nums">
 							#{reply.number}
 						</a>
@@ -425,19 +452,19 @@ function FloorReply({
 								className="hover:text-ink-strong cursor-pointer"
 								onClick={onAnswer}
 							>
-								回复
+								<Trans context="verb">回复</Trans>
 							</button>
 						)}
 					</div>
 				</div>
-				<ActionMenu label={`第 ${reply.number} 楼的操作`} items={items} />
+				<ActionMenu label={t`第 ${replyNumber} 楼的操作`} items={items} />
 				{ext.slots}
 			</div>
 			<ConfirmDialog
 				isOpen={confirming}
 				onOpenChange={setConfirming}
-				title="删除这条回复？"
-				confirmLabel="删除"
+				title={t`删除这条回复？`}
+				confirmLabel={t`删除`}
 				fields={{ intent: 'delete-post', postId: reply.id }}
 			/>
 		</li>
@@ -454,6 +481,8 @@ function AnswerInFloor({
 	bodyMax: number | undefined
 	onCancel: () => void
 }) {
+	const { t } = useLingui()
+	const targetName = target.author.displayName
 	const navigation = useNavigation()
 	const submitting =
 		navigation.state === 'submitting' && navigation.formData?.get('parentId') === target.id
@@ -466,21 +495,21 @@ function AnswerInFloor({
 			<input type="hidden" name="parentId" value={target.id} />
 			<FormError message={error} />
 			<Composer
-				label={`回复 ${target.author.displayName}`}
+				label={t`回复 ${targetName}`}
 				hideLabel
 				required
 				maxLength={bodyMax}
 				rows={2}
-				placeholder={`回复 ${target.author.displayName}`}
+				placeholder={t`回复 ${targetName}`}
 				autoFocus
 				deferRich
 			/>
 			<div className="flex justify-end gap-2">
 				<Button tone="ghost" size="sm" onPress={onCancel}>
-					取消
+					<Trans>取消</Trans>
 				</Button>
 				<Button tone="primary" size="sm" type="submit" isPending={submitting}>
-					回复
+					<Trans context="verb">回复</Trans>
 				</Button>
 			</div>
 		</Form>
@@ -499,6 +528,7 @@ function EditPost({
 	/** Inside a floor's replies: no padding of its own. */
 	compact?: boolean
 }) {
+	const { t } = useLingui()
 	const navigation = useNavigation()
 	const submitting =
 		navigation.state === 'submitting' && navigation.formData?.get('postId') === post.id
@@ -513,7 +543,7 @@ function EditPost({
 			<input type="hidden" name="intent" value="edit-post" />
 			<input type="hidden" name="postId" value={post.id} />
 			<Composer
-				label="编辑内容"
+				label={t`编辑内容`}
 				hideLabel
 				required
 				maxLength={bodyMax}
@@ -525,10 +555,10 @@ function EditPost({
 			/>
 			<div className="flex justify-end gap-2">
 				<Button tone="ghost" onPress={onDone}>
-					取消
+					<Trans>取消</Trans>
 				</Button>
 				<Button tone="primary" type="submit" isPending={submitting}>
-					保存
+					<Trans>保存</Trans>
 				</Button>
 			</div>
 		</Form>

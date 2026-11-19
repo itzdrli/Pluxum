@@ -1,6 +1,7 @@
 import type { CategoryDto, ThreadDto } from '@pluxum/domain'
 import { Fragment } from 'react'
 import { Hash, Lock, MessageSquare, Pin } from 'lucide-react'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { StageLink } from '../stage/stage'
 import { isUnread } from '../../slots/forum-reads/state'
 import { Tag, Timestamp } from '../ui/display'
@@ -18,6 +19,9 @@ function Stat({ value, label }: { value: number; label: string }) {
 
 /** One category in the list on the home page; the whole row is the link. */
 export function CategoryRow({ category }: { category: CategoryDto }) {
+	const { t } = useLingui()
+	const threadCount = category.threadCount
+	const postCount = category.postCount
 	return (
 		<li>
 			<StageLink
@@ -38,12 +42,12 @@ export function CategoryRow({ category }: { category: CategoryDto }) {
 					)}
 					{/* Narrow screens: counts move under the description. */}
 					<p className="text-ink-weak mt-1 text-meta tabular-nums sm:hidden">
-						{category.threadCount} 主题 · {category.postCount} 帖子
+						{t`${threadCount} 主题`} · {t`${postCount} 帖子`}
 					</p>
 				</div>
 				<div className="hidden shrink-0 gap-4 sm:flex">
-					<Stat value={category.threadCount} label="主题" />
-					<Stat value={category.postCount} label="帖子" />
+					<Stat value={category.threadCount} label={t({ message: '主题', context: 'thread' })} />
+					<Stat value={category.postCount} label={t`帖子`} />
 				</div>
 			</StageLink>
 		</li>
@@ -58,13 +62,14 @@ export function UnreadDot({
 	thread: Pick<ThreadDto, 'ext' | 'lastPostAt'>
 	hidden?: boolean
 }) {
+	const { t } = useLingui()
 	if (hidden || !isUnread(thread)) return null
 	return (
 		// Inline in the title's text, so it stays on the title's first line however long the title.
 		<span
 			role="img"
-			aria-label="有未读内容"
-			title="有未读内容"
+			aria-label={t`有未读内容`}
+			title={t`有未读内容`}
 			className="bg-accent mr-2 mb-px inline-block size-2 rounded-full align-middle"
 		/>
 	)
@@ -85,12 +90,12 @@ export function ThreadFlags({
 		<>
 			{thread.pinned && (
 				<Tag tone="accent" icon={Pin} className={tagClassName}>
-					置顶
+					<Trans>置顶</Trans>
 				</Tag>
 			)}
 			{thread.locked && (
 				<Tag icon={Lock} className={tagClassName}>
-					已锁定
+					<Trans>已锁定</Trans>
 				</Tag>
 			)}
 			<ThreadBadgeSlots thread={thread} tagClassName={tagClassName} />
@@ -120,7 +125,9 @@ export function ThreadRow({
 	showAuthor?: boolean
 	time?: 'last' | 'created'
 }) {
+	const { t } = useLingui()
 	const shownTime = time === 'created' ? thread.createdAt : thread.lastPostAt
+	const noteAuthor = thread.author.displayName
 	const meta = [
 		showAuthor && (
 			// Above the row link's box, so the name opens the profile instead.
@@ -167,7 +174,7 @@ export function ThreadRow({
 						aria-current={isActive ? 'page' : undefined}
 						className="text-ink-strong text-ui font-bold after:absolute after:inset-0 @lg/threads:text-title"
 					>
-						{thread.kind === 'note' ? `${thread.author.displayName} 的动态` : thread.title}
+						{thread.kind === 'note' ? t`${noteAuthor} 的动态` : thread.title}
 					</StageLink>
 				</p>
 				<div className="text-ink-weak mt-1.5 flex items-center justify-between gap-3 text-meta">
@@ -193,7 +200,9 @@ export function ThreadRow({
 					<span className="flex shrink-0 items-center gap-1 tabular-nums @lg/threads:hidden">
 						<MessageSquare aria-hidden size={12} />
 						{thread.replyCount}
-						<span className="sr-only">回复</span>
+						<span className="sr-only">
+							<Trans context="noun">回复</Trans>
+						</span>
 					</span>
 				</div>
 			</div>
@@ -201,10 +210,16 @@ export function ThreadRow({
 				<span className="text-ink-strong flex items-center gap-1 tabular-nums">
 					<MessageSquare aria-hidden size={13} className="text-ink-weak" />
 					{thread.replyCount}
-					<span className="sr-only">回复</span>
+					<span className="sr-only">
+						<Trans context="noun">回复</Trans>
+					</span>
 				</span>
 				<span className="text-ink-weak whitespace-nowrap">
-					{time === 'last' && <span className="sr-only">最后回复 </span>}
+					{time === 'last' && (
+						<span className="sr-only">
+							<Trans>最后回复</Trans>{' '}
+						</span>
+					)}
 					<Timestamp iso={shownTime} />
 				</span>
 			</div>

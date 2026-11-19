@@ -2,6 +2,7 @@ import type { CategoryDto, ThreadDto } from '@pluxum/domain'
 import { MessageSquare, Send } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Form, useNavigation } from 'react-router'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import { PostFooterSlots } from '../../slots/slots'
 import { Composer } from '../composer/composer'
@@ -38,6 +39,7 @@ export function NoteCard({
 	category?: Pick<CategoryDto, 'slug' | 'name'>
 	showAuthor?: boolean
 }) {
+	const { t } = useLingui()
 	const navigate = useStageNavigate()
 	const lightbox = useLightbox()
 	const opening = thread.opening
@@ -113,7 +115,9 @@ export function NoteCard({
 							className="hover:text-ink-strong shrink-0 whitespace-nowrap hover:underline"
 						>
 							<Timestamp iso={thread.createdAt} />
-							<span className="sr-only">的动态</span>
+							<span className="sr-only">
+								<Trans context="screen-reader suffix after a note's time">的动态</Trans>
+							</span>
 						</StageLink>
 					</p>
 					{opening !== undefined && (
@@ -132,7 +136,7 @@ export function NoteCard({
 									className="text-accent mt-1 cursor-pointer text-meta hover:underline"
 									onClick={() => setUnfolded((open) => !open)}
 								>
-									{unfolded ? '收起' : '展开全文'}
+									{unfolded ? t`收起` : t`展开全文`}
 								</button>
 							)}
 						</>
@@ -145,8 +149,12 @@ export function NoteCard({
 							className="text-ink-weak hover:text-ink-strong ml-2.5 flex h-8 items-center gap-1 text-meta tabular-nums"
 						>
 							<MessageSquare aria-hidden size={14} />
-							{thread.replyCount > 0 ? thread.replyCount : '回复'}
-							{thread.replyCount > 0 && <span className="sr-only">条回复</span>}
+							{thread.replyCount > 0 ? thread.replyCount : t({ message: '回复', context: 'verb' })}
+							{thread.replyCount > 0 && (
+								<span className="sr-only">
+									<Trans>条回复</Trans>
+								</span>
+							)}
 						</StageLink>
 					</div>
 				</div>
@@ -170,32 +178,33 @@ export function NoteComposer({
 	/** Changes after a note was posted, which empties the box. */
 	resetKey: string
 }) {
+	const { t } = useLingui()
 	const navigation = useNavigation()
 	const submitting =
 		navigation.state === 'submitting' && navigation.formData?.get('intent') === 'note'
 	const [open, setOpen] = useState(false)
 	return (
-		<Panel as="section" aria-label="发动态" className="mb-4 p-3">
+		<Panel as="section" aria-label={t`发动态`} className="mb-4 p-3">
 			{open ? (
 				<Form method="post" className="flex flex-col gap-2" key={resetKey}>
 					<input type="hidden" name="intent" value="note" />
 					<FormError message={error} />
 					<Composer
-						label="动态内容"
+						label={t`动态内容`}
 						hideLabel
 						required
 						maxLength={max}
 						rows={3}
-						placeholder="分享点什么…"
+						placeholder={t`分享点什么…`}
 						autoFocus
 					/>
 					<div className="flex items-center justify-end gap-2">
 						<Button tone="ghost" size="sm" onPress={() => setOpen(false)}>
-							收起
+							<Trans>收起</Trans>
 						</Button>
 						<Button tone="primary" size="sm" type="submit" isPending={submitting}>
 							<Send aria-hidden />
-							发布
+							<Trans context="verb">发布</Trans>
 						</Button>
 					</div>
 				</Form>
@@ -205,7 +214,7 @@ export function NoteComposer({
 					onClick={() => setOpen(true)}
 					className="bg-control text-ink-weak hover:text-ink h-control w-full cursor-text rounded-[2px] px-3 text-left"
 				>
-					分享点什么…
+					<Trans>分享点什么…</Trans>
 				</button>
 			)}
 			{!open && error !== undefined && <FormError message={error} />}

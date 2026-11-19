@@ -1,7 +1,9 @@
 import { data } from 'react-router'
+import { t } from '@lingui/core/macro'
 
 import type { Route } from './+types/ext-action'
 import { forumApi } from '../lib/forum-api.server'
+import { i18nFromRequest } from '../lib/i18n.server'
 
 export type ExtActionResult =
 	| Readonly<{ ok: true; value: unknown }>
@@ -15,7 +17,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 	try {
 		input = await request.json()
 	} catch {
-		const failure: ExtActionResult = { ok: false, error: '请求内容无法解析。' }
+		const failure: ExtActionResult = {
+			ok: false,
+			error: t(await i18nFromRequest(request))`请求内容无法解析。`,
+		}
 		return data(failure, { status: 400 })
 	}
 	const result = await forumApi.extAction(request, params.extId, params.action, input)

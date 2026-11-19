@@ -15,6 +15,9 @@ import {
 	Trash2,
 } from 'lucide-react'
 import { data, Form, useNavigation } from 'react-router'
+import type { I18n, MessageDescriptor } from '@lingui/core'
+import { msg, t as tm } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import type { Route } from './+types/moderation'
 import { UserAvatar } from '../components/forum/user-avatar'
@@ -32,6 +35,8 @@ import {
 import { Pager } from '../components/ui/pager'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { defineStage } from '../lib/stage'
+import { i18nOfRoot } from '../lib/i18n'
+import { i18nFromRequest } from '../lib/i18n.server'
 import { pageTitle } from '../lib/site'
 
 export type ModerationTab = 'queue' | 'logs'
@@ -42,29 +47,32 @@ export type ParsedModerationUrl = Readonly<{
 	page: number
 }>
 
-const QUEUE_STATUS_TABS: ReadonlyArray<Readonly<{ status: ModerationQueueStatus; label: string }>> =
-	[
-		{ status: 'open', label: '待处理' },
-		{ status: 'resolved', label: '已处理' },
-		{ status: 'dismissed', label: '已驳回' },
-		{ status: 'all', label: '全部' },
-	]
+const QUEUE_STATUS_TABS: ReadonlyArray<
+	Readonly<{ status: ModerationQueueStatus; label: MessageDescriptor }>
+> = [
+	{ status: 'open', label: msg`待处理` },
+	{ status: 'resolved', label: msg`已处理` },
+	{ status: 'dismissed', label: msg`已驳回` },
+	{ status: 'all', label: msg`全部` },
+]
 
 const REPORT_STATUS_META: Readonly<
-	Record<ModerationReportStatus, Readonly<{ label: string; tone: TagTone }>>
+	Record<ModerationReportStatus, Readonly<{ label: MessageDescriptor; tone: TagTone }>>
 > = {
-	open: { label: '待处理', tone: 'warning' },
-	resolved: { label: '已处理', tone: 'success' },
-	dismissed: { label: '已驳回', tone: 'neutral' },
+	open: { label: msg`待处理`, tone: 'warning' },
+	resolved: { label: msg`已处理`, tone: 'success' },
+	dismissed: { label: msg`已驳回`, tone: 'neutral' },
 }
 
-const LOG_ACTION_META: Readonly<Record<string, Readonly<{ label: string; tone: TagTone }>>> = {
-	'report.created': { label: '提交举报', tone: 'warning' },
-	'report.resolved': { label: '处理举报', tone: 'success' },
-	'report.resolved_deleted': { label: '处理并删除内容', tone: 'danger' },
-	'report.dismissed': { label: '驳回举报', tone: 'neutral' },
-	'user.banned': { label: '封禁账号', tone: 'danger' },
-	'user.unbanned': { label: '解除封禁', tone: 'accent' },
+const LOG_ACTION_META: Readonly<
+	Record<string, Readonly<{ label: MessageDescriptor; tone: TagTone }>>
+> = {
+	'report.created': { label: msg`提交举报`, tone: 'warning' },
+	'report.resolved': { label: msg`处理举报`, tone: 'success' },
+	'report.resolved_deleted': { label: msg`处理并删除内容`, tone: 'danger' },
+	'report.dismissed': { label: msg`驳回举报`, tone: 'neutral' },
+	'user.banned': { label: msg`封禁账号`, tone: 'danger' },
+	'user.unbanned': { label: msg`解除封禁`, tone: 'accent' },
 }
 
 function isQueueStatus(value: string | null): value is ModerationQueueStatus {
@@ -108,15 +116,21 @@ export function resolveReportTargetHref(
 
 /** Maps a moderation audit log action code to a localized badge label and tone. */
 export function formatModerationLogAction(
+	i18n: I18n,
 	actionCode: string,
 ): Readonly<{ label: string; tone: TagTone }> {
-	return LOG_ACTION_META[actionCode] ?? { label: actionCode, tone: 'neutral' }
+	const known = LOG_ACTION_META[actionCode]
+	return known === undefined
+		? { label: actionCode, tone: 'neutral' }
+		: { label: i18n._(known.label), tone: known.tone }
 }
 
 export const handle = defineStage({ layer: 'page', nav: true })
 
 export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
-	return [{ title: pageTitle(matches[0].loaderData, '审核队列') }]
+	return [
+		{ title: pageTitle(matches[0].loaderData, tm(i18nOfRoot(matches[0].loaderData))`审核队列`) },
+	]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -244,6 +258,7 @@ type ActionResponse =
 	| Readonly<{ ok: false; reportId?: string; error: string }>
 
 export async function action({ request }: Route.ActionArgs) {
+	const i18n = await i18nFromRequest(request)
 	const form = await request.formData()
 	const intent = textField(form, 'intent')
 
@@ -268,18 +283,20 @@ export async function action({ request }: Route.ActionArgs) {
 		return success
 	}
 
-	const failure: ActionResponse = { ok: false, error: '不支持的审核操作' }
+	const failure: ActionResponse = { ok: false, error: tm(i18n)`不支持的审核操作` }
 	return data(failure, { status: 400 })
 }
 
 export default function ModerationRoute({ loaderData, actionData }: Route.ComponentProps) {
+	const { t, i18n } = useLingui()
 	const { available, loggedIn, authorized, loginAvailable, tab, status, queue, logs } = loaderData
+	const queueTotal = queue?.total ?? 0
 
 	if (!available) {
 		return (
 			<>
-				<PageHeader title="审核队列" />
-				<EmptyState icon={ShieldOff} title="审核功能未启用" />
+				<PageHeader title={t`审核队列`} />
+				<EmptyState icon={ShieldOff} title={t`审核功能未启用`} />
 			</>
 		)
 	}
@@ -287,10 +304,10 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 	if (!loggedIn) {
 		return (
 			<>
-				<PageHeader title="审核队列" />
+				<PageHeader title={t`审核队列`} />
 				<EmptyState
 					icon={LogIn}
-					title="请先登录"
+					title={t`请先登录`}
 					action={
 						loginAvailable ? (
 							<ButtonAnchor
@@ -298,7 +315,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 								tone="primary"
 								size="sm"
 							>
-								登录
+								<Trans>登录</Trans>
 							</ButtonAnchor>
 						) : undefined
 					}
@@ -310,8 +327,8 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 	if (!authorized) {
 		return (
 			<>
-				<PageHeader title="审核队列" />
-				<EmptyState icon={ShieldAlert} title="没有权限访问审核队列" />
+				<PageHeader title={t`审核队列`} />
+				<EmptyState icon={ShieldAlert} title={t`没有权限访问审核队列`} />
 			</>
 		)
 	}
@@ -322,11 +339,11 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 	return (
 		<>
 			<PageHeader
-				title="审核"
+				title={t`审核`}
 				actions={
 					<div
 						role="tablist"
-						aria-label="审核视图"
+						aria-label={t`审核视图`}
 						className="border-line bg-panel isolate inline-flex rounded-[2px] border p-0.5 text-meta"
 					>
 						<StageLink
@@ -341,7 +358,9 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 						>
 							{tab === 'queue' && <SegmentIndicator />}
 							<ClipboardList aria-hidden size={13} />
-							<span>举报队列</span>
+							<span>
+								<Trans>举报队列</Trans>
+							</span>
 							{queue !== null && queue.openCount > 0 && (
 								<span className="tabular-nums">({queue.openCount})</span>
 							)}
@@ -356,7 +375,9 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 						>
 							{tab === 'logs' && <SegmentIndicator />}
 							<History aria-hidden size={13} />
-							<span>审核日志</span>
+							<span>
+								<Trans>审核日志</Trans>
+							</span>
 						</StageLink>
 					</div>
 				}
@@ -369,11 +390,11 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 			)}
 
 			{tab === 'queue' && queue !== null && (
-				<section aria-label="举报列表">
+				<section aria-label={t`举报列表`}>
 					<div className="mb-4 flex flex-wrap items-center justify-between gap-2">
 						<div
 							role="group"
-							aria-label="举报状态筛选"
+							aria-label={t`举报状态筛选`}
 							className="border-line bg-panel isolate inline-flex flex-wrap rounded-[2px] border p-0.5 text-meta"
 						>
 							{QUEUE_STATUS_TABS.map((entry) => {
@@ -388,7 +409,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 										}`}
 									>
 										{active && <SegmentIndicator name="moderation-status" />}
-										<span>{entry.label}</span>
+										<span>{i18n._(entry.label)}</span>
 										{entry.status === 'open' && queue.openCount > 0 && (
 											<span className="tabular-nums">({queue.openCount})</span>
 										)}
@@ -397,14 +418,14 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 							})}
 						</div>
 						{queue.total > 0 && (
-							<span className="text-ink-weak text-meta tabular-nums">共 {queue.total} 条</span>
+							<span className="text-ink-weak text-meta tabular-nums">{t`共 ${queueTotal} 条`}</span>
 						)}
 					</div>
 
 					{queue.items.length === 0 ? (
 						<EmptyState
 							icon={ShieldCheck}
-							title={status === 'open' ? '没有待处理的举报' : '当前筛选下没有举报记录'}
+							title={status === 'open' ? t`没有待处理的举报` : t`当前筛选下没有举报记录`}
 						/>
 					) : (
 						<div className="flex flex-col gap-3">
@@ -427,9 +448,9 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 			)}
 
 			{tab === 'logs' && logs !== null && (
-				<section aria-label="审核日志">
+				<section aria-label={t`审核日志`}>
 					{logs.items.length === 0 ? (
-						<EmptyState icon={History} title="暂无审核日志" />
+						<EmptyState icon={History} title={t`暂无审核日志`} />
 					) : (
 						<Panel as="ul" className="divide-line divide-y">
 							{logs.items.map((entry) => (
@@ -445,21 +466,26 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 }
 
 function ReportCard({ report, error }: { report: ModerationReportDto; error: string | undefined }) {
+	const { t, i18n } = useLingui()
 	const navigation = useNavigation()
 	const isSubmittingThis =
 		navigation.state === 'submitting' && navigation.formData?.get('reportId') === report.id
 	const submittingMode = isSubmittingThis ? navigation.formData?.get('mode') : null
 	const statusMeta = REPORT_STATUS_META[report.status]
+	const resolutionNote = report.resolutionNote ?? ''
+	const resolverName = report.resolvedBy?.displayName ?? ''
 	const targetHref = resolveReportTargetHref(report)
 
 	return (
 		<Panel as="article" className="flex flex-col gap-3 p-4">
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<div className="flex flex-wrap items-center gap-2">
-					<Tag tone={statusMeta.tone}>{statusMeta.label}</Tag>
-					<Tag>{report.targetType === 'thread' ? '主题举报' : '帖子举报'}</Tag>
+					<Tag tone={statusMeta.tone}>{i18n._(statusMeta.label)}</Tag>
+					<Tag>{report.targetType === 'thread' ? t`主题举报` : t`帖子举报`}</Tag>
 					<span className="text-ink-weak flex items-center gap-1.5 text-meta">
-						<span>举报人：</span>
+						<span>
+							<Trans>举报人：</Trans>
+						</span>
 						<StageLink
 							to={`/u/${report.reporter.handle}`}
 							className="text-ink-strong inline-flex items-center gap-1 font-bold hover:underline"
@@ -470,7 +496,9 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 					</span>
 					{report.targetAuthor !== null && (
 						<span className="text-ink-weak flex items-center gap-1.5 text-meta">
-							<span>· 被举报作者：</span>
+							<span>
+								<Trans>· 被举报作者：</Trans>
+							</span>
 							<StageLink
 								to={`/u/${report.targetAuthor.handle}`}
 								className="text-ink-strong font-bold hover:underline"
@@ -487,7 +515,9 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 						to={targetHref}
 						className="text-accent inline-flex items-center gap-1 hover:underline"
 					>
-						<span>查看目标</span>
+						<span>
+							<Trans>查看目标</Trans>
+						</span>
 						<ExternalLink aria-hidden size={12} />
 					</StageLink>
 				</div>
@@ -500,18 +530,35 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 			{report.status !== 'open' && (
 				<div className="text-ink-weak flex flex-wrap items-center gap-x-2 gap-y-1 text-meta">
 					<span>
-						由{' '}
 						{report.resolvedBy !== null ? (
-							<StageLink
-								to={`/u/${report.resolvedBy.handle}`}
-								className="text-ink-strong font-bold hover:underline"
-							>
-								{report.resolvedBy.displayName}
-							</StageLink>
+							report.status === 'dismissed' ? (
+								<Trans>
+									由{' '}
+									<StageLink
+										to={`/u/${report.resolvedBy.handle}`}
+										className="text-ink-strong font-bold hover:underline"
+									>
+										{resolverName}
+									</StageLink>{' '}
+									驳回
+								</Trans>
+							) : (
+								<Trans>
+									由{' '}
+									<StageLink
+										to={`/u/${report.resolvedBy.handle}`}
+										className="text-ink-strong font-bold hover:underline"
+									>
+										{resolverName}
+									</StageLink>{' '}
+									处理
+								</Trans>
+							)
+						) : report.status === 'dismissed' ? (
+							t`由管理人员驳回`
 						) : (
-							'管理人员'
-						)}{' '}
-						{report.status === 'dismissed' ? '驳回' : '处理'}
+							t`由管理人员处理`
+						)}
 					</span>
 					{report.resolvedAt !== null && (
 						<>
@@ -520,7 +567,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 						</>
 					)}
 					{report.resolutionNote !== null && (
-						<span className="text-ink break-words">· 备注：{report.resolutionNote}</span>
+						<span className="text-ink break-words">{t`· 备注：${resolutionNote}`}</span>
 					)}
 				</div>
 			)}
@@ -535,8 +582,8 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 							type="text"
 							name="note"
 							maxLength={500}
-							placeholder="备注（可选）"
-							aria-label="处理备注"
+							placeholder={t`备注（可选）`}
+							aria-label={t`处理备注`}
 							className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control min-w-0 flex-1 basis-48 rounded-[2px] border px-2.5 text-ui outline-none"
 						/>
 						<div className="flex flex-wrap items-center gap-2">
@@ -548,7 +595,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 								isPending={submittingMode === 'dismiss'}
 								isDisabled={isSubmittingThis}
 							>
-								驳回
+								<Trans>驳回</Trans>
 							</Button>
 							<Button
 								tone="secondary"
@@ -558,7 +605,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 								isPending={submittingMode === 'resolve'}
 								isDisabled={isSubmittingThis}
 							>
-								标记已处理
+								<Trans>标记已处理</Trans>
 							</Button>
 							<Button
 								tone="danger"
@@ -569,7 +616,7 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 								isDisabled={isSubmittingThis}
 							>
 								<Trash2 aria-hidden />
-								{report.targetType === 'thread' ? '处理并删除主题' : '处理并删除内容'}
+								{report.targetType === 'thread' ? t`处理并删除主题` : t`处理并删除内容`}
 							</Button>
 						</div>
 					</div>
@@ -580,7 +627,9 @@ function ReportCard({ report, error }: { report: ModerationReportDto; error: str
 }
 
 function LogRow({ entry }: { entry: ModerationLogDto }) {
-	const actionMeta = formatModerationLogAction(entry.action)
+	const { t, i18n } = useLingui()
+	const actionMeta = formatModerationLogAction(i18n, entry.action)
+	const targetRef = entry.targetId.slice(0, 8)
 	return (
 		<li className="flex flex-wrap items-start justify-between gap-2 px-4 py-3">
 			<div className="flex min-w-0 flex-1 basis-64 flex-col gap-1">
@@ -595,7 +644,7 @@ function LogRow({ entry }: { entry: ModerationLogDto }) {
 					</StageLink>
 					{entry.targetUser !== null ? (
 						<span className="text-ink-weak text-meta">
-							目标用户：
+							<Trans>目标用户：</Trans>
 							<StageLink
 								to={`/u/${entry.targetUser.handle}`}
 								className="text-ink-strong font-bold hover:underline"
@@ -608,7 +657,7 @@ function LogRow({ entry }: { entry: ModerationLogDto }) {
 							to={`/t/${entry.targetId}`}
 							className="text-accent text-meta hover:underline"
 						>
-							主题 #{entry.targetId.slice(0, 8)}
+							{t`主题 #${targetRef}`}
 						</StageLink>
 					) : (
 						<span className="text-ink-weak font-mono text-meta">

@@ -2,6 +2,7 @@ import type { PostDto, ThreadDto } from '@pluxum/domain'
 import { CircleCheck } from 'lucide-react'
 import { useEffect } from 'react'
 import { Link, useFetcher, useRouteLoaderData } from 'react-router'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import { Tag } from '../../components/ui/display'
 import { useThreadContext } from '../../lib/thread-context'
@@ -51,7 +52,7 @@ export function SolvedBadge({ thread, tagClassName }: SlotProps['thread.badges']
 	if (solutionOf(thread) === null) return null
 	return (
 		<Tag tone="success" icon={CircleCheck} className={tagClassName}>
-			已解决
+			<Trans>已解决</Trans>
 		</Tag>
 	)
 }
@@ -62,7 +63,7 @@ export function AcceptedMark({ post }: { post: PostDto }) {
 	return (
 		<p className="px-4 pb-3 lg:px-5">
 			<Tag tone="success" icon={CircleCheck}>
-				已采纳的答案
+				<Trans>已采纳的答案</Trans>
 			</Tag>
 		</p>
 	)
@@ -70,6 +71,7 @@ export function AcceptedMark({ post }: { post: PostDto }) {
 
 /** `post.after`: under the opening post, the accepted answer's opening words and a way to it. */
 export function SolutionPin({ post, thread }: SlotProps['post.after']) {
+	const { t } = useLingui()
 	const solution = solutionOf(thread)
 	if (post.number !== 1 || solution === null) return null
 	return (
@@ -82,10 +84,10 @@ export function SolutionPin({ post, thread }: SlotProps['post.after']) {
 				<span className="text-ink-weak flex flex-wrap items-center gap-x-2 text-meta">
 					<span className="text-success flex items-center gap-1 font-bold">
 						<CircleCheck aria-hidden size={14} />
-						已采纳的答案
+						<Trans>已采纳的答案</Trans>
 					</span>
 					<span>
-						{solution.author?.displayName ?? '一位成员'} · #{solution.floor}
+						{solution.author?.displayName ?? t`一位成员`} · #{solution.floor}
 					</span>
 				</span>
 				{solution.excerpt !== '' && (
@@ -101,6 +103,7 @@ export function SolutionPin({ post, thread }: SlotProps['post.after']) {
  * moderators. Notes and the opening post have no such item.
  */
 export function AcceptAction({ post, setMenuItems }: SlotProps['post.actions']) {
+	const { t } = useLingui()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
 	const context = useThreadContext()
 	const fetcher = useFetcher<ExtActionResult>()
@@ -126,7 +129,7 @@ export function AcceptAction({ post, setMenuItems }: SlotProps['post.actions']) 
 		setMenuItems([
 			{
 				id: 'accept',
-				label: accepted ? '取消采纳' : '采纳为答案',
+				label: accepted ? t`取消采纳` : t`采纳为答案`,
 				disabled: busy,
 				onAction: () =>
 					void submit(
@@ -135,7 +138,7 @@ export function AcceptAction({ post, setMenuItems }: SlotProps['post.actions']) 
 					),
 			},
 		])
-	}, [available, accepted, busy, post.id, submit, setMenuItems])
+	}, [available, accepted, busy, post.id, submit, setMenuItems, t])
 
 	if (error === undefined) return null
 	return (

@@ -4,6 +4,7 @@ import { Code, Type } from 'lucide-react'
 import type { Extensions } from '@tiptap/core'
 import { useEffect, useRef, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
+import { useLingui } from '@lingui/react/macro'
 
 import type { loader as rootLoader } from '../../root'
 import {
@@ -162,6 +163,7 @@ export function Composer({
 	/** Grow the writing area into the height of a flex column around it (the dock). */
 	fill?: boolean
 }) {
+	const { t } = useLingui()
 	const format = useRouteLoaderData<typeof rootLoader>('root')?.meta?.content.format ?? 'plain'
 	const [value, setValue] = useState(defaultValue)
 	// On the first page load (or when deferred) nothing is mounted as rich yet.
@@ -295,8 +297,8 @@ export function Composer({
 		format !== 'markdown' || showRich
 			? undefined
 			: fits
-				? '支持 Markdown'
-				: '含表格或图片，切到富文本会改变它们。'
+				? t`支持 Markdown`
+				: t`含表格或图片，切到富文本会改变它们。`
 
 	const toggle = rich !== null && format === 'markdown' && (
 		<button
@@ -305,7 +307,7 @@ export function Composer({
 			onClick={() => choose(showRich ? 'source' : 'rich')}
 		>
 			{showRich ? <Code aria-hidden /> : <Type aria-hidden />}
-			{showRich ? 'Markdown 源码' : '富文本'}
+			{showRich ? t`Markdown 源码` : t`富文本`}
 		</button>
 	)
 

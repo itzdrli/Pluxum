@@ -2,6 +2,8 @@
 import { Extension, type Editor, type Range } from '@tiptap/core'
 import { PluginKey } from '@tiptap/pm/state'
 import { Suggestion, type SuggestionKeyDownProps, type SuggestionProps } from '@tiptap/suggestion'
+import type { I18n } from '@lingui/core'
+import { t } from '@lingui/core/macro'
 
 import type { ComposerEditorExtension } from '../slots'
 
@@ -58,7 +60,7 @@ function insertMention(editor: Editor, range: Range, person: Person) {
 }
 
 /** The popup: a listbox of people, driven by the suggestion plugin's keys and the mouse. */
-function popup() {
+function popup(i18n: I18n) {
 	let element: HTMLDivElement | null = null
 	let unmount: (() => void) | null = null
 	let items: Person[] = []
@@ -71,7 +73,7 @@ function popup() {
 		if (items.length === 0) {
 			const empty = document.createElement('p')
 			empty.className = 'text-ink-weak px-3 py-2 text-meta'
-			empty.textContent = loading ? '查找中…' : '没有找到这个人'
+			empty.textContent = loading ? t(i18n)`查找中…` : t(i18n)`没有找到这个人`
 			element.append(empty)
 			return
 		}
@@ -114,7 +116,7 @@ function popup() {
 		onStart: (props: SuggestionProps<Person, Person>) => {
 			element = document.createElement('div')
 			element.setAttribute('role', 'listbox')
-			element.setAttribute('aria-label', '提到的人')
+			element.setAttribute('aria-label', t(i18n)`提到的人`)
 			element.className =
 				'border-line bg-panel shadow-overlay z-50 w-64 max-w-[calc(100vw-1rem)] rounded-[2px] border py-1'
 			element.style.position = 'absolute'
@@ -151,34 +153,35 @@ function popup() {
 /** A letter, digit or address character right before `@`: an email address, not a mention. */
 const ADDRESS_CHAR = /[\w.%+-]$/u
 
-const Mentions = Extension.create({
-	name: 'forumMentions',
-	addProseMirrorPlugins() {
-		return [
-			Suggestion<Person, Person>({
-				editor: this.editor,
-				pluginKey: new PluginKey('forumMentions'),
-				char: '@',
-				// Chinese text has no space before a mention.
-				allowedPrefixes: null,
-				debounce: 150,
-				allow: ({ state, range }) => {
-					const $from = state.doc.resolve(range.from)
-					if ($from.parent.type.spec.code === true) return false
-					if (
-						$from.marks().some((mark) => mark.type.name === 'code' || mark.type.name === 'link')
-					) {
-						return false
-					}
-					const before = state.doc.textBetween(Math.max(0, range.from - 1), range.from)
-					return !ADDRESS_CHAR.test(before)
-				},
-				items: ({ query, signal }) => suggest(query, signal),
-				command: ({ editor, range, props }) => insertMention(editor, range, props),
-				render: popup,
-			}),
-		]
-	},
-})
+const Mentions = (i18n: I18n) =>
+	Extension.create({
+		name: 'forumMentions',
+		addProseMirrorPlugins() {
+			return [
+				Suggestion<Person, Person>({
+					editor: this.editor,
+					pluginKey: new PluginKey('forumMentions'),
+					char: '@',
+					// Chinese text has no space before a mention.
+					allowedPrefixes: null,
+					debounce: 150,
+					allow: ({ state, range }) => {
+						const $from = state.doc.resolve(range.from)
+						if ($from.parent.type.spec.code === true) return false
+						if (
+							$from.marks().some((mark) => mark.type.name === 'code' || mark.type.name === 'link')
+						) {
+							return false
+						}
+						const before = state.doc.textBetween(Math.max(0, range.from - 1), range.from)
+						return !ADDRESS_CHAR.test(before)
+					},
+					items: ({ query, signal }) => suggest(query, signal),
+					command: ({ editor, range, props }) => insertMention(editor, range, props),
+					render: () => popup(i18n),
+				}),
+			]
+		},
+	})
 
-export const mentionsEditor: ComposerEditorExtension = { extensions: () => [Mentions] }
+export const mentionsEditor: ComposerEditorExtension = { extensions: (i18n) => [Mentions(i18n)] }

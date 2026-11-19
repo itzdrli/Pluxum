@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useRef } from 'react'
 import { Link, Outlet, useLocation, useParams, useRouteLoaderData } from 'react-router'
+import { useLingui } from '@lingui/react/macro'
 
 import type { Route } from './+types/forum-stage'
 import { PaletteTrigger } from '../components/palette/palette-trigger'
@@ -72,6 +73,7 @@ function RailIndicator() {
 export const shouldRevalidate = stageShouldRevalidate
 
 export default function ForumStage({ loaderData }: Route.ComponentProps) {
+	const { t } = useLingui()
 	const { categories } = loaderData
 	const stage = useStage()
 	const params = useParams()
@@ -95,7 +97,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 			className="relative flex min-h-0 w-full flex-1 lg:overflow-hidden"
 		>
 			<aside
-				aria-label="版块导航"
+				aria-label={t`版块导航`}
 				data-rail={mode}
 				className={`${railWidthClass(mode)} border-line-soft bg-sunken flex min-h-0 shrink-0 flex-col overflow-x-hidden border-r transition-[width] duration-300 ease-[var(--stage-ease)] [view-transition-name:stage-nav] max-lg:hidden`}
 			>
@@ -105,7 +107,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 					<Link
 						to="/"
 						viewTransition
-						aria-label={`${siteName} 首页`}
+						aria-label={t`${siteName} 首页`}
 						className={`text-ink-strong flex min-w-0 items-center gap-2.5 font-bold transition-opacity ${
 							preference === 'mini'
 								? 'group-hover/head:opacity-0 group-has-[:focus-visible]/head:opacity-0'
@@ -118,7 +120,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 					{preference === 'mini' ? (
 						// Folded: the logo turns into the way to open the rail on hover, as in most editors.
 						<IconButton
-							label={'展开侧栏（\\）'}
+							label={t`展开侧栏（\\）`}
 							key="expand"
 							className="absolute top-1/2 left-3 -translate-y-1/2 opacity-0 group-hover/head:opacity-100 focus-visible:opacity-100"
 							onPress={() => toggleRail(preference)}
@@ -128,7 +130,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 					) : (
 						<IconButton
 							key="collapse"
-							label={'收起侧栏（\\）'}
+							label={t`收起侧栏（\\）`}
 							className={`text-ink-weak ml-auto shrink-0 ${RAIL_LABEL}`}
 							onPress={() => toggleRail(preference)}
 						>
@@ -236,6 +238,7 @@ function CategoryNavPanel({
 	root: ReturnType<typeof useRouteLoaderData<typeof rootLoader>>
 	collapsed: boolean
 }) {
+	const { t } = useLingui()
 	const meta = root?.meta
 	// Staff reach the moderation page from the frame too, not only from the account menu.
 	const moderationOn =
@@ -253,7 +256,7 @@ function CategoryNavPanel({
 				<RailLink
 					to="/"
 					icon={LayoutGrid}
-					label="概览"
+					label={t`概览`}
 					active={pathname === '/'}
 					collapsed={collapsed}
 				/>
@@ -261,7 +264,7 @@ function CategoryNavPanel({
 					<RailLink
 						to="/notifications"
 						icon={Bell}
-						label="通知"
+						label={t`通知`}
 						active={pathname === '/notifications'}
 						badge={root?.unreadNotifications}
 						collapsed={collapsed}
@@ -271,7 +274,7 @@ function CategoryNavPanel({
 					<RailLink
 						to="/moderation"
 						icon={ShieldCheck}
-						label="审核"
+						label={t`审核`}
 						active={pathname === '/moderation'}
 						collapsed={collapsed}
 					/>
@@ -279,13 +282,15 @@ function CategoryNavPanel({
 			</ul>
 			{/* Folding closes this head to nothing, so the categories glide up instead of jumping. */}
 			<div className="border-line-soft flex h-12 shrink-0 items-center justify-between gap-2 overflow-hidden border-b pr-3 pl-5 whitespace-nowrap transition-[height,opacity,border-color] duration-300 ease-[var(--stage-ease)] rail-mini:h-0 rail-mini:border-transparent rail-mini:opacity-0">
-				<span className="section-label">版块 · {categories.length}</span>
+				<span className="section-label">
+					{t`版块`} · {categories.length}
+				</span>
 				<div className="flex items-center gap-1">
 					{canManageCategories && (
 						<StageLink
 							to="/?new=1"
-							aria-label="新建版块"
-							title="新建版块"
+							aria-label={t`新建版块`}
+							title={t`新建版块`}
 							tabIndex={collapsed ? -1 : undefined}
 							className="text-ink-weak hover:bg-hover hover:text-ink-strong inline-flex size-control-sm items-center justify-center rounded-[2px]"
 						>
@@ -296,7 +301,7 @@ function CategoryNavPanel({
 			</div>
 			<ul className="flex-1 overflow-x-hidden overflow-y-auto py-2">
 				{categories.length === 0 ? (
-					<li className={`text-ink-weak px-5 py-5 text-meta ${RAIL_LABEL}`}>还没有版块</li>
+					<li className={`text-ink-weak px-5 py-5 text-meta ${RAIL_LABEL}`}>{t`还没有版块`}</li>
 				) : (
 					categories.map((cat) => {
 						const isActive = cat.slug === activeSlug

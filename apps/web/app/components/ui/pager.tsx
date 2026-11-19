@@ -1,6 +1,7 @@
 import { buttonVariants } from '@heroui/react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useLocation } from 'react-router'
+import { useLingui } from '@lingui/react/macro'
 
 import { pageCount } from '../../lib/format'
 import { isDetailPath, LIST_PAGE_PARAM } from '../../lib/stage'
@@ -57,15 +58,16 @@ export function Pager({
 	total: number
 	paramName?: string
 }) {
+	const { t } = useLingui()
 	const location = useLocation()
 	const pages = pageCount(total, pageSize)
 	if (pages <= 1) return null
 	const pageHref = (targetPage: number) =>
 		buildPageHref(location.pathname, location.search, targetPage, paramName)
 	return (
-		<nav aria-label="分页" className="mt-4 flex items-center justify-center gap-1">
+		<nav aria-label={t`分页`} className="mt-4 flex items-center justify-center gap-1">
 			{page > 1 ? (
-				<StageLink to={pageHref(page - 1)} className={STEP} aria-label="上一页" rel="prev">
+				<StageLink to={pageHref(page - 1)} className={STEP} aria-label={t`上一页`} rel="prev">
 					<ChevronLeft aria-hidden />
 				</StageLink>
 			) : (
@@ -95,7 +97,7 @@ export function Pager({
 				),
 			)}
 			{page < pages ? (
-				<StageLink to={pageHref(page + 1)} className={STEP} aria-label="下一页" rel="next">
+				<StageLink to={pageHref(page + 1)} className={STEP} aria-label={t`下一页`} rel="next">
 					<ChevronRight aria-hidden />
 				</StageLink>
 			) : (

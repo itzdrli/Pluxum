@@ -1,6 +1,7 @@
 import { msg } from '@lingui/core/macro'
 import { MessagesSquare, Plus } from 'lucide-react'
 import { useParams, useRouteLoaderData } from 'react-router'
+import { useLingui } from '@lingui/react/macro'
 
 import type { Route } from './+types/category'
 import { NoteCard } from '../components/forum/note-card'
@@ -58,7 +59,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 export const shouldRevalidate = listShouldRevalidate()
 
 export default function Category({ loaderData }: Route.ComponentProps) {
+	const { t } = useLingui()
 	const { category, threads, can } = loaderData
+	const categoryName = category.name
 	const openRef = useOpenThreadRef()
 	const { detail } = useStageLinks()
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
@@ -76,7 +79,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 	const action = (compact: boolean) =>
 		canCreate && compact ? (
 			// The narrow list's head has room for the icon only.
-			<IconButton label="发布主题" onPress={() => dock.openThread(category.slug)}>
+			<IconButton label={t`发布主题`} onPress={() => dock.openThread(category.slug)}>
 				<Plus aria-hidden />
 			</IconButton>
 		) : canCreate ? (
@@ -86,16 +89,16 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 				onPress={() => dock.openThread(category.slug)}
 			>
 				<Plus aria-hidden />
-				发布主题
+				{t`发布主题`}
 			</Button>
 		) : loginToPost !== undefined ? (
 			<ButtonAnchor href={loginToPost} size={compact ? 'sm' : 'md'}>
-				登录后发布
+				{t`登录后发布`}
 			</ButtonAnchor>
 		) : undefined
 
 	return (
-		<StageSplit label={`${category.name} 主题列表`} short={category.name}>
+		<StageSplit label={t`${categoryName} 主题列表`} short={category.name}>
 			{(detailOpen) => (
 				<>
 					{detailOpen ? (
@@ -126,12 +129,12 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 							icon={MessagesSquare}
 							title={
 								threads.total > 0
-									? '这一页没有内容'
+									? t`这一页没有内容`
 									: isStream
-										? '还没有动态'
-										: '这个版块还没有主题'
+										? t`还没有动态`
+										: t`这个版块还没有主题`
 							}
-							hint={threads.total === 0 && canCreate ? '来发布第一个主题吧。' : undefined}
+							hint={threads.total === 0 && canCreate ? t`来发布第一个主题吧。` : undefined}
 							action={threads.total === 0 ? action(detailOpen) : undefined}
 						/>
 					) : (

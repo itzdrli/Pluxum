@@ -3,6 +3,7 @@ import { Popover } from '@heroui/react'
 import { Bell } from 'lucide-react'
 import { useState } from 'react'
 import { useFetcher, useLocation, useRouteLoaderData } from 'react-router'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import type { loader as rootLoader } from '../../root'
 import type { loader as notificationsLoader } from '../../routes/notifications'
@@ -25,6 +26,7 @@ export function formatUnreadBadge(count: number): string | null {
  * latest notifications in a popover; the full list stays at `/notifications`.
  */
 export function NotificationBell({ meta }: { meta: MetaDto | null }) {
+	const { t } = useLingui()
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const location = useLocation()
 	const [open, setOpen] = useState(false)
@@ -59,7 +61,7 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 	const unread = root?.unreadNotifications ?? 0
 	const badge = formatUnreadBadge(unread)
 	const active = open || location.pathname === '/notifications'
-	const label = unread > 0 ? `通知（${unread} 条未读）` : '通知'
+	const label = unread > 0 ? t`通知（${unread} 条未读）` : t`通知`
 
 	const page = list.data?.notifications ?? null
 	const loading = page === null && list.state !== 'idle'
@@ -79,6 +81,7 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 		void mark.submit({ intent: 'mark-all-read' }, { method: 'post', action: '/notifications' })
 	}
 
+	const unreadCount = page?.unreadCount ?? 0
 	const showMarkAll = page !== null && page.unreadCount > 0 && !allRead
 
 	const trigger = (
@@ -104,21 +107,27 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 	)
 
 	const unreadNote = page !== null && page.unreadCount > 0 && !allRead && (
-		<span className="text-ink-weak font-normal tabular-nums">{page.unreadCount} 条未读</span>
+		<span className="text-ink-weak font-normal tabular-nums">{t`${unreadCount} 条未读`}</span>
 	)
 	const markAllButton = showMarkAll && (
 		<Button tone="ghost" size="sm" onPress={markAllRead}>
-			全部已读
+			<Trans>全部已读</Trans>
 		</Button>
 	)
 	const listBody = (
 		<div className="min-h-0 flex-1 overflow-y-auto">
 			{loading ? (
-				<p className="text-ink-weak px-3 py-8 text-center text-ui">加载中…</p>
+				<p className="text-ink-weak px-3 py-8 text-center text-ui">
+					<Trans>加载中…</Trans>
+				</p>
 			) : unavailable ? (
-				<p className="text-ink-weak px-3 py-8 text-center text-ui">通知暂时无法加载。</p>
+				<p className="text-ink-weak px-3 py-8 text-center text-ui">
+					<Trans>通知暂时无法加载。</Trans>
+				</p>
 			) : page !== null && page.items.length === 0 ? (
-				<p className="text-ink-weak px-3 py-8 text-center text-ui">暂时还没有收到通知。</p>
+				<p className="text-ink-weak px-3 py-8 text-center text-ui">
+					<Trans>暂时还没有收到通知。</Trans>
+				</p>
 			) : (
 				page !== null && (
 					<ol className="divide-line divide-y">
@@ -144,7 +153,7 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 			onClick={() => setOpen(false)}
 			className="border-line text-ink-weak hover:bg-hover hover:text-ink-strong flex h-11 shrink-0 items-center justify-center border-t text-ui"
 		>
-			查看全部通知
+			<Trans>查看全部通知</Trans>
 		</StageLink>
 	)
 
@@ -156,7 +165,7 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 				<BottomSheet
 					isOpen={open}
 					onOpenChange={handleOpenChange}
-					title="通知"
+					title={t`通知`}
 					bodyClassName="flex min-h-0 flex-1 flex-col"
 				>
 					{(unreadNote || markAllButton) && (
@@ -180,12 +189,12 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 				className="w-[min(24rem,calc(100vw-1rem))] overflow-hidden p-0"
 			>
 				<Popover.Dialog
-					aria-label="通知"
+					aria-label={t`通知`}
 					className="flex max-h-[min(32rem,70dvh)] flex-col p-0 outline-none"
 				>
 					<div className="border-line flex h-11 shrink-0 items-center justify-between gap-2 border-b pr-1.5 pl-3">
 						<p className="text-ink-strong flex items-center gap-1.5 text-ui font-bold">
-							通知
+							<Trans>通知</Trans>
 							{unreadNote}
 						</p>
 						{markAllButton}
@@ -207,6 +216,7 @@ function PopoverRow({
 	read: boolean
 	onOpen: () => void
 }) {
+	const { t } = useLingui()
 	const href = resolveNotificationHref(item)
 	const body = (
 		<>
@@ -244,7 +254,7 @@ function PopoverRow({
 				</span>
 			</span>
 			{!read && (
-				<span aria-label="未读" className="bg-accent mt-1.5 size-2 shrink-0 rounded-full" />
+				<span aria-label={t`未读`} className="bg-accent mt-1.5 size-2 shrink-0 rounded-full" />
 			)}
 		</>
 	)

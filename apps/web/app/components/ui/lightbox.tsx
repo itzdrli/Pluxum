@@ -1,6 +1,7 @@
 import { Modal } from '@heroui/react'
 import { ChevronLeft, ChevronRight, Download, X } from 'lucide-react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useLingui } from '@lingui/react/macro'
 
 import { IconButton } from './button'
 
@@ -66,6 +67,7 @@ function Viewer({
 	state: { images: readonly LightboxImage[]; index: number } | null
 	onChange: (next: { images: readonly LightboxImage[]; index: number } | null) => void
 }) {
+	const { t } = useLingui()
 	const count = state?.images.length ?? 0
 	const current = state?.images[state.index]
 	const step = useCallback(
@@ -94,7 +96,7 @@ function Viewer({
 		<Modal isOpen={state !== null} onOpenChange={(open) => !open && onChange(null)}>
 			<Modal.Backdrop variant="blur" className="lightbox-backdrop">
 				<Modal.Container size="full" className="lightbox">
-					<Modal.Dialog aria-label={current?.alt || '图片'} className="lightbox-dialog">
+					<Modal.Dialog aria-label={current?.alt || t`图片`} className="lightbox-dialog">
 						<div className="flex items-center gap-2 px-3 py-2">
 							<p className="min-w-0 flex-1 truncate text-ui text-white/85">
 								{current?.alt}
@@ -109,13 +111,13 @@ function Viewer({
 									href={current.src}
 									download
 									className="button button--ghost button--icon-only button--sm lightbox-control"
-									aria-label="下载原图"
+									aria-label={t`下载原图`}
 								>
 									<Download aria-hidden />
 								</a>
 							)}
 							<IconButton
-								label="关闭"
+								label={t`关闭`}
 								size="sm"
 								className="lightbox-control"
 								onPress={() => onChange(null)}
@@ -161,14 +163,14 @@ function Viewer({
 							{count > 1 && (
 								<>
 									<IconButton
-										label="上一张"
+										label={t`上一张`}
 										className="lightbox-control lightbox-nav left-2 max-sm:hidden"
 										onPress={() => step(-1)}
 									>
 										<ChevronLeft aria-hidden />
 									</IconButton>
 									<IconButton
-										label="下一张"
+										label={t`下一张`}
 										className="lightbox-control lightbox-nav right-2 max-sm:hidden"
 										onPress={() => step(1)}
 									>
@@ -180,13 +182,13 @@ function Viewer({
 						{/* Phones: a picture fills the width, so the buttons go below it instead of over it. */}
 						{count > 1 && state !== null && (
 							<div className="flex items-center justify-center gap-6 px-3 pt-1 pb-[max(12px,env(safe-area-inset-bottom))] sm:hidden">
-								<IconButton label="上一张" className="lightbox-control" onPress={() => step(-1)}>
+								<IconButton label={t`上一张`} className="lightbox-control" onPress={() => step(-1)}>
 									<ChevronLeft aria-hidden />
 								</IconButton>
 								<span className="min-w-12 text-center text-ui text-white/70 tabular-nums">
 									{state.index + 1} / {count}
 								</span>
-								<IconButton label="下一张" className="lightbox-control" onPress={() => step(1)}>
+								<IconButton label={t`下一张`} className="lightbox-control" onPress={() => step(1)}>
 									<ChevronRight aria-hidden />
 								</IconButton>
 							</div>

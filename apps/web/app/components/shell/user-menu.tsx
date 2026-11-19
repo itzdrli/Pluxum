@@ -1,7 +1,5 @@
-import type { MetaDto, UserDto } from '@pluxum/domain'
+import type { MetaDto, Role, UserDto } from '@pluxum/domain'
 import { Dropdown, Popover } from '@heroui/react'
-import type { MessageDescriptor } from '@lingui/core'
-import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Ellipsis, LogIn, Palette } from 'lucide-react'
 import { useRef, useState } from 'react'
@@ -11,15 +9,9 @@ import { ButtonAnchor, IconButton } from '../ui/button'
 import { BottomSheet } from '../ui/bottom-sheet'
 import { UserAvatar } from '../forum/user-avatar'
 import { NARROW_QUERY, useMediaQuery } from '../../lib/media'
+import { ROLE_LABELS } from '../../lib/roles'
 import { LocaleSwitcher } from './locale-switcher'
 import { ThemeSwatches } from './theme-picker'
-
-const ROLE_LABELS = {
-	guest: msg`游客`,
-	member: msg`成员`,
-	moderator: msg`版主`,
-	admin: msg`管理员`,
-} as const satisfies Record<string, MessageDescriptor>
 
 /**
  * Login link, or the signed-in account with its menu. `variant="bar"` is the top bar's avatar
@@ -110,7 +102,7 @@ function AccountMenu({
 	collapsed,
 }: {
 	user: UserDto
-	role: keyof typeof ROLE_LABELS | undefined
+	role: Role | undefined
 	showModeration: boolean
 	variant: Variant
 	collapsed: boolean

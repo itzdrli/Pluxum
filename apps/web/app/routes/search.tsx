@@ -2,6 +2,8 @@ import { LIMITS, type CategoryDto, type SearchHitDto } from '@pluxum/domain'
 import { msg } from '@lingui/core/macro'
 import { Search, SearchX } from 'lucide-react'
 import { Form, useNavigation, useParams, useRouteLoaderData } from 'react-router'
+import { t as tm } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 
 import type { Route } from './+types/search'
 import type { loader as stageLoader } from './forum-stage'
@@ -27,6 +29,7 @@ import {
 import { Pager } from '../components/ui/pager'
 import { NativeSelect } from '../components/ui/field'
 import { forumApi, orThrow } from '../lib/forum-api.server'
+import { i18nOfRoot } from '../lib/i18n'
 import { pageTitle } from '../lib/site'
 import {
 	defineStage,
@@ -82,8 +85,11 @@ export function buildSearchHitHref(
 }
 
 export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
-	const query = loaderData?.query
-	return [{ title: pageTitle(matches[0].loaderData, query ? `搜索“${query}”` : '搜索') }]
+	const query = loaderData?.query ?? ''
+	const i18n = i18nOfRoot(matches[0].loaderData)
+	return [
+		{ title: pageTitle(matches[0].loaderData, query ? tm(i18n)`搜索“${query}”` : tm(i18n)`搜索`) },
+	]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -149,6 +155,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 export const shouldRevalidate = listShouldRevalidate(SEARCH_CARRY)
 
 export default function SearchRoute({ loaderData }: Route.ComponentProps) {
+	const { t } = useLingui()
 	const { available, query, categoryId, authorId, threadsOnly, results, error } = loaderData
 	const categories = useRouteLoaderData<typeof stageLoader>('routes/forum-stage')?.categories ?? []
 	const navigation = useNavigation()
@@ -159,11 +166,11 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 
 	if (!available) {
 		return (
-			<StageSplit label="搜索">
+			<StageSplit label={t`搜索`}>
 				{() => (
 					<>
-						<PageHeader title="搜索" />
-						<EmptyState icon={SearchX} title="搜索功能未启用" />
+						<PageHeader title={t`搜索`} />
+						<EmptyState icon={SearchX} title={t`搜索功能未启用`} />
 					</>
 				)}
 			</StageSplit>
@@ -182,7 +189,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 	)
 
 	return (
-		<StageSplit label="搜索结果" short="搜索">
+		<StageSplit label={t`搜索结果`} short={t`搜索`}>
 			{(detailOpen) => (
 				<>
 					{detailOpen ? (
@@ -196,7 +203,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 						</PaneBar>
 					) : (
 						<>
-							<PageHeader title="搜索" />
+							<PageHeader title={t`搜索`} />
 							<Panel className="mb-6 p-3 sm:p-4">
 								<Form method="get" action="/search" role="search" className="flex flex-col gap-3">
 									{authorId !== undefined && (
@@ -205,7 +212,7 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 									<div className="flex items-center gap-2">
 										<SearchInput query={query} size="md" autoFocus={query === ''} />
 										<Button tone="primary" size="md" type="submit" isPending={isSearching}>
-											搜索
+											<Trans>搜索</Trans>
 										</Button>
 									</div>
 
@@ -214,10 +221,10 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 											key={categoryId}
 											name="categoryId"
 											defaultValue={categoryId}
-											aria-label="按版块筛选"
+											aria-label={t`按版块筛选`}
 											className="max-w-full"
 										>
-											<option value="">全部版块</option>
+											<option value="">{t`全部版块`}</option>
 											{categories.map((category) => (
 												<option key={category.id} value={category.id}>
 													{category.name}
@@ -234,7 +241,9 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 												defaultChecked={threadsOnly}
 												className="size-3.5 accent-[var(--c-accent)]"
 											/>
-											<span>仅看主题</span>
+											<span>
+												<Trans>仅看主题</Trans>
+											</span>
 										</label>
 									</div>
 								</Form>
@@ -249,12 +258,14 @@ export default function SearchRoute({ loaderData }: Route.ComponentProps) {
 					)}
 
 					{results === null ? (
-						error === undefined && <EmptyState icon={Search} title="输入关键词开始搜索" />
+						error === undefined && <EmptyState icon={Search} title={t`输入关键词开始搜索`} />
 					) : results.items.length === 0 ? (
-						<EmptyState icon={SearchX} title="没有找到匹配的内容" />
+						<EmptyState icon={SearchX} title={t`没有找到匹配的内容`} />
 					) : (
 						<section>
-							<SectionLabel>搜索结果 · {results.total}</SectionLabel>
+							<SectionLabel>
+								{t`搜索结果`} · {results.total}
+							</SectionLabel>
 							<Panel as="ol" className="divide-line divide-y">
 								{results.items.map((hit) => (
 									<SearchHitRow
@@ -289,6 +300,7 @@ function SearchInput({
 	size: 'sm' | 'md'
 	autoFocus?: boolean
 }) {
+	const { t } = useLingui()
 	return (
 		<div className="relative flex min-w-0 flex-1 items-center">
 			<Search
@@ -302,8 +314,8 @@ function SearchInput({
 				name="q"
 				defaultValue={query}
 				maxLength={LIMITS.searchQueryMax}
-				placeholder="搜索主题或回复…"
-				aria-label="搜索关键词"
+				placeholder={t`搜索主题或回复…`}
+				aria-label={t`搜索关键词`}
 				autoFocus={autoFocus}
 				className={`border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border pr-3 pl-8 text-ui outline-none ${size === 'sm' ? 'h-control-sm' : 'h-control'}`}
 			/>
@@ -322,6 +334,8 @@ function SearchHitRow({
 	isActive: boolean
 	category: CategoryDto | undefined
 }) {
+	const { t } = useLingui()
+	const hitAuthor = hit.author.displayName
 	return (
 		<li
 			className={`hover:bg-hover relative flex items-start gap-4 border-l-2 px-5 py-4 transition-colors ${
@@ -341,7 +355,11 @@ function SearchHitRow({
 				<p className="[overflow-wrap:anywhere]">
 					<Tag tone={hit.opening ? 'accent' : 'neutral'} className="mr-2 align-[1px]">
 						{/* Only notes have no title. */}
-						{hit.opening ? (hit.title === '' ? '动态' : '主题') : '回复'}
+						{hit.opening
+							? hit.title === ''
+								? t({ message: '动态', context: 'tab: notes' })
+								: t({ message: '主题', context: 'thread' })
+							: t({ message: '回复', context: 'noun' })}
 					</Tag>
 					{/* The link's box covers the row, so the whole row opens the hit. */}
 					<StageLink
@@ -351,7 +369,7 @@ function SearchHitRow({
 						aria-current={isActive ? 'page' : undefined}
 						className="text-ink-strong text-ui font-bold after:absolute after:inset-0 hover:underline @lg/threads:text-title"
 					>
-						{hit.title === '' ? `${hit.author.displayName} 的动态` : hit.title}
+						{hit.title === '' ? t`${hitAuthor} 的动态` : hit.title}
 					</StageLink>
 				</p>
 

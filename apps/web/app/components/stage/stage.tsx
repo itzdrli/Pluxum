@@ -18,6 +18,7 @@ import {
 } from 'react-router'
 
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useLingui } from '@lingui/react/macro'
 
 import { toggleFocusReading, useFocusReading } from '../../lib/focus'
 import { jumpPaneTo, useSmoothScroll } from './smooth-scroll'
@@ -131,8 +132,9 @@ const DETAIL =
  * what it folds. The `[` shortcut does the same.
  */
 export function FoldListButton() {
+	const { t } = useLingui()
 	return (
-		<IconButton label="收起主题列表（[）" onPress={toggleFocusReading}>
+		<IconButton label={t`收起主题列表（[）`} onPress={toggleFocusReading}>
 			<PanelLeftClose aria-hidden />
 		</IconButton>
 	)
@@ -155,6 +157,7 @@ export function StageSplit({
 	short?: string
 	children: (detailOpen: boolean) => React.ReactNode
 }) {
+	const { t } = useLingui()
 	const stage = useStage()
 	const location = useLocation()
 	const detailOpen = stage.depth === 2
@@ -210,7 +213,7 @@ export function StageSplit({
 					}`}
 				>
 					<div className="flex h-[var(--h-pane-bar)] shrink-0 items-center">
-						<IconButton label="展开主题列表（[）" onPress={toggleFocusReading}>
+						<IconButton label={t`展开主题列表（[）`} onPress={toggleFocusReading}>
 							<PanelLeftOpen aria-hidden />
 						</IconButton>
 					</div>

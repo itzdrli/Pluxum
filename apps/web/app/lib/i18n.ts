@@ -17,3 +17,22 @@ export function createI18n(
 ): I18n {
 	return setupI18n({ locale, messages: { [locale]: messages } })
 }
+
+function isMessages(value: unknown): value is Messages {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		Object.values(value).every((entry) => typeof entry === 'string' || Array.isArray(entry))
+	)
+}
+
+/**
+ * The i18n of a loader's or `meta()`'s root data (`matches[0].loaderData`). `meta()` sees the
+ * loader data after React Router's serialisation types, which no longer say what `messages` is,
+ * so it is checked here. Without root data (the loader failed) it is the source language.
+ */
+export function i18nOfRoot(
+	root: Readonly<{ locale: LocaleId; messages: unknown }> | undefined,
+): I18n {
+	return createI18n(root?.locale, isMessages(root?.messages) ? root.messages : undefined)
+}
