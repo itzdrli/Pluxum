@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from 'react'
 import { useLingui } from '@lingui/react/macro'
 
 import { formatDateTime, formatHumanTime } from '../../lib/format'
+import { useTimeZone } from '../../lib/timezone'
 import { StageLink } from '../stage/stage'
 
 /** Small inline label. `accent` marks the one thing worth noticing (pinned, own role). */
@@ -128,16 +129,17 @@ function subscribeToClock(listener: () => void) {
 /** A moment as people say it (`3分钟前`, `3月2日`); hover for the exact minute. */
 export function Timestamp({ iso, className }: { iso: string; className?: string }) {
 	const { i18n } = useLingui()
+	const timeZone = useTimeZone()
 	const now = useSyncExternalStore(subscribeToClock, () => clock, Date.now)
 	return (
 		// The server and the browser read the clock at different moments, so their words may differ.
 		<time
 			dateTime={iso}
-			title={formatDateTime(iso, i18n.locale)}
+			title={formatDateTime(iso, i18n.locale, timeZone)}
 			suppressHydrationWarning
 			className={`tabular-nums ${className ?? ''}`}
 		>
-			{formatHumanTime(iso, now, i18n)}
+			{formatHumanTime(iso, now, i18n, timeZone)}
 		</time>
 	)
 }

@@ -1,9 +1,6 @@
 import type { I18n } from '@lingui/core'
 import { t, plural } from '@lingui/core/macro'
 
-// The forum shows one fixed time zone so that server-rendered and hydrated markup always agree.
-const FORUM_TIME_ZONE = 'Asia/Shanghai'
-
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
@@ -17,11 +14,15 @@ function intlLocale(locale: string): string {
 }
 
 const formatters = new Map<string, Intl.DateTimeFormat>()
-function formatter(locale: string, kind: 'full' | 'day' | 'dayYear'): Intl.DateTimeFormat {
-	const key = `${locale}|${kind}`
+function formatter(
+	locale: string,
+	kind: 'full' | 'day' | 'dayYear',
+	timeZone: string,
+): Intl.DateTimeFormat {
+	const key = `${locale}|${kind}|${timeZone}`
 	let found = formatters.get(key)
 	if (found === undefined) {
-		const base = { timeZone: FORUM_TIME_ZONE }
+		const base = { timeZone }
 		found = new Intl.DateTimeFormat(
 			intlLocale(locale),
 			kind === 'full'
@@ -33,6 +34,7 @@ function formatter(locale: string, kind: 'full' | 'day' | 'dayYear'): Intl.DateT
 						hour: '2-digit',
 						minute: '2-digit',
 						hourCycle: 'h23',
+						timeZoneName: 'short',
 					}
 				: {
 						...base,
@@ -46,19 +48,29 @@ function formatter(locale: string, kind: 'full' | 'day' | 'dayYear'): Intl.DateT
 	return found
 }
 
-/** An ISO timestamp as `2026/11/13 18:20` (`Nov 13, 2026, 18:20`) in the forum's time zone: for tooltips. */
-export function formatDateTime(iso: string, locale: string): string {
+/** An ISO timestamp as `2026/11/13 18:20 GMT+8` (`Nov 13, 2026, 18:20 GMT+8`) in `timeZone`: for tooltips. */
+export function formatDateTime(iso: string, locale: string, timeZone: string): string {
 	const date = new Date(iso)
-	return Number.isNaN(date.getTime()) ? '' : formatter(locale, 'full').format(date)
+	if (Number.isNaN(date.getTime())) return ''
+	// Some locales (zh) put the zone name in the middle of the time; it always goes last here.
+	const parts = formatter(locale, 'full', timeZone).formatToParts(date)
+	const zone = parts.find((part) => part.type === 'timeZoneName')?.value ?? ''
+	const text = parts
+		.filter((part) => part.type !== 'timeZoneName')
+		.map((part) => part.value)
+		.join('')
+		.replaceAll(/\s+/g, ' ')
+		.trim()
+	return `${text} ${zone}`.trim()
 }
 
 /**
  * A time the way a person says it. Within a month: how long ago, in the largest whole unit
  * (`12秒前`, `5分钟前`, `3小时前`, `2天前`, `3周前`; a future time reads `…后`). After a month but
  * within a year: the date without its year (`3月2日`). Beyond that: the full date without the time
- * of day (`2025年3月2日`).
+ * of day (`2025年3月2日`). Dates are the ones of `timeZone`.
  */
-export function formatHumanTime(iso: string, now: number, i18n: I18n): string {
+export function formatHumanTime(iso: string, now: number, i18n: I18n, timeZone: string): string {
 	const time = new Date(iso).getTime()
 	if (Number.isNaN(time)) return ''
 	const delta = now - time
@@ -95,7 +107,7 @@ export function formatHumanTime(iso: string, now: number, i18n: I18n): string {
 			? t(i18n)`${plural(weeks, { other: '#周前' })}`
 			: t(i18n)`${plural(weeks, { other: '#周后' })}`
 	}
-	return formatter(i18n.locale, span < YEAR ? 'day' : 'dayYear').format(time)
+	return formatter(i18n.locale, span < YEAR ? 'day' : 'dayYear', timeZone).format(time)
 }
 
 export function pageCount(total: number, pageSize: number): number {

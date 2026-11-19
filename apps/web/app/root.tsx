@@ -15,7 +15,7 @@ import '@fontsource/jetbrains-mono/700.css'
 import { I18nProvider } from '@lingui/react'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Home, TriangleAlert } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import {
 	isRouteErrorResponse,
 	Links,
@@ -44,6 +44,7 @@ import { focusFromRequest } from './lib/focus'
 import { createI18n } from './lib/i18n'
 import { loadMessages } from './lib/i18n.server'
 import { DEFAULT_LOCALE, localeFromRequest } from './lib/locale'
+import { rememberTimeZone, timeZoneFromRequest } from './lib/timezone'
 import { railFromRequest } from './lib/rail'
 import { isDarkTheme, themeFromRequest } from './lib/theme'
 
@@ -68,6 +69,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		meta: forumMeta,
 		unreadNotifications,
 		locale,
+		timeZone: timeZoneFromRequest(request),
 		// The whole catalog rides along with the document, so the browser hydrates in the same
 		// language the server rendered. Switching language revalidates this loader.
 		messages: await loadMessages(locale),
@@ -118,6 +120,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
+	// Tells the server the visitor's time zone for its next render.
+	useEffect(() => rememberTimeZone(loaderData.timeZone), [loaderData.timeZone])
 	return (
 		<LightboxProvider>
 			<DockProvider>

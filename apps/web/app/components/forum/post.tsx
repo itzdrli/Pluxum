@@ -5,6 +5,8 @@ import { Form, Link, useActionData, useNavigation } from 'react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 
 import { withoutLeadingTitle } from '../../lib/post-html'
+import { formatDateTime } from '../../lib/format'
+import { useTimeZone } from '../../lib/timezone'
 import { PostFooterSlots, usePostMenuSlots } from '../../slots/slots'
 import { Composer } from '../composer/composer'
 import { Button } from '../ui/button'
@@ -41,7 +43,7 @@ export function PostCard({
 	/** Whether the viewer may answer inside this floor. */
 	canReply?: boolean
 }) {
-	const { t } = useLingui()
+	const { t, i18n } = useLingui()
 	// Who the floor's reply box answers (the floor or one reply in it), opened at a reply count.
 	// Posting changes the count, which closes the box.
 	const [answering, setAnswering] = useState<Readonly<{ post: PostDto; total: number }> | null>(
@@ -59,7 +61,8 @@ export function PostCard({
 	const lightbox = useLightbox()
 	const [copied, setCopied] = useState(false)
 	const ext = usePostMenuSlots(post)
-	const editedAt = post.editedAt ?? ''
+	const timeZone = useTimeZone()
+	const editedAt = formatDateTime(post.editedAt ?? '', i18n.locale, timeZone)
 	// Order: share, then what extensions add (report), then the author's own edit and delete.
 	const items: MenuItem[] = [
 		{
@@ -352,12 +355,13 @@ function FloorReply({
 	bodyMax: number | undefined
 	onAnswer: () => void
 }) {
-	const { t } = useLingui()
+	const { t, i18n } = useLingui()
 	const [editingFrom, setEditingFrom] = useState<string | null | undefined>(undefined)
 	const editing = editingFrom !== undefined && editingFrom === reply.editedAt
 	const [confirming, setConfirming] = useState(false)
 	const ext = usePostMenuSlots(reply)
-	const replyEditedAt = reply.editedAt ?? ''
+	const timeZone = useTimeZone()
+	const replyEditedAt = formatDateTime(reply.editedAt ?? '', i18n.locale, timeZone)
 	const replyNumber = reply.number
 	const items: MenuItem[] = [
 		{

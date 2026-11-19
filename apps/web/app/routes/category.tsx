@@ -1,6 +1,6 @@
 import { msg } from '@lingui/core/macro'
 import { MessagesSquare, Plus } from 'lucide-react'
-import { useParams, useRouteLoaderData } from 'react-router'
+import { useRouteLoaderData } from 'react-router'
 import { useLingui } from '@lingui/react/macro'
 
 import type { Route } from './+types/category'

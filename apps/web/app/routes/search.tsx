@@ -1,7 +1,7 @@
 import { LIMITS, type CategoryDto, type SearchHitDto } from '@pluxum/domain'
 import { msg } from '@lingui/core/macro'
 import { Search, SearchX } from 'lucide-react'
-import { Form, useNavigation, useParams, useRouteLoaderData } from 'react-router'
+import { Form, useNavigation, useRouteLoaderData } from 'react-router'
 import { t as tm } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 
