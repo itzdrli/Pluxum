@@ -1,3 +1,5 @@
+import { errorDetail, type ErrorDetail, type FieldName } from './errors'
+
 export const LIMITS = Object.freeze({
 	categoryNameMax: 40,
 	categoryDescriptionMax: 200,
@@ -17,12 +19,17 @@ export const LIMITS = Object.freeze({
 	pageSizeMax: 50,
 })
 
+/** `reason` is the Chinese text of `error`, which carries the key a client words in its language. */
 export type Validated<T> =
 	| Readonly<{ ok: true; value: T }>
-	| Readonly<{ ok: false; reason: string }>
+	| Readonly<{ ok: false; reason: string; error: ErrorDetail }>
 
 const valid = <T>(value: T): Validated<T> => ({ ok: true, value })
-const invalid = (reason: string): Validated<never> => ({ ok: false, reason })
+const invalid = (error: ErrorDetail): Validated<never> => ({
+	ok: false,
+	reason: error.message,
+	error,
+})
 
 /** Length as users count it for the limits: Unicode code points, not UTF-16 units. */
 function codePoints(value: string): number {
@@ -30,36 +37,42 @@ function codePoints(value: string): number {
 }
 
 /** Single-line text: trimmed, inner whitespace collapsed, control characters rejected. */
-function singleLine(input: string, label: string, max: number): Validated<string> {
-	if (typeof input !== 'string') return invalid(`${label}必须是文本`)
+function singleLine(input: string, field: FieldName, max: number): Validated<string> {
+	if (typeof input !== 'string') return invalid(errorDetail('field.not_text', { field }))
 	const value = input.trim().replaceAll(/\s+/g, ' ')
-	if (!value) return invalid(`${label}不能为空`)
-	if (/\p{Cc}/u.test(value)) return invalid(`${label}包含不允许的字符`)
-	if (codePoints(value) > max) return invalid(`${label}不能超过 ${max} 个字符`)
+	if (!value) return invalid(errorDetail('field.empty', { field }))
+	if (/\p{Cc}/u.test(value)) return invalid(errorDetail('field.bad_chars', { field }))
+	if (codePoints(value) > max) return invalid(errorDetail('field.too_long', { field, max }))
 	return valid(value)
 }
 
 export function validateThreadTitle(input: string): Validated<string> {
-	return singleLine(input, '标题', LIMITS.threadTitleMax)
+	return singleLine(input, 'title', LIMITS.threadTitleMax)
 }
 
 export function validateCategoryName(input: string): Validated<string> {
-	return singleLine(input, '版块名称', LIMITS.categoryNameMax)
+	return singleLine(input, 'category_name', LIMITS.categoryNameMax)
 }
 
 export function validateDisplayName(input: string): Validated<string> {
-	return singleLine(input, '昵称', LIMITS.displayNameMax)
+	return singleLine(input, 'display_name', LIMITS.displayNameMax)
 }
 
 export function validateSearchQuery(input: string): Validated<string> {
-	return singleLine(input, '搜索词', LIMITS.searchQueryMax)
+	return singleLine(input, 'search_query', LIMITS.searchQueryMax)
 }
 
 export function validateCategoryDescription(input: string): Validated<string> {
-	if (typeof input !== 'string') return invalid('版块简介必须是文本')
+	if (typeof input !== 'string')
+		return invalid(errorDetail('field.not_text', { field: 'category_description' }))
 	const value = input.trim().replaceAll(/\s+/g, ' ')
 	if (codePoints(value) > LIMITS.categoryDescriptionMax) {
-		return invalid(`版块简介不能超过 ${LIMITS.categoryDescriptionMax} 个字符`)
+		return invalid(
+			errorDetail('field.too_long', {
+				field: 'category_description',
+				max: LIMITS.categoryDescriptionMax,
+			}),
+		)
 	}
 	return valid(value)
 }
@@ -72,15 +85,16 @@ export function validatePostBody(
 	input: string,
 	max: number = LIMITS.postBodyMax,
 ): Validated<string> {
-	if (typeof input !== 'string') return invalid('内容必须是文本')
+	if (typeof input !== 'string') return invalid(errorDetail('field.not_text', { field: 'content' }))
 	const value = input
 		.replaceAll(/\r\n?/g, '\n')
 		.replace(/^(?:[ \t]*\n)+/, '')
 		.trimEnd()
-	if (!value.trim()) return invalid('内容不能为空')
-	if (value.includes('\0')) return invalid('内容包含不允许的字符')
+	if (!value.trim()) return invalid(errorDetail('field.empty', { field: 'content' }))
+	if (value.includes('\0')) return invalid(errorDetail('field.bad_chars', { field: 'content' }))
 	const limit = Math.min(max, LIMITS.postBodyMax)
-	if (codePoints(value) > limit) return invalid(`内容不能超过 ${limit} 个字符`)
+	if (codePoints(value) > limit)
+		return invalid(errorDetail('field.too_long', { field: 'content', max: limit }))
 	return valid(value)
 }
 
@@ -93,9 +107,10 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 export function validateSlug(input: string): Validated<string> {
 	if (typeof input !== 'string' || !SLUG.test(input)) {
-		return invalid('标识只能包含小写字母、数字和连字符')
+		return invalid(errorDetail('slug.format'))
 	}
-	if (input.length > LIMITS.slugMax) return invalid(`标识不能超过 ${LIMITS.slugMax} 个字符`)
+	if (input.length > LIMITS.slugMax)
+		return invalid(errorDetail('field.too_long', { field: 'slug', max: LIMITS.slugMax }))
 	return valid(input)
 }
 
@@ -194,18 +209,16 @@ export function floorPageOf(floor: number, pageSize: number = LIMITS.pageSizeDef
 }
 
 export function validateHandle(input: string): Validated<string> {
-	if (typeof input !== 'string') return invalid('用户名必须是文本')
+	if (typeof input !== 'string') return invalid(errorDetail('field.not_text', { field: 'handle' }))
 	const value = input.trim().toLowerCase()
 	if (value.length < LIMITS.handleMin) {
-		return invalid(`用户名至少需要 ${LIMITS.handleMin} 个字符`)
+		return invalid(errorDetail('handle.too_short', { min: LIMITS.handleMin }))
 	}
 	if (value.length > LIMITS.handleMax) {
-		return invalid(`用户名不能超过 ${LIMITS.handleMax} 个字符`)
+		return invalid(errorDetail('field.too_long', { field: 'handle', max: LIMITS.handleMax }))
 	}
 	if (!HANDLE.test(value)) {
-		return invalid(
-			'用户名需以小写字母开头，只能包含小写字母、数字、连字符和下划线，且不能以符号结尾',
-		)
+		return invalid(errorDetail('handle.format'))
 	}
 	return valid(value)
 }

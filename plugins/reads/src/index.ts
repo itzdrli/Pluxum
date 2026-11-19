@@ -1,3 +1,4 @@
+import { failure } from '@pluxum/domain'
 import type { Principal } from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult } from '@pluxum/core'
@@ -107,7 +108,7 @@ export class ForumReadsPlugin extends BasePlugin {
 	 */
 	async mark(principal: Principal, threadId: string): Promise<ForumResult<ReadState>> {
 		const userId = principal.userId
-		if (userId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (userId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		const located = await this.core.locateThread(principal, threadId)
 		if (located.isErr()) return Result.err(located.error)
 		const [row] = await this.database.transaction((tx) =>

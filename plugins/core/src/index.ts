@@ -1,4 +1,11 @@
 import {
+	errorDetail,
+	failure,
+	failureOf,
+	type EntityName,
+	type ErrorArgs,
+	type ErrorDetail,
+	type ErrorKey,
 	bodyLength,
 	defaultRolePolicy,
 	deriveHandleBase,
@@ -295,14 +302,19 @@ type Db = Pick<PluginDatabaseClient<typeof ForumDatabase>, 'select'>
 
 const BUILT_IN_POLICY_ID = 'forum-core.roles'
 
-const fail = (code: ForumErrorCode, message: string): Result<never, ForumError> =>
-	Result.err({ code, message })
-const notFound = (what: string) => fail('not_found', `${what}不存在`)
-const invalid = (message: string) => fail('invalid', message)
+const fail = <K extends ErrorKey>(
+	code: ForumErrorCode,
+	key: K,
+	...args: ErrorArgs<K>
+): Result<never, ForumError> => Result.err(failure(code, key, ...args))
+const failDetail = (code: ForumErrorCode, detail: ErrorDetail): Result<never, ForumError> =>
+	Result.err(failureOf(code, detail))
+const notFound = (entity: EntityName) => fail('not_found', 'entity.not_found', { entity })
+const invalid = (detail: ErrorDetail) => failDetail('invalid', detail)
 const denied = (principal: Principal) =>
 	principal.userId === null
-		? fail('unauthenticated', '请先登录')
-		: fail('forbidden', '没有权限执行此操作')
+		? fail('unauthenticated', 'auth.required')
+		: fail('forbidden', 'permission.denied')
 
 /** Postgres `unique_violation`, possibly wrapped by the query builder in `cause`. */
 function isUniqueViolation(error: unknown): boolean {
@@ -538,7 +550,7 @@ export class ForumCorePlugin extends BasePlugin {
 	/** Renders a post body exactly as a saved post would be shown, without saving anything. */
 	previewBody(source: string): ForumResult<PreviewDto> {
 		const body = validatePostBody(source)
-		if (!body.ok) return invalid(body.reason)
+		if (!body.ok) return invalid(body.error)
 		const rendered = this.contentRenderers.render(body.value, (error, rendererId) =>
 			this.ctx.logger.error('content renderer failed; previewing as plain text', {
 				error,
@@ -727,23 +739,23 @@ export class ForumCorePlugin extends BasePlugin {
 	 * the principal may view, resolves author names and strips unsafe HTML from snippets.
 	 */
 	async search(principal: Principal, request: SearchRequest): Promise<ForumResult<SearchPageDto>> {
-		if (!this.searchProviders.available()) return fail('unavailable', '搜索服务未启用')
+		if (!this.searchProviders.available()) return fail('unavailable', 'search.disabled')
 		const query = validateSearchQuery(request.query)
-		if (!query.ok) return invalid(query.reason)
+		if (!query.ok) return invalid(query.error)
 		if (request.categoryId !== undefined && !isEntityId(request.categoryId)) {
-			return notFound('版块')
+			return notFound('category')
 		}
 		let resolvedAuthorId: string | undefined
 		if (request.authorId !== undefined) {
 			const parsedAuthor = parseUserRef(request.authorId)
-			if (!parsedAuthor) return notFound('用户')
+			if (!parsedAuthor) return notFound('user')
 			if (parsedAuthor.kind === 'id') {
 				resolvedAuthorId = parsedAuthor.id
 			} else {
 				const [foundAuthor] = await this.database.read((db) =>
 					db.select({ id: users.id }).from(users).where(eq(users.handle, parsedAuthor.handle)),
 				)
-				if (!foundAuthor) return notFound('用户')
+				if (!foundAuthor) return notFound('user')
 				resolvedAuthorId = foundAuthor.id
 			}
 		}
@@ -752,7 +764,7 @@ export class ForumCorePlugin extends BasePlugin {
 		const visibleIds = new Set(visibleCategories.map((category) => category.id))
 		let categoryIds: string[]
 		if (request.categoryId !== undefined) {
-			if (!visibleIds.has(request.categoryId)) return notFound('版块')
+			if (!visibleIds.has(request.categoryId)) return notFound('category')
 			categoryIds = [request.categoryId]
 		} else {
 			categoryIds = [...visibleIds]
@@ -771,7 +783,7 @@ export class ForumCorePlugin extends BasePlugin {
 			},
 			(error, providerId) => this.ctx.logger.error('search provider failed', { error, providerId }),
 		)
-		if (!raw) return fail('unavailable', '搜索服务暂时不可用')
+		if (!raw) return fail('unavailable', 'search.unavailable')
 		const hits = raw.items.filter((hit) => visibleIds.has(hit.categoryId))
 		const authorIds = [...new Set(hits.map((hit) => hit.authorId).filter(isEntityId))]
 		const threadIds = [...new Set(hits.map((hit) => hit.threadId).filter(isEntityId))]
@@ -870,9 +882,9 @@ export class ForumCorePlugin extends BasePlugin {
 	 * principal, and returns what a permission check on it needs.
 	 */
 	async locatePost(principal: Principal, postId: string): Promise<ForumResult<PostLocation>> {
-		if (!isEntityId(postId)) return notFound('帖子')
+		if (!isEntityId(postId)) return notFound('post')
 		const found = await this.database.read((db) => this.findPost(db, principal, postId))
-		if (!found) return notFound('帖子')
+		if (!found) return notFound('post')
 		return Result.ok({
 			postId: found.post.id,
 			threadId: found.thread.id,
@@ -891,10 +903,10 @@ export class ForumCorePlugin extends BasePlugin {
 	 * principal, and returns what a permission check on it needs.
 	 */
 	async locateThread(principal: Principal, threadId: string): Promise<ForumResult<ThreadLocation>> {
-		if (!isEntityId(threadId)) return notFound('主题')
+		if (!isEntityId(threadId)) return notFound('thread')
 		const found = await this.database.read((db) => this.findThread(db, threadId))
 		if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
-			return notFound('主题')
+			return notFound('thread')
 		}
 		return Result.ok({
 			threadId: found.thread.id,
@@ -908,9 +920,9 @@ export class ForumCorePlugin extends BasePlugin {
 	/** Returns the account for an identity-provider subject, creating it on first sight. */
 	async ensureUser(input: EnsureUserInput): Promise<ForumResult<UserDto>> {
 		const subject = typeof input.subject === 'string' ? input.subject.trim() : ''
-		if (!subject || subject.length > 255) return invalid('无效的账号标识')
+		if (!subject || subject.length > 255) return invalid(errorDetail('account.invalid_subject'))
 		const displayName = validateDisplayName(input.displayName)
-		if (!displayName.ok) return invalid(displayName.reason)
+		if (!displayName.ok) return invalid(displayName.error)
 		// A concurrent first login may claim the same handle (or subject) between our read and
 		// write; the retry then sees that row and picks the next candidate or the existing account.
 		for (let attempt = 1; ; attempt++) {
@@ -1007,9 +1019,9 @@ export class ForumCorePlugin extends BasePlugin {
 
 	/** Privileged: changes an account's display name; callers decide who may. */
 	async renameUser(userId: string, displayName: string): Promise<ForumResult<UserDto>> {
-		if (!isEntityId(userId)) return notFound('用户')
+		if (!isEntityId(userId)) return notFound('user')
 		const name = validateDisplayName(displayName)
-		if (!name.ok) return invalid(name.reason)
+		if (!name.ok) return invalid(name.error)
 		const [user] = await this.database.transaction((tx) =>
 			tx
 				.update(users)
@@ -1018,15 +1030,15 @@ export class ForumCorePlugin extends BasePlugin {
 				.returning(author),
 		)
 		if (user) await this.listingsChanged()
-		return user ? Result.ok(user) : notFound('用户')
+		return user ? Result.ok(user) : notFound('user')
 	}
 
 	async getUser(userRef: string, viewer: Principal = GUEST): Promise<ForumResult<UserDto>> {
 		const parsed = parseUserRef(userRef)
-		if (!parsed) return notFound('用户')
+		if (!parsed) return notFound('user')
 		const match = parsed.kind === 'id' ? eq(users.id, parsed.id) : eq(users.handle, parsed.handle)
 		const [user] = await this.database.read((db) => db.select(author).from(users).where(match))
-		if (!user) return notFound('用户')
+		if (!user) return notFound('user')
 		const enriched = await this.extendedUsers(viewer, [user])
 		return Result.ok(enriched.get(user.id) ?? user)
 	}
@@ -1038,16 +1050,16 @@ export class ForumCorePlugin extends BasePlugin {
 		input: UpdateProfileInput,
 	): Promise<ForumResult<UserDto>> {
 		const parsed = parseUserRef(userRef)
-		if (!parsed) return notFound('用户')
+		if (!parsed) return notFound('user')
 		const patch: Partial<Pick<typeof users.$inferInsert, 'displayName' | 'handle'>> = {}
 		if (input.displayName !== undefined) {
 			const name = validateDisplayName(input.displayName)
-			if (!name.ok) return invalid(name.reason)
+			if (!name.ok) return invalid(name.error)
 			patch.displayName = name.value
 		}
 		if (input.handle !== undefined) {
 			const handle = validateHandle(input.handle)
-			if (!handle.ok) return invalid(handle.reason)
+			if (!handle.ok) return invalid(handle.error)
 			patch.handle = handle.value
 		}
 
@@ -1056,7 +1068,7 @@ export class ForumCorePlugin extends BasePlugin {
 				const match =
 					parsed.kind === 'id' ? eq(users.id, parsed.id) : eq(users.handle, parsed.handle)
 				const [current] = await tx.select(author).from(users).where(match)
-				if (!current) return notFound('用户')
+				if (!current) return notFound('user')
 				if (!this.can(principal, 'user.edit', { userId: current.id })) return denied(principal)
 				if (Object.keys(patch).length === 0) return Result.ok(current)
 				if (patch.handle !== undefined && patch.handle !== current.handle) {
@@ -1064,18 +1076,18 @@ export class ForumCorePlugin extends BasePlugin {
 						.select({ id: users.id })
 						.from(users)
 						.where(eq(users.handle, patch.handle))
-					if (taken) return fail('conflict', '用户名已被使用')
+					if (taken) return fail('conflict', 'handle.taken')
 				}
 				const [row] = await tx
 					.update(users)
 					.set(patch)
 					.where(eq(users.id, current.id))
 					.returning(author)
-				return row ? Result.ok(row) : notFound('用户')
+				return row ? Result.ok(row) : notFound('user')
 			})
 			// Another account took the handle between the check above and the write.
 			.catch((error: unknown) => {
-				if (isUniqueViolation(error)) return fail('conflict', '用户名已被使用')
+				if (isUniqueViolation(error)) return fail('conflict', 'handle.taken')
 				throw error
 			})
 		if (updated.isErr()) return updated
@@ -1095,7 +1107,7 @@ export class ForumCorePlugin extends BasePlugin {
 		paging: ProfilePageRequest = {},
 	): Promise<ForumResult<UserProfileDto>> {
 		const parsed = parseUserRef(userRef)
-		if (!parsed) return notFound('用户')
+		if (!parsed) return notFound('user')
 		const { page, pageSize } = normalizePage(paging)
 		const wanted: ThreadKind = paging.kind === 'note' ? 'note' : 'topic'
 		const visibleCategories = await this.listCategories(principal)
@@ -1189,7 +1201,7 @@ export class ForumCorePlugin extends BasePlugin {
 				openings,
 			}
 		})
-		if (!read) return notFound('用户')
+		if (!read) return notFound('user')
 
 		const baseUser: UserDto = {
 			id: read.account.id,
@@ -1300,18 +1312,18 @@ export class ForumCorePlugin extends BasePlugin {
 
 	/** Privileged: callers (identity setup, admin tooling) decide who may grant roles. */
 	async grantRole(userId: string, role: AssignableRole): Promise<ForumResult<void>> {
-		if (!isAssignableRole(role)) return invalid('未知的角色')
-		if (!isEntityId(userId)) return notFound('用户')
+		if (!isAssignableRole(role)) return invalid(errorDetail('role.unknown'))
+		if (!isEntityId(userId)) return notFound('user')
 		return this.database.transaction(async (tx) => {
 			const [user] = await tx.select({ id: users.id }).from(users).where(eq(users.id, userId))
-			if (!user) return notFound('用户')
+			if (!user) return notFound('user')
 			await tx.insert(userRoles).values({ userId, role }).onConflictDoNothing()
 			return Result.ok()
 		})
 	}
 
 	async revokeRole(userId: string, role: AssignableRole): Promise<ForumResult<void>> {
-		if (!isEntityId(userId)) return notFound('用户')
+		if (!isEntityId(userId)) return notFound('user')
 		await this.database.transaction((tx) =>
 			tx.delete(userRoles).where(and(eq(userRoles.userId, userId), eq(userRoles.role, role))),
 		)
@@ -1335,15 +1347,15 @@ export class ForumCorePlugin extends BasePlugin {
 	): Promise<ForumResult<CategoryDto>> {
 		if (!this.can(principal, 'category.manage')) return denied(principal)
 		const name = validateCategoryName(input.name)
-		if (!name.ok) return invalid(name.reason)
+		if (!name.ok) return invalid(name.error)
 		const slug = validateSlug(input.slug ?? slugify(name.value))
 		if (!slug.ok) {
-			return invalid(input.slug === undefined ? '无法从名称生成标识，请手动填写' : slug.reason)
+			return invalid(input.slug === undefined ? errorDetail('slug.derive_failed') : slug.error)
 		}
 		const description = validateCategoryDescription(input.description ?? '')
-		if (!description.ok) return invalid(description.reason)
+		if (!description.ok) return invalid(description.error)
 		const position = input.position ?? 0
-		if (!Number.isSafeInteger(position)) return invalid('排序必须是整数')
+		if (!Number.isSafeInteger(position)) return invalid(errorDetail('position.not_integer'))
 
 		const [row] = await this.database.transaction((tx) =>
 			tx
@@ -1358,7 +1370,7 @@ export class ForumCorePlugin extends BasePlugin {
 				.returning(),
 		)
 		if (row) await this.listingsChanged()
-		return row ? Result.ok(toCategoryDto(row)) : fail('conflict', '版块标识已被使用')
+		return row ? Result.ok(toCategoryDto(row)) : fail('conflict', 'category.slug_taken')
 	}
 
 	async updateCategory(
@@ -1367,45 +1379,45 @@ export class ForumCorePlugin extends BasePlugin {
 		input: UpdateCategoryInput,
 	): Promise<ForumResult<CategoryDto>> {
 		if (!this.can(principal, 'category.manage', { categoryId })) return denied(principal)
-		if (!isEntityId(categoryId)) return notFound('版块')
+		if (!isEntityId(categoryId)) return notFound('category')
 		const patch: Partial<Pick<CategoryRow, 'name' | 'slug' | 'description' | 'position'>> = {}
 		if (input.name !== undefined) {
 			const name = validateCategoryName(input.name)
-			if (!name.ok) return invalid(name.reason)
+			if (!name.ok) return invalid(name.error)
 			patch.name = name.value
 		}
 		if (input.slug !== undefined) {
 			const slug = validateSlug(input.slug)
-			if (!slug.ok) return invalid(slug.reason)
+			if (!slug.ok) return invalid(slug.error)
 			patch.slug = slug.value
 		}
 		if (input.description !== undefined) {
 			const description = validateCategoryDescription(input.description)
-			if (!description.ok) return invalid(description.reason)
+			if (!description.ok) return invalid(description.error)
 			patch.description = description.value
 		}
 		if (input.position !== undefined) {
-			if (!Number.isSafeInteger(input.position)) return invalid('排序必须是整数')
+			if (!Number.isSafeInteger(input.position)) return invalid(errorDetail('position.not_integer'))
 			patch.position = input.position
 		}
 
 		const updated = await this.database.transaction(async (tx) => {
 			const [current] = await tx.select().from(categories).where(eq(categories.id, categoryId))
-			if (!current) return notFound('版块')
+			if (!current) return notFound('category')
 			if (Object.keys(patch).length === 0) return Result.ok(toCategoryDto(current))
 			if (patch.slug !== undefined && patch.slug !== current.slug) {
 				const [taken] = await tx
 					.select({ id: categories.id })
 					.from(categories)
 					.where(eq(categories.slug, patch.slug))
-				if (taken) return fail('conflict', '版块标识已被使用')
+				if (taken) return fail('conflict', 'category.slug_taken')
 			}
 			const [row] = await tx
 				.update(categories)
 				.set(patch)
 				.where(eq(categories.id, categoryId))
 				.returning()
-			return row ? Result.ok(toCategoryDto(row)) : notFound('版块')
+			return row ? Result.ok(toCategoryDto(row)) : notFound('category')
 		})
 		if (updated.isOk()) await this.listingsChanged()
 		return updated
@@ -1414,24 +1426,24 @@ export class ForumCorePlugin extends BasePlugin {
 	/** Only a category that never held a thread can be removed; history is not discarded. */
 	async deleteCategory(principal: Principal, categoryId: string): Promise<ForumResult<void>> {
 		if (!this.can(principal, 'category.manage', { categoryId })) return denied(principal)
-		if (!isEntityId(categoryId)) return notFound('版块')
+		if (!isEntityId(categoryId)) return notFound('category')
 		const outcome = await this.database.transaction(async (tx) => {
 			const [current] = await tx
 				.select({ kind: categories.kind })
 				.from(categories)
 				.where(eq(categories.id, categoryId))
-			if (current?.kind === 'stream') return fail('conflict', '动态版块不能删除')
+			if (current?.kind === 'stream') return fail('conflict', 'category.stream_undeletable')
 			const [used] = await tx
 				.select({ id: threads.id })
 				.from(threads)
 				.where(eq(threads.categoryId, categoryId))
 				.limit(1)
-			if (used) return fail('conflict', '版块内已有主题，不能删除')
+			if (used) return fail('conflict', 'category.not_empty')
 			const removed = await tx
 				.delete(categories)
 				.where(eq(categories.id, categoryId))
 				.returning({ id: categories.id })
-			return removed.length > 0 ? Result.ok() : notFound('版块')
+			return removed.length > 0 ? Result.ok() : notFound('category')
 		})
 		if (outcome.isOk()) await this.listingsChanged()
 		return outcome
@@ -1653,7 +1665,7 @@ export class ForumCorePlugin extends BasePlugin {
 					)
 				: await load()
 		if (!listing || !this.can(principal, 'category.view', { categoryId: listing.category.id })) {
-			return notFound('版块')
+			return notFound('category')
 		}
 		const { category } = listing
 		return Result.ok({
@@ -1684,12 +1696,12 @@ export class ForumCorePlugin extends BasePlugin {
 		threadRef: string,
 		paging: ThreadPageRequest = {},
 	): Promise<ForumResult<ThreadDetailDto>> {
-		if (!parseThreadRef(threadRef)) return notFound('主题')
+		if (!parseThreadRef(threadRef)) return notFound('thread')
 		const { page, pageSize } = normalizePage(paging)
 		const detail = await this.database.read(async (db): Promise<ForumResult<ThreadDetailDto>> => {
 			const found = await this.findThread(db, threadRef)
 			if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
-				return notFound('主题')
+				return notFound('thread')
 			}
 			const { thread, category } = found
 			const topLevel = and(eq(posts.threadId, thread.id), isNull(posts.parentId))
@@ -1834,7 +1846,7 @@ export class ForumCorePlugin extends BasePlugin {
 		postId: string,
 		paging: PageRequest = {},
 	): Promise<ForumResult<PageDto<PostDto>>> {
-		if (!isEntityId(postId)) return notFound('楼层')
+		if (!isEntityId(postId)) return notFound('floor')
 		const { page, pageSize } = normalizePage(paging)
 		const read = await this.database.read(async (db) => {
 			const [row] = await db
@@ -1869,7 +1881,7 @@ export class ForumCorePlugin extends BasePlugin {
 				total: total?.value ?? 0,
 			}
 		})
-		if (!read) return notFound('楼层')
+		if (!read) return notFound('floor')
 		return Result.ok({
 			items: await this.extended('post', principal, read.items),
 			page,
@@ -1888,20 +1900,20 @@ export class ForumCorePlugin extends BasePlugin {
 		floor: number,
 		paging: PageRequest = {},
 	): Promise<ForumResult<FloorLocationDto>> {
-		if (!parseThreadRef(threadRef)) return notFound('主题')
-		if (!Number.isSafeInteger(floor) || floor < 1) return notFound('楼层')
+		if (!parseThreadRef(threadRef)) return notFound('thread')
+		if (!Number.isSafeInteger(floor) || floor < 1) return notFound('floor')
 		const { pageSize } = normalizePage(paging)
 		const located = await this.database.read(async (db) => {
 			const found = await this.findThread(db, threadRef)
 			if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
-				return notFound('主题')
+				return notFound('thread')
 			}
 			const { thread } = found
 			const [post] = await db
 				.select({ parentId: posts.parentId, number: posts.number })
 				.from(posts)
 				.where(and(eq(posts.threadId, thread.id), eq(posts.number, floor)))
-			if (!post) return notFound('楼层')
+			if (!post) return notFound('floor')
 			let topNumber = post.number
 			let parentFloor: number | null = null
 			if (post.parentId !== null) {
@@ -1909,7 +1921,7 @@ export class ForumCorePlugin extends BasePlugin {
 					.select({ number: posts.number })
 					.from(posts)
 					.where(eq(posts.id, post.parentId))
-				if (!parent) return notFound('楼层')
+				if (!parent) return notFound('floor')
 				topNumber = parent.number
 				parentFloor = parent.number
 			}
@@ -1939,27 +1951,28 @@ export class ForumCorePlugin extends BasePlugin {
 	): Promise<ForumResult<ThreadDto>> {
 		const { categoryId } = input
 		if (principal.userId === null) return denied(principal)
-		if (!isEntityId(categoryId)) return notFound('版块')
+		if (!isEntityId(categoryId)) return notFound('category')
 		const [target] = await this.database.read((db) =>
 			db.select({ kind: categories.kind }).from(categories).where(eq(categories.id, categoryId)),
 		)
-		if (!target || !this.can(principal, 'category.view', { categoryId })) return notFound('版块')
+		if (!target || !this.can(principal, 'category.view', { categoryId }))
+			return notFound('category')
 		const threadKind = kindOf(target.kind)
 		let titleValue = ''
 		if (threadKind === 'note') {
 			if (typeof input.title !== 'string' || input.title.trim() !== '') {
-				return invalid('动态不需要标题')
+				return invalid(errorDetail('thread.note_no_title'))
 			}
 		} else {
 			const title = validateThreadTitle(input.title)
-			if (!title.ok) return invalid(title.reason)
+			if (!title.ok) return invalid(title.error)
 			titleValue = title.value
 		}
 		const body = validatePostBody(
 			input.body,
 			threadKind === 'note' ? this.noteBodyMax() : undefined,
 		)
-		if (!body.ok) return invalid(body.reason)
+		if (!body.ok) return invalid(body.error)
 		if (!this.can(principal, 'thread.create', { categoryId })) return denied(principal)
 		const authorId = principal.userId
 		if (authorId === null) return denied(principal)
@@ -1977,8 +1990,8 @@ export class ForumCorePlugin extends BasePlugin {
 					.select({ id: categories.id, kind: categories.kind })
 					.from(categories)
 					.where(eq(categories.id, categoryId))
-				if (!category) return notFound('版块')
-				if (kindOf(category.kind) !== threadKind) return fail('conflict', '版块类型已变化，请重试')
+				if (!category) return notFound('category')
+				if (kindOf(category.kind) !== threadKind) return fail('conflict', 'category.kind_changed')
 				const rejected = this.beforeWrite({
 					kind: 'thread.create',
 					principal,
@@ -2045,13 +2058,13 @@ export class ForumCorePlugin extends BasePlugin {
 		threadRef: string,
 		input: UpdateThreadInput,
 	): Promise<ForumResult<ThreadDto>> {
-		if (!parseThreadRef(threadRef)) return notFound('主题')
-		if (input.categoryId !== undefined && !isEntityId(input.categoryId)) return notFound('版块')
+		if (!parseThreadRef(threadRef)) return notFound('thread')
+		if (input.categoryId !== undefined && !isEntityId(input.categoryId)) return notFound('category')
 		const patch: Partial<Pick<ThreadRow, 'title' | 'slug' | 'pinned' | 'locked' | 'categoryId'>> =
 			{}
 		if (input.title !== undefined) {
 			const title = validateThreadTitle(input.title)
-			if (!title.ok) return invalid(title.reason)
+			if (!title.ok) return invalid(title.error)
 			patch.title = title.value
 			patch.slug = slugifyAsciiTitle(title.value)
 		}
@@ -2069,7 +2082,7 @@ export class ForumCorePlugin extends BasePlugin {
 			): Promise<ForumResult<Readonly<{ dto: ThreadDto; event: PostAfterWriteEvent | null }>>> => {
 				const found = await this.findThread(tx, threadRef)
 				if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
-					return notFound('主题')
+					return notFound('thread')
 				}
 				const resource = this.threadResource(found.thread)
 				const source = found.category
@@ -2081,9 +2094,9 @@ export class ForumCorePlugin extends BasePlugin {
 						.from(categories)
 						.where(eq(categories.id, input.categoryId))
 					if (!row || !this.can(principal, 'category.view', { categoryId: row.id })) {
-						return notFound('版块')
+						return notFound('category')
 					}
-					if (row.kind === 'stream') return invalid('主题帖不能移到动态里')
+					if (row.kind === 'stream') return invalid(errorDetail('thread.topic_not_to_stream'))
 					const allowed =
 						moderator ||
 						(this.can(principal, 'thread.edit', resource) &&
@@ -2093,10 +2106,10 @@ export class ForumCorePlugin extends BasePlugin {
 					patch.categoryId = row.id
 				}
 				if (target.kind === 'stream' && patch.title !== undefined) {
-					return invalid('动态没有标题')
+					return invalid(errorDetail('thread.note_untitled'))
 				}
 				if (source.kind === 'stream' && target.kind !== 'stream' && patch.title === undefined) {
-					return invalid('转为主题帖需要一个标题')
+					return invalid(errorDetail('thread.convert_needs_title'))
 				}
 				if (patch.title !== undefined && !this.can(principal, 'thread.edit', resource)) {
 					return denied(principal)
@@ -2125,7 +2138,7 @@ export class ForumCorePlugin extends BasePlugin {
 					.set(patch)
 					.where(eq(threads.id, found.thread.id))
 					.returning()
-				if (!row) return notFound('主题')
+				if (!row) return notFound('thread')
 				if (target.id !== source.id) {
 					const moved = found.thread.replyCount + 1
 					await tx
@@ -2178,12 +2191,12 @@ export class ForumCorePlugin extends BasePlugin {
 
 	/** Hides a thread and all of its posts. The rows stay for moderation history. */
 	async deleteThread(principal: Principal, threadRef: string): Promise<ForumResult<void>> {
-		if (!parseThreadRef(threadRef)) return notFound('主题')
+		if (!parseThreadRef(threadRef)) return notFound('thread')
 		const deleted = await this.database.transaction(
 			async (tx): Promise<ForumResult<PostAfterWriteEvent>> => {
 				const found = await this.findThread(tx, threadRef)
 				if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
-					return notFound('主题')
+					return notFound('thread')
 				}
 				const { thread } = found
 				if (!this.can(principal, 'thread.delete', this.threadResource(thread))) {
@@ -2219,9 +2232,9 @@ export class ForumCorePlugin extends BasePlugin {
 	/** Replies to a thread, or inside a floor of it with `parentId` (see `CreatePostInput`). */
 	async createPost(principal: Principal, input: CreatePostInput): Promise<ForumResult<PostDto>> {
 		const body = validatePostBody(input.body)
-		if (!body.ok) return invalid(body.reason)
-		if (!parseThreadRef(input.threadId)) return notFound('主题')
-		if (input.parentId !== undefined && !isEntityId(input.parentId)) return notFound('楼层')
+		if (!body.ok) return invalid(body.error)
+		if (!parseThreadRef(input.threadId)) return notFound('thread')
+		if (input.parentId !== undefined && !isEntityId(input.parentId)) return notFound('floor')
 		const authorId = principal.userId
 		if (authorId !== null) {
 			const refused = await this.admit({ kind: 'post.create', principal })
@@ -2232,12 +2245,12 @@ export class ForumCorePlugin extends BasePlugin {
 			async (tx): Promise<ForumResult<Readonly<{ dto: PostDto; event: PostAfterWriteEvent }>>> => {
 				const found = await this.findThread(tx, input.threadId)
 				if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
-					return notFound('主题')
+					return notFound('thread')
 				}
 				const { thread } = found
 				if (authorId === null || !this.can(principal, 'post.create', this.threadResource(thread))) {
 					return thread.locked && authorId !== null
-						? fail('forbidden', '主题已锁定，不能回复')
+						? fail('forbidden', 'thread.locked')
 						: denied(principal)
 				}
 				const [by] = await tx.select(author).from(users).where(eq(users.id, authorId))
@@ -2251,13 +2264,13 @@ export class ForumCorePlugin extends BasePlugin {
 						.from(posts)
 						.innerJoin(users, eq(users.id, posts.authorId))
 						.where(and(eq(posts.id, input.parentId), eq(posts.threadId, thread.id)))
-					if (!target || target.post.deletedAt !== null) return notFound('楼层')
+					if (!target || target.post.deletedAt !== null) return notFound('floor')
 					if (target.post.parentId !== null) {
 						const [floor] = await tx
 							.select({ id: posts.id, authorId: posts.authorId })
 							.from(posts)
 							.where(eq(posts.id, target.post.parentId))
-						if (!floor) return notFound('楼层')
+						if (!floor) return notFound('floor')
 						parent = { id: floor.id, authorId: floor.authorId }
 						answered = target.author
 					} else if (!target.post.opening) {
@@ -2337,8 +2350,8 @@ export class ForumCorePlugin extends BasePlugin {
 		input: UpdatePostInput,
 	): Promise<ForumResult<PostDto>> {
 		const body = validatePostBody(input.body)
-		if (!body.ok) return invalid(body.reason)
-		if (!isEntityId(postId)) return notFound('帖子')
+		if (!body.ok) return invalid(body.error)
+		if (!isEntityId(postId)) return notFound('post')
 		const editorId = principal.userId
 		if (editorId !== null) {
 			const refused = await this.admit({ kind: 'post.update', principal })
@@ -2350,7 +2363,7 @@ export class ForumCorePlugin extends BasePlugin {
 				tx,
 			): Promise<ForumResult<Readonly<{ dto: PostDto; event: PostAfterWriteEvent | null }>>> => {
 				const found = await this.findPost(tx, principal, postId)
-				if (!found) return notFound('帖子')
+				if (!found) return notFound('post')
 				const { post, thread } = found
 				const resource = this.postResource(post, thread)
 				if (editorId === null || !this.can(principal, 'post.edit', resource)) {
@@ -2364,7 +2377,7 @@ export class ForumCorePlugin extends BasePlugin {
 						.where(eq(categories.id, thread.categoryId))
 					const limit = this.noteBodyMax()
 					if (category?.kind === 'stream' && bodyLength(body.value) > limit) {
-						return invalid(`内容不能超过 ${limit} 个字符`)
+						return invalid(errorDetail('field.too_long', { field: 'content', max: limit }))
 					}
 				}
 				const rejected = this.beforeWrite({
@@ -2417,16 +2430,16 @@ export class ForumCorePlugin extends BasePlugin {
 
 	/** Hides a reply. The opening post goes away only with its thread. */
 	async deletePost(principal: Principal, postId: string): Promise<ForumResult<void>> {
-		if (!isEntityId(postId)) return notFound('帖子')
+		if (!isEntityId(postId)) return notFound('post')
 		const deleted = await this.database.transaction(
 			async (tx): Promise<ForumResult<PostAfterWriteEvent>> => {
 				const found = await this.findPost(tx, principal, postId)
-				if (!found) return notFound('帖子')
+				if (!found) return notFound('post')
 				const { post, thread } = found
 				if (!this.can(principal, 'post.delete', this.postResource(post, thread))) {
 					return denied(principal)
 				}
-				if (post.opening) return fail('conflict', '主楼不能单独删除，请删除整个主题')
+				if (post.opening) return fail('conflict', 'post.opening_undeletable')
 				await tx
 					.update(posts)
 					.set({ deletedAt: sql`now()` })

@@ -1,4 +1,11 @@
-import type { ForumError, ForumErrorCode, Principal, ThreadKind } from '@pluxum/domain'
+import type {
+	ErrorKey,
+	ErrorParams,
+	ForumError,
+	ForumErrorCode,
+	Principal,
+	ThreadKind,
+} from '@pluxum/domain'
 import { EXTENSION_TIMEOUT_MS, TIMED_OUT, withTimeout } from './extensions'
 import { CONTRIBUTION_ID } from './policies'
 
@@ -55,12 +62,17 @@ export type PostHookRejectionCode = Extract<ForumErrorCode, 'invalid' | 'forbidd
 export type PostAdmitRejection = Readonly<{
 	code?: PostHookRejectionCode | 'rate_limited'
 	message: string
+	/** What went wrong as data, for clients that word it themselves (see `@pluxum/domain` errors). */
+	key?: ErrorKey
+	params?: ErrorParams
 }>
 
 /** Returned by a `beforeWrite` hook when it refuses the write; `code` defaults to `'invalid'`. */
 export type PostHookRejection = Readonly<{
 	code?: PostHookRejectionCode
 	message: string
+	key?: ErrorKey
+	params?: ErrorParams
 }>
 
 /** Facts about a thread or post write that has been committed to the core database. */
@@ -268,7 +280,7 @@ export class PostHookRegistry {
 					}
 					// Withdrawn while answering: its verdict no longer counts.
 					if (this.entries.get(entry.id) !== entry) return null
-					return { code: verdict.code ?? 'invalid', message: verdict.message }
+					return rejected(verdict)
 				} catch (error) {
 					onFailure(error, entry.id)
 					return null
@@ -301,7 +313,7 @@ export class PostHookRegistry {
 				) {
 					throw new TypeError('The hook returned an invalid rejection')
 				}
-				return { code: verdict.code ?? 'invalid', message: verdict.message }
+				return rejected(verdict)
 			} catch (error) {
 				onFailure(error, entry.id)
 			}
@@ -339,5 +351,16 @@ export class PostHookRegistry {
 				}
 			}),
 		)
+	}
+}
+
+/** A hook's refusal as the error a write fails with. */
+function rejected(verdict: PostAdmitRejection | PostHookRejection): ForumError {
+	const { message, key, params } = verdict
+	return {
+		code: verdict.code ?? 'invalid',
+		message,
+		...(key === undefined ? {} : { key }),
+		...(params === undefined ? {} : { params }),
 	}
 }

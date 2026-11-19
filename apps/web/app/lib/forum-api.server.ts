@@ -27,6 +27,7 @@ import { t } from '@lingui/core/macro'
 import { data } from 'react-router'
 
 import type { feedQuery } from './home'
+import { apiErrorText } from './api-errors'
 import { i18nFromRequest } from './i18n.server'
 
 const DEFAULT_API_INTERNAL = 'http://127.0.0.1:5173'
@@ -55,8 +56,18 @@ const ERROR_CODES = [
 	'internal',
 ] as const satisfies ReadonlyArray<ApiError['code']>
 
-/** The API's own error, or null when the body is not one. */
-function apiErrorOf(body: unknown): ApiError | null {
+/** The error's parameters when it sent any: only strings and numbers are kept. */
+function paramsOf(value: unknown): Record<string, string | number> | undefined {
+	if (typeof value !== 'object' || value === null) return undefined
+	const out: Record<string, string | number> = {}
+	for (const [name, entry] of Object.entries(value)) {
+		if (typeof entry === 'string' || typeof entry === 'number') out[name] = entry
+	}
+	return out
+}
+
+/** The API's own error, or null when the body is not one. Its text is already in the visitor's language. */
+async function apiErrorOf(request: Request, body: unknown): Promise<ApiError | null> {
 	if (typeof body !== 'object' || body === null || !('error' in body)) return null
 	const error: unknown = body.error
 	if (typeof error !== 'object' || error === null) return null
@@ -64,7 +75,14 @@ function apiErrorOf(body: unknown): ApiError | null {
 	const reported: unknown = 'code' in error ? error.code : undefined
 	// An unknown code only loses its specific handling; the message is still the API's own.
 	const code = ERROR_CODES.find((known) => known === reported) ?? 'internal'
-	return { code, message: error.message }
+	const key: unknown = 'key' in error ? error.key : undefined
+	const params = paramsOf('params' in error ? error.params : undefined)
+	const message = apiErrorText(await i18nFromRequest(request), {
+		key: typeof key === 'string' ? key : undefined,
+		params,
+		message: error.message,
+	})
+	return { code, message }
 }
 
 type CallInit = Readonly<{ method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'; body?: unknown }>
@@ -100,7 +118,7 @@ async function call<T>(request: Request, path: string, init: CallInit = {}): Pro
 		return {
 			ok: false,
 			status: response.status,
-			error: apiErrorOf(body) ?? (await unavailableOf(request)),
+			error: (await apiErrorOf(request, body)) ?? (await unavailableOf(request)),
 		}
 	}
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- forum-api validates every success response against the schema these DTO types mirror; this is the one place that trust is stated.

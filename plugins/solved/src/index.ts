@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { isEntityId, type Principal, type UserDto } from '@pluxum/domain'
+import { failure, isEntityId, type Principal, type UserDto } from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult, type PostAfterWriteEvent } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
@@ -172,7 +172,7 @@ export class ForumSolvedPlugin extends BasePlugin {
 		on: boolean,
 	): Promise<ForumResult<AcceptResult>> {
 		const userId = principal.userId
-		if (userId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (userId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		const located = await this.core.locatePost(principal, postId)
 		if (located.isErr()) return Result.err(located.error)
 		const post = located.value
@@ -182,13 +182,13 @@ export class ForumSolvedPlugin extends BasePlugin {
 			post.threadAuthorId === userId ||
 			this.core.can(principal, 'thread.moderate', thread.value.resource)
 		if (!mayAccept) {
-			return Result.err({ code: 'forbidden', message: '只有楼主或版主可以采纳答案' })
+			return Result.err(failure('forbidden', 'solved.not_allowed'))
 		}
 		if (post.threadKind === 'note') {
-			return Result.err({ code: 'invalid', message: '动态不能采纳答案' })
+			return Result.err(failure('invalid', 'solved.note'))
 		}
 		if (post.postNumber === 1) {
-			return Result.err({ code: 'invalid', message: '主楼不能被采纳为答案' })
+			return Result.err(failure('invalid', 'solved.opening'))
 		}
 		if (!on) {
 			const [current] = await this.database.transaction((tx) =>

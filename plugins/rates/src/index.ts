@@ -1,4 +1,4 @@
-import type { Principal } from '@pluxum/domain'
+import { failure, type Principal } from '@pluxum/domain'
 import { ForumCorePlugin, type PostAdmitEvent, type PostAdmitRejection } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Rates, type RateLimiter } from '@pluxel/plugin-rates'
@@ -56,12 +56,6 @@ const BUCKET_OF: Readonly<Record<PostAdmitEvent['kind'], Bucket>> = {
 	'post.create': 'replies',
 	'thread.update': 'edits',
 	'post.update': 'edits',
-}
-
-const WHAT: Readonly<Record<Bucket, string>> = {
-	threads: '发主题',
-	replies: '回帖',
-	edits: '编辑',
 }
 
 /** "30 秒" / "5 分钟" / "2 小时", rounded up. */
@@ -138,9 +132,9 @@ export class ForumRatesPlugin extends BasePlugin {
 		if (!limiter) return undefined
 		const decision = await limiter.consume(principal.userId)
 		if (!decision.denied) return undefined
-		return {
-			code: 'rate_limited',
-			message: `${WHAT[bucket]}太频繁了，请 ${waitText(decision.retryAfterMs)}后再试`,
-		}
+		return failure('rate_limited', 'rate.limited', {
+			bucket,
+			seconds: Math.max(1, Math.ceil(decision.retryAfterMs / 1000)),
+		})
 	}
 }

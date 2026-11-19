@@ -1,3 +1,4 @@
+import { failure } from '@pluxum/domain'
 import type { Principal } from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult } from '@pluxum/core'
@@ -167,11 +168,11 @@ export class ForumReactionsPlugin extends BasePlugin {
 		kind: ReactionKind = 'like',
 	): Promise<ForumResult<ReactionSummary>> {
 		const userId = principal.userId
-		if (userId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (userId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		const located = await this.core.locatePost(principal, postId)
 		if (located.isErr()) return Result.err(located.error)
 		if (!this.core.can(principal, 'post.react', located.value.resource)) {
-			return Result.err({ code: 'forbidden', message: '没有权限执行此操作' })
+			return Result.err(failure('forbidden', 'permission.denied'))
 		}
 		const key = and(
 			eq(reactions.postId, located.value.postId),

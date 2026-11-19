@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { isEntityId, type Principal } from '@pluxum/domain'
+import { failure, isEntityId, type Principal } from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type Followed, type ForumResult } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
@@ -239,12 +239,12 @@ export class ForumFollowsPlugin extends BasePlugin {
 		on: boolean,
 	): Promise<ForumResult<FollowState>> {
 		const followerId = principal.userId
-		if (followerId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (followerId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		const target = await this.target(principal, kind, ref)
 		if (target.isErr()) return Result.err(target.error)
 		const targetId = target.value
 		if (kind === 'user' && targetId === followerId) {
-			return Result.err({ code: 'invalid', message: '不能关注自己' })
+			return Result.err(failure('invalid', 'follow.self'))
 		}
 		const key = and(
 			eq(follows.followerId, followerId),
@@ -282,7 +282,7 @@ export class ForumFollowsPlugin extends BasePlugin {
 		notify: boolean,
 	): Promise<ForumResult<FollowPreference>> {
 		const userId = principal.userId
-		if (userId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (userId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		await this.database.transaction((tx) =>
 			tx
 				.insert(followSettings)
@@ -309,7 +309,7 @@ export class ForumFollowsPlugin extends BasePlugin {
 		const category = visible.find((entry) => entry.id === ref || entry.slug === ref)
 		return category
 			? Result.ok(category.id)
-			: Result.err({ code: 'not_found', message: '版块不存在' })
+			: Result.err(failure('not_found', 'entity.not_found', { entity: 'category' }))
 	}
 
 	private async stateOf(

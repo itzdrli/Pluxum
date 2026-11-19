@@ -27,6 +27,10 @@ msgstr "{accepted}; up to {maxSize} each"
 msgid "{author} 的动态"
 msgstr "{author}'s note"
 
+#: app/lib/api-errors.ts
+msgid "{bucket, select, threads {发主题} replies {回帖} edits {编辑} other {操作}}"
+msgstr "{bucket, select, threads {You are posting threads} replies {You are replying} edits {You are editing} other {You are doing that}}"
+
 #: app/routes/home.tsx
 msgid "{categoryCount} 版块"
 msgstr "{categoryCount, plural, one {# category} other {# categories}}"
@@ -42,6 +46,14 @@ msgstr "{days, plural, one {# day ago} other {# days ago}}"
 #: app/lib/format.ts
 msgid "{days, plural, other {#天后}}"
 msgstr "{days, plural, one {in # day} other {in # days}}"
+
+#: app/lib/api-errors.ts
+msgid "{entity, select, category {版块} user {用户} post {帖子} thread {主题} floor {楼层} report {举报记录} notification {通知} file {文件} other {内容}}不存在"
+msgstr "{entity, select, category {Category} user {User} post {Post} thread {Thread} floor {Floor} report {Report} notification {Notification} file {File} other {Item}} not found"
+
+#: app/lib/api-errors.ts
+msgid "{field, select, title {标题} category_name {版块名称} category_description {版块简介} display_name {昵称} search_query {搜索词} content {内容} slug {标识} handle {用户名} report_reason {举报原因} ban_reason {封禁原因} resolution_note {处理备注} unban_note {解封说明} other {内容}}"
+msgstr "{field, select, title {title} category_name {category name} category_description {category description} display_name {display name} search_query {search query} content {content} slug {slug} handle {username} report_reason {report reason} ban_reason {ban reason} resolution_note {resolution note} unban_note {unban note} other {content}}"
 
 #: app/slots/forum-follows/follow.tsx
 msgid "{followers} 人关注"
@@ -59,6 +71,10 @@ msgstr "{hours, plural, one {# hour ago} other {# hours ago}}"
 msgid "{hours, plural, other {#小时后}}"
 msgstr "{hours, plural, one {in # hour} other {in # hours}}"
 
+#: app/lib/api-errors.ts
+msgid "{hours} 小时"
+msgstr "{hours, plural, one {# hour} other {# hours}}"
+
 #: app/components/shell/theme-picker.tsx
 msgid "{label}（{mode}）"
 msgstr "{label} ({mode})"
@@ -70,6 +86,26 @@ msgstr "{minutes, plural, one {# minute ago} other {# minutes ago}}"
 #: app/lib/format.ts
 msgid "{minutes, plural, other {#分钟后}}"
 msgstr "{minutes, plural, one {in # minute} other {in # minutes}}"
+
+#: app/lib/api-errors.ts
+msgid "{minutes} 分钟"
+msgstr "{minutes, plural, one {# minute} other {# minutes}}"
+
+#: app/lib/api-errors.ts
+msgid "{name}不能为空"
+msgstr "The {name} cannot be empty"
+
+#: app/lib/api-errors.ts
+msgid "{name}不能超过 {max} 个字符"
+msgstr "The {name} cannot exceed {max} characters"
+
+#: app/lib/api-errors.ts
+msgid "{name}包含不允许的字符"
+msgstr "The {name} contains characters that are not allowed"
+
+#: app/lib/api-errors.ts
+msgid "{name}必须是文本"
+msgstr "The {name} must be text"
 
 #: app/components/forum/rows.tsx
 #: app/components/hover/hover-cards.tsx
@@ -105,6 +141,10 @@ msgstr "{seconds, plural, one {# second ago} other {# seconds ago}}"
 #: app/lib/format.ts
 msgid "{seconds, plural, other {#秒后}}"
 msgstr "{seconds, plural, one {in # second} other {in # seconds}}"
+
+#: app/lib/api-errors.ts
+msgid "{seconds} 秒"
+msgstr "{seconds, plural, one {# second} other {# seconds}}"
 
 #: app/components/shell/shell.tsx
 #: app/routes/forum-stage.tsx
@@ -149,6 +189,10 @@ msgstr "{weeks, plural, one {# week ago} other {# weeks ago}}"
 #: app/lib/format.ts
 msgid "{weeks, plural, other {#周后}}"
 msgstr "{weeks, plural, one {in # week} other {in # weeks}}"
+
+#: app/lib/api-errors.ts
+msgid "{what}太频繁了，请 {wait}后再试"
+msgstr "{what} too fast. Try again in {wait}"
 
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "1 小时"
@@ -218,17 +262,45 @@ msgstr "Next page"
 msgid "下载原图"
 msgstr "Download original"
 
+#: app/lib/api-errors.ts
+msgid "不允许跨站请求"
+msgstr "Cross-site requests are not allowed"
+
 #: app/routes/moderation.tsx
 msgid "不支持的审核操作"
 msgstr "Unsupported moderation action"
+
+#: app/lib/api-errors.ts
+msgid "不支持的文件类型（支持 {types}）"
+msgstr "Unsupported file type (supported: {types})"
 
 #: app/routes/notifications.tsx
 msgid "不支持的通知操作"
 msgstr "Unsupported notification action"
 
+#: app/lib/api-errors.ts
+msgid "不能关注自己"
+msgstr "You cannot follow yourself"
+
+#: app/lib/api-errors.ts
+msgid "不能封禁管理员"
+msgstr "Admins cannot be banned"
+
+#: app/lib/api-errors.ts
+msgid "不能封禁自己"
+msgstr "You cannot ban yourself"
+
 #: app/components/shell/user-menu.tsx
 msgid "个人资料"
 msgstr "Profile"
+
+#: app/lib/api-errors.ts
+msgid "主楼不能单独删除，请删除整个主题"
+msgstr "The opening post cannot be deleted on its own; delete the whole thread"
+
+#: app/lib/api-errors.ts
+msgid "主楼不能被采纳为答案"
+msgstr "The opening post cannot be accepted as an answer"
 
 #: app/routes/user.tsx
 msgid "主页"
@@ -270,10 +342,18 @@ msgstr "Thread sidebar"
 msgid "主题已锁定"
 msgstr "Thread locked"
 
+#: app/lib/api-errors.ts
+msgid "主题已锁定，不能回复"
+msgstr "This thread is locked and cannot be replied to"
+
 #: app/components/shell/mobile-stage-bar.tsx
 #: app/routes/thread.tsx
 msgid "主题已锁定，仅版主可回复"
 msgstr "This thread is locked. Only moderators can reply."
+
+#: app/lib/api-errors.ts
+msgid "主题帖不能移到动态里"
+msgstr "A thread cannot be moved into the notes category"
 
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "主题快捷栏"
@@ -335,6 +415,10 @@ msgstr "Code block"
 #: app/components/ui/display.tsx
 msgid "位置"
 msgstr "Breadcrumb"
+
+#: app/lib/api-errors.ts
+msgid "你已举报过该内容，正在等待处理"
+msgstr "You have already reported this; it is waiting to be handled"
 
 #: app/routes/thread-new.tsx
 msgid "你没有在这个版块发布主题的权限。"
@@ -430,6 +514,10 @@ msgstr "Close new thread"
 #: app/routes/thread-new.tsx
 msgid "内容"
 msgstr "Content"
+
+#: app/lib/api-errors.ts
+msgid "内容包含违禁词，请修改后再提交"
+msgstr "The content contains blocked words. Please edit it and try again"
 
 #: app/components/forum/rows.tsx
 msgid "最后回复"
@@ -560,6 +648,14 @@ msgctxt "tab: notes"
 msgid "动态"
 msgstr "Notes"
 
+#: app/lib/api-errors.ts
+msgid "动态不能采纳答案"
+msgstr "A note cannot have an accepted answer"
+
+#: app/lib/api-errors.ts
+msgid "动态不需要标题"
+msgstr "A note does not need a title"
+
 #: app/components/forum/note-card.tsx
 msgid "动态内容"
 msgstr "Note"
@@ -567,6 +663,14 @@ msgstr "Note"
 #: app/routes/home.tsx
 msgid "动态暂时不可用。"
 msgstr "Notes are temporarily unavailable."
+
+#: app/lib/api-errors.ts
+msgid "动态没有标题"
+msgstr "A note has no title"
+
+#: app/lib/api-errors.ts
+msgid "动态版块不能删除"
+msgstr "The notes category cannot be deleted"
 
 #: app/components/dock/composer-dock.tsx
 msgid "半屏"
@@ -667,6 +771,10 @@ msgstr "Unpin"
 msgid "取消采纳"
 msgstr "Unaccept answer"
 
+#: app/lib/api-errors.ts
+msgid "只有楼主或版主可以采纳答案"
+msgstr "Only the thread author or a moderator can accept an answer"
+
 #: app/routes/home.tsx
 msgid "名称"
 msgstr "Name"
@@ -739,6 +847,14 @@ msgstr "Image"
 msgid "图片太大了，头像不能超过 {maxSize}。"
 msgstr "The image is too large. An avatar can be at most {maxSize}."
 
+#: app/lib/api-errors.ts
+msgid "图片数据无法解析"
+msgstr "The image data could not be read"
+
+#: app/lib/api-errors.ts
+msgid "图片文件内容与格式不符"
+msgstr "The image does not match its format"
+
 #: app/components/composer/rich-editor.tsx
 msgid "在下方插入行"
 msgstr "Insert row below"
@@ -791,6 +907,14 @@ msgstr "Copy link"
 msgid "头像"
 msgstr "Avatar"
 
+#: app/lib/api-errors.ts
+msgid "头像仅支持 PNG、JPEG、WebP 或 GIF 图片"
+msgstr "Avatars must be PNG, JPEG, WebP or GIF images"
+
+#: app/lib/api-errors.ts
+msgid "头像图片不能超过 {limit}"
+msgstr "The avatar cannot be larger than {limit}"
+
 #: app/components/shell/user-menu.tsx
 #: app/routes/forum-stage.tsx
 #: app/routes/moderation.tsx
@@ -828,6 +952,10 @@ msgstr "Reason for ban: "
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "封禁时长"
 msgstr "Ban duration"
+
+#: app/lib/api-errors.ts
+msgid "封禁时长必须大于 0"
+msgstr "The ban duration must be greater than 0"
 
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "封禁至"
@@ -960,6 +1088,14 @@ msgstr "Filter by category"
 msgid "排序"
 msgstr "Sort"
 
+#: app/lib/api-errors.ts
+msgid "排序必须是整数"
+msgstr "The order must be an integer"
+
+#: app/lib/api-errors.ts
+msgid "接口不存在"
+msgstr "Endpoint not found"
+
 #: app/routes/moderation.tsx
 #: app/slots/forum-moderation/report-button.tsx
 msgid "提交举报"
@@ -1006,6 +1142,14 @@ msgstr "Search is not enabled"
 msgid "搜索或输入命令"
 msgstr "Search or type a command"
 
+#: app/lib/api-errors.ts
+msgid "搜索服务暂时不可用"
+msgstr "Search is temporarily unavailable"
+
+#: app/lib/api-errors.ts
+msgid "搜索服务未启用"
+msgstr "Search is not enabled"
+
 #: app/routes/search.tsx
 msgid "搜索结果"
 msgstr "Search results"
@@ -1038,9 +1182,17 @@ msgstr "Collapse thread list ([)"
 msgid "收起侧栏（\\）"
 msgstr "Collapse sidebar (\\)"
 
+#: app/lib/api-errors.ts
+msgid "文件内容无法解析"
+msgstr "The file content could not be read"
+
 #: app/slots/forum-attachments/shared.ts
 msgid "文件太大了。"
 msgstr "The file is too large."
+
+#: app/lib/api-errors.ts
+msgid "文本附件包含无效的二进制字符"
+msgstr "The text attachment contains invalid binary characters"
 
 #: app/components/composer/rich-editor.tsx
 msgid "斜体"
@@ -1062,6 +1214,18 @@ msgstr "New category"
 #: app/components/composer/rich-editor.tsx
 msgid "无序列表"
 msgstr "Bulleted list"
+
+#: app/lib/api-errors.ts
+msgid "无效的举报状态筛选"
+msgstr "Invalid report status filter"
+
+#: app/lib/api-errors.ts
+msgid "无效的账号标识"
+msgstr "Invalid account identifier"
+
+#: app/lib/api-errors.ts
+msgid "无法从名称生成标识，请手动填写"
+msgstr "A slug could not be made from the name; please enter one"
 
 #: app/routes/user.tsx
 msgid "昵称"
@@ -1107,6 +1271,10 @@ msgstr "Has unread content"
 msgid "有用"
 msgstr "Helpful"
 
+#: app/lib/api-errors.ts
+msgid "服务器内部错误"
+msgstr "Internal server error"
+
 #: app/components/shell/user-menu.tsx
 msgid "未登录"
 msgstr "Not signed in"
@@ -1114,6 +1282,10 @@ msgstr "Not signed in"
 #: app/routes/thread.tsx
 msgid "未知的操作。"
 msgstr "Unknown action."
+
+#: app/lib/api-errors.ts
+msgid "未知的角色"
+msgstr "Unknown role"
 
 #: app/routes/notifications.tsx
 #: app/slots/forum-notifications/bell.tsx
@@ -1160,6 +1332,10 @@ msgstr "Mark resolved"
 #: app/routes/home.tsx
 msgid "标识"
 msgstr "Slug"
+
+#: app/lib/api-errors.ts
+msgid "标识只能包含小写字母、数字和连字符"
+msgstr "A slug may only contain lowercase letters, digits and hyphens"
 
 #: app/components/composer/rich-editor.tsx
 #: app/components/dock/composer-dock.tsx
@@ -1226,6 +1402,10 @@ msgstr "No one found"
 msgid "没有未读通知"
 msgstr "No unread notifications"
 
+#: app/lib/api-errors.ts
+msgid "没有权限执行此操作"
+msgstr "You do not have permission to do that"
+
 #: app/routes/moderation.tsx
 msgid "没有权限访问审核队列"
 msgstr "You do not have access to the moderation queue"
@@ -1255,6 +1435,10 @@ msgstr "Moderator"
 msgid "版块"
 msgstr "Categories"
 
+#: app/lib/api-errors.ts
+msgid "版块内已有主题，不能删除"
+msgstr "The category still has threads and cannot be deleted"
+
 #: app/routes/forum-stage.tsx
 msgid "版块导航"
 msgstr "Category navigation"
@@ -1263,9 +1447,29 @@ msgstr "Category navigation"
 msgid "版块快捷栏"
 msgstr "Category bar"
 
+#: app/lib/api-errors.ts
+msgid "版块标识已被使用"
+msgstr "That category slug is already in use"
+
+#: app/lib/api-errors.ts
+msgid "版块类型已变化，请重试"
+msgstr "The category type changed. Please try again"
+
 #: app/routes/user.tsx
 msgid "用户名"
 msgstr "Username"
+
+#: app/lib/api-errors.ts
+msgid "用户名已被使用"
+msgstr "That username is already taken"
+
+#: app/lib/api-errors.ts
+msgid "用户名至少需要 {min} 个字符"
+msgstr "A username needs at least {min} characters"
+
+#: app/lib/api-errors.ts
+msgid "用户名需以小写字母开头，只能包含小写字母、数字、连字符和下划线，且不能以符号结尾"
+msgstr "A username must start with a lowercase letter, contain only lowercase letters, digits, hyphens and underscores, and not end with a symbol"
 
 #: app/routes/moderation.tsx
 msgid "由 <0>{resolverName}</0> 处理"
@@ -1307,6 +1511,14 @@ msgstr "Log in to post"
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "登录后回复"
 msgstr "Log in to reply"
+
+#: app/lib/api-errors.ts
+msgid "登录尚未配置"
+msgstr "Sign-in is not configured"
+
+#: app/lib/api-errors.ts
+msgid "登录服务暂时不可用，请稍后再试"
+msgstr "The sign-in service is temporarily unavailable. Please try again later"
 
 #: app/components/shell/shell.tsx
 msgid "登录服务暂时不可用，请稍后再试。"
@@ -1417,6 +1629,10 @@ msgstr "Edit content"
 msgid "编辑资料"
 msgstr "Edit profile"
 
+#: app/lib/api-errors.ts
+msgid "缺少举报目标"
+msgstr "The report has no target"
+
 #: app/slots/forum-attachments/shared.ts
 #: app/slots/forum-follows/follow.tsx
 #: app/slots/forum-mail/mail-settings.tsx
@@ -1462,14 +1678,31 @@ msgstr "The forum service is temporarily unavailable"
 msgid "语言"
 msgstr "Language"
 
+#: app/lib/api-errors.ts
 #: app/routes/moderation.tsx
 #: app/routes/notifications.tsx
 msgid "请先登录"
 msgstr "Please log in first"
 
+#: app/lib/api-errors.ts
+msgid "请填写{name}"
+msgstr "Please enter the {name}"
+
+#: app/lib/api-errors.ts
+msgid "请求内容无法解析"
+msgstr "The request body could not be parsed"
+
 #: app/routes/ext-action.ts
 msgid "请求内容无法解析。"
 msgstr "The request could not be parsed."
+
+#: app/lib/api-errors.ts
+msgid "请求参数无效"
+msgstr "Invalid request parameters"
+
+#: app/lib/api-errors.ts
+msgid "请求方法不支持"
+msgstr "Method not supported"
 
 #: app/slots/forum-attachments/avatar.tsx
 msgid "请选择图片文件。"
@@ -1487,6 +1720,14 @@ msgstr "Account"
 #: app/components/shell/user-menu.tsx
 msgid "账号：{name}"
 msgstr "Account: {name}"
+
+#: app/lib/api-errors.ts
+msgid "账号已被封禁，无法发帖或编辑内容"
+msgstr "Your account is banned and cannot post or edit"
+
+#: app/lib/api-errors.ts
+msgid "账号已被封禁，无法执行此操作"
+msgstr "Your account is banned and cannot do this"
 
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "账号状态"
@@ -1507,6 +1748,10 @@ msgstr "Convert to thread"
 #: app/routes/thread.tsx
 msgid "转为主题帖后，正文和回复都会保留。"
 msgstr "The text and replies are kept when it becomes a thread."
+
+#: app/lib/api-errors.ts
+msgid "转为主题帖需要一个标题"
+msgstr "Converting to a thread needs a title"
 
 #: app/routes/search.tsx
 msgid "输入关键词开始搜索"
@@ -1651,6 +1896,10 @@ msgstr "Lock"
 #: app/slots/forum-attachments/upload.tsx
 msgid "附件"
 msgstr "Attachments"
+
+#: app/lib/api-errors.ts
+msgid "附件大小不能超过 {limit}"
+msgstr "An attachment cannot be larger than {limit}"
 
 #: app/components/shell/site-footer.tsx
 msgid "页脚链接"

@@ -1,4 +1,5 @@
 import {
+	failure,
 	isEntityId,
 	normalizePage,
 	type ForumAction,
@@ -406,7 +407,7 @@ export class ForumModerationPlugin extends BasePlugin {
 
 	private onBeforeWrite(event: PostBeforeWriteEvent): PostHookRejection | void {
 		if (this.activeBanOf(event.principal.userId) !== null) {
-			return { code: 'forbidden', message: '账号已被封禁，无法发帖或编辑内容' }
+			return failure('forbidden', 'ban.cannot_post')
 		}
 		const words = this.config.blockedWords
 		if (words.length === 0) return undefined
@@ -430,7 +431,7 @@ export class ForumModerationPlugin extends BasePlugin {
 			const needle = normalizeMatchText(rawWord.trim())
 			if (!needle) continue
 			if (normalizedTexts.some((haystack) => haystack.includes(needle))) {
-				return { code: 'invalid', message: '内容包含违禁词，请修改后再提交' }
+				return failure('invalid', 'content.banned_words')
 			}
 		}
 		return undefined
@@ -452,10 +453,10 @@ export class ForumModerationPlugin extends BasePlugin {
 
 	private ensureStaff(principal: Principal): ForumResult<string> {
 		if (principal.userId === null) {
-			return Result.err({ code: 'unauthenticated', message: '请先登录' })
+			return Result.err(failure('unauthenticated', 'auth.required'))
 		}
 		if (!this.core.can(principal, 'thread.moderate')) {
-			return Result.err({ code: 'forbidden', message: '没有权限执行此操作' })
+			return Result.err(failure('forbidden', 'permission.denied'))
 		}
 		return Result.ok(principal.userId)
 	}
@@ -535,25 +536,27 @@ export class ForumModerationPlugin extends BasePlugin {
 	): Promise<ForumResult<ReportSubmittedResult>> {
 		const reporterId = principal.userId
 		if (reporterId === null) {
-			return Result.err({ code: 'unauthenticated', message: '请先登录' })
+			return Result.err(failure('unauthenticated', 'auth.required'))
 		}
 		if (this.activeBanOf(reporterId) !== null) {
-			return Result.err({ code: 'forbidden', message: '账号已被封禁，无法执行此操作' })
+			return Result.err(failure('forbidden', 'ban.cannot_act'))
 		}
 
 		const reason = cleanText(input.reason, REASON_MAX_LENGTH)
 		if (reason === null) {
-			return Result.err({
-				code: 'invalid',
-				message: !input.reason.trim()
-					? '请填写举报原因'
-					: `举报原因不能超过 ${REASON_MAX_LENGTH} 字`,
-			})
+			return Result.err(
+				!input.reason.trim()
+					? failure('invalid', 'field.required', { field: 'report_reason' })
+					: failure('invalid', 'field.too_long', {
+							field: 'report_reason',
+							max: REASON_MAX_LENGTH,
+						}),
+			)
 		}
 
 		const lookupPostId = input.postId ?? input.targetId
 		if (!lookupPostId) {
-			return Result.err({ code: 'invalid', message: '缺少举报目标' })
+			return Result.err(failure('invalid', 'report.no_target'))
 		}
 
 		const located = await this.core.locatePost(principal, lookupPostId)
@@ -580,7 +583,7 @@ export class ForumModerationPlugin extends BasePlugin {
 				)
 				.limit(1)
 			if (duplicate) {
-				return Result.err({ code: 'conflict', message: '你已举报过该内容，正在等待处理' })
+				return Result.err(failure('conflict', 'report.duplicate'))
 			}
 
 			const [created] = await tx
@@ -628,7 +631,7 @@ export class ForumModerationPlugin extends BasePlugin {
 
 		const rawStatus = options.status ?? 'open'
 		if (!isQueueStatus(rawStatus)) {
-			return Result.err({ code: 'invalid', message: '无效的举报状态筛选' })
+			return Result.err(failure('invalid', 'report.bad_status'))
 		}
 		const { page, pageSize } = normalizePage(options)
 		const filter = rawStatus === 'all' ? undefined : eq(reports.status, rawStatus)
@@ -682,10 +685,12 @@ export class ForumModerationPlugin extends BasePlugin {
 		const actorId = staff.value
 
 		if (!isEntityId(input.reportId)) {
-			return Result.err({ code: 'not_found', message: '举报记录不存在' })
+			return Result.err(failure('not_found', 'entity.not_found', { entity: 'report' }))
 		}
 		if (input.note !== undefined && Array.from(input.note.trim()).length > NOTE_MAX_LENGTH) {
-			return Result.err({ code: 'invalid', message: `处理备注不能超过 ${NOTE_MAX_LENGTH} 字` })
+			return Result.err(
+				failure('invalid', 'field.too_long', { field: 'resolution_note', max: NOTE_MAX_LENGTH }),
+			)
 		}
 		const note = cleanText(input.note, NOTE_MAX_LENGTH)
 
@@ -693,7 +698,7 @@ export class ForumModerationPlugin extends BasePlugin {
 			db.select().from(reports).where(eq(reports.id, input.reportId)).limit(1),
 		)
 		if (!existing) {
-			return Result.err({ code: 'not_found', message: '举报记录不存在' })
+			return Result.err(failure('not_found', 'entity.not_found', { entity: 'report' }))
 		}
 
 		const deleteTarget = input.decision === 'resolved' && input.deleteTarget === true
@@ -750,7 +755,7 @@ export class ForumModerationPlugin extends BasePlugin {
 			})
 			return row
 		})
-		if (!updated) return Result.err({ code: 'not_found', message: '举报记录不存在' })
+		if (!updated) return Result.err(failure('not_found', 'entity.not_found', { entity: 'report' }))
 
 		const usersById = await this.resolveUsers(
 			[updated.reporterId, updated.targetAuthorId, updated.resolvedBy],
@@ -773,27 +778,26 @@ export class ForumModerationPlugin extends BasePlugin {
 		const actorId = staff.value
 
 		if (!isEntityId(input.userId)) {
-			return Result.err({ code: 'not_found', message: '用户不存在' })
+			return Result.err(failure('not_found', 'entity.not_found', { entity: 'user' }))
 		}
 		if (actorId === input.userId) {
-			return Result.err({ code: 'forbidden', message: '不能封禁自己' })
+			return Result.err(failure('forbidden', 'ban.self'))
 		}
 
 		const reason = cleanText(input.reason, REASON_MAX_LENGTH)
 		if (reason === null) {
-			return Result.err({
-				code: 'invalid',
-				message: !input.reason.trim()
-					? '请填写封禁原因'
-					: `封禁原因不能超过 ${REASON_MAX_LENGTH} 字`,
-			})
+			return Result.err(
+				!input.reason.trim()
+					? failure('invalid', 'field.required', { field: 'ban_reason' })
+					: failure('invalid', 'field.too_long', { field: 'ban_reason', max: REASON_MAX_LENGTH }),
+			)
 		}
 
 		if (
 			input.durationHours !== undefined &&
 			(!Number.isFinite(input.durationHours) || input.durationHours <= 0)
 		) {
-			return Result.err({ code: 'invalid', message: '封禁时长必须大于 0' })
+			return Result.err(failure('invalid', 'ban.duration'))
 		}
 
 		const targetUser = await this.core.getUser(input.userId, principal)
@@ -801,7 +805,7 @@ export class ForumModerationPlugin extends BasePlugin {
 
 		const targetPrincipal = await this.core.principalOf(input.userId)
 		if (targetPrincipal.roles.includes('admin')) {
-			return Result.err({ code: 'forbidden', message: '不能封禁管理员' })
+			return Result.err(failure('forbidden', 'ban.admin'))
 		}
 
 		const now = new Date()
@@ -875,10 +879,12 @@ export class ForumModerationPlugin extends BasePlugin {
 		const actorId = staff.value
 
 		if (!isEntityId(input.userId)) {
-			return Result.err({ code: 'not_found', message: '用户不存在' })
+			return Result.err(failure('not_found', 'entity.not_found', { entity: 'user' }))
 		}
 		if (input.reason !== undefined && Array.from(input.reason.trim()).length > REASON_MAX_LENGTH) {
-			return Result.err({ code: 'invalid', message: `解封说明不能超过 ${REASON_MAX_LENGTH} 字` })
+			return Result.err(
+				failure('invalid', 'field.too_long', { field: 'unban_note', max: REASON_MAX_LENGTH }),
+			)
 		}
 
 		const targetUser = await this.core.getUser(input.userId, principal)

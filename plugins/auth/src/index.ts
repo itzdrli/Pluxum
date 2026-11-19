@@ -1,4 +1,11 @@
-import { LIMITS } from '@pluxum/domain'
+import {
+	errorDetail,
+	failureOf,
+	LIMITS,
+	type ErrorDetail,
+	type ErrorKey,
+	type ErrorParams,
+} from '@pluxum/domain'
 import { ForumCorePlugin } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
@@ -30,6 +37,9 @@ export type Authentication =
 	| Readonly<{ status: 'unavailable' }>
 
 export type AuthFailure = Readonly<{
+	/** What went wrong as data (see `@pluxum/domain` errors); `message` is the Chinese fallback. */
+	key?: ErrorKey
+	params?: ErrorParams
 	/**
 	 * `unavailable`: login is not configured, or Redis / the provider cannot be reached.
 	 * `rejected`: this login attempt or token is not acceptable.
@@ -110,10 +120,10 @@ const LoginState = v.object({
 	returnTo: v.string(),
 })
 
-const fail = (code: AuthFailure['code'], message: string): Result<never, AuthFailure> =>
-	Result.err({ code, message })
-const NOT_CONFIGURED = '登录尚未配置'
-const TRY_LATER = '登录服务暂时不可用，请稍后再试'
+const fail = (code: AuthFailure['code'], error: string | ErrorDetail): Result<never, AuthFailure> =>
+	Result.err(typeof error === 'string' ? { code, message: error } : failureOf(code, error))
+const NOT_CONFIGURED = errorDetail('login.not_configured')
+const TRY_LATER = errorDetail('login.unavailable')
 
 /** A same-origin path to return to after login; anything that could leave the origin becomes `/`. */
 function safeReturnTo(value: string | null): string {
@@ -385,7 +395,8 @@ export class ForumAuthPlugin extends ForumAuth {
 	override async logoutEverywhere(request: Request): Promise<AuthResult<Logout>> {
 		const authentication = await this.authenticate(request)
 		if (authentication.status === 'unavailable') return fail('unavailable', TRY_LATER)
-		if (authentication.status === 'guest') return fail('unauthenticated', '请先登录')
+		if (authentication.status === 'guest')
+			return fail('unauthenticated', errorDetail('auth.required'))
 		try {
 			await this.sessions.revokeUser(authentication.userId)
 		} catch (error) {

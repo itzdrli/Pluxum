@@ -1,4 +1,5 @@
 import {
+	failure,
 	isEntityId,
 	normalizePage,
 	type ForumNotification,
@@ -306,7 +307,7 @@ export class ForumNotificationsPlugin extends BasePlugin {
 		options: { page?: number; pageSize?: number; unreadOnly?: boolean } = {},
 	): Promise<ForumResult<NotificationPageDto>> {
 		const userId = principal.userId
-		if (userId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (userId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		const { page, pageSize } = normalizePage(options)
 		const filter = options.unreadOnly
 			? and(eq(notifications.recipientId, userId), isNull(notifications.readAt))
@@ -387,7 +388,7 @@ export class ForumNotificationsPlugin extends BasePlugin {
 	/** Returns the number of unread notifications for the signed-in principal. */
 	async unreadCount(principal: Principal): Promise<ForumResult<UnreadCountResult>> {
 		const userId = principal.userId
-		if (userId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (userId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		const [row] = await this.database.read((db) =>
 			db
 				.select({ value: count() })
@@ -406,9 +407,9 @@ export class ForumNotificationsPlugin extends BasePlugin {
 		notificationId: string,
 	): Promise<ForumResult<MarkReadResult>> {
 		const userId = principal.userId
-		if (userId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (userId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		if (!isEntityId(notificationId)) {
-			return Result.err({ code: 'not_found', message: '通知不存在' })
+			return Result.err(failure('not_found', 'entity.not_found', { entity: 'notification' }))
 		}
 
 		const outcome = await this.database.transaction(async (tx) => {
@@ -437,14 +438,15 @@ export class ForumNotificationsPlugin extends BasePlugin {
 			}
 		})
 
-		if (!outcome) return Result.err({ code: 'not_found', message: '通知不存在' })
+		if (!outcome)
+			return Result.err(failure('not_found', 'entity.not_found', { entity: 'notification' }))
 		return Result.ok(outcome)
 	}
 
 	/** Marks all unread notifications of the signed-in principal as read. */
 	async markAllRead(principal: Principal): Promise<ForumResult<MarkAllReadResult>> {
 		const userId = principal.userId
-		if (userId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (userId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		const now = new Date()
 		const updated = await this.database.transaction((tx) =>
 			tx

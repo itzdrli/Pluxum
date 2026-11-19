@@ -1,4 +1,5 @@
 import {
+	failure as keyed,
 	GUEST,
 	LIMITS,
 	type ApiError,
@@ -69,6 +70,8 @@ const authFailure = (failure: AuthFailure) =>
 	new ApiFailure(AUTH_STATUS[failure.code], {
 		code: failure.code === 'rejected' ? 'invalid' : failure.code,
 		message: failure.message,
+		...(failure.key === undefined ? {} : { key: failure.key }),
+		...(failure.params === undefined ? {} : { params: failure.params }),
 	})
 
 function redirect(location: string, setCookie?: string): Response {
@@ -193,16 +196,16 @@ export class ForumApiPlugin extends BasePlugin {
 				const { code, status } = elysiaErrorFacts(error)
 				// A response that fails its own schema is a server fault (500), not bad input.
 				if (code === 'validation' && status === 422) {
-					return errorResponse(422, { code: 'invalid', message: '请求参数无效' })
+					return errorResponse(422, keyed('invalid', 'request.invalid'))
 				}
 				if (code === 'parse') {
-					return errorResponse(400, { code: 'invalid', message: '请求内容无法解析' })
+					return errorResponse(400, keyed('invalid', 'request.unparsable'))
 				}
 				if (code === 'not-found') {
-					return errorResponse(404, { code: 'not_found', message: '接口不存在' })
+					return errorResponse(404, keyed('not_found', 'route.not_found'))
 				}
 				this.ctx.logger.error('forum api request failed', { error })
-				return errorResponse(500, { code: 'internal', message: '服务器内部错误' })
+				return errorResponse(500, keyed('internal', 'server.internal'))
 			})
 			.group(FORUM_API_PREFIX, (app) =>
 				app
@@ -263,7 +266,7 @@ export class ForumApiPlugin extends BasePlugin {
 		params: { extId: string; fileId: string },
 	): Promise<Response> {
 		const found = this.extFiles.find(params.extId)
-		if (!found) throw new ApiFailure(404, { code: 'not_found', message: '接口不存在' })
+		if (!found) throw new ApiFailure(404, keyed('not_found', 'route.not_found'))
 		const principal = await this.viewer(request)
 		const result = await found.read({
 			principal,
@@ -271,7 +274,7 @@ export class ForumApiPlugin extends BasePlugin {
 			ifNoneMatch: request.headers.get('if-none-match'),
 		})
 		if (!this.extFiles.holds(found)) {
-			throw new ApiFailure(404, { code: 'not_found', message: '接口不存在' })
+			throw new ApiFailure(404, keyed('not_found', 'route.not_found'))
 		}
 		const payload = valueOf(result)
 		if (payload === 'not_modified') {
@@ -300,22 +303,22 @@ export class ForumApiPlugin extends BasePlugin {
 		raw: unknown,
 	): Promise<Response> {
 		const found = this.extActions.find(params.extId, params.action)
-		if (!found) throw new ApiFailure(404, { code: 'not_found', message: '接口不存在' })
+		if (!found) throw new ApiFailure(404, keyed('not_found', 'route.not_found'))
 		if (found.method !== method) {
-			throw new ApiFailure(405, { code: 'invalid', message: '请求方法不支持' })
+			throw new ApiFailure(405, keyed('invalid', 'request.method'))
 		}
 		const principal = await (method === 'POST' ? this.actor(request) : this.viewer(request))
 		if (found.login && principal.userId === null) {
-			throw new ApiFailure(401, { code: 'unauthenticated', message: '请先登录' })
+			throw new ApiFailure(401, keyed('unauthenticated', 'auth.required'))
 		}
 		const input = Value.Clean(found.input, raw ?? {})
 		if (!Value.Check(found.input, input)) {
-			throw new ApiFailure(422, { code: 'invalid', message: '请求参数无效' })
+			throw new ApiFailure(422, keyed('invalid', 'request.invalid'))
 		}
 		const result = await found.handle({ principal, input })
 		// Stopped or replaced while it ran: its answer is no longer this endpoint's.
 		if (!this.extActions.holds(found)) {
-			throw new ApiFailure(404, { code: 'not_found', message: '接口不存在' })
+			throw new ApiFailure(404, keyed('not_found', 'route.not_found'))
 		}
 		const output = Value.Clean(found.output, structuredClone(valueOf(result)))
 		if (!Value.Check(found.output, output)) {
@@ -492,7 +495,7 @@ export class ForumApiPlugin extends BasePlugin {
 					async ({ request, body }) => {
 						const principal = await this.actor(request)
 						if (principal.userId === null) {
-							throw new ApiFailure(401, { code: 'unauthenticated', message: '请先登录' })
+							throw new ApiFailure(401, keyed('unauthenticated', 'auth.required'))
 						}
 						return valueOf(this.core.previewBody(body.body))
 					},
@@ -528,7 +531,7 @@ export class ForumApiPlugin extends BasePlugin {
 				// Off reads as 404 so the route does not advertise itself.
 				.post('/auth/test-login', async ({ request, body }) => {
 					if (!this.auth.testLoginAvailable()) {
-						throw new ApiFailure(404, { code: 'not_found', message: '接口不存在' })
+						throw new ApiFailure(404, keyed('not_found', 'route.not_found'))
 					}
 					const input = testLoginInputOf(body)
 					if (input === null) {
@@ -613,7 +616,7 @@ export class ForumApiPlugin extends BasePlugin {
 		this.requireSameOrigin(request)
 		const authentication = await this.auth.authenticate(request)
 		if (authentication.status === 'unavailable') {
-			throw new ApiFailure(503, { code: 'unavailable', message: '登录服务暂时不可用，请稍后再试' })
+			throw new ApiFailure(503, keyed('unavailable', 'login.unavailable'))
 		}
 		return authentication.status === 'authenticated'
 			? this.core.principalOf(authentication.userId)
@@ -622,7 +625,7 @@ export class ForumApiPlugin extends BasePlugin {
 
 	private requireSameOrigin(request: Request): void {
 		if (!this.auth.allowsOrigin(request)) {
-			throw new ApiFailure(403, { code: 'forbidden', message: '不允许跨站请求' })
+			throw new ApiFailure(403, keyed('forbidden', 'request.cross_site'))
 		}
 	}
 }

@@ -1,3 +1,4 @@
+import { failure } from '@pluxum/domain'
 import type { ForumNotification, Principal } from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult } from '@pluxum/core'
@@ -210,7 +211,7 @@ export class ForumMailPlugin extends BasePlugin {
 	/** Where the signed-in account's notification mail goes, and whether it wants it. */
 	async address(principal: Principal): Promise<ForumResult<MailAddressResult>> {
 		const userId = principal.userId
-		if (userId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (userId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		return Result.ok(await this.stateOf(userId))
 	}
 
@@ -220,7 +221,7 @@ export class ForumMailPlugin extends BasePlugin {
 		enabled: boolean,
 	): Promise<ForumResult<MailAddressResult>> {
 		const userId = principal.userId
-		if (userId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (userId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		const now = new Date()
 		await this.database.transaction((tx) =>
 			tx

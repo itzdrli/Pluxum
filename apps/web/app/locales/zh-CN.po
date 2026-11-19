@@ -27,6 +27,10 @@ msgstr "{accepted}，单个不超过 {maxSize}"
 msgid "{author} 的动态"
 msgstr "{author} 的动态"
 
+#: app/lib/api-errors.ts
+msgid "{bucket, select, threads {发主题} replies {回帖} edits {编辑} other {操作}}"
+msgstr "{bucket, select, threads {发主题} replies {回帖} edits {编辑} other {操作}}"
+
 #: app/routes/home.tsx
 msgid "{categoryCount} 版块"
 msgstr "{categoryCount} 版块"
@@ -42,6 +46,14 @@ msgstr "{days, plural, other {#天前}}"
 #: app/lib/format.ts
 msgid "{days, plural, other {#天后}}"
 msgstr "{days, plural, other {#天后}}"
+
+#: app/lib/api-errors.ts
+msgid "{entity, select, category {版块} user {用户} post {帖子} thread {主题} floor {楼层} report {举报记录} notification {通知} file {文件} other {内容}}不存在"
+msgstr "{entity, select, category {版块} user {用户} post {帖子} thread {主题} floor {楼层} report {举报记录} notification {通知} file {文件} other {内容}}不存在"
+
+#: app/lib/api-errors.ts
+msgid "{field, select, title {标题} category_name {版块名称} category_description {版块简介} display_name {昵称} search_query {搜索词} content {内容} slug {标识} handle {用户名} report_reason {举报原因} ban_reason {封禁原因} resolution_note {处理备注} unban_note {解封说明} other {内容}}"
+msgstr "{field, select, title {标题} category_name {版块名称} category_description {版块简介} display_name {昵称} search_query {搜索词} content {内容} slug {标识} handle {用户名} report_reason {举报原因} ban_reason {封禁原因} resolution_note {处理备注} unban_note {解封说明} other {内容}}"
 
 #: app/slots/forum-follows/follow.tsx
 msgid "{followers} 人关注"
@@ -59,6 +71,10 @@ msgstr "{hours, plural, other {#小时前}}"
 msgid "{hours, plural, other {#小时后}}"
 msgstr "{hours, plural, other {#小时后}}"
 
+#: app/lib/api-errors.ts
+msgid "{hours} 小时"
+msgstr "{hours} 小时"
+
 #: app/components/shell/theme-picker.tsx
 msgid "{label}（{mode}）"
 msgstr "{label}（{mode}）"
@@ -70,6 +86,26 @@ msgstr "{minutes, plural, other {#分钟前}}"
 #: app/lib/format.ts
 msgid "{minutes, plural, other {#分钟后}}"
 msgstr "{minutes, plural, other {#分钟后}}"
+
+#: app/lib/api-errors.ts
+msgid "{minutes} 分钟"
+msgstr "{minutes} 分钟"
+
+#: app/lib/api-errors.ts
+msgid "{name}不能为空"
+msgstr "{name}不能为空"
+
+#: app/lib/api-errors.ts
+msgid "{name}不能超过 {max} 个字符"
+msgstr "{name}不能超过 {max} 个字符"
+
+#: app/lib/api-errors.ts
+msgid "{name}包含不允许的字符"
+msgstr "{name}包含不允许的字符"
+
+#: app/lib/api-errors.ts
+msgid "{name}必须是文本"
+msgstr "{name}必须是文本"
 
 #: app/components/forum/rows.tsx
 #: app/components/hover/hover-cards.tsx
@@ -105,6 +141,10 @@ msgstr "{seconds, plural, other {#秒前}}"
 #: app/lib/format.ts
 msgid "{seconds, plural, other {#秒后}}"
 msgstr "{seconds, plural, other {#秒后}}"
+
+#: app/lib/api-errors.ts
+msgid "{seconds} 秒"
+msgstr "{seconds} 秒"
 
 #: app/components/shell/shell.tsx
 #: app/routes/forum-stage.tsx
@@ -149,6 +189,10 @@ msgstr "{weeks, plural, other {#周前}}"
 #: app/lib/format.ts
 msgid "{weeks, plural, other {#周后}}"
 msgstr "{weeks, plural, other {#周后}}"
+
+#: app/lib/api-errors.ts
+msgid "{what}太频繁了，请 {wait}后再试"
+msgstr "{what}太频繁了，请 {wait}后再试"
 
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "1 小时"
@@ -218,17 +262,45 @@ msgstr "下一页"
 msgid "下载原图"
 msgstr "下载原图"
 
+#: app/lib/api-errors.ts
+msgid "不允许跨站请求"
+msgstr "不允许跨站请求"
+
 #: app/routes/moderation.tsx
 msgid "不支持的审核操作"
 msgstr "不支持的审核操作"
+
+#: app/lib/api-errors.ts
+msgid "不支持的文件类型（支持 {types}）"
+msgstr "不支持的文件类型（支持 {types}）"
 
 #: app/routes/notifications.tsx
 msgid "不支持的通知操作"
 msgstr "不支持的通知操作"
 
+#: app/lib/api-errors.ts
+msgid "不能关注自己"
+msgstr "不能关注自己"
+
+#: app/lib/api-errors.ts
+msgid "不能封禁管理员"
+msgstr "不能封禁管理员"
+
+#: app/lib/api-errors.ts
+msgid "不能封禁自己"
+msgstr "不能封禁自己"
+
 #: app/components/shell/user-menu.tsx
 msgid "个人资料"
 msgstr "个人资料"
+
+#: app/lib/api-errors.ts
+msgid "主楼不能单独删除，请删除整个主题"
+msgstr "主楼不能单独删除，请删除整个主题"
+
+#: app/lib/api-errors.ts
+msgid "主楼不能被采纳为答案"
+msgstr "主楼不能被采纳为答案"
 
 #: app/routes/user.tsx
 msgid "主页"
@@ -270,10 +342,18 @@ msgstr "主题侧栏"
 msgid "主题已锁定"
 msgstr "主题已锁定"
 
+#: app/lib/api-errors.ts
+msgid "主题已锁定，不能回复"
+msgstr "主题已锁定，不能回复"
+
 #: app/components/shell/mobile-stage-bar.tsx
 #: app/routes/thread.tsx
 msgid "主题已锁定，仅版主可回复"
 msgstr "主题已锁定，仅版主可回复"
+
+#: app/lib/api-errors.ts
+msgid "主题帖不能移到动态里"
+msgstr "主题帖不能移到动态里"
 
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "主题快捷栏"
@@ -335,6 +415,10 @@ msgstr "代码块"
 #: app/components/ui/display.tsx
 msgid "位置"
 msgstr "位置"
+
+#: app/lib/api-errors.ts
+msgid "你已举报过该内容，正在等待处理"
+msgstr "你已举报过该内容，正在等待处理"
 
 #: app/routes/thread-new.tsx
 msgid "你没有在这个版块发布主题的权限。"
@@ -430,6 +514,10 @@ msgstr "关闭发布主题"
 #: app/routes/thread-new.tsx
 msgid "内容"
 msgstr "内容"
+
+#: app/lib/api-errors.ts
+msgid "内容包含违禁词，请修改后再提交"
+msgstr "内容包含违禁词，请修改后再提交"
 
 #: app/components/forum/rows.tsx
 msgid "最后回复"
@@ -560,6 +648,14 @@ msgctxt "tab: notes"
 msgid "动态"
 msgstr "动态"
 
+#: app/lib/api-errors.ts
+msgid "动态不能采纳答案"
+msgstr "动态不能采纳答案"
+
+#: app/lib/api-errors.ts
+msgid "动态不需要标题"
+msgstr "动态不需要标题"
+
 #: app/components/forum/note-card.tsx
 msgid "动态内容"
 msgstr "动态内容"
@@ -567,6 +663,14 @@ msgstr "动态内容"
 #: app/routes/home.tsx
 msgid "动态暂时不可用。"
 msgstr "动态暂时不可用。"
+
+#: app/lib/api-errors.ts
+msgid "动态没有标题"
+msgstr "动态没有标题"
+
+#: app/lib/api-errors.ts
+msgid "动态版块不能删除"
+msgstr "动态版块不能删除"
 
 #: app/components/dock/composer-dock.tsx
 msgid "半屏"
@@ -667,6 +771,10 @@ msgstr "取消置顶"
 msgid "取消采纳"
 msgstr "取消采纳"
 
+#: app/lib/api-errors.ts
+msgid "只有楼主或版主可以采纳答案"
+msgstr "只有楼主或版主可以采纳答案"
+
 #: app/routes/home.tsx
 msgid "名称"
 msgstr "名称"
@@ -739,6 +847,14 @@ msgstr "图片"
 msgid "图片太大了，头像不能超过 {maxSize}。"
 msgstr "图片太大了，头像不能超过 {maxSize}。"
 
+#: app/lib/api-errors.ts
+msgid "图片数据无法解析"
+msgstr "图片数据无法解析"
+
+#: app/lib/api-errors.ts
+msgid "图片文件内容与格式不符"
+msgstr "图片文件内容与格式不符"
+
 #: app/components/composer/rich-editor.tsx
 msgid "在下方插入行"
 msgstr "在下方插入行"
@@ -791,6 +907,14 @@ msgstr "复制链接"
 msgid "头像"
 msgstr "头像"
 
+#: app/lib/api-errors.ts
+msgid "头像仅支持 PNG、JPEG、WebP 或 GIF 图片"
+msgstr "头像仅支持 PNG、JPEG、WebP 或 GIF 图片"
+
+#: app/lib/api-errors.ts
+msgid "头像图片不能超过 {limit}"
+msgstr "头像图片不能超过 {limit}"
+
 #: app/components/shell/user-menu.tsx
 #: app/routes/forum-stage.tsx
 #: app/routes/moderation.tsx
@@ -828,6 +952,10 @@ msgstr "封禁原因："
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "封禁时长"
 msgstr "封禁时长"
+
+#: app/lib/api-errors.ts
+msgid "封禁时长必须大于 0"
+msgstr "封禁时长必须大于 0"
 
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "封禁至"
@@ -960,6 +1088,14 @@ msgstr "按版块筛选"
 msgid "排序"
 msgstr "排序"
 
+#: app/lib/api-errors.ts
+msgid "排序必须是整数"
+msgstr "排序必须是整数"
+
+#: app/lib/api-errors.ts
+msgid "接口不存在"
+msgstr "接口不存在"
+
 #: app/routes/moderation.tsx
 #: app/slots/forum-moderation/report-button.tsx
 msgid "提交举报"
@@ -1006,6 +1142,14 @@ msgstr "搜索功能未启用"
 msgid "搜索或输入命令"
 msgstr "搜索或输入命令"
 
+#: app/lib/api-errors.ts
+msgid "搜索服务暂时不可用"
+msgstr "搜索服务暂时不可用"
+
+#: app/lib/api-errors.ts
+msgid "搜索服务未启用"
+msgstr "搜索服务未启用"
+
 #: app/routes/search.tsx
 msgid "搜索结果"
 msgstr "搜索结果"
@@ -1038,9 +1182,17 @@ msgstr "收起主题列表（[）"
 msgid "收起侧栏（\\）"
 msgstr "收起侧栏（\\）"
 
+#: app/lib/api-errors.ts
+msgid "文件内容无法解析"
+msgstr "文件内容无法解析"
+
 #: app/slots/forum-attachments/shared.ts
 msgid "文件太大了。"
 msgstr "文件太大了。"
+
+#: app/lib/api-errors.ts
+msgid "文本附件包含无效的二进制字符"
+msgstr "文本附件包含无效的二进制字符"
 
 #: app/components/composer/rich-editor.tsx
 msgid "斜体"
@@ -1062,6 +1214,18 @@ msgstr "新建版块"
 #: app/components/composer/rich-editor.tsx
 msgid "无序列表"
 msgstr "无序列表"
+
+#: app/lib/api-errors.ts
+msgid "无效的举报状态筛选"
+msgstr "无效的举报状态筛选"
+
+#: app/lib/api-errors.ts
+msgid "无效的账号标识"
+msgstr "无效的账号标识"
+
+#: app/lib/api-errors.ts
+msgid "无法从名称生成标识，请手动填写"
+msgstr "无法从名称生成标识，请手动填写"
 
 #: app/routes/user.tsx
 msgid "昵称"
@@ -1107,6 +1271,10 @@ msgstr "有未读内容"
 msgid "有用"
 msgstr "有用"
 
+#: app/lib/api-errors.ts
+msgid "服务器内部错误"
+msgstr "服务器内部错误"
+
 #: app/components/shell/user-menu.tsx
 msgid "未登录"
 msgstr "未登录"
@@ -1114,6 +1282,10 @@ msgstr "未登录"
 #: app/routes/thread.tsx
 msgid "未知的操作。"
 msgstr "未知的操作。"
+
+#: app/lib/api-errors.ts
+msgid "未知的角色"
+msgstr "未知的角色"
 
 #: app/routes/notifications.tsx
 #: app/slots/forum-notifications/bell.tsx
@@ -1160,6 +1332,10 @@ msgstr "标记已处理"
 #: app/routes/home.tsx
 msgid "标识"
 msgstr "标识"
+
+#: app/lib/api-errors.ts
+msgid "标识只能包含小写字母、数字和连字符"
+msgstr "标识只能包含小写字母、数字和连字符"
 
 #: app/components/composer/rich-editor.tsx
 #: app/components/dock/composer-dock.tsx
@@ -1226,6 +1402,10 @@ msgstr "没有找到这个人"
 msgid "没有未读通知"
 msgstr "没有未读通知"
 
+#: app/lib/api-errors.ts
+msgid "没有权限执行此操作"
+msgstr "没有权限执行此操作"
+
 #: app/routes/moderation.tsx
 msgid "没有权限访问审核队列"
 msgstr "没有权限访问审核队列"
@@ -1255,6 +1435,10 @@ msgstr "版主"
 msgid "版块"
 msgstr "版块"
 
+#: app/lib/api-errors.ts
+msgid "版块内已有主题，不能删除"
+msgstr "版块内已有主题，不能删除"
+
 #: app/routes/forum-stage.tsx
 msgid "版块导航"
 msgstr "版块导航"
@@ -1263,9 +1447,29 @@ msgstr "版块导航"
 msgid "版块快捷栏"
 msgstr "版块快捷栏"
 
+#: app/lib/api-errors.ts
+msgid "版块标识已被使用"
+msgstr "版块标识已被使用"
+
+#: app/lib/api-errors.ts
+msgid "版块类型已变化，请重试"
+msgstr "版块类型已变化，请重试"
+
 #: app/routes/user.tsx
 msgid "用户名"
 msgstr "用户名"
+
+#: app/lib/api-errors.ts
+msgid "用户名已被使用"
+msgstr "用户名已被使用"
+
+#: app/lib/api-errors.ts
+msgid "用户名至少需要 {min} 个字符"
+msgstr "用户名至少需要 {min} 个字符"
+
+#: app/lib/api-errors.ts
+msgid "用户名需以小写字母开头，只能包含小写字母、数字、连字符和下划线，且不能以符号结尾"
+msgstr "用户名需以小写字母开头，只能包含小写字母、数字、连字符和下划线，且不能以符号结尾"
 
 #: app/routes/moderation.tsx
 msgid "由 <0>{resolverName}</0> 处理"
@@ -1307,6 +1511,14 @@ msgstr "登录后发布"
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "登录后回复"
 msgstr "登录后回复"
+
+#: app/lib/api-errors.ts
+msgid "登录尚未配置"
+msgstr "登录尚未配置"
+
+#: app/lib/api-errors.ts
+msgid "登录服务暂时不可用，请稍后再试"
+msgstr "登录服务暂时不可用，请稍后再试"
 
 #: app/components/shell/shell.tsx
 msgid "登录服务暂时不可用，请稍后再试。"
@@ -1417,6 +1629,10 @@ msgstr "编辑内容"
 msgid "编辑资料"
 msgstr "编辑资料"
 
+#: app/lib/api-errors.ts
+msgid "缺少举报目标"
+msgstr "缺少举报目标"
+
 #: app/slots/forum-attachments/shared.ts
 #: app/slots/forum-follows/follow.tsx
 #: app/slots/forum-mail/mail-settings.tsx
@@ -1462,14 +1678,31 @@ msgstr "论坛服务暂时不可用"
 msgid "语言"
 msgstr "语言"
 
+#: app/lib/api-errors.ts
 #: app/routes/moderation.tsx
 #: app/routes/notifications.tsx
 msgid "请先登录"
 msgstr "请先登录"
 
+#: app/lib/api-errors.ts
+msgid "请填写{name}"
+msgstr "请填写{name}"
+
+#: app/lib/api-errors.ts
+msgid "请求内容无法解析"
+msgstr "请求内容无法解析"
+
 #: app/routes/ext-action.ts
 msgid "请求内容无法解析。"
 msgstr "请求内容无法解析。"
+
+#: app/lib/api-errors.ts
+msgid "请求参数无效"
+msgstr "请求参数无效"
+
+#: app/lib/api-errors.ts
+msgid "请求方法不支持"
+msgstr "请求方法不支持"
 
 #: app/slots/forum-attachments/avatar.tsx
 msgid "请选择图片文件。"
@@ -1487,6 +1720,14 @@ msgstr "账号"
 #: app/components/shell/user-menu.tsx
 msgid "账号：{name}"
 msgstr "账号：{name}"
+
+#: app/lib/api-errors.ts
+msgid "账号已被封禁，无法发帖或编辑内容"
+msgstr "账号已被封禁，无法发帖或编辑内容"
+
+#: app/lib/api-errors.ts
+msgid "账号已被封禁，无法执行此操作"
+msgstr "账号已被封禁，无法执行此操作"
 
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "账号状态"
@@ -1507,6 +1748,10 @@ msgstr "转为主题帖"
 #: app/routes/thread.tsx
 msgid "转为主题帖后，正文和回复都会保留。"
 msgstr "转为主题帖后，正文和回复都会保留。"
+
+#: app/lib/api-errors.ts
+msgid "转为主题帖需要一个标题"
+msgstr "转为主题帖需要一个标题"
 
 #: app/routes/search.tsx
 msgid "输入关键词开始搜索"
@@ -1651,6 +1896,10 @@ msgstr "锁定"
 #: app/slots/forum-attachments/upload.tsx
 msgid "附件"
 msgstr "附件"
+
+#: app/lib/api-errors.ts
+msgid "附件大小不能超过 {limit}"
+msgstr "附件大小不能超过 {limit}"
 
 #: app/components/shell/site-footer.tsx
 msgid "页脚链接"

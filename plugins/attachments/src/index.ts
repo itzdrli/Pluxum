@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { isEntityId, type Principal } from '@pluxum/domain'
+import { failure, isEntityId, type Principal } from '@pluxum/domain'
 import { ForumApiPlugin, type ExtFileObject } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult, type PostAfterWriteEvent } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
@@ -431,30 +431,27 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 		input: Static<typeof UploadAvatarInput>,
 	): Promise<ForumResult<AvatarActionResult>> {
 		const actorId = principal.userId
-		if (actorId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (actorId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		const targetUserId = input.userId ?? actorId
-		if (!isEntityId(targetUserId)) return Result.err({ code: 'not_found', message: '用户不存在' })
+		if (!isEntityId(targetUserId))
+			return Result.err(failure('not_found', 'entity.not_found', { entity: 'user' }))
 		if (!this.core.can(principal, 'user.edit', { userId: targetUserId })) {
-			return Result.err({ code: 'forbidden', message: '没有权限执行此操作' })
+			return Result.err(failure('forbidden', 'permission.denied'))
 		}
 		const targetUser = await this.core.getUser(targetUserId, principal)
 		if (targetUser.isErr()) return Result.err(targetUser.error)
 
 		const bytes = decodeBase64Payload(input.dataBase64)
-		if (!bytes) return Result.err({ code: 'invalid', message: '图片数据无法解析' })
+		if (!bytes) return Result.err(failure('invalid', 'upload.avatar_unreadable'))
 		const { avatarMaxBytes } = this.limits()
 		if (bytes.byteLength > avatarMaxBytes) {
-			return Result.err({
-				code: 'invalid',
-				message: `头像图片不能超过 ${formatMebibytes(avatarMaxBytes)}`,
-			})
+			return Result.err(
+				failure('invalid', 'upload.avatar_too_large', { limit: formatMebibytes(avatarMaxBytes) }),
+			)
 		}
 		const sniffed = sniffRasterImage(bytes)
 		if (!sniffed) {
-			return Result.err({
-				code: 'invalid',
-				message: '头像仅支持 PNG、JPEG、WebP 或 GIF 图片',
-			})
+			return Result.err(failure('invalid', 'upload.avatar_type'))
 		}
 
 		const id = randomUUID()
@@ -524,11 +521,12 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 		requestedUserId?: string,
 	): Promise<ForumResult<AvatarActionResult>> {
 		const actorId = principal.userId
-		if (actorId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (actorId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 		const targetUserId = requestedUserId ?? actorId
-		if (!isEntityId(targetUserId)) return Result.err({ code: 'not_found', message: '用户不存在' })
+		if (!isEntityId(targetUserId))
+			return Result.err(failure('not_found', 'entity.not_found', { entity: 'user' }))
 		if (!this.core.can(principal, 'user.edit', { userId: targetUserId })) {
-			return Result.err({ code: 'forbidden', message: '没有权限执行此操作' })
+			return Result.err(failure('forbidden', 'permission.denied'))
 		}
 
 		const removed = await this.database.transaction(async (tx) => {
@@ -561,16 +559,17 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 		input: Static<typeof UploadAttachmentInput>,
 	): Promise<ForumResult<AttachmentItem>> {
 		const uploaderId = principal.userId
-		if (uploaderId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
+		if (uploaderId === null) return Result.err(failure('unauthenticated', 'auth.required'))
 
 		const bytes = decodeBase64Payload(input.dataBase64)
-		if (!bytes) return Result.err({ code: 'invalid', message: '文件内容无法解析' })
+		if (!bytes) return Result.err(failure('invalid', 'upload.file_unreadable'))
 		const limits = this.limits()
 		if (bytes.byteLength > limits.attachmentMaxBytes) {
-			return Result.err({
-				code: 'invalid',
-				message: `附件大小不能超过 ${formatMebibytes(limits.attachmentMaxBytes)}`,
-			})
+			return Result.err(
+				failure('invalid', 'upload.file_too_large', {
+					limit: formatMebibytes(limits.attachmentMaxBytes),
+				}),
+			)
 		}
 
 		const requestedType = input.contentType.trim().toLowerCase()
@@ -579,13 +578,13 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 		if (sniffedImage !== null) {
 			contentType = sniffedImage
 		} else if (RASTER_IMAGES.has(requestedType)) {
-			return Result.err({ code: 'invalid', message: '图片文件内容与格式不符' })
+			return Result.err(failure('invalid', 'upload.image_mismatch'))
 		} else if (limits.documentTypes.includes(requestedType)) {
 			if (
 				(requestedType.startsWith('text/') || requestedType === 'application/json') &&
 				bytes.includes(0)
 			) {
-				return Result.err({ code: 'invalid', message: '文本附件包含无效的二进制字符' })
+				return Result.err(failure('invalid', 'upload.binary_text'))
 			}
 			contentType = requestedType
 		} else {
@@ -593,10 +592,7 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 				'PNG/JPEG/WebP/GIF',
 				...this.config.documentTypes.map((type) => DOCUMENT_LABELS[type]),
 			]
-			return Result.err({
-				code: 'invalid',
-				message: `不支持的文件类型（支持 ${allowed.join('、')}）`,
-			})
+			return Result.err(failure('invalid', 'upload.type_unsupported', { types: allowed.join(',') }))
 		}
 
 		const id = randomUUID()
@@ -642,11 +638,12 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 		fileId: string,
 		ifNoneMatch?: string | null,
 	): Promise<ForumResult<ExtFileObject | 'not_modified'>> {
-		if (!isEntityId(fileId)) return Result.err({ code: 'not_found', message: '文件不存在' })
+		if (!isEntityId(fileId))
+			return Result.err(failure('not_found', 'entity.not_found', { entity: 'file' }))
 		const [row] = await this.database.read((db) =>
 			db.select().from(attachments).where(eq(attachments.id, fileId)),
 		)
-		if (!row) return Result.err({ code: 'not_found', message: '文件不存在' })
+		if (!row) return Result.err(failure('not_found', 'entity.not_found', { entity: 'file' }))
 
 		const etag = `"${row.sha256}"`
 		if (
@@ -662,7 +659,7 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 		const data = await this.s3
 			.bucket(this.config.bucketId)
 			.client.getObjectArrayBuffer(row.objectKey)
-		if (!data) return Result.err({ code: 'not_found', message: '文件不存在' })
+		if (!data) return Result.err(failure('not_found', 'entity.not_found', { entity: 'file' }))
 
 		return Result.ok({
 			body: data,

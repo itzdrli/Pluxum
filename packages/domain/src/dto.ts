@@ -1,4 +1,5 @@
 import type { Role } from './permissions'
+import type { ErrorKey, ErrorParams } from './errors'
 
 // Wire shapes shared by forum-api and the frontend. Timestamps are ISO 8601 strings.
 
@@ -418,10 +419,15 @@ export const FORUM_ERROR_CODES = [
 ] as const
 export type ForumErrorCode = (typeof FORUM_ERROR_CODES)[number]
 
-/** An expected, recoverable failure of a forum operation. `message` is safe to show to users. */
+/**
+ * An expected, recoverable failure of a forum operation. `key` and `params` say what happened
+ * (see errors.ts); `message` is the Chinese fallback and is safe to show to users.
+ */
 export type ForumError = Readonly<{
 	code: ForumErrorCode
 	message: string
+	key?: ErrorKey
+	params?: ErrorParams
 }>
 
 /**
@@ -431,6 +437,8 @@ export type ForumError = Readonly<{
 export type ApiError = Readonly<{
 	code: ForumErrorCode | 'unavailable' | 'internal'
 	message: string
+	key?: ErrorKey
+	params?: ErrorParams
 }>
 
 export type ApiErrorDto = Readonly<{ error: ApiError }>

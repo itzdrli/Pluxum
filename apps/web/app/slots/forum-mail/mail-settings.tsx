@@ -5,6 +5,7 @@ import { useRouteLoaderData } from 'react-router'
 import type { I18n } from '@lingui/core'
 import { t as tm } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
+import { apiErrorTextOfBody } from '../../lib/api-errors'
 
 import { FormError, Panel, SectionLabel } from '../../components/ui/display'
 import type { loader as rootLoader } from '../../root'
@@ -46,16 +47,7 @@ async function call(i18n: I18n, action: string, input?: unknown): Promise<Outcom
 		)
 		const body: unknown = await response.json().catch(() => null)
 		if (response.ok && isMailState(body)) return { ok: true, state: body }
-		const message =
-			typeof body === 'object' &&
-			body !== null &&
-			'error' in body &&
-			typeof body.error === 'object' &&
-			body.error !== null &&
-			'message' in body.error &&
-			typeof body.error.message === 'string'
-				? body.error.message
-				: tm(i18n)`操作失败，请稍后再试。`
+		const message = apiErrorTextOfBody(i18n, body) ?? tm(i18n)`操作失败，请稍后再试。`
 		return { ok: false, error: message }
 	} catch {
 		return { ok: false, error: tm(i18n)`网络错误，请稍后再试。` }

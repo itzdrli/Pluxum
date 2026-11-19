@@ -2,6 +2,7 @@ import type { UserDto } from '@pluxum/domain'
 import { useEffect, useState } from 'react'
 import type { I18n } from '@lingui/core'
 import { t } from '@lingui/core/macro'
+import { apiErrorTextOfBody } from '../../lib/api-errors'
 
 export const EXT_ID = 'forum-attachments'
 
@@ -155,11 +156,11 @@ export async function callAction(i18n: I18n, action: string, input: unknown): Pr
 	}
 	const body: unknown = await response.json().catch(() => null)
 	if (response.ok) return { ok: true, value: body }
-	const error = isRecord(body) && isRecord(body.error) ? body.error.message : undefined
+	const error = apiErrorTextOfBody(i18n, body)
 	return {
 		ok: false,
 		error:
-			typeof error === 'string'
+			error !== null
 				? error
 				: response.status === 413
 					? t(i18n)`文件太大了。`
