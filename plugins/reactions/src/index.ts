@@ -6,36 +6,87 @@ import { Result } from '@pluxel/core/better-result'
 import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
 import { and, count, eq, inArray, sql } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
+import * as v from 'valibot'
+import * as f from 'valibot-form'
 import { reactions, ReactionsDatabase } from './database'
 
 /** The extension's ID: the key of its data in a post's `ext` and its segment of the ext ingress. */
 export const REACTIONS_EXT_ID = 'forum-reactions'
 
-const LIKE = 'like'
+/** The reactions there are: a like, and 「有用」 for a reply that helped. */
+export const REACTION_KINDS = ['like', 'useful'] as const
+export type ReactionKind = (typeof REACTION_KINDS)[number]
 
-/** What a post's `ext['forum-reactions']` holds, and what the `react` action answers. */
-export const ReactionSummary = Type.Object({
-	/** How many people like the post. */
+const weight = (title: string, description: string, fallback: number) =>
+	v.optional(
+		v.pipe(
+			v.number(),
+			v.integer(),
+			v.minValue(0),
+			v.maxValue(20),
+			f.formMeta({ title, description }),
+			f.numberMeta({ step: 1 }),
+		),
+		fallback,
+	)
+
+export const ForumReactionsConfig = v.object({
+	likeWeight: weight(
+		'点赞的热度',
+		'每个点赞给主题加的热度分（一条回复算 1 分）。改动只影响之后的点赞和取消。',
+		1,
+	),
+	usefulWeight: weight(
+		'「有用」的热度',
+		'每个「有用」给主题加的热度分，通常比点赞高。改动只影响之后的回应和取消。',
+		3,
+	),
+})
+export type ForumReactionsConfig = v.InferOutput<typeof ForumReactionsConfig>
+
+const Tally = Type.Object({
+	/** How many people gave this reaction. */
 	count: Type.Integer({ minimum: 0 }),
 	/** Whether the viewer is one of them. */
 	reacted: Type.Boolean(),
+})
+type Tally = Static<typeof Tally>
+
+/**
+ * What a post's `ext['forum-reactions']` holds, and what the `react` action answers: the likes at
+ * the top level (the shape from before there was a second reaction), 「有用」 under `useful`.
+ */
+export const ReactionSummary = Type.Object({
+	count: Type.Integer({ minimum: 0 }),
+	reacted: Type.Boolean(),
+	useful: Tally,
 })
 export type ReactionSummary = Static<typeof ReactionSummary>
 
 const ReactInput = Type.Object({
 	postId: Type.String({ maxLength: 64 }),
+	/** Which reaction; a like when left out. */
+	kind: Type.Optional(Type.Union([Type.Literal('like'), Type.Literal('useful')])),
 	/** The state to end in, not a toggle: repeating the call changes nothing. */
 	on: Type.Boolean(),
 })
 
+const none = (): ReactionSummary => ({
+	count: 0,
+	reacted: false,
+	useful: { count: 0, reacted: false },
+})
+
 /**
- * Likes on posts, as an extension of the forum: it keeps its own table, attaches a summary to
- * every post DTO, fills the `post.footer` slot of the frontend and serves one action behind the
- * ext ingress. Stopping it removes all three; the likes stay stored and return with it.
+ * Likes and 「有用」 on posts, as an extension of the forum: it keeps its own table, attaches a
+ * summary to every post DTO, fills the `post.footer` slot of the frontend and serves one action
+ * behind the ext ingress. Both count towards the thread's place in 「热门」, each with its own
+ * weight (config). Stopping it removes all of that; the reactions stay stored and return with it.
  */
 // PGlite compiles its WASM module on first use, which can exceed the default start timeout.
 @Plugin({ displayName: 'Forum Reactions', startTimeoutMs: 30_000 })
 export class ForumReactionsPlugin extends BasePlugin {
+	private readonly config = this.configs.use(ForumReactionsConfig)
 	private database!: PluginDatabaseHandle<typeof ReactionsDatabase>
 
 	constructor(
@@ -47,6 +98,8 @@ export class ForumReactionsPlugin extends BasePlugin {
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(ReactionsDatabase)
+		// Weights are read per reaction; a saved change applies as is.
+		this.configs.onUpdate(this.config, () => {})
 		this.ctx.effects.defer(
 			this.core.registerEntityExtension({
 				id: REACTIONS_EXT_ID,
@@ -65,19 +118,18 @@ export class ForumReactionsPlugin extends BasePlugin {
 				login: true,
 				input: ReactInput,
 				output: ReactionSummary,
-				handle: ({ principal, input }) => this.react(principal, input.postId, input.on),
+				handle: ({ principal, input }) =>
+					this.react(principal, input.postId, input.on, input.kind ?? 'like'),
 			}),
 		)
 	}
 
-	/** The like summary of every given post as the viewer sees it, in one query. */
+	/** The reaction summary of every given post as the viewer sees it, in one query. */
 	async summaries(
 		postIds: readonly string[],
 		viewer: Principal,
 	): Promise<Map<string, ReactionSummary>> {
-		const summaries = new Map<string, ReactionSummary>(
-			postIds.map((postId) => [postId, { count: 0, reacted: false }]),
-		)
+		const summaries = new Map<string, ReactionSummary>(postIds.map((postId) => [postId, none()]))
 		if (postIds.length === 0) return summaries
 		const mine =
 			viewer.userId === null
@@ -85,26 +137,34 @@ export class ForumReactionsPlugin extends BasePlugin {
 				: sql<boolean>`coalesce(bool_or(${reactions.userId} = ${viewer.userId}), false)`
 		const rows = await this.database.read((db) =>
 			db
-				.select({ postId: reactions.postId, count: count(), reacted: mine })
+				.select({ postId: reactions.postId, kind: reactions.kind, count: count(), reacted: mine })
 				.from(reactions)
-				.where(and(inArray(reactions.postId, [...postIds]), eq(reactions.kind, LIKE)))
-				.groupBy(reactions.postId),
+				.where(
+					and(inArray(reactions.postId, [...postIds]), inArray(reactions.kind, REACTION_KINDS)),
+				)
+				.groupBy(reactions.postId, reactions.kind),
 		)
 		for (const row of rows) {
-			summaries.set(row.postId, { count: row.count, reacted: row.reacted })
+			const current = summaries.get(row.postId) ?? none()
+			const tally: Tally = { count: row.count, reacted: row.reacted }
+			summaries.set(
+				row.postId,
+				row.kind === 'useful' ? { ...current, useful: tally } : { ...current, ...tally },
+			)
 		}
 		return summaries
 	}
 
 	/**
-	 * Sets whether the principal likes a post and returns the post's new summary. The core decides
-	 * whether the post can be seen and reacted to; the write itself is idempotent, so a retry
-	 * after a lost answer is safe.
+	 * Sets whether the principal gives a post a reaction (a like by default) and returns the post's
+	 * new summary. The core decides whether the post can be seen and reacted to; the write itself
+	 * is idempotent, so a retry after a lost answer is safe.
 	 */
 	async react(
 		principal: Principal,
 		postId: string,
 		on: boolean,
+		kind: ReactionKind = 'like',
 	): Promise<ForumResult<ReactionSummary>> {
 		const userId = principal.userId
 		if (userId === null) return Result.err({ code: 'unauthenticated', message: '请先登录' })
@@ -116,24 +176,26 @@ export class ForumReactionsPlugin extends BasePlugin {
 		const key = and(
 			eq(reactions.postId, located.value.postId),
 			eq(reactions.userId, userId),
-			eq(reactions.kind, LIKE),
+			eq(reactions.kind, kind),
 		)
-		const { total, changed } = await this.database.transaction(async (tx) => {
+		const changed = await this.database.transaction(async (tx) => {
 			const touched = on
 				? await tx
 						.insert(reactions)
-						.values({ postId: located.value.postId, userId, kind: LIKE })
+						.values({ postId: located.value.postId, userId, kind })
 						.onConflictDoNothing()
 						.returning({ postId: reactions.postId })
 				: await tx.delete(reactions).where(key).returning({ postId: reactions.postId })
-			const [row] = await tx
-				.select({ value: count() })
-				.from(reactions)
-				.where(and(eq(reactions.postId, located.value.postId), eq(reactions.kind, LIKE)))
-			return { total: row?.value ?? 0, changed: touched.length > 0 }
+			return touched.length > 0
 		})
-		// A like counts towards the thread's place in "hot"; a repeated call changes nothing.
-		if (changed) await this.core.adjustEngagement(located.value.threadId, on ? 1 : -1)
-		return Result.ok({ count: total, reacted: on })
+		// Reactions count towards the thread's place in "hot"; a repeated call changes nothing.
+		const points = kind === 'useful' ? this.config.usefulWeight : this.config.likeWeight
+		if (changed && points > 0) {
+			await this.core.adjustEngagement(located.value.threadId, on ? points : -points)
+		}
+		const summary = (await this.summaries([located.value.postId], principal)).get(
+			located.value.postId,
+		)
+		return Result.ok(summary ?? none())
 	}
 }

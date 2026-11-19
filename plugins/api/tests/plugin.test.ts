@@ -304,6 +304,7 @@ describe('ForumApiPlugin', () => {
 			user: null,
 			roles: ['guest'],
 			can: { manageCategories: false, postNote: false },
+			following: { available: false, any: false },
 		})
 		expect(meta.auth).toEqual({ loginAvailable: true })
 		expect(meta.limits.threadTitleMax).toBeGreaterThan(0)

@@ -12,6 +12,7 @@ import { ForumMailPlugin } from '@pluxum/mail'
 import { ForumMarkdownPlugin } from '@pluxum/markdown'
 import { ForumMentionsPlugin } from '@pluxum/mentions'
 import { ForumModerationPlugin } from '@pluxum/moderation'
+import { ForumFollowsPlugin } from '@pluxum/follows'
 import { ForumFooterPlugin } from '@pluxum/footer'
 import { ForumNotificationsPlugin } from '@pluxum/notifications'
 import { ForumOutlinePlugin } from '@pluxum/outline'
@@ -19,6 +20,7 @@ import { ForumRatesPlugin } from '@pluxum/rates'
 import { ForumReactionsPlugin } from '@pluxum/reactions'
 import { ForumReadsPlugin } from '@pluxum/reads'
 import { ForumSearchPlugin } from '@pluxum/search'
+import { ForumSolvedPlugin } from '@pluxum/solved'
 
 // Forum plugins that run in every dev session by default.
 const forumPlugins = [
@@ -44,6 +46,8 @@ const forumPlugins = [
 	ForumRatesPlugin,
 	ForumMailPlugin,
 	ForumMentionsPlugin,
+	ForumFollowsPlugin,
+	ForumSolvedPlugin,
 ] as const
 
 // vp exec pluxel dev run host/web/dev/plugins.ts                    → list plugin states

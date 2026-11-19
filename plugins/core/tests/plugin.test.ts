@@ -917,6 +917,81 @@ describe('notes, moves, replies inside floors and hot (M6.1)', () => {
 	})
 })
 
+describe('follow graph slot (M6.2)', () => {
+	it('builds the following feed from the graph, within what the reader may see', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { admin, alice, bob, category } = await seed(core)
+		const hidden = (await core.createCategory(admin, { name: 'Staff' })).unwrap()
+		const titles = async (principal: Principal) =>
+			(await core.listRecentThreads(principal, {}, { scope: 'following' })).items
+				.map((item) => item.title)
+				.toSorted()
+		await core.createThread(alice, { categoryId: category.id, title: 'Mine', body: 'x' })
+		await core.createThread(bob, { categoryId: category.id, title: 'Bob', body: 'x' })
+		await core.createThread(admin, { categoryId: hidden.id, title: 'Secret', body: 'x' })
+
+		// No graph: no such feed.
+		expect(core.followGraphId()).toBeNull()
+		expect(await titles(alice)).toEqual([])
+		expect(await core.followingOf(alice)).toEqual({ available: false, any: false })
+
+		const dispose = core.registerFollowGraph({
+			id: 'test.graph',
+			following: () => Promise.resolve({ userIds: [bob.userId ?? ''], categoryIds: [hidden.id] }),
+		})
+		const hide = core.registerPermissionPolicy({
+			id: 'test.hide-staff',
+			evaluate: ({ action, resource }) =>
+				action === 'category.view' && resource.categoryId === hidden.id ? 'deny' : 'abstain',
+		})
+		expect(await titles(alice)).toEqual(['Bob', 'Mine'])
+		expect(await titles(GUEST)).toEqual([])
+		expect(await core.followingOf(alice)).toEqual({ available: true, any: true })
+		expect(await core.followingOf(GUEST)).toEqual({ available: false, any: false })
+		hide()
+		expect(await titles(alice)).toEqual(['Bob', 'Mine', 'Secret'])
+
+		expect(() =>
+			core.registerFollowGraph({
+				id: 'test.other',
+				following: () => Promise.resolve({ userIds: [], categoryIds: [] }),
+			}),
+		).toThrow(/already installed/)
+		dispose()
+		expect(core.followGraphId()).toBeNull()
+	})
+
+	it('serves an empty feed when the graph fails or answers nonsense', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { alice, category } = await seed(core)
+		await core.createThread(alice, { categoryId: category.id, title: 'Mine', body: 'x' })
+		expect(() =>
+			// @ts-expect-error -- deliberately missing the following function
+			core.registerFollowGraph({ id: 'test.broken' }),
+		).toThrow(TypeError)
+
+		const failing = core.registerFollowGraph({
+			id: 'test.failing',
+			following: () => Promise.reject(new Error('graph bug')),
+		})
+		expect((await core.listRecentThreads(alice, {}, { scope: 'following' })).items).toEqual([])
+		expect(await core.followingOf(alice)).toEqual({ available: true, any: false })
+		failing()
+
+		const nonsense = core.registerFollowGraph({
+			id: 'test.nonsense',
+			// @ts-expect-error -- deliberately not ID lists
+			following: () => Promise.resolve({ userIds: 'everyone' }),
+		})
+		expect((await core.listRecentThreads(alice, {}, { scope: 'following' })).items).toEqual([])
+		nonsense()
+		// The ordinary feed never depended on it.
+		expect((await core.listRecentThreads(alice)).items.map((item) => item.title)).toEqual(['Mine'])
+	})
+})
+
 describe('permission policy registry', () => {
 	it('applies a contributed policy only while its contributor runs', async () => {
 		await using host = await createHost()
@@ -1187,6 +1262,10 @@ describe('entity extensions and UI slots', () => {
 			threadId: thread.id,
 			threadRef: thread.ref,
 			postNumber: 2,
+			threadKind: 'topic',
+			threadAuthorId: alice.userId,
+			authorId: bob.userId,
+			body: 'y',
 			resource: {
 				categoryId: category.id,
 				threadId: thread.id,

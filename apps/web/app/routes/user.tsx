@@ -44,7 +44,7 @@ import {
 	listShouldRevalidate,
 } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
-import { ProfileSlots } from '../slots/slots'
+import { ProfileSlots, UserHeaderSlots } from '../slots/slots'
 import { pageTitle } from '../lib/site'
 
 const ROLE_LABELS: Readonly<Record<Role, string>> = {
@@ -190,6 +190,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 											<span className="tabular-nums">{noteCount} 动态</span>
 											<span className="tabular-nums">{postCount} 回复</span>
 										</p>
+										<UserHeaderSlots user={user} />
 									</>
 								)}
 							</div>

@@ -8,7 +8,7 @@ import { database } from '@pluxel/services/database'
 import { pglite } from '@pluxel/services/database/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 const MISSING_ID = '00000000-0000-4000-8000-000000000000'
 
@@ -135,46 +135,87 @@ async function setUp(host: Host) {
 
 const REACT = `/ext/${REACTIONS_EXT_ID}/react`
 
+/** A post's summary with `count` likes (the viewer's among them when `reacted`) and no 「有用」. */
+const like = (count: number, reacted: boolean) => ({
+	count,
+	reacted,
+	useful: { count: 0, reacted: false },
+})
+
 describe('ForumReactionsPlugin', () => {
 	it('counts likes per post and tells each viewer which are theirs', async () => {
 		await using host = await createHost()
 		const { alice, bob, reply, summaries } = await setUp(host)
-		const none = { count: 0, reacted: false }
+		const none = like(0, false)
 		expect(await summaries()).toEqual([none, none])
 
 		expect(await client(host, alice.id).post(REACT, { postId: reply.id, on: true })).toEqual({
 			status: 200,
-			body: { count: 1, reacted: true },
+			body: like(1, true),
 		})
 		// Repeating the call changes nothing: it sets a state, it does not toggle.
 		expect((await client(host, alice.id).post(REACT, { postId: reply.id, on: true })).body).toEqual(
-			{
-				count: 1,
-				reacted: true,
-			},
+			like(1, true),
 		)
-		expect((await client(host, bob.id).post(REACT, { postId: reply.id, on: true })).body).toEqual({
-			count: 2,
+		expect((await client(host, bob.id).post(REACT, { postId: reply.id, on: true })).body).toEqual(
+			like(2, true),
+		)
+
+		expect(await summaries(alice.id)).toEqual([none, like(2, true)])
+		expect(await summaries()).toEqual([none, like(2, false)])
+
+		expect(
+			(await client(host, alice.id).post(REACT, { postId: reply.id, on: false })).body,
+		).toEqual(like(1, false))
+		expect(
+			(await client(host, alice.id).post(REACT, { postId: reply.id, on: false })).body,
+		).toEqual(like(1, false))
+		expect(await summaries(alice.id)).toEqual([none, like(1, false)])
+		expect(await summaries(bob.id)).toEqual([none, like(1, true)])
+	})
+
+	it("counts 「有用」 apart from likes and weighs both into the thread's heat", async () => {
+		// What the plugin hands the core's heat counter, summed per thread. On the prototype and
+		// before the host starts: the plugin reaches the core through a view of its methods.
+		const adjust = vi.spyOn(ForumCorePlugin.prototype, 'adjustEngagement')
+		onTestFinished(() => adjust.mockRestore())
+		await using host = await createHost()
+		const { alice, bob, thread, reply, summaries } = await setUp(host)
+		const heat = () =>
+			adjust.mock.calls
+				.filter(([threadId]) => threadId === thread.id)
+				.reduce((sum, [, delta]) => sum + delta, 0)
+		const asAlice = client(host, alice.id)
+
+		expect(
+			(await asAlice.post(REACT, { postId: reply.id, kind: 'useful', on: true })).body,
+		).toEqual({
+			count: 0,
+			reacted: false,
+			useful: { count: 1, reacted: true },
+		})
+		await asAlice.post(REACT, { postId: reply.id, on: true })
+		await client(host, bob.id).post(REACT, { postId: reply.id, kind: 'useful', on: true })
+		expect((await summaries(alice.id))[1]).toEqual({
+			count: 1,
 			reacted: true,
+			useful: { count: 2, reacted: true },
 		})
-
-		expect(await summaries(alice.id)).toEqual([none, { count: 2, reacted: true }])
-		expect(await summaries()).toEqual([none, { count: 2, reacted: false }])
-
-		expect(
-			(await client(host, alice.id).post(REACT, { postId: reply.id, on: false })).body,
-		).toEqual({
+		expect((await summaries())[1]).toEqual({
 			count: 1,
 			reacted: false,
+			useful: { count: 2, reacted: false },
 		})
-		expect(
-			(await client(host, alice.id).post(REACT, { postId: reply.id, on: false })).body,
-		).toEqual({
-			count: 1,
-			reacted: false,
-		})
-		expect(await summaries(alice.id)).toEqual([none, { count: 1, reacted: false }])
-		expect(await summaries(bob.id)).toEqual([none, { count: 1, reacted: true }])
+		// 1 like (weight 1) and 2 「有用」 (weight 3 each).
+		expect(heat()).toBe(7)
+
+		await asAlice.post(REACT, { postId: reply.id, kind: 'useful', on: false })
+		await asAlice.post(REACT, { postId: reply.id, kind: 'useful', on: false })
+		// Withdrawing twice takes the points back once.
+		expect(heat()).toBe(4)
+		expect((await asAlice.post(REACT, { postId: reply.id, kind: 'love', on: true })).status).toBe(
+			422,
+		)
 	})
 
 	it('refuses guests, bad input and posts that cannot be seen', async () => {
@@ -226,10 +267,7 @@ describe('ForumReactionsPlugin', () => {
 
 		await host.start(ForumReactionsPlugin)
 		expect(await slots()).toHaveLength(1)
-		expect(await summaries(alice.id)).toEqual([
-			{ count: 0, reacted: false },
-			{ count: 1, reacted: true },
-		])
+		expect(await summaries(alice.id)).toEqual([like(0, false), like(1, true)])
 	})
 
 	it('registers again after the core or the API restarts', async () => {
@@ -247,6 +285,6 @@ describe('ForumReactionsPlugin', () => {
 		expect(host.isRunning(ForumReactionsPlugin)).toBe(true)
 		expect(core.entityExtensionIds('post')).toEqual([REACTIONS_EXT_ID])
 		expect(core.uiSlots()).toEqual([{ slot: 'post.footer', extId: REACTIONS_EXT_ID }])
-		expect((await summaries(alice.id))[1]).toEqual({ count: 1, reacted: true })
+		expect((await summaries(alice.id))[1]).toEqual(like(1, true))
 	})
 })

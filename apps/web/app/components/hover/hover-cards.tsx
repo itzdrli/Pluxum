@@ -1,10 +1,11 @@
-import type { ThreadDetailDto, UserProfileDto } from '@pluxum/domain'
+import type { ThreadDetailDto, UserDto, UserProfileDto } from '@pluxum/domain'
 import { MessageSquare } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Popover } from 'react-aria-components'
 
 import { withoutLeadingTitle } from '../../lib/post-html'
 import { excerptOf, previewTarget, type PreviewTarget } from '../../lib/preview'
+import { UserHeaderSlots } from '../../slots/slots'
 
 type Card =
 	| Readonly<{
@@ -16,7 +17,7 @@ type Card =
 			floor: number | null
 			excerpt: string
 	  }>
-	| Readonly<{ kind: 'user'; name: string; handle: string; threads: number; posts: number }>
+	| Readonly<{ kind: 'user'; user: UserDto; threads: number; posts: number }>
 
 const OPEN_DELAY_MS = 350
 const CLOSE_DELAY_MS = 180
@@ -44,8 +45,7 @@ async function loadCard(target: PreviewTarget): Promise<Card | null> {
 			? null
 			: {
 					kind: 'user',
-					name: profile.user.displayName,
-					handle: profile.user.handle,
+					user: profile.user,
 					threads: profile.threadCount,
 					posts: profile.postCount,
 				}
@@ -189,10 +189,11 @@ export function HoverCards() {
 					</>
 				) : (
 					<>
-						<p className="text-ink-strong font-bold">{shown.name}</p>
+						<p className="text-ink-strong font-bold">{shown.user.displayName}</p>
 						<p className="text-ink-weak text-meta tabular-nums">
-							@{shown.handle} · {shown.threads} 主题 · {shown.posts} 回复
+							@{shown.user.handle} · {shown.threads} 主题 · {shown.posts} 回复
 						</p>
+						<UserHeaderSlots user={shown.user} compact />
 					</>
 				)}
 			</div>

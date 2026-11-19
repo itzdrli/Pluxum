@@ -15,6 +15,7 @@ import { ForumAttachmentsPlugin, ForumStorageConfig, ForumStoragePlugin } from '
 import { ForumAuth, ForumAuthConfig, ForumAuthPlugin } from '@pluxum/auth'
 import { ForumCachePlugin } from '@pluxum/cache'
 import { ForumCorePlugin } from '@pluxum/core'
+import { ForumFollowsPlugin } from '@pluxum/follows'
 import { ForumFooterPlugin } from '@pluxum/footer'
 import { ForumMailConfig, ForumMailPlugin } from '@pluxum/mail'
 import { ForumMarkdownPlugin } from '@pluxum/markdown'
@@ -27,6 +28,7 @@ import { ForumReactionsPlugin } from '@pluxum/reactions'
 import { ForumReadsPlugin } from '@pluxum/reads'
 import { ForumRedisConfig, ForumRedisPlugin } from '@pluxum/redis'
 import { ForumSearchPlugin } from '@pluxum/search'
+import { ForumSolvedPlugin } from '@pluxum/solved'
 
 export const appPlugins = [
 	ForumRedisPlugin,
@@ -52,6 +54,8 @@ export const appPlugins = [
 	ForumRatesPlugin,
 	ForumMailPlugin,
 	ForumMentionsPlugin,
+	ForumFollowsPlugin,
+	ForumSolvedPlugin,
 	// No VaultAdminPlugin: in the standalone bundle it lowers @pluxel/services from source while
 	// the host uses its dist, so its Vault token never matches. Each forum plugin manages its own
 	// secrets on its Workbench page.

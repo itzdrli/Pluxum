@@ -1,6 +1,6 @@
 import { parseFloorNumber, type PostDto, type ThreadDto } from '@pluxum/domain'
 import { Lock, MessageSquare, Reply, Trash2, X } from 'lucide-react'
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import {
 	data,
 	Form,
@@ -36,10 +36,12 @@ import { Pager } from '../components/ui/pager'
 import { pageCount } from '../lib/format'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { useFocusReading } from '../lib/focus'
+import { ThreadContext } from '../lib/thread-context'
 import { defineStage, listPathOf, pagePathOf } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
 import type { loader as forumStageLoader } from './forum-stage'
 import {
+	PostAfterSlots,
 	PostBeforeSlots,
 	ThreadSidebarSlots,
 	ThreadViewSlots,
@@ -215,6 +217,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const setMoving = (open: boolean) => setMovingFrom(open ? thread.categoryId : undefined)
 	const boards = useRouteLoaderData<typeof forumStageLoader>('routes/forum-stage')?.categories ?? []
 	const isNote = thread.kind === 'note'
+	const threadContext = useMemo(() => ({ thread, can }), [thread, can])
 	const opening = posts.items.find((post) => post.number === 1)
 	const heading = headingOf(thread, opening)
 	const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -445,29 +448,32 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			{posts.items.length === 0 ? (
 				<EmptyState icon={MessageSquare} title="这一页没有内容" />
 			) : (
-				<ol className="border-line mt-5 flex flex-col gap-4 max-lg:-mx-4 max-lg:gap-0 max-lg:border-t">
-					{posts.items.map((post) => (
-						<Fragment key={post.id}>
-							<PostBeforeSlots post={post} thread={thread} />
-							<PostCard
-								post={post}
-								number={post.number}
-								byThreadAuthor={post.author.id === thread.author.id}
-								// The opening post cannot be deleted on its own.
-								opening={post.number === 1}
-								threadTitle={thread.title}
-								// A note's opening post keeps the note limit.
-								bodyMax={
-									isNote && post.number === 1
-										? forum?.limits.noteBodyMax
-										: forum?.limits.postBodyMax
-								}
-								threadAuthorId={thread.author.id}
-								canReply={can.reply}
-							/>
-						</Fragment>
-					))}
-				</ol>
+				<ThreadContext.Provider value={threadContext}>
+					<ol className="border-line mt-5 flex flex-col gap-4 max-lg:-mx-4 max-lg:gap-0 max-lg:border-t">
+						{posts.items.map((post) => (
+							<Fragment key={post.id}>
+								<PostBeforeSlots post={post} thread={thread} />
+								<PostCard
+									post={post}
+									number={post.number}
+									byThreadAuthor={post.author.id === thread.author.id}
+									// The opening post cannot be deleted on its own.
+									opening={post.number === 1}
+									threadTitle={thread.title}
+									// A note's opening post keeps the note limit.
+									bodyMax={
+										isNote && post.number === 1
+											? forum?.limits.noteBodyMax
+											: forum?.limits.postBodyMax
+									}
+									threadAuthorId={thread.author.id}
+									canReply={can.reply}
+								/>
+								<PostAfterSlots post={post} thread={thread} />
+							</Fragment>
+						))}
+					</ol>
+				</ThreadContext.Provider>
 			)}
 			<Pager page={posts.page} pageSize={posts.pageSize} total={posts.total} />
 			<ReplyArea

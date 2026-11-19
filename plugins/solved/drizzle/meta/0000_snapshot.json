@@ -1,0 +1,91 @@
+{
+	"id": "33a49353-cc09-4e8a-8c8c-26f778259e84",
+	"prevId": "00000000-0000-0000-0000-000000000000",
+	"version": "7",
+	"dialect": "postgresql",
+	"tables": {
+		"public.solutions": {
+			"name": "solutions",
+			"schema": "",
+			"columns": {
+				"thread_id": {
+					"name": "thread_id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"post_id": {
+					"name": "post_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"post_number": {
+					"name": "post_number",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"answer_author_id": {
+					"name": "answer_author_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"excerpt": {
+					"name": "excerpt",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"accepted_by": {
+					"name": "accepted_by",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"accepted_at": {
+					"name": "accepted_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"solutions_post_idx": {
+					"name": "solutions_post_idx",
+					"columns": [
+						{
+							"expression": "post_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		}
+	},
+	"enums": {},
+	"schemas": {},
+	"sequences": {},
+	"roles": {},
+	"policies": {},
+	"views": {},
+	"_meta": {
+		"columns": {},
+		"schemas": {},
+		"tables": {}
+	}
+}

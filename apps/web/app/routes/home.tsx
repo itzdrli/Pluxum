@@ -1,6 +1,6 @@
 import type { CategoryDto, CommunityDto, UserDto } from '@pluxum/domain'
 import { Dropdown } from '@heroui/react'
-import { LayoutList, MessagesSquare, Plus } from 'lucide-react'
+import { LayoutList, MessagesSquare, Plus, UserRoundPlus } from 'lucide-react'
 import { useState } from 'react'
 import {
 	data,
@@ -22,7 +22,15 @@ import { EmptyState, FormError, Panel, TabIndicator } from '../components/ui/dis
 import { Pager } from '../components/ui/pager'
 import { TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
-import { HOME_PAGE_SIZE, HOME_SORTS, homeSortOf, type HomeSort } from '../lib/home'
+import {
+	feedQuery,
+	HOME_PAGE_SIZE,
+	HOME_TABS,
+	homeFeedHref,
+	homeFeedOf,
+	LATEST_ORDERS,
+	type HomeFeed,
+} from '../lib/home'
 import { defineStage } from '../lib/stage'
 import { withViewTransition } from '../lib/view-transition'
 import type { loader as rootLoader } from '../root'
@@ -36,10 +44,15 @@ export function meta({ matches }: Route.MetaArgs): Route.MetaDescriptors {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-	const sort = homeSortOf(new URL(request.url))
+	// `/meta` is cached per session, so asking it here again costs nothing.
+	const viewer = await forumApi.meta(request)
+	const feed = homeFeedOf(
+		new URL(request.url),
+		viewer.ok ? viewer.value.viewer.following : undefined,
+	)
 	const [categoriesResult, recentResult, communityResult] = await Promise.all([
 		forumApi.categories(request),
-		forumApi.recentThreads(request, pageParam(request), HOME_PAGE_SIZE, sort),
+		forumApi.recentThreads(request, pageParam(request), HOME_PAGE_SIZE, feedQuery(feed)),
 		forumApi.community(request),
 	])
 	return {
@@ -47,7 +60,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		recentThreads: orThrow(recentResult),
 		// A side panel: the feed is served without it when it cannot be had.
 		community: communityResult.ok ? communityResult.value : null,
-		sort,
+		feed,
 	}
 }
 
@@ -77,7 +90,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
-	const { categories, recentThreads, community, sort } = loaderData
+	const { categories, recentThreads, community, feed } = loaderData
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const canManage = root?.meta?.viewer.can.manageCategories === true
 	const signedIn = root?.meta?.viewer.user != null
@@ -90,6 +103,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 		actionData !== undefined && 'error' in actionData ? actionData.error : undefined
 	const showForm = canManage && (creating || requestedNew || categoryError !== undefined)
 	const canPostNote = root?.meta?.viewer.can.postNote === true
+	const followingAvailable = root?.meta?.viewer.following.available === true
 
 	const totalThreads = categories.reduce((sum, cat) => sum + cat.threadCount, 0)
 	const totalPosts = categories.reduce((sum, cat) => sum + cat.postCount, 0)
@@ -149,7 +163,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 						}`}
 					>
 						<h1 className="text-ink-strong mr-4 text-heading font-bold max-lg:hidden">概览</h1>
-						<SortTabs sort={sort} />
+						<FeedTabs feed={feed} following={followingAvailable} />
 						<div className="flex items-center gap-3 lg:ml-auto">
 							<span className="text-ink-weak text-meta tabular-nums max-lg:hidden xl:hidden">
 								{categories.length} 版块 · {totalThreads} 主题 · {totalPosts} 帖子
@@ -182,8 +196,17 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 								}
 							/>
 						)}
+						{feed.tab === 'latest' && <LatestOrderToggle feed={feed} />}
 						{recentThreads.items.length === 0 ? (
-							<EmptyState icon={MessagesSquare} title="还没有讨论" />
+							feed.tab === 'following' ? (
+								<EmptyState
+									icon={UserRoundPlus}
+									title="还没有关注的内容"
+									hint="在用户主页或版块页点「关注」，就能在这里看到那里的新帖。"
+								/>
+							) : (
+								<EmptyState icon={MessagesSquare} title="还没有讨论" />
+							)
 						) : (
 							// The same rows as a category's list; the overview's mix of categories shows each row's.
 							<div className="@container/threads">
@@ -204,7 +227,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 												thread={item}
 												href={`/c/${item.category.slug}/t/${item.ref}`}
 												category={item.category}
-												time={sort === 'new' ? 'created' : 'last'}
+												time={feed.tab === 'latest' && feed.order === 'new' ? 'created' : 'last'}
 											/>
 										),
 									)}
@@ -320,22 +343,50 @@ function MemberRow({ user, note }: { user: UserDto; note?: string }) {
 	)
 }
 
-/** The feed's orderings: links, so each is a URL of its own. `active` is the bare page. */
-function SortTabs({ sort }: { sort: HomeSort }) {
+/**
+ * The feed's tabs: links, so each is a URL of its own. 「关注」 is there only while a follow
+ * plugin runs and the reader is signed in.
+ */
+function FeedTabs({ feed, following }: { feed: HomeFeed; following: boolean }) {
 	return (
-		<nav aria-label="排序" className="flex items-center gap-4">
-			{HOME_SORTS.map((item) => (
+		<nav aria-label="信息流" className="flex items-center gap-4">
+			{HOME_TABS.filter((tab) => tab.id !== 'following' || following).map((tab) => (
 				<StageLink
-					key={item.id}
-					to={item.id === 'active' ? '/' : `/?sort=${item.id}`}
+					key={tab.id}
+					to={homeFeedHref({ tab: tab.id, order: 'active' })}
 					replace
-					aria-current={item.id === sort ? 'page' : undefined}
+					aria-current={tab.id === feed.tab ? 'page' : undefined}
 					className={`h-control relative -mb-px inline-flex items-center text-ui transition-colors max-lg:-mx-1 max-lg:px-1 lg:h-[var(--h-pane-bar)] ${
-						item.id === sort ? 'text-ink-strong font-bold' : 'text-ink-weak hover:text-ink-strong'
+						tab.id === feed.tab
+							? 'text-ink-strong font-bold'
+							: 'text-ink-weak hover:text-ink-strong'
 					}`}
 				>
-					{item.label}
-					{item.id === sort && <TabIndicator name="sort-tab" />}
+					{tab.label}
+					{tab.id === feed.tab && <TabIndicator name="sort-tab" />}
+				</StageLink>
+			))}
+		</nav>
+	)
+}
+
+/** 「最新」's second choice, above its list: by latest reply (the default) or by start. */
+function LatestOrderToggle({ feed }: { feed: HomeFeed }) {
+	return (
+		<nav aria-label="排序" className="text-meta mb-3 flex items-center gap-1">
+			{LATEST_ORDERS.map((order) => (
+				<StageLink
+					key={order.id}
+					to={homeFeedHref({ tab: 'latest', order: order.id })}
+					replace
+					aria-current={order.id === feed.order ? 'page' : undefined}
+					className={`rounded-[2px] px-2 py-1 transition-colors ${
+						order.id === feed.order
+							? 'bg-control text-ink-strong font-bold'
+							: 'text-ink-weak hover:text-ink-strong'
+					}`}
+				>
+					{order.label}
 				</StageLink>
 			))}
 		</nav>

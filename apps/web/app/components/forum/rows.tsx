@@ -5,6 +5,7 @@ import { StageLink } from '../stage/stage'
 import { isUnread } from '../../slots/forum-reads/state'
 import { Tag, Timestamp } from '../ui/display'
 import { UserAvatar } from './user-avatar'
+import { ThreadBadgeSlots } from '../../slots/slots'
 
 function Stat({ value, label }: { value: number; label: string }) {
 	return (
@@ -69,12 +70,15 @@ export function UnreadDot({
 	)
 }
 
-/** Pinned / locked markers of a thread. `tagClassName` places them, e.g. inline before a title. */
+/**
+ * Pinned / locked markers of a thread, then the tags of running extensions (「已解决」).
+ * `tagClassName` places the own ones, e.g. inline before a title.
+ */
 export function ThreadFlags({
 	thread,
 	tagClassName,
 }: {
-	thread: Pick<ThreadDto, 'pinned' | 'locked'>
+	thread: ThreadDto
 	tagClassName?: string
 }) {
 	return (
@@ -89,6 +93,7 @@ export function ThreadFlags({
 					已锁定
 				</Tag>
 			)}
+			<ThreadBadgeSlots thread={thread} tagClassName={tagClassName} />
 		</>
 	)
 }

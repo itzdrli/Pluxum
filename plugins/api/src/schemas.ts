@@ -162,6 +162,7 @@ export const meta = t.Object({
 		user: t.Union([user, t.Null()]),
 		roles: t.Array(role),
 		can: t.Object({ manageCategories: t.Boolean(), postNote: t.Boolean() }),
+		following: t.Object({ available: t.Boolean(), any: t.Boolean() }),
 	}),
 	auth: t.Object({ loginAvailable: t.Boolean() }),
 	search: t.Object({ available: t.Boolean() }),
@@ -185,6 +186,9 @@ export const meta = t.Object({
 				t.Literal('thread.view'),
 				t.Literal('category.header'),
 				t.Literal('post.before'),
+				t.Literal('post.after'),
+				t.Literal('thread.badges'),
+				t.Literal('user.header'),
 				t.Literal('user.profile.tabs'),
 				t.Literal('composer.toolbar'),
 				t.Literal('composer.editor'),
@@ -269,6 +273,7 @@ export const recentThreadsQuery = t.Object({
 	page: t.Optional(t.String({ maxLength: 10 })),
 	pageSize: t.Optional(t.String({ maxLength: 10 })),
 	sort: t.Optional(t.Union([t.Literal('active'), t.Literal('new'), t.Literal('hot')])),
+	scope: t.Optional(t.Union([t.Literal('all'), t.Literal('following')])),
 })
 
 export const searchQuery = t.Object({

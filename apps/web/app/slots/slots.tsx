@@ -4,6 +4,7 @@ import type {
 	PostDto,
 	ThreadDto,
 	UiSlot,
+	UserDto,
 	UserProfileDto,
 } from '@pluxum/domain'
 import type { Extensions } from '@tiptap/core'
@@ -16,12 +17,14 @@ import { AttachmentsFooter } from './forum-attachments/attachments'
 import { AvatarEditor } from './forum-attachments/avatar'
 import { MailSettings } from './forum-mail/mail-settings'
 import { UploadButton } from './forum-attachments/upload'
+import { CategoryFollow, FollowSettings, UserFollow } from './forum-follows/follow'
 import { ReportAction } from './forum-moderation/report-button'
 import { UserBanTab } from './forum-moderation/user-ban-tab'
 import { NotificationBell } from './forum-notifications/bell'
 import { OutlineSidebar } from './forum-outline/outline'
 import { MarkThreadRead } from './forum-reads/mark-read'
 import { ReactionsFooter } from './forum-reactions/reactions'
+import { AcceptAction, AcceptedMark, SolutionPin, SolvedBadge } from './forum-solved/solved'
 
 /** Puts an uploaded file where the visitor is writing: an image in place, or a link. */
 export type InsertAttachment = (
@@ -39,6 +42,21 @@ export type SlotProps = {
 	'post.actions': { post: PostDto; setMenuItems: (items: readonly MenuItem[]) => void }
 	/** Above a floor on the thread page, between it and the one before (a divider, a notice). */
 	'post.before': { post: PostDto; thread: ThreadDto }
+	/**
+	 * Below a top-level floor on the thread page, outside its card (an answer pinned under it).
+	 * It sits in the list of floors, so a component that draws something draws an `<li>`.
+	 */
+	'post.after': { post: PostDto; thread: ThreadDto }
+	/**
+	 * Small tags beside a thread's pinned / locked markers, in lists and on its page; each tag
+	 * takes `tagClassName`, which places it like those markers.
+	 */
+	'thread.badges': { thread: ThreadDto; tagClassName?: string }
+	/**
+	 * Beside a member's name, on their profile and in their hover card: counts and buttons.
+	 * `compact` in the hover card, which has little room.
+	 */
+	'user.header': { user: UserDto; compact: boolean }
 	'thread.sidebar': { thread: ThreadDto }
 	/** Under a category's title: what extensions say about it or offer for it (follow, weather). */
 	'category.header': { category: CategoryDto }
@@ -60,6 +78,17 @@ type SlotComponents = { [S in MountedSlot]?: ComponentType<SlotProps[S]> }
  */
 const EXTENSIONS: Readonly<Record<string, SlotComponents>> = {
 	'forum-reactions': { 'post.footer': ReactionsFooter },
+	'forum-follows': {
+		'user.header': UserFollow,
+		'category.header': CategoryFollow,
+		'user.profile.tabs': FollowSettings,
+	},
+	'forum-solved': {
+		'post.actions': AcceptAction,
+		'post.footer': AcceptedMark,
+		'post.after': SolutionPin,
+		'thread.badges': SolvedBadge,
+	},
 	'forum-attachments': {
 		'post.footer': AttachmentsFooter,
 		'composer.toolbar': UploadButton,
@@ -181,6 +210,33 @@ function SetterBound({
 export function PostBeforeSlots({ post, thread }: { post: PostDto; thread: ThreadDto }) {
 	return useFilled('post.before').map(([extId, Component]) => (
 		<Component key={extId} post={post} thread={thread} />
+	))
+}
+
+/** What running extensions put below a floor of a thread. */
+export function PostAfterSlots({ post, thread }: { post: PostDto; thread: ThreadDto }) {
+	return useFilled('post.after').map(([extId, Component]) => (
+		<Component key={extId} post={post} thread={thread} />
+	))
+}
+
+/** Tags running extensions put beside a thread's own markers. */
+export function ThreadBadgeSlots({
+	thread,
+	tagClassName,
+}: {
+	thread: ThreadDto
+	tagClassName?: string
+}) {
+	return useFilled('thread.badges').map(([extId, Component]) => (
+		<Component key={extId} thread={thread} tagClassName={tagClassName} />
+	))
+}
+
+/** What running extensions put beside a member's name. */
+export function UserHeaderSlots({ user, compact = false }: { user: UserDto; compact?: boolean }) {
+	return useFilled('user.header').map(([extId, Component]) => (
+		<Component key={extId} user={user} compact={compact} />
 	))
 }
 

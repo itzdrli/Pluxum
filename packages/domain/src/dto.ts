@@ -290,6 +290,11 @@ export type ViewerDto = Readonly<{
 	user: UserDto | null
 	roles: Role[]
 	can: Readonly<{ manageCategories: boolean; postNote: boolean }>
+	/**
+	 * The home page's 「关注」 feed: `available` while a follow plugin runs and the viewer is signed
+	 * in, `any` once they follow at least one person or category (it is then their default tab).
+	 */
+	following: Readonly<{ available: boolean; any: boolean }>
 }>
 
 export type UserProfileDto = Readonly<{
@@ -313,6 +318,9 @@ export const UI_SLOTS = [
 	'thread.view',
 	'category.header',
 	'post.before',
+	'post.after',
+	'thread.badges',
+	'user.header',
 	'user.profile.tabs',
 	'composer.toolbar',
 	'composer.editor',

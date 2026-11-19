@@ -393,6 +393,7 @@ export class ForumApiPlugin extends BasePlugin {
 					async ({ request, query }) =>
 						await this.core.listRecentThreads(await this.viewer(request), pageOf(query), {
 							sort: query.sort,
+							scope: query.scope,
 						}),
 				)
 				.post(
@@ -558,11 +559,12 @@ export class ForumApiPlugin extends BasePlugin {
 
 	private async meta(request: Request): Promise<MetaDto> {
 		const principal = await this.viewer(request)
-		const [user, stream] = await Promise.all([
+		const [user, stream, following] = await Promise.all([
 			principal.userId === null
 				? null
 				: this.core.getUser(principal.userId, principal).then((found) => found.unwrapOr(null)),
 			this.core.streamFor(principal),
+			this.core.followingOf(principal),
 		])
 		return {
 			viewer: {
@@ -572,6 +574,7 @@ export class ForumApiPlugin extends BasePlugin {
 					manageCategories: this.core.can(principal, 'category.manage'),
 					postNote: stream?.canPost ?? false,
 				},
+				following,
 			},
 			auth: { loginAvailable: this.auth.loginAvailable() },
 			search: { available: this.core.searchAvailable() },

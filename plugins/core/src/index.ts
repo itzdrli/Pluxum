@@ -76,6 +76,7 @@ import {
 	lte,
 	or,
 	sql,
+	type SQL,
 } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import {
@@ -107,6 +108,7 @@ import {
 	type PostHookContribution,
 } from './hooks'
 import { digest, ForumCacheRegistry, type ForumCacheContribution } from './cache'
+import { FollowGraphRegistry, type FollowGraphContribution } from './follow-graph'
 import {
 	isCategoryListing,
 	isCommunityListing,
@@ -174,6 +176,7 @@ export type {
 	PostHookRejectionCode,
 } from './hooks'
 export type { ForumCacheContribution } from './cache'
+export type { FollowGraphContribution, Followed } from './follow-graph'
 export type { NotificationChannelContribution } from './notifications'
 export type { PermissionPolicyContribution } from './policies'
 export type {
@@ -188,7 +191,9 @@ export type ForumResult<T> = Result<T, ForumError>
 
 /** How the cross-category thread list is ordered; see `listRecentThreads`. */
 export type RecentSort = 'active' | 'new' | 'hot'
-export type RecentThreadsFilter = Readonly<{ sort?: RecentSort }>
+/** Which threads it lists: everything the viewer may see, or only what they follow. */
+export type RecentScope = 'all' | 'following'
+export type RecentThreadsFilter = Readonly<{ sort?: RecentSort; scope?: RecentScope }>
 
 /** `hot` only ranks threads with activity this recently, so old long threads do not stay on top. */
 const HOT_WINDOW_DAYS = 30
@@ -256,6 +261,13 @@ export type PostLocation = Readonly<{
 	threadRef: string
 	/** 1-based floor number of the post inside its thread. */
 	postNumber: number
+	/** Whether it sits in a topic or a note. */
+	threadKind: ThreadKind
+	/** Author of the thread it belongs to. */
+	threadAuthorId: string
+	authorId: string
+	/** Source text as written. */
+	body: string
 	resource: ForumResource
 }>
 
@@ -377,6 +389,7 @@ export class ForumCorePlugin extends BasePlugin {
 	private readonly notificationChannels = new NotificationChannelRegistry()
 	private readonly searchProviders = new SearchProviderRegistry()
 	private readonly cache = new ForumCacheRegistry()
+	private readonly followGraph = new FollowGraphRegistry()
 	/** Bumped whenever the content renderer changes, so cached HTML of the old one is not served. */
 	private renderGeneration = 0
 
@@ -450,6 +463,46 @@ export class ForumCorePlugin extends BasePlugin {
 	/** ID of the installed cache, or null while the core reads everything fresh. */
 	cacheId(): string | null {
 		return this.cache.id()
+	}
+
+	// ── Follows ─────────────────────────────────────────────────────────────────────────────
+
+	/**
+	 * Installs the follow graph the 「关注」 feed is built from (see `FollowGraphContribution`).
+	 * Without one there is no such feed. The returned disposer must be handed to the contributor's
+	 * `ctx.effects`. Throws on an invalid ID or when a graph is already installed.
+	 */
+	registerFollowGraph(contribution: FollowGraphContribution): () => void {
+		return this.followGraph.register(contribution)
+	}
+
+	/** ID of the installed follow graph, or null while there is none. */
+	followGraphId(): string | null {
+		return this.followGraph.id()
+	}
+
+	/**
+	 * Whether the viewer has a 「关注」 feed (a graph is installed and they are signed in) and
+	 * whether they follow anything yet.
+	 */
+	async followingOf(principal: Principal): Promise<Readonly<{ available: boolean; any: boolean }>> {
+		if (principal.userId === null || this.followGraph.id() === null) {
+			return { available: false, any: false }
+		}
+		const followed = await this.followedBy(principal.userId)
+		return {
+			available: true,
+			any: followed !== null && followed.userIds.length + followed.categoryIds.length > 0,
+		}
+	}
+
+	private followedBy(userId: string) {
+		return this.followGraph.following(userId, (error, graphId) =>
+			this.ctx.logger.error('follow graph failed; the following feed is empty', {
+				error,
+				graphId,
+			}),
+		)
 	}
 
 	/** Drops every cached listing. Called after each write that changes what a listing shows. */
@@ -825,6 +878,10 @@ export class ForumCorePlugin extends BasePlugin {
 			threadId: found.thread.id,
 			threadRef: formatThreadRef(found.thread.number, found.thread.slug),
 			postNumber: found.post.number,
+			threadKind: kindOf(found.kind),
+			threadAuthorId: found.thread.authorId,
+			authorId: found.post.authorId,
+			body: found.post.body,
 			resource: this.postResource(found.post, found.thread),
 		})
 	}
@@ -1387,6 +1444,10 @@ export class ForumCorePlugin extends BasePlugin {
 	 * `active` (latest activity, the default), `new` (latest started) or `hot`: replies plus
 	 * engagement, decaying with age (`(replies + engagement) / (hours + 2) ^ gravity`), among
 	 * threads active in the last `HOT_WINDOW_DAYS` days.
+	 *
+	 * `scope: 'following'` keeps only threads by people the viewer follows (and their own) and
+	 * threads in categories they follow, as the follow graph says; it is empty for guests and while
+	 * no graph is installed. Those pages are per reader, so they are never cached.
 	 */
 	async listRecentThreads(
 		principal: Principal,
@@ -1395,9 +1456,23 @@ export class ForumCorePlugin extends BasePlugin {
 	): Promise<RecentThreadsDto> {
 		const { page, pageSize } = normalizePage(paging)
 		const sort = filter.sort ?? 'active'
+		const empty: RecentThreadsDto = { items: [], page, pageSize, total: 0 }
 		const visibleCategories = await this.visibleCategories(principal)
-		if (visibleCategories.length === 0) return { items: [], page, pageSize, total: 0 }
+		if (visibleCategories.length === 0) return empty
 		const visibleIds = visibleCategories.map((category) => category.id)
+		let following: SQL | undefined
+		if (filter.scope === 'following') {
+			if (principal.userId === null) return empty
+			const followed = await this.followedBy(principal.userId)
+			if (followed === null) return empty
+			const visibleSet = new Set(visibleIds)
+			const userIds = [...new Set([principal.userId, ...followed.userIds])].filter(isEntityId)
+			const categoryIds = followed.categoryIds.filter((id) => visibleSet.has(id))
+			following = or(
+				inArray(threads.authorId, userIds),
+				categoryIds.length > 0 ? inArray(threads.categoryId, categoryIds) : undefined,
+			)
+		}
 		const categoriesById = new Map<string, CategorySummaryDto>(
 			visibleCategories.map(({ id, slug, name }) => [id, { id, slug, name }]),
 		)
@@ -1411,6 +1486,7 @@ export class ForumCorePlugin extends BasePlugin {
 					sort === 'hot'
 						? gte(threads.lastPostAt, new Date(Date.now() - HOT_WINDOW_DAYS * 86_400_000))
 						: undefined,
+					following,
 				)
 				const order =
 					sort === 'new'
@@ -1436,7 +1512,7 @@ export class ForumCorePlugin extends BasePlugin {
 				}
 			})
 		const read =
-			page <= CACHED_PAGES
+			page <= CACHED_PAGES && following === undefined
 				? await this.cachedListing(
 						`recent:${sort}${sort === 'hot' ? gravity : ''}:${page}:${pageSize}:${digest(visibleIds.join(','))}`,
 						load,
@@ -2655,10 +2731,11 @@ export class ForumCorePlugin extends BasePlugin {
 	/** A visible post in a visible thread that the principal may see. */
 	private async findPost(db: Db, principal: Principal, postId: string) {
 		const [row] = await db
-			.select({ post: posts, author, thread: threads })
+			.select({ post: posts, author, thread: threads, kind: categories.kind })
 			.from(posts)
 			.innerJoin(users, eq(users.id, posts.authorId))
 			.innerJoin(threads, eq(threads.id, posts.threadId))
+			.innerJoin(categories, eq(categories.id, threads.categoryId))
 			.where(and(eq(posts.id, postId), isNull(posts.deletedAt), isNull(threads.deletedAt)))
 		if (!row || !this.can(principal, 'thread.view', this.threadResource(row.thread))) {
 			return undefined

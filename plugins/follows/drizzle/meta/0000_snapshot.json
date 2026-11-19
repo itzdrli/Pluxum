@@ -1,0 +1,116 @@
+{
+	"id": "c26910e5-ca58-47dd-adc6-d0f61fac70fb",
+	"prevId": "00000000-0000-0000-0000-000000000000",
+	"version": "7",
+	"dialect": "postgresql",
+	"tables": {
+		"public.follow_settings": {
+			"name": "follow_settings",
+			"schema": "",
+			"columns": {
+				"user_id": {
+					"name": "user_id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"notify": {
+					"name": "notify",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.follows": {
+			"name": "follows",
+			"schema": "",
+			"columns": {
+				"follower_id": {
+					"name": "follower_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"target_kind": {
+					"name": "target_kind",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"target_id": {
+					"name": "target_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"follows_target_idx": {
+					"name": "follows_target_idx",
+					"columns": [
+						{
+							"expression": "target_kind",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						},
+						{
+							"expression": "target_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {
+				"follows_follower_id_target_kind_target_id_pk": {
+					"name": "follows_follower_id_target_kind_target_id_pk",
+					"columns": ["follower_id", "target_kind", "target_id"]
+				}
+			},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		}
+	},
+	"enums": {},
+	"schemas": {},
+	"sequences": {},
+	"roles": {},
+	"policies": {},
+	"views": {},
+	"_meta": {
+		"columns": {},
+		"schemas": {},
+		"tables": {}
+	}
+}

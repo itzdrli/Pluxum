@@ -1,17 +1,63 @@
-// The overview page's feed ordering. The values are the API's `sort` parameter.
+// The overview page's feed: three tabs, 「关注」 / 「热门」 / 「最新」, and for 「最新」 a second
+// choice of order (latest activity, or newly started).
 
-export const HOME_SORTS = [
-	{ id: 'active', label: '活跃' },
-	{ id: 'new', label: '最新' },
+import type { ViewerDto } from '@pluxum/domain'
+
+export const HOME_TABS = [
+	{ id: 'following', label: '关注' },
 	{ id: 'hot', label: '热门' },
+	{ id: 'latest', label: '最新' },
 ] as const
 
-export type HomeSort = (typeof HOME_SORTS)[number]['id']
+export type HomeTab = (typeof HOME_TABS)[number]['id']
 
-/** The `?sort=` of a URL; anything unknown is the default, `active`. */
-export function homeSortOf(url: URL): HomeSort {
-	const raw = url.searchParams.get('sort')
-	return HOME_SORTS.find((sort) => sort.id === raw)?.id ?? 'active'
+export const LATEST_ORDERS = [
+	{ id: 'active', label: '最近回复' },
+	{ id: 'new', label: '新发布' },
+] as const
+
+export type LatestOrder = (typeof LATEST_ORDERS)[number]['id']
+
+export type HomeFeed = Readonly<{ tab: HomeTab; order: LatestOrder }>
+
+/** What the API is asked for a feed: its `sort`, and `scope` for 「关注」. */
+export function feedQuery(feed: HomeFeed): Readonly<{
+	sort: 'active' | 'new' | 'hot'
+	scope: 'all' | 'following'
+}> {
+	if (feed.tab === 'following') return { sort: 'active', scope: 'following' }
+	if (feed.tab === 'hot') return { sort: 'hot', scope: 'all' }
+	return { sort: feed.order, scope: 'all' }
+}
+
+/**
+ * The feed a URL asks for. `?tab=` names it (`order=new` for 「最新」 by start); links from before
+ * the tabs used `?sort=active|new|hot` and still work. Without either, signed-in readers who
+ * follow something see 「关注」 and everyone else 「热门」. 「关注」 without a follow plugin, or for a
+ * guest, falls back to 「热门」.
+ */
+export function homeFeedOf(url: URL, following: ViewerDto['following'] | undefined): HomeFeed {
+	const params = url.searchParams
+	const order: LatestOrder = params.get('order') === 'new' ? 'new' : 'active'
+	const asked = HOME_TABS.find((tab) => tab.id === params.get('tab'))?.id
+	const legacy = params.get('sort')
+	const tab: HomeTab =
+		asked ??
+		(legacy === 'hot'
+			? 'hot'
+			: legacy === 'active' || legacy === 'new'
+				? 'latest'
+				: following?.available === true && following.any
+					? 'following'
+					: 'hot')
+	if (tab === 'following' && following?.available !== true) return { tab: 'hot', order }
+	return { tab, order: asked === undefined && legacy === 'new' ? 'new' : order }
+}
+
+/** The URL of a feed. */
+export function homeFeedHref(feed: HomeFeed): string {
+	if (feed.tab === 'latest' && feed.order === 'new') return '/?tab=latest&order=new'
+	return `/?tab=${feed.tab}`
 }
 
 /** Page size of the overview feed. */
