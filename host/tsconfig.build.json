@@ -1,0 +1,13 @@
+{
+	// Bundling settings. Differences from tsconfig.json:
+	// - no `paths` (they point framework plugins at their .d.mts for type checking only);
+	// - no `@pluxel/hmr` condition: some framework entries (e.g. @pluxel/services/plugins) would
+	//   resolve to source while the rest of the package resolves to dist, bundling a second copy
+	//   of capability tokens such as Vault. The bundle uses every framework package's dist.
+	"extends": "../tsconfig.base.json",
+	"compilerOptions": {
+		"types": ["node"],
+		"customConditions": []
+	},
+	"include": ["src/**/*.ts"]
+}

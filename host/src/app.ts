@@ -5,11 +5,12 @@ import { servicesPreset } from '@pluxel/services/preset'
 import { listenElysia } from '@pluxel/services/elysia/node'
 import { database } from '@pluxel/services/database'
 import { pglite } from '@pluxel/services/database/pglite'
+import { postgres } from '@pluxel/services/database/postgres'
 import { Passthrough } from '@pluxel/core/fs'
 import { logtape, zenfs } from '@pluxel/core/config'
 
-import { pluginSource } from '@pluxel/host/sources'
 import { resolve } from 'node:path'
+import { listenAdminRelay } from './admin-relay'
 import { product } from './product'
 import { appConfig, appHostPolicy, appPlugins } from './runtime-state'
 
@@ -24,20 +25,18 @@ export default defineHostApplication(async (startup) => {
 	return {
 		name: 'forum',
 		plugins: appPlugins,
-		sources: [
-			pluginSource({
-				kind: 'directory',
-				path: resolve(dataRoot, 'managed-plugins/entries'),
-				include: ['*.mjs'],
-			}),
-		],
 		services: [
 			...(await servicesPreset(startup, {
 				product,
 				workbench: environment.workbench ?? true,
 			})),
-			// Development backend; production switches to native PostgreSQL (M5).
-			database({ backend: pglite({ dataDir: resolve(dataRoot, 'database') }) }),
+			// DATABASE_URL selects native PostgreSQL (the deployment images); without it the forum
+			// keeps an embedded PGlite database under the data root (local development).
+			database({
+				backend: env.DATABASE_URL
+					? postgres({ connectionString: env.DATABASE_URL })
+					: pglite({ dataDir: resolve(dataRoot, 'database') }),
+			}),
 		],
 		// Production only: the dev server owns its own listener.
 		async launch({ host }) {
@@ -45,8 +44,28 @@ export default defineHostApplication(async (startup) => {
 				hostname: environment.hostBind,
 				port: environment.hostPort,
 				publicOrigin: environment.publicOrigin,
-				publicDir: resolve(startup.deployment?.root ?? startup.root, 'dist/public'),
+				// A standalone build is its own deployment root; a native start runs from host/.
+				publicDir: startup.deployment
+					? resolve(startup.deployment.root, 'public')
+					: resolve(startup.root, 'dist/public'),
 			})
+			const adminPort = Number(env.PLUXUM_ADMIN_PORT || 0)
+			if (adminPort > 0) {
+				const relay = await listenAdminRelay(adminPort, environment.hostPort ?? 3000)
+				host.ctx.effects.defer(() => new Promise<void>((done) => relay.close(() => done())))
+				host.ctx.logger.info(`Workbench relay listening on :${adminPort}`)
+			}
+			// Containers stop with SIGTERM; close plugins and connections before exiting.
+			for (const signal of ['SIGINT', 'SIGTERM'] as const)
+				process.once(signal, () => {
+					void host.close().then(
+						() => process.exit(0),
+						(error: unknown) => {
+							console.error(error)
+							process.exit(1)
+						},
+					)
+				})
 		},
 		config: appConfig(env),
 		policy: appHostPolicy(),

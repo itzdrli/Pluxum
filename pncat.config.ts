@@ -57,6 +57,7 @@ export default defineConfig({
 				'graphql-yoga',
 				'marked',
 				'nanoid',
+				'pg',
 				'qrcode',
 				'redis',
 				's3mini',

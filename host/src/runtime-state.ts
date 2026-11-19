@@ -9,7 +9,6 @@ import {
 	RedisRatesBackendPlugin,
 } from '@pluxel/plugin-redis'
 import { S3 } from '@pluxel/plugin-storage'
-import { VaultAdminPlugin } from '@pluxel/services/plugins'
 import * as v from 'valibot'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAttachmentsPlugin, ForumStorageConfig, ForumStoragePlugin } from '@pluxum/attachments'
@@ -53,7 +52,9 @@ export const appPlugins = [
 	ForumRatesPlugin,
 	ForumMailPlugin,
 	ForumMentionsPlugin,
-	VaultAdminPlugin,
+	// No VaultAdminPlugin: in the standalone bundle it lowers @pluxel/services from source while
+	// the host uses its dist, so its Vault token never matches. Each forum plugin manages its own
+	// secrets on its Workbench page.
 ] as const
 
 /**

@@ -11,6 +11,7 @@
 	},
 	"dependencies": {
 		"@electric-sql/pglite": "catalog:prod",
+		"@node-rs/jieba": "catalog:backend",
 		"@pluxel/commands": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",
@@ -41,6 +42,7 @@
 		"capnweb": "catalog:prod",
 		"elysia": "catalog:backend",
 		"exact-mirror": "catalog:backend",
+		"pg": "catalog:backend",
 		"react": "catalog:frontend",
 		"react-dom": "catalog:frontend",
 		"typebox": "catalog:backend",

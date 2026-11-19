@@ -1,0 +1,117 @@
+# Pluxum: one-file deployment. Copy this file and .env.example (as .env) to a server, fill in .env,
+# then `docker compose up -d`. Add `--profile caddy` to let the bundled Caddy obtain HTTPS for
+# PLUXUM_DOMAIN; without it, put your own HTTPS reverse proxy in front of PLUXUM_HTTP_PORT.
+# Guide: docs/deploy.md
+name: pluxum
+
+x-forum-env: &forum-env
+  FORUM_WEB_PUBLIC_ORIGIN: https://${PLUXUM_DOMAIN:?set PLUXUM_DOMAIN in .env}
+
+services:
+  postgres:
+    image: postgres:17.7-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pluxum
+      POSTGRES_DB: pluxum
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U pluxum -d pluxum']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  valkey:
+    image: valkey/valkey:9.1.2-alpine
+    restart: unless-stopped
+    # Sessions live here, so keep them across restarts.
+    command: ['valkey-server', '--appendonly', 'yes', '--save', '60', '1000']
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ['CMD', 'valkey-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  server:
+    image: ghcr.io/itzdrli/pluxum-server:${PLUXUM_VERSION:-latest}
+    restart: unless-stopped
+    init: true
+    depends_on:
+      postgres: { condition: service_healthy }
+      valkey: { condition: service_healthy }
+    environment:
+      <<: *forum-env
+      DATABASE_URL: postgres://pluxum:${POSTGRES_PASSWORD}@postgres:5432/pluxum
+      REDIS_CONNECTIONS: '[{"id":"session","url":"redis://valkey:6379"},{"id":"cache","url":"redis://valkey:6379","database":1},{"id":"rates","url":"redis://valkey:6379","database":2}]'
+      FORUM_OIDC_ISSUER: ${FORUM_OIDC_ISSUER:-}
+      FORUM_OIDC_CLIENT_ID: ${FORUM_OIDC_CLIENT_ID:-}
+      FORUM_OIDC_PROVIDER_LOGOUT: ${FORUM_OIDC_PROVIDER_LOGOUT:-false}
+      FORUM_ADMIN_SUBJECTS: ${FORUM_ADMIN_SUBJECTS:-}
+      # Workbench is opened through an SSH tunnel at this address (see PLUXUM_ADMIN_PORT below).
+      PLUXEL_PUBLIC_ORIGIN: http://localhost:${PLUXUM_ADMIN_PORT:-8080}
+    volumes:
+      - server-data:/data
+    ports:
+      # Workbench admin. Loopback of this machine only: anyone who reaches it is administrator.
+      - 127.0.0.1:${PLUXUM_ADMIN_PORT:-8080}:8080
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/forum/meta').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 120s
+      retries: 6
+
+  web:
+    image: ghcr.io/itzdrli/pluxum-web:${PLUXUM_VERSION:-latest}
+    restart: unless-stopped
+    init: true
+    depends_on:
+      server: { condition: service_healthy }
+    environment:
+      <<: *forum-env
+      FORUM_API_INTERNAL: http://server:3000
+    ports:
+      - ${PLUXUM_HTTP_BIND:-127.0.0.1}:${PLUXUM_HTTP_PORT:-3000}:3000
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/favicon.svg').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  # Optional HTTPS front: `docker compose --profile caddy up -d`. Needs ports 80/443 and DNS for
+  # PLUXUM_DOMAIN pointing at this machine.
+  caddy:
+    image: caddy:2.10.2-alpine
+    profiles: [caddy]
+    restart: unless-stopped
+    depends_on: [web]
+    command: ['caddy', 'reverse-proxy', '--from', '${PLUXUM_DOMAIN}', '--to', 'web:3000']
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    volumes:
+      - caddy-data:/data
+
+volumes:
+  postgres-data:
+  valkey-data:
+  server-data:
+  caddy-data:

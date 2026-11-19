@@ -20,6 +20,12 @@ live in `../FORUM_PLAN.md`.
 | `plugins/redis/`                               | Provider of the official `Redis` capability (connection catalog, Lua scripts)                    |
 | `plugins/{audit,http,todo}`, `packages/domain` | Template examples kept as a reference until the forum core lands                                 |
 | `compose.dev.yaml`                             | Local infrastructure: `pluxum-valkey` on `127.0.0.1:6380`                                        |
+| `compose.yaml`, `Dockerfile`                   | Deployment: images and the one-file production stack ([docs/deploy.md](docs/deploy.md))          |
+
+## Deploy
+
+Prebuilt images and one compose file (PostgreSQL, Valkey, server, web, optional Caddy for HTTPS):
+see [docs/deploy.md](docs/deploy.md).
 
 ## Develop
 

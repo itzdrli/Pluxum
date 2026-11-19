@@ -1,5 +1,5 @@
 import { Jieba } from '@node-rs/jieba'
-import { dict } from '@node-rs/jieba/dict'
+import { dict } from '@node-rs/jieba/dict.js'
 
 const CUSTOM_WORD_FREQ = 100_000
 const CUSTOM_WORD_TAG = 'nz'
