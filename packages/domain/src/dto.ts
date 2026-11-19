@@ -32,12 +32,19 @@ export type CommunityDto = Readonly<{
 	days: number
 }>
 
+/**
+ * `board`: an ordinary category of titled topics. `stream`: where notes go (short untitled
+ * posts, like a microblog); navigation and category lists leave it out.
+ */
+export type CategoryKind = 'board' | 'stream'
+
 export type CategoryDto = Readonly<{
 	id: string
 	slug: string
 	name: string
 	description: string
 	position: number
+	kind: CategoryKind
 	threadCount: number
 	postCount: number
 }>
@@ -49,6 +56,9 @@ export type CategoryDto = Readonly<{
  */
 export type ExtensionData = Readonly<Record<string, unknown>>
 
+/** `topic`: a titled thread in a board. `note`: an untitled one in the stream, shown as a card. */
+export type ThreadKind = 'topic' | 'note'
+
 export type ThreadDto = Readonly<{
 	id: string
 	number: number
@@ -56,6 +66,8 @@ export type ThreadDto = Readonly<{
 	/** Canonical URL segment (`1001` or `1001-ascii-slug`). */
 	ref: string
 	categoryId: string
+	kind: ThreadKind
+	/** Empty for a note. */
 	title: string
 	author: UserDto
 	createdAt: string
@@ -63,6 +75,11 @@ export type ThreadDto = Readonly<{
 	replyCount: number
 	pinned: boolean
 	locked: boolean
+	/**
+	 * A note's opening post, in thread lists only, so a feed can show the note as a card. Absent
+	 * for topics and on the thread page (whose posts include it).
+	 */
+	opening?: PostDto
 	ext: ExtensionData
 }>
 
@@ -77,6 +94,13 @@ export type PostDto = Readonly<{
 	threadId: string
 	/** 1-based floor number inside the thread (`1` for the opening post). */
 	number: number
+	/**
+	 * The top-level post this one replies to inside the thread ("楼中楼"), or null for a top-level
+	 * post. Only one level deep: a reply to a reply hangs under the same top-level post.
+	 */
+	parentId: string | null
+	/** For a reply inside a floor: the author it answers when that is not the floor's author. */
+	replyTo: UserDto | null
 	author: UserDto
 	/** Source text as written, for editing; empty when the post was deleted. */
 	body: string
@@ -91,6 +115,11 @@ export type PostDto = Readonly<{
 	deleted: boolean
 	/** What the current viewer may do with this post. */
 	can: Readonly<{ edit: boolean; delete: boolean }>
+	/**
+	 * On the thread page, for a top-level post: the first replies inside it, oldest first, and how
+	 * many there are in all (`listReplies` pages through the rest). Absent everywhere else.
+	 */
+	replies?: Readonly<{ items: PostDto[]; total: number }>
 	ext: ExtensionData
 }>
 
@@ -235,14 +264,32 @@ export type CategoryThreadsDto = Readonly<{
 export type ThreadDetailDto = Readonly<{
 	thread: ThreadDto
 	category: CategoryDto
+	/** One page of top-level posts; replies inside a floor ride along on each post's `replies`. */
 	posts: PageDto<PostDto>
-	can: Readonly<{ reply: boolean; edit: boolean; delete: boolean; moderate: boolean }>
+	can: Readonly<{
+		reply: boolean
+		edit: boolean
+		delete: boolean
+		moderate: boolean
+		/** Move the thread to another category (a note: turn it into a topic). */
+		move: boolean
+	}>
+}>
+
+/** Where a floor sits on its thread's pages: what a link to `/t/<ref>/<floor>` resolves to. */
+export type FloorLocationDto = Readonly<{
+	threadRef: string
+	floor: number
+	/** The page of top-level posts that shows the floor (or the floor it replies inside). */
+	page: number
+	/** The top-level floor it replies inside, or null when it is top-level itself. */
+	parentFloor: number | null
 }>
 
 export type ViewerDto = Readonly<{
 	user: UserDto | null
 	roles: Role[]
-	can: Readonly<{ manageCategories: boolean }>
+	can: Readonly<{ manageCategories: boolean; postNote: boolean }>
 }>
 
 export type UserProfileDto = Readonly<{
@@ -251,7 +298,9 @@ export type UserProfileDto = Readonly<{
 	createdAt: string
 	threadCount: number
 	postCount: number
+	/** Topics or notes, as asked (`kind`). */
 	threads: PageDto<ThreadDto>
+	noteCount: number
 	can: Readonly<{ edit: boolean }>
 	ext: ExtensionData
 }>
@@ -262,6 +311,8 @@ export const UI_SLOTS = [
 	'post.actions',
 	'thread.sidebar',
 	'thread.view',
+	'category.header',
+	'post.before',
 	'user.profile.tabs',
 	'composer.toolbar',
 	'composer.editor',
@@ -331,6 +382,7 @@ export type MetaDto = Readonly<{
 		categoryNameMax: number
 		threadTitleMax: number
 		postBodyMax: number
+		noteBodyMax: number
 		displayNameMax: number
 		handleMax: number
 	}>
@@ -338,6 +390,8 @@ export type MetaDto = Readonly<{
 		/** How new posts will be rendered right now; the composer offers formatting only for `markdown`. */
 		format: BodyFormat
 	}>
+	/** The stream notes are posted to, or null when there is none the viewer may see. */
+	stream: CategorySummaryDto | null
 	/** Slots filled by the extensions that are running, in display order. */
 	uiSlots: UiSlotDto[]
 	site: SiteDto

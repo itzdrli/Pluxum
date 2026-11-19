@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto'
 import type { ForumNotification, UserDto } from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
-import { ForumCorePlugin, type PostAfterWriteEvent } from '@pluxum/core'
+import {
+	answeredAuthorOf,
+	ForumCorePlugin,
+	threadPlace,
+	type PostAfterWriteEvent,
+} from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
 import { Type, type Static } from 'typebox'
@@ -97,12 +102,15 @@ export class ForumMentionsPlugin extends BasePlugin {
 		const refs = mentionedRefs(event.body)
 		if (refs.length === 0) return
 		const actor = await this.userOr(event.authorId)
-		const threadTitle = event.kind === 'thread.created' ? event.title : event.threadTitle
+		const place = threadPlace(
+			event.threadKind,
+			event.kind === 'thread.created' ? event.title : event.threadTitle,
+		)
 		const postNumber = event.kind === 'thread.created' ? 1 : event.postNumber
-		// The thread's author already hears about a reply from the notifications plugin.
+		// Whoever a reply answers already hears about it from the notifications plugin.
 		const covered = new Set([
 			event.authorId,
-			...(event.kind === 'post.created' ? [event.threadAuthorId] : []),
+			...(event.kind === 'post.created' ? [answeredAuthorOf(event)] : []),
 		])
 		const excerpt = excerptOf(event.body)
 
@@ -120,7 +128,7 @@ export class ForumMentionsPlugin extends BasePlugin {
 					id: mentionNoticeId(event.postId, recipient.id),
 					recipientId: recipient.id,
 					kind: 'post.mention',
-					title: `${actor.displayName} 在《${threadTitle}》中提到了你`,
+					title: `${actor.displayName} 在${place}中提到了你`,
 					...(excerpt === undefined ? {} : { body: excerpt }),
 					path: `/t/${event.threadRef}/${postNumber}`,
 					threadId: event.threadId,

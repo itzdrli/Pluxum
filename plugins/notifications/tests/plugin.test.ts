@@ -202,6 +202,24 @@ describe('ForumNotificationsPlugin', () => {
 			path: `/t/${thread.ref}/${reply.number}`,
 			actor: { id: bob.id, handle: bob.handle, displayName: 'Bob' },
 		})
+
+		// Alice answering inside Bob's floor tells Bob, not herself as the thread's author.
+		const inner = (
+			await core.createPost(await core.principalOf(alice.id), {
+				threadId: thread.id,
+				body: 'Thanks!',
+				parentId: reply.id,
+			})
+		).unwrap()
+		const bobPage: NotificationPageDto = (await client(host, bob.id).get(LIST)).body
+		expect(bobPage.items[0]).toMatchObject({
+			id: inner.id,
+			recipientId: bob.id,
+			kind: 'post.reply',
+			title: 'Alice 在《Notifications Thread》中回复了你',
+			path: `/t/${thread.ref}/${inner.number}`,
+		})
+		expect((await client(host, alice.id).get(UNREAD_COUNT)).body).toEqual({ count: 1 })
 	})
 
 	it('persists direct core.deliverNotification calls idempotently and supports pagination & unread filtering', async () => {

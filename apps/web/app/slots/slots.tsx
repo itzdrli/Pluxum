@@ -1,4 +1,11 @@
-import type { MetaDto, PostDto, ThreadDto, UiSlot, UserProfileDto } from '@pluxum/domain'
+import type {
+	CategoryDto,
+	MetaDto,
+	PostDto,
+	ThreadDto,
+	UiSlot,
+	UserProfileDto,
+} from '@pluxum/domain'
 import type { Extensions } from '@tiptap/core'
 import { useCallback, useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { useRouteLoaderData } from 'react-router'
@@ -30,7 +37,11 @@ export type SlotProps = {
 	 * as a dialog, or nothing.
 	 */
 	'post.actions': { post: PostDto; setMenuItems: (items: readonly MenuItem[]) => void }
+	/** Above a floor on the thread page, between it and the one before (a divider, a notice). */
+	'post.before': { post: PostDto; thread: ThreadDto }
 	'thread.sidebar': { thread: ThreadDto }
+	/** Under a category's title: what extensions say about it or offer for it (follow, weather). */
+	'category.header': { category: CategoryDto }
 	/** Mounted while a thread is on screen; `atEnd` is true on its last page. Draws nothing, usually. */
 	'thread.view': { thread: ThreadDto; atEnd: boolean }
 	'composer.toolbar': { insert: InsertAttachment }
@@ -164,6 +175,20 @@ function SetterBound({
 }) {
 	const [setMenuItems] = useState(() => setterFor(extId))
 	return children(setMenuItems)
+}
+
+/** What running extensions put above a floor of a thread. */
+export function PostBeforeSlots({ post, thread }: { post: PostDto; thread: ThreadDto }) {
+	return useFilled('post.before').map(([extId, Component]) => (
+		<Component key={extId} post={post} thread={thread} />
+	))
+}
+
+/** What running extensions put under a category's title. */
+export function CategoryHeaderSlots({ category }: { category: CategoryDto }) {
+	return useFilled('category.header').map(([extId, Component]) => (
+		<Component key={extId} category={category} />
+	))
 }
 
 /** Buttons running extensions add to the composer's toolbar. */

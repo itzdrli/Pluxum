@@ -1,5 +1,6 @@
+import { parseFloorNumber, type PostDto, type ThreadDto } from '@pluxum/domain'
 import { Lock, MessageSquare, Reply, Trash2, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import {
 	data,
 	Form,
@@ -29,7 +30,7 @@ import {
 	Panel,
 	Tag,
 } from '../components/ui/display'
-import { TextInputField } from '../components/ui/field'
+import { NativeSelect, TextInputField } from '../components/ui/field'
 import { ActionMenu, ConfirmDialog, type MenuItem } from '../components/ui/overlay'
 import { Pager } from '../components/ui/pager'
 import { pageCount } from '../lib/format'
@@ -37,17 +38,33 @@ import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server
 import { useFocusReading } from '../lib/focus'
 import { defineStage, listPathOf, pagePathOf } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
-import { ThreadSidebarSlots, ThreadViewSlots, useHasFilledSlot } from '../slots/slots'
+import type { loader as forumStageLoader } from './forum-stage'
+import {
+	PostBeforeSlots,
+	ThreadSidebarSlots,
+	ThreadViewSlots,
+	useHasFilledSlot,
+} from '../slots/slots'
 import { pageTitle } from '../lib/site'
 
 // Mounted under every list route (category, search, profile); the list decides where closing goes.
 export const handle = defineStage({ layer: 'detail' })
 
+/** A note has no title: its page is named by the start of what it says. */
+function headingOf(thread: ThreadDto, opening: PostDto | undefined): string {
+	if (thread.kind === 'topic') return thread.title
+	const text = opening?.body.replaceAll(/\s+/g, ' ').trim() ?? ''
+	if (text === '') return `${thread.author.displayName} 的动态`
+	const chars = Array.from(text)
+	return chars.length > 30 ? `${chars.slice(0, 30).join('')}…` : text
+}
+
 export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
 	const root = matches[0].loaderData
 	if (!loaderData) return [{ title: pageTitle(root) }]
+	const opening = loaderData.posts.items.find((post) => post.number === 1)
 	return [
-		{ title: pageTitle(root, loaderData.thread.title) },
+		{ title: pageTitle(root, headingOf(loaderData.thread, opening)) },
 		{
 			tagName: 'link',
 			rel: 'canonical',
@@ -57,25 +74,53 @@ export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescrip
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
-	const detail = orThrow(await forumApi.thread(request, params.id, pageParam(request)))
+	const url = new URL(request.url)
+	// `?floor=N` (from links that only know the floor) becomes the page that shows it, with the
+	// floor it replies inside unfolded.
+	const floor = parseFloorNumber(url.searchParams.get('floor') ?? '')
+	if (floor !== null) {
+		const located = orThrow(await forumApi.floorLocation(request, params.id, floor))
+		url.searchParams.delete('floor')
+		throw redirect(`${url.pathname}${floorSearch(url, located)}#post-${floor}`)
+	}
+	const expand = parseFloorNumber(url.searchParams.get('expand') ?? '') ?? undefined
+	const detail = orThrow(await forumApi.thread(request, params.id, pageParam(request), expand))
 	const wrongCategory = params.slug !== undefined && detail.category.slug !== params.slug
 	const wrongRef = params.id !== detail.thread.ref
 	if (wrongCategory || wrongRef) {
-		const url = new URL(request.url)
 		const base = params.slug !== undefined ? `/c/${detail.category.slug}` : listPathOf(url.pathname)
 		throw redirect(`${base}/t/${detail.thread.ref}${url.search}`)
 	}
 	return detail
 }
 
-type ActionFailure = Readonly<{ intent: string; error: string; postId?: string }>
+/** The search of `url` with the page and unfolded floor that show a located floor. */
+function floorSearch(
+	url: URL,
+	located: Readonly<{ page: number; parentFloor: number | null }>,
+): string {
+	const params = new URLSearchParams(url.search)
+	if (located.page > 1) params.set('page', String(located.page))
+	else params.delete('page')
+	if (located.parentFloor !== null) params.set('expand', String(located.parentFloor))
+	else params.delete('expand')
+	return params.size > 0 ? `?${params}` : ''
+}
+
+type ActionFailure = Readonly<{
+	intent: string
+	error: string
+	postId?: string
+	parentId?: string
+}>
 
 function failed(
 	intent: string,
 	result: { status: number; error: { message: string } },
 	postId?: string,
+	parentId?: string,
 ) {
-	const body: ActionFailure = { intent, error: result.error.message, postId }
+	const body: ActionFailure = { intent, error: result.error.message, postId, parentId }
 	return data(body, { status: result.status })
 }
 
@@ -86,15 +131,28 @@ export async function action({ request, params }: Route.ActionArgs) {
 	const postId = textField(form, 'postId')
 	switch (intent) {
 		case 'reply': {
-			const result = await forumApi.createPost(request, params.id, textField(form, 'body'))
-			if (!result.ok) return failed(intent, result)
-			// Land on the page that now holds the reply, in the same list (`?cpage=`, search filters).
-			const { posts } = orThrow(await forumApi.thread(request, params.id))
-			const last = pageCount(posts.total, posts.pageSize)
+			const parentId = textField(form, 'parentId') || undefined
+			const result = await forumApi.createPost(
+				request,
+				params.id,
+				textField(form, 'body'),
+				parentId,
+			)
+			if (!result.ok) return failed(intent, result, undefined, parentId)
+			// Land on the page that now holds the reply (its floor unfolded when it is inside one), in
+			// the same list (`?cpage=`, search filters).
 			const url = new URL(request.url)
-			if (last > 1) url.searchParams.set('page', String(last))
-			else url.searchParams.delete('page')
-			return redirect(`${pagePathOf(url)}${url.search}#post-${result.value.number}`)
+			const located = orThrow(await forumApi.floorLocation(request, params.id, result.value.number))
+			return redirect(`${pagePathOf(url)}${floorSearch(url, located)}#post-${result.value.number}`)
+		}
+		case 'move': {
+			const title = textField(form, 'title').trim()
+			const result = await forumApi.updateThread(request, params.id, {
+				categoryId: textField(form, 'categoryId'),
+				...(title === '' ? {} : { title }),
+			})
+			// The page reloads under the thread's new category (and ref, when it got a title).
+			return result.ok ? null : failed(intent, result)
 		}
 		case 'edit-post': {
 			const result = await forumApi.updatePost(request, postId, textField(form, 'body'))
@@ -151,6 +209,14 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const [renamingFrom, setRenamingFrom] = useState<string | undefined>(undefined)
 	const renaming = renamingFrom === thread.title
 	const setRenaming = (open: boolean) => setRenamingFrom(open ? thread.title : undefined)
+	// The category the move form was opened in; arriving elsewhere closes it.
+	const [movingFrom, setMovingFrom] = useState<string | undefined>(undefined)
+	const moving = movingFrom === thread.categoryId
+	const setMoving = (open: boolean) => setMovingFrom(open ? thread.categoryId : undefined)
+	const boards = useRouteLoaderData<typeof forumStageLoader>('routes/forum-stage')?.categories ?? []
+	const isNote = thread.kind === 'note'
+	const opening = posts.items.find((post) => post.number === 1)
+	const heading = headingOf(thread, opening)
 	const [confirmingDelete, setConfirmingDelete] = useState(false)
 	const [copiedFor, setCopiedFor] = useState<string | undefined>(undefined)
 	const copied = copiedFor === thread.ref
@@ -181,7 +247,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.key !== 'Escape' || event.defaultPrevented) return
-			if (confirmingDelete || renaming) return
+			if (confirmingDelete || renaming || moving) return
 			if (
 				document.querySelector(
 					'[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]',
@@ -205,7 +271,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 		}
 		window.addEventListener('keydown', onKeyDown)
 		return () => window.removeEventListener('keydown', onKeyDown)
-	}, [closeHref, confirmingDelete, navigate, renaming])
+	}, [closeHref, confirmingDelete, moving, navigate, renaming])
 
 	const menu: MenuItem[] = [
 		{
@@ -220,8 +286,15 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			},
 		},
 	]
-	if (can.edit) {
+	if (can.edit && !isNote) {
 		menu.push({ id: 'rename', label: '修改标题', onAction: () => setRenaming(true) })
+	}
+	if (can.move && boards.some((board) => board.id !== thread.categoryId)) {
+		menu.push({
+			id: 'move',
+			label: isNote ? '转为主题帖' : '移动到其他版块',
+			onAction: () => setMoving(true),
+		})
 	}
 	if (can.moderate) {
 		menu.push(
@@ -277,7 +350,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 					onPress={() =>
 						dock.openReply({
 							threadId: thread.id,
-							title: thread.title,
+							title: heading,
 							action: `${location.pathname}${location.search}`,
 						})
 					}
@@ -326,7 +399,15 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 				thread={thread}
 				atEnd={posts.page >= pageCount(posts.total, posts.pageSize)}
 			/>
-			{renaming ? (
+			{moving ? (
+				<MoveThread
+					thread={thread}
+					boards={boards.filter((board) => board.id !== thread.categoryId)}
+					titleMax={forum?.limits.threadTitleMax}
+					error={actionData?.intent === 'move' ? actionData.error : undefined}
+					onCancel={() => setMoving(false)}
+				/>
+			) : renaming ? (
 				<RenameThread
 					title={thread.title}
 					max={forum?.limits.threadTitleMax}
@@ -336,7 +417,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			) : (
 				<PageHeader
 					bar={false}
-					title={thread.title}
+					title={isNote ? `${thread.author.displayName} 的动态` : thread.title}
 					meta={
 						<>
 							<StageLink
@@ -360,22 +441,31 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 					}
 				/>
 			)}
-			{threadError !== undefined && !renaming && <FormError message={threadError} />}
+			{threadError !== undefined && !renaming && !moving && <FormError message={threadError} />}
 			{posts.items.length === 0 ? (
 				<EmptyState icon={MessageSquare} title="这一页没有内容" />
 			) : (
 				<ol className="border-line mt-5 flex flex-col gap-4 max-lg:-mx-4 max-lg:gap-0 max-lg:border-t">
-					{posts.items.map((post, index) => (
-						<PostCard
-							key={post.id}
-							post={post}
-							number={post.number}
-							byThreadAuthor={post.author.id === thread.author.id}
-							// Posts are oldest first and the opening post cannot be deleted on its own.
-							opening={posts.page === 1 && index === 0}
-							threadTitle={thread.title}
-							bodyMax={forum?.limits.postBodyMax}
-						/>
+					{posts.items.map((post) => (
+						<Fragment key={post.id}>
+							<PostBeforeSlots post={post} thread={thread} />
+							<PostCard
+								post={post}
+								number={post.number}
+								byThreadAuthor={post.author.id === thread.author.id}
+								// The opening post cannot be deleted on its own.
+								opening={post.number === 1}
+								threadTitle={thread.title}
+								// A note's opening post keeps the note limit.
+								bodyMax={
+									isNote && post.number === 1
+										? forum?.limits.noteBodyMax
+										: forum?.limits.postBodyMax
+								}
+								threadAuthorId={thread.author.id}
+								canReply={can.reply}
+							/>
+						</Fragment>
 					))}
 				</ol>
 			)}
@@ -434,6 +524,62 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 			{paneBar}
 			{mainContent}
 		</div>
+	)
+}
+
+/**
+ * Moves the thread to another board. A note becomes a topic there and needs a title; a topic
+ * keeps its title unless one is typed.
+ */
+function MoveThread({
+	thread,
+	boards,
+	titleMax,
+	error,
+	onCancel,
+}: {
+	thread: ThreadDto
+	boards: ReadonlyArray<Readonly<{ id: string; name: string }>>
+	titleMax: number | undefined
+	error: string | undefined
+	onCancel: () => void
+}) {
+	const submitting = useNavigation().formData?.get('intent') === 'move'
+	const isNote = thread.kind === 'note'
+	return (
+		<Form method="post" className="mb-5 flex flex-col gap-3">
+			<input type="hidden" name="intent" value="move" />
+			<FormError message={error} />
+			<label className="flex flex-col gap-1.5">
+				<span className="text-ink-strong text-ui font-bold">
+					{isNote ? '发到版块' : '移到版块'}
+				</span>
+				<NativeSelect name="categoryId" required defaultValue={boards[0]?.id}>
+					{boards.map((board) => (
+						<option key={board.id} value={board.id}>
+							{board.name}
+						</option>
+					))}
+				</NativeSelect>
+			</label>
+			<TextInputField
+				name="title"
+				label="标题"
+				required={isNote}
+				maxLength={titleMax}
+				defaultValue={isNote ? '' : thread.title}
+				hint={isNote ? '转为主题帖后，正文和回复都会保留。' : undefined}
+				autoFocus
+			/>
+			<div className="flex justify-end gap-2">
+				<Button tone="ghost" onPress={onCancel}>
+					取消
+				</Button>
+				<Button tone="primary" type="submit" isPending={submitting}>
+					{isNote ? '转为主题帖' : '移动'}
+				</Button>
+			</div>
+		</Form>
 	)
 }
 

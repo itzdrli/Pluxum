@@ -7,6 +7,8 @@ export const LIMITS = Object.freeze({
 	threadNumberStart: 1001,
 	threadTitleMax: 120,
 	postBodyMax: 20_000,
+	/** Default length limit of a note's body; Forum Core's config may change it. */
+	noteBodyMax: 500,
 	displayNameMax: 40,
 	handleMin: 2,
 	handleMax: 24,
@@ -62,8 +64,14 @@ export function validateCategoryDescription(input: string): Validated<string> {
 	return valid(value)
 }
 
-/** Post source text: line endings normalized, outer blank lines dropped, NUL rejected. */
-export function validatePostBody(input: string): Validated<string> {
+/**
+ * Post source text: line endings normalized, outer blank lines dropped, NUL rejected. `max`
+ * (code points) defaults to the limit of an ordinary post; notes pass their own.
+ */
+export function validatePostBody(
+	input: string,
+	max: number = LIMITS.postBodyMax,
+): Validated<string> {
 	if (typeof input !== 'string') return invalid('内容必须是文本')
 	const value = input
 		.replaceAll(/\r\n?/g, '\n')
@@ -71,10 +79,14 @@ export function validatePostBody(input: string): Validated<string> {
 		.trimEnd()
 	if (!value.trim()) return invalid('内容不能为空')
 	if (value.includes('\0')) return invalid('内容包含不允许的字符')
-	if (codePoints(value) > LIMITS.postBodyMax) {
-		return invalid(`内容不能超过 ${LIMITS.postBodyMax} 个字符`)
-	}
+	const limit = Math.min(max, LIMITS.postBodyMax)
+	if (codePoints(value) > limit) return invalid(`内容不能超过 ${limit} 个字符`)
 	return valid(value)
+}
+
+/** Body length as the limits count it (Unicode code points). */
+export function bodyLength(input: string): number {
+	return codePoints(input)
 }
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/

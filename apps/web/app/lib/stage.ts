@@ -16,8 +16,6 @@
  * Pure module: no React, so loaders, `shouldRevalidate` and tests can use it.
  */
 
-import { floorPageOf } from '@pluxum/domain'
-
 /** Query parameter of the list's own page while a detail is open; `?page=` belongs to the detail. */
 export const LIST_PAGE_PARAM = 'cpage'
 
@@ -187,8 +185,9 @@ export function resolveStage(matches: readonly StageMatch[], url: URL): Resolved
 
 /**
  * Link that opens thread `threadRef` in the detail pane of the current list.
- * When `postRef` is a 1-based floor number (`number`), it also sets `?page=` when the floor is
- * past page 1, or links to `/t/<threadRef>/<floor>` when no list is active.
+ * When `postRef` is a 1-based floor number past the first, it sets `?floor=`, which the thread
+ * page turns into the page that shows it, or links to `/t/<threadRef>/<floor>` when no list is
+ * active.
  */
 export function stageDetailHref(
 	stage: Pick<ResolvedStage, 'listPath' | 'listHref'>,
@@ -205,13 +204,10 @@ export function stageDetailHref(
 	}
 	const base = stage.listPath === '/' ? '' : stage.listPath
 	const query = stage.listHref.slice(stage.listPath.length)
-	if (floor !== undefined) {
-		const page = floorPageOf(floor)
-		if (page > 1) {
-			const params = new URLSearchParams(query.startsWith('?') ? query.slice(1) : query)
-			params.set('page', String(page))
-			return `${base}/t/${threadRef}?${params.toString()}${hash}`
-		}
+	if (floor !== undefined && floor > 1) {
+		const params = new URLSearchParams(query.startsWith('?') ? query.slice(1) : query)
+		params.set('floor', String(floor))
+		return `${base}/t/${threadRef}?${params.toString()}${hash}`
 	}
 	return `${base}/t/${threadRef}${query}${hash}`
 }

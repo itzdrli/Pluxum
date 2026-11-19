@@ -1,14 +1,24 @@
-import { parseThreadRef, type CategoryDto, type Role } from '@pluxum/domain'
+import { parseThreadRef, type CategoryDto, type Role, type UserDto } from '@pluxum/domain'
 import { CalendarDays, MessagesSquare } from 'lucide-react'
 import { useState } from 'react'
-import { data, Form, redirect, useNavigation, useParams, useRouteLoaderData } from 'react-router'
+import {
+	data,
+	Form,
+	redirect,
+	useNavigation,
+	useParams,
+	useRouteLoaderData,
+	useSearchParams,
+} from 'react-router'
 
 import type { Route } from './+types/user'
 import type { loader as stageLoader } from './forum-stage'
+import { NoteCard } from '../components/forum/note-card'
 import { ThreadRow } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
 import {
 	FoldListButton,
+	StageLink,
 	StageSplit,
 	useOpenThreadRef,
 	useStageLinks,
@@ -19,7 +29,7 @@ import {
 	FormError,
 	PaneBar,
 	Panel,
-	SectionLabel,
+	TabIndicator,
 	Tag,
 	Timestamp,
 } from '../components/ui/display'
@@ -44,7 +54,15 @@ const ROLE_LABELS: Readonly<Record<Role, string>> = {
 	admin: '管理员',
 }
 
-export const handle = defineStage({ layer: 'list', nav: true, backLabel: '主页' })
+/** `?tab=notes` lists the member's notes instead of their topics; threads opened beside keep it. */
+const PROFILE_CARRY = ['tab'] as const
+
+export const handle = defineStage({
+	layer: 'list',
+	nav: true,
+	backLabel: '主页',
+	carry: PROFILE_CARRY,
+})
 
 export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
 	return [{ title: pageTitle(matches[0].loaderData, loaderData?.user.displayName) }]
@@ -53,8 +71,9 @@ export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescrip
 export async function loader({ request, params }: Route.LoaderArgs) {
 	const url = new URL(request.url)
 	const detailOpen = isDetailPath(url.pathname)
+	const kind = url.searchParams.get('tab') === 'notes' ? 'note' : 'topic'
 	const profile = orThrow(
-		await forumApi.userProfile(request, params.userId, listPageOf(url, detailOpen)),
+		await forumApi.userProfile(request, params.userId, listPageOf(url, detailOpen), kind),
 	)
 	if (params.userId !== profile.user.handle) {
 		const suffix = detailOpen && params.id !== undefined ? `/t/${params.id}` : ''
@@ -63,7 +82,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	return profile
 }
 
-export const shouldRevalidate = listShouldRevalidate()
+export const shouldRevalidate = listShouldRevalidate(PROFILE_CARRY)
 
 type ActionFailure = Readonly<{ error: string }>
 
@@ -92,7 +111,9 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function UserProfile({ loaderData, actionData }: Route.ComponentProps) {
-	const { user, roles, createdAt, threadCount, postCount, threads, can } = loaderData
+	const { user, roles, createdAt, threadCount, noteCount, postCount, threads, can } = loaderData
+	const [searchParams] = useSearchParams()
+	const tab = searchParams.get('tab') === 'notes' ? 'notes' : 'topics'
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	// The profile identity the edit form was opened for. A saved change differs from it, closing it.
 	const profileIdentity = `${user.handle}:${user.displayName}`
@@ -115,7 +136,9 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 							<UserAvatar user={user} size="sm" />
 							<div className="min-w-0 flex-1 leading-tight">
 								<p className="text-ink-strong truncate font-bold">{user.displayName}</p>
-								<p className="text-ink-weak text-meta tabular-nums">{threadCount} 主题</p>
+								<p className="text-ink-weak text-meta tabular-nums">
+									{tab === 'notes' ? `${noteCount} 动态` : `${threadCount} 主题`}
+								</p>
 							</div>
 							<FoldListButton />
 						</PaneBar>
@@ -164,6 +187,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 												加入于 <Timestamp iso={createdAt} />
 											</span>
 											<span className="tabular-nums">{threadCount} 主题</span>
+											<span className="tabular-nums">{noteCount} 动态</span>
 											<span className="tabular-nums">{postCount} 回复</span>
 										</p>
 									</>
@@ -179,7 +203,7 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 						<div className="flex flex-col gap-6">
 							<ProfileSlots profile={loaderData} />
 							<section>
-								<SectionLabel>发布的主题</SectionLabel>
+								<ProfileListTabs user={user} tab={tab} />
 								<UserThreads
 									threads={threads}
 									categories={categories}
@@ -192,6 +216,32 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 				)
 			}
 		</StageSplit>
+	)
+}
+
+/** Topics or notes: two links, so each list is a URL of its own. */
+function ProfileListTabs({ user, tab }: { user: UserDto; tab: 'topics' | 'notes' }) {
+	const items = [
+		{ id: 'topics', label: '主题', to: `/u/${user.handle}` },
+		{ id: 'notes', label: '动态', to: `/u/${user.handle}?tab=notes` },
+	] as const
+	return (
+		<nav aria-label="发布的内容" className="mb-2 flex items-center gap-4">
+			{items.map((item) => (
+				<StageLink
+					key={item.id}
+					to={item.to}
+					replace
+					aria-current={item.id === tab ? 'page' : undefined}
+					className={`h-control relative inline-flex items-center text-ui transition-colors ${
+						item.id === tab ? 'text-ink-strong font-bold' : 'text-ink-weak hover:text-ink-strong'
+					}`}
+				>
+					{item.label}
+					{item.id === tab && <TabIndicator name="profile-tab" />}
+				</StageLink>
+			))}
+		</nav>
 	)
 }
 
@@ -211,20 +261,30 @@ function UserThreads({
 			{threads.items.length === 0 ? (
 				<EmptyState
 					icon={MessagesSquare}
-					title={threads.total === 0 ? '还没有发布过主题' : '这一页没有内容'}
+					title={threads.total === 0 ? '还没有发布过内容' : '这一页没有内容'}
 				/>
 			) : (
 				<Panel as="ul" className="divide-line divide-y">
-					{threads.items.map((thread) => (
-						<ThreadRow
-							key={thread.id}
-							thread={thread}
-							href={detail(thread.ref)}
-							isActive={thread.ref === activeId || thread.id === activeId}
-							category={categories?.find((category) => category.id === thread.categoryId)}
-							showAuthor={false}
-						/>
-					))}
+					{threads.items.map((thread) =>
+						thread.kind === 'note' ? (
+							<NoteCard
+								key={thread.id}
+								thread={thread}
+								href={detail(thread.ref)}
+								isActive={thread.ref === activeId || thread.id === activeId}
+								showAuthor={false}
+							/>
+						) : (
+							<ThreadRow
+								key={thread.id}
+								thread={thread}
+								href={detail(thread.ref)}
+								isActive={thread.ref === activeId || thread.id === activeId}
+								category={categories?.find((category) => category.id === thread.categoryId)}
+								showAuthor={false}
+							/>
+						),
+					)}
 				</Panel>
 			)}
 			<Pager

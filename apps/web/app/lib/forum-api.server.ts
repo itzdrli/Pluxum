@@ -5,18 +5,21 @@ import type {
 	CategoryDto,
 	CategoryThreadsDto,
 	CommunityDto,
+	FloorLocationDto,
 	MetaDto,
 	ModerationLogPageDto,
 	ModerationQueuePageDto,
 	ModerationQueueStatus,
 	ModerationReportDto,
 	NotificationPageDto,
+	PageDto,
 	PostDto,
 	RecentThreadsDto,
 	SearchPageDto,
 	SearchRequest,
 	ThreadDetailDto,
 	ThreadDto,
+	ThreadKind,
 	UserDto,
 	UserProfileDto,
 } from '@pluxum/domain'
@@ -165,7 +168,14 @@ async function cachedCategories(request: Request): Promise<ApiResult<{ items: Ca
 	if (existing !== undefined) return existing
 	const pending = (async (): Promise<ApiResult<{ items: CategoryDto[] }>> => {
 		try {
-			const result = await call<{ items: CategoryDto[] }>(request, '/categories')
+			const fetched = await call<{ items: CategoryDto[] }>(request, '/categories')
+			// The stream holds notes and is reached through the home page, not as a category.
+			const result: ApiResult<{ items: CategoryDto[] }> = fetched.ok
+				? {
+						ok: true,
+						value: { items: fetched.value.items.filter((item) => item.kind !== 'stream') },
+					}
+				: fetched
 			if (result.ok) {
 				categoriesCache.delete(key)
 				categoriesCache.set(key, {
@@ -408,8 +418,24 @@ export const forumApi = {
 			request,
 			`/categories/${encodeURIComponent(slug)}/threads${pageQuery(page)}`,
 		),
-	thread: (request: Request, id: string, page = 1) =>
-		call<ThreadDetailDto>(request, `/threads/${encodeURIComponent(id)}${pageQuery(page)}`),
+	/** `expand`: a top-level floor on the page whose replies are all wanted. */
+	thread: (request: Request, id: string, page = 1, expand?: number) => {
+		const query = new URLSearchParams()
+		if (page > 1) query.set('page', String(page))
+		if (expand !== undefined) query.set('expand', String(expand))
+		const search = query.size > 0 ? `?${query}` : ''
+		return call<ThreadDetailDto>(request, `/threads/${encodeURIComponent(id)}${search}`)
+	},
+	floorLocation: (request: Request, threadRef: string, floor: number) =>
+		call<FloorLocationDto>(
+			request,
+			`/threads/${encodeURIComponent(threadRef)}/floors/${encodeURIComponent(String(floor))}`,
+		),
+	replies: (request: Request, postId: string, page = 1, pageSize = 50) =>
+		call<PageDto<PostDto>>(
+			request,
+			`/posts/${encodeURIComponent(postId)}/replies?page=${page}&pageSize=${pageSize}`,
+		),
 	createThread: async (
 		request: Request,
 		body: Readonly<{ categoryId: string; title: string; body: string }>,
@@ -418,19 +444,28 @@ export const forumApi = {
 		if (result.ok) categoriesCache.clear()
 		return result
 	},
-	createPost: async (request: Request, threadId: string, body: string) => {
+	/** `parentId`: the post answered, for a reply inside a floor. */
+	createPost: async (request: Request, threadId: string, body: string, parentId?: string) => {
 		const result = await call<PostDto>(request, `/threads/${encodeURIComponent(threadId)}/posts`, {
 			method: 'POST',
-			body: { body },
+			body: parentId === undefined ? { body } : { body, parentId },
 		})
 		if (result.ok) categoriesCache.clear()
 		return result
 	},
-	updateThread: (
+	updateThread: async (
 		request: Request,
 		id: string,
-		body: Readonly<{ title?: string; pinned?: boolean; locked?: boolean }>,
-	) => call<ThreadDto>(request, `/threads/${encodeURIComponent(id)}`, { method: 'PATCH', body }),
+		body: Readonly<{ title?: string; pinned?: boolean; locked?: boolean; categoryId?: string }>,
+	) => {
+		const result = await call<ThreadDto>(request, `/threads/${encodeURIComponent(id)}`, {
+			method: 'PATCH',
+			body,
+		})
+		// A move changes two categories' counts.
+		if (result.ok && body.categoryId !== undefined) categoriesCache.clear()
+		return result
+	},
 	deleteThread: async (request: Request, id: string) => {
 		const result = await call<null>(request, `/threads/${encodeURIComponent(id)}`, {
 			method: 'DELETE',
@@ -455,8 +490,13 @@ export const forumApi = {
 		if (result.ok) categoriesCache.clear()
 		return result
 	},
-	userProfile: (request: Request, id: string, page = 1) =>
-		call<UserProfileDto>(request, `/users/${encodeURIComponent(id)}${pageQuery(page)}`),
+	userProfile: (request: Request, id: string, page = 1, kind: ThreadKind = 'topic') => {
+		const query = new URLSearchParams()
+		if (page > 1) query.set('page', String(page))
+		if (kind === 'note') query.set('kind', 'note')
+		const search = query.size > 0 ? `?${query}` : ''
+		return call<UserProfileDto>(request, `/users/${encodeURIComponent(id)}${search}`)
+	},
 	updateProfile: async (
 		request: Request,
 		id: string,

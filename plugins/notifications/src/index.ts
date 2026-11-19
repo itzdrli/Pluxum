@@ -8,7 +8,13 @@ import {
 	type UserDto,
 } from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
-import { ForumCorePlugin, type ForumResult, type PostAfterWriteEvent } from '@pluxum/core'
+import {
+	answeredAuthorOf,
+	ForumCorePlugin,
+	threadPlace,
+	type ForumResult,
+	type PostAfterWriteEvent,
+} from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
 import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
@@ -265,8 +271,9 @@ export class ForumNotificationsPlugin extends BasePlugin {
 
 	private async onPostAfterWrite(event: PostAfterWriteEvent): Promise<void> {
 		if (event.kind !== 'post.created') return
-		if (event.threadAuthorId === event.authorId) return
-		if (!isEntityId(event.threadAuthorId)) return
+		const recipientId = answeredAuthorOf(event)
+		if (recipientId === event.authorId) return
+		if (!isEntityId(recipientId)) return
 
 		const actorResult = await this.core.getUser(event.authorId)
 		const actor: UserDto = actorResult.isOk()
@@ -275,9 +282,14 @@ export class ForumNotificationsPlugin extends BasePlugin {
 		const excerpt = summarizeReplyBody(event.body, this.config.excerptChars)
 		const notification: ForumNotification = {
 			id: isEntityId(event.postId) ? event.postId : crypto.randomUUID(),
-			recipientId: event.threadAuthorId,
-			kind: 'thread.reply',
-			title: `${actor.displayName} 回复了你的主题《${event.threadTitle}》`,
+			recipientId,
+			kind: event.parentId === null ? 'thread.reply' : 'post.reply',
+			title:
+				event.parentId !== null
+					? `${actor.displayName} 在${threadPlace(event.threadKind, event.threadTitle)}中回复了你`
+					: event.threadKind === 'note'
+						? `${actor.displayName} 回复了你的动态`
+						: `${actor.displayName} 回复了你的主题《${event.threadTitle}》`,
 			...(excerpt === undefined ? {} : { body: excerpt }),
 			path: `/t/${event.threadRef}/${event.postNumber}`,
 			threadId: event.threadId,

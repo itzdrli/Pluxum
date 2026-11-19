@@ -23,6 +23,8 @@ const role = t.Union([
 ])
 
 const bodyFormat = t.Union([t.Literal('markdown'), t.Literal('plain')])
+const categoryKind = t.Union([t.Literal('board'), t.Literal('stream')])
+const threadKind = t.Union([t.Literal('topic'), t.Literal('note')])
 
 export const category = t.Object({
 	id: t.String(),
@@ -30,6 +32,7 @@ export const category = t.Object({
 	name: t.String(),
 	description: t.String(),
 	position: t.Number(),
+	kind: categoryKind,
 	threadCount: t.Number(),
 	postCount: t.Number(),
 })
@@ -40,31 +43,13 @@ export const categorySummary = t.Object({
 	name: t.String(),
 })
 
-export const thread = t.Object({
-	id: t.String(),
-	number: t.Number(),
-	slug: t.String(),
-	ref: t.String(),
-	categoryId: t.String(),
-	title: t.String(),
-	author: user,
-	createdAt: t.String(),
-	lastPostAt: t.String(),
-	replyCount: t.Number(),
-	pinned: t.Boolean(),
-	locked: t.Boolean(),
-	ext,
-})
-
-export const recentThread = t.Object({
-	...thread.properties,
-	category: categorySummary,
-})
-
-export const post = t.Object({
+/** A post without the replies inside it: a reply itself, or a note's opening post in a list. */
+const postFields = {
 	id: t.String(),
 	threadId: t.String(),
 	number: t.Number(),
+	parentId: t.Union([t.String(), t.Null()]),
+	replyTo: t.Union([user, t.Null()]),
 	author: user,
 	body: t.String(),
 	bodyHtml: t.String(),
@@ -74,6 +59,44 @@ export const post = t.Object({
 	deleted: t.Boolean(),
 	can: t.Object({ edit: t.Boolean(), delete: t.Boolean() }),
 	ext,
+}
+const innerPost = t.Object(postFields)
+
+export const post = t.Object({
+	...postFields,
+	replies: t.Optional(t.Object({ items: t.Array(innerPost), total: t.Number() })),
+})
+
+export const replyPage = t.Object({ items: t.Array(innerPost), ...paged })
+
+export const floorLocation = t.Object({
+	threadRef: t.String(),
+	floor: t.Number(),
+	page: t.Number(),
+	parentFloor: t.Union([t.Number(), t.Null()]),
+})
+
+export const thread = t.Object({
+	id: t.String(),
+	number: t.Number(),
+	slug: t.String(),
+	ref: t.String(),
+	categoryId: t.String(),
+	kind: threadKind,
+	title: t.String(),
+	author: user,
+	createdAt: t.String(),
+	lastPostAt: t.String(),
+	replyCount: t.Number(),
+	pinned: t.Boolean(),
+	locked: t.Boolean(),
+	opening: t.Optional(innerPost),
+	ext,
+})
+
+export const recentThread = t.Object({
+	...thread.properties,
+	category: categorySummary,
 })
 
 /** Where a post lives: its thread's URL segment and its floor number. */
@@ -118,6 +141,7 @@ export const threadDetail = t.Object({
 		edit: t.Boolean(),
 		delete: t.Boolean(),
 		moderate: t.Boolean(),
+		move: t.Boolean(),
 	}),
 })
 
@@ -128,6 +152,7 @@ export const userProfile = t.Object({
 	threadCount: t.Number(),
 	postCount: t.Number(),
 	threads: t.Object({ items: t.Array(thread), ...paged }),
+	noteCount: t.Number(),
 	can: t.Object({ edit: t.Boolean() }),
 	ext,
 })
@@ -136,7 +161,7 @@ export const meta = t.Object({
 	viewer: t.Object({
 		user: t.Union([user, t.Null()]),
 		roles: t.Array(role),
-		can: t.Object({ manageCategories: t.Boolean() }),
+		can: t.Object({ manageCategories: t.Boolean(), postNote: t.Boolean() }),
 	}),
 	auth: t.Object({ loginAvailable: t.Boolean() }),
 	search: t.Object({ available: t.Boolean() }),
@@ -144,10 +169,12 @@ export const meta = t.Object({
 		categoryNameMax: t.Number(),
 		threadTitleMax: t.Number(),
 		postBodyMax: t.Number(),
+		noteBodyMax: t.Number(),
 		displayNameMax: t.Number(),
 		handleMax: t.Number(),
 	}),
 	content: t.Object({ format: bodyFormat }),
+	stream: t.Union([categorySummary, t.Null()]),
 	uiSlots: t.Array(
 		t.Object({
 			// Mirrors UI_SLOTS in @pluxum/domain; a missing name fails type-checking of `/meta`.
@@ -156,6 +183,8 @@ export const meta = t.Object({
 				t.Literal('post.actions'),
 				t.Literal('thread.sidebar'),
 				t.Literal('thread.view'),
+				t.Literal('category.header'),
+				t.Literal('post.before'),
 				t.Literal('user.profile.tabs'),
 				t.Literal('composer.toolbar'),
 				t.Literal('composer.editor'),
@@ -203,6 +232,19 @@ const text = (max: number) => t.String({ maxLength: max * 2 })
 export const paging = t.Object({
 	page: t.Optional(t.String({ maxLength: 10 })),
 	pageSize: t.Optional(t.String({ maxLength: 10 })),
+})
+
+export const threadQuery = t.Object({
+	page: t.Optional(t.String({ maxLength: 10 })),
+	pageSize: t.Optional(t.String({ maxLength: 10 })),
+	/** A top-level floor on the page whose replies are all wanted. */
+	expand: t.Optional(t.String({ maxLength: 10 })),
+})
+
+export const profileQuery = t.Object({
+	page: t.Optional(t.String({ maxLength: 10 })),
+	pageSize: t.Optional(t.String({ maxLength: 10 })),
+	kind: t.Optional(threadKind),
 })
 
 export const paletteCommands = t.Array(
@@ -262,9 +304,15 @@ export const updateThreadBody = t.Object({
 	title: t.Optional(text(LIMITS.threadTitleMax)),
 	pinned: t.Optional(t.Boolean()),
 	locked: t.Optional(t.Boolean()),
+	categoryId: t.Optional(t.String({ maxLength: 64 })),
 })
 
 export const postBody = t.Object({ body: text(LIMITS.postBodyMax) })
+
+export const createPostBody = t.Object({
+	body: text(LIMITS.postBodyMax),
+	parentId: t.Optional(t.String({ maxLength: 64 })),
+})
 
 export const updateUserBody = t.Object({
 	displayName: t.Optional(text(LIMITS.displayNameMax)),

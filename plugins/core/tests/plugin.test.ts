@@ -391,7 +391,13 @@ describe('ForumCorePlugin', () => {
 			{ edit: false, delete: false },
 			{ edit: true, delete: true },
 		])
-		expect(detail.can).toEqual({ reply: true, edit: false, delete: false, moderate: false })
+		expect(detail.can).toEqual({
+			reply: true,
+			edit: false,
+			delete: false,
+			moderate: false,
+			move: false,
+		})
 	})
 
 	it('orders threads by pin, then latest activity, and pages them', async () => {
@@ -662,7 +668,11 @@ describe('ForumCorePlugin', () => {
 
 		const empty = (await core.createCategory(admin, { name: 'Empty' })).unwrap()
 		;(await core.deleteCategory(admin, empty.id)).unwrap()
-		expect((await core.listCategories(GUEST)).map((item) => item.slug)).toEqual(['general'])
+		// The stream the migration seeds stays, and cannot be removed.
+		const slugs = (await core.listCategories(GUEST)).map((item) => item.slug)
+		expect(slugs.toSorted()).toEqual(['general', 'stream'])
+		const stream = (await core.listCategories(GUEST)).find((item) => item.kind === 'stream')!
+		expect(await codeOf(core.deleteCategory(admin, stream.id))).toBe('conflict')
 	})
 
 	it('keeps data across a restart of the plugin', async () => {
@@ -677,6 +687,233 @@ describe('ForumCorePlugin', () => {
 		const detail = (await core.getThread(GUEST, thread.id)).unwrap()
 		expect(detail.thread.title).toBe('Durable')
 		expect(detail.posts.items[0].author.displayName).toBe('Alice')
+	})
+})
+
+async function streamOf(core: ForumCorePlugin) {
+	const stream = await core.streamFor(GUEST)
+	if (!stream) throw new Error('the migration seeds a stream')
+	return stream.category
+}
+
+describe('notes, moves, replies inside floors and hot (M6.1)', () => {
+	it('posts notes to the stream without a title and shows them as cards in listings', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { alice, category } = await seed(core)
+		const stream = await streamOf(core)
+		expect(await core.streamFor(alice)).toMatchObject({ canPost: true })
+		expect(await core.streamFor(GUEST)).toMatchObject({ canPost: false })
+
+		expect(
+			await codeOf(core.createThread(alice, { categoryId: stream.id, title: 'No', body: 'x' })),
+		).toBe('invalid')
+		expect(
+			await codeOf(
+				core.createThread(alice, { categoryId: stream.id, title: '', body: 'x'.repeat(501) }),
+			),
+		).toBe('invalid')
+		expect(
+			await codeOf(core.createThread(alice, { categoryId: category.id, title: '', body: 'x' })),
+		).toBe('invalid')
+
+		const note = (
+			await core.createThread(alice, { categoryId: stream.id, title: '', body: 'just a note' })
+		).unwrap()
+		expect(note).toMatchObject({ kind: 'note', title: '', categoryId: stream.id })
+		const topic = (
+			await core.createThread(alice, { categoryId: category.id, title: 'Topic', body: 'long' })
+		).unwrap()
+		expect(topic.kind).toBe('topic')
+
+		// The opening post of a note keeps the note limit when edited.
+		const detail = (await core.getThread(alice, note.id)).unwrap()
+		expect(detail.thread.kind).toBe('note')
+		expect(detail.category.kind).toBe('stream')
+		const opening = detail.posts.items[0]
+		expect(await codeOf(core.updatePost(alice, opening.id, { body: 'y'.repeat(501) }))).toBe(
+			'invalid',
+		)
+
+		const recent = await core.listRecentThreads(GUEST, {}, { sort: 'new' })
+		expect(recent.items.map((item) => item.kind)).toEqual(['topic', 'note'])
+		expect(recent.items[0].opening).toBeUndefined()
+		expect(recent.items[1].opening).toMatchObject({
+			id: opening.id,
+			number: 1,
+			body: 'just a note',
+			bodyHtml: 'just a note',
+			can: { edit: false, delete: false },
+		})
+		expect(recent.items[1].category).toMatchObject({ slug: 'stream' })
+
+		const notes = (await core.getUserProfile(GUEST, alice.userId!, { kind: 'note' })).unwrap()
+		expect(notes).toMatchObject({ threadCount: 1, noteCount: 1 })
+		expect(notes.threads.items.map((item) => item.opening?.body)).toEqual(['just a note'])
+		const topics = (await core.getUserProfile(GUEST, alice.userId!)).unwrap()
+		expect(topics.threads.items.map((item) => item.title)).toEqual(['Topic'])
+	})
+
+	it('moves threads between boards and turns a note into a topic', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { admin, alice, bob, category } = await seed(core)
+		const stream = await streamOf(core)
+		const other = (await core.createCategory(admin, { name: 'Other' })).unwrap()
+		const events: PostAfterWriteEvent[] = []
+		const note = (
+			await core.createThread(alice, { categoryId: stream.id, title: '', body: 'grow me' })
+		).unwrap()
+		;(await core.createPost(bob, { threadId: note.id, body: 'reply' })).unwrap()
+		const listen = core.registerPostHook({
+			id: 'test.moves',
+			afterWrite: (event) => {
+				events.push(event)
+			},
+		})
+
+		expect(await codeOf(core.updateThread(alice, note.id, { title: 'Titled note' }))).toBe(
+			'invalid',
+		)
+		expect(await codeOf(core.updateThread(alice, note.id, { categoryId: other.id }))).toBe(
+			'invalid',
+		)
+		expect(
+			await codeOf(core.updateThread(bob, note.id, { categoryId: other.id, title: 'Mine' })),
+		).toBe('forbidden')
+
+		const moved = (
+			await core.updateThread(alice, note.id, { categoryId: other.id, title: 'Grown up' })
+		).unwrap()
+		expect(moved).toMatchObject({ kind: 'topic', title: 'Grown up', categoryId: other.id })
+		expect(events.at(-1)).toMatchObject({
+			kind: 'thread.updated',
+			categoryId: other.id,
+			previousCategoryId: stream.id,
+			threadKind: 'topic',
+		})
+		const categories = await core.listCategories(GUEST)
+		expect(categories.find((item) => item.id === stream.id)).toMatchObject({
+			threadCount: 0,
+			postCount: 0,
+		})
+		expect(categories.find((item) => item.id === other.id)).toMatchObject({
+			threadCount: 1,
+			postCount: 2,
+		})
+
+		// Topics never go back into the stream; moderators move between boards.
+		expect(await codeOf(core.updateThread(admin, note.id, { categoryId: stream.id }))).toBe(
+			'invalid',
+		)
+		;(await core.updateThread(admin, note.id, { categoryId: category.id })).unwrap()
+		expect((await core.getThread(GUEST, note.id)).unwrap().category.id).toBe(category.id)
+		listen()
+	})
+
+	it('nests replies one level inside floors and locates any floor on its page', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { admin, alice, bob, category } = await seed(core)
+		const events: PostAfterWriteEvent[] = []
+		const listen = core.registerPostHook({
+			id: 'test.nesting',
+			afterWrite: (event) => {
+				events.push(event)
+			},
+		})
+		const thread = (
+			await core.createThread(alice, { categoryId: category.id, title: 'Nest', body: 'op' })
+		).unwrap()
+		const opening = (await core.getThread(GUEST, thread.id)).unwrap().posts.items[0]
+		const floor2 = (await core.createPost(bob, { threadId: thread.id, body: 'two' })).unwrap()
+		// Answering the opening post is an ordinary reply.
+		const floor3 = (
+			await core.createPost(admin, { threadId: thread.id, body: 'three', parentId: opening.id })
+		).unwrap()
+		expect(floor3.parentId).toBeNull()
+
+		const inner = (
+			await core.createPost(alice, { threadId: thread.id, body: 'in two', parentId: floor2.id })
+		).unwrap()
+		expect(inner).toMatchObject({ number: 4, parentId: floor2.id, replyTo: null })
+		expect(events.at(-1)).toMatchObject({
+			kind: 'post.created',
+			parentId: floor2.id,
+			parentAuthorId: bob.userId,
+			replyToAuthorId: null,
+			threadKind: 'topic',
+		})
+		// Answering a reply stays in the same floor and names who it answers.
+		const answer = (
+			await core.createPost(bob, { threadId: thread.id, body: 'back', parentId: inner.id })
+		).unwrap()
+		expect(answer).toMatchObject({
+			parentId: floor2.id,
+			replyTo: { id: alice.userId, displayName: 'Alice' },
+		})
+		expect(events.at(-1)).toMatchObject({ replyToAuthorId: alice.userId })
+		for (const body of ['a', 'b']) {
+			// oxlint-disable-next-line no-await-in-loop -- floors are numbered in order.
+			;(await core.createPost(admin, { threadId: thread.id, body, parentId: floor2.id })).unwrap()
+		}
+		expect(
+			await codeOf(core.createPost(bob, { threadId: thread.id, body: 'x', parentId: MISSING_ID })),
+		).toBe('not_found')
+
+		const detail = (await core.getThread(GUEST, thread.id)).unwrap()
+		expect(detail.thread.replyCount).toBe(6)
+		expect(detail.posts.total).toBe(3)
+		expect(detail.posts.items.map((post) => post.number)).toEqual([1, 2, 3])
+		const two = detail.posts.items[1]
+		expect(two.replies?.total).toBe(4)
+		expect(two.replies?.items.map((post) => post.body)).toEqual(['in two', 'back', 'a'])
+		expect(two.replies?.items[1].replyTo).toMatchObject({ handle: expect.any(String) })
+		expect(detail.posts.items[0].replies).toEqual({ items: [], total: 0 })
+
+		const expanded = (await core.getThread(GUEST, thread.id, { expandFloor: 2 })).unwrap()
+		expect(expanded.posts.items[1].replies?.items).toHaveLength(4)
+
+		const rest = (await core.listReplies(GUEST, floor2.id, { page: 2, pageSize: 3 })).unwrap()
+		expect(rest).toMatchObject({ total: 4, page: 2 })
+		expect(rest.items.map((post) => post.body)).toEqual(['b'])
+
+		// A deleted reply leaves the floor without a placeholder.
+		;(await core.deletePost(alice, inner.id)).unwrap()
+		const after = (await core.getThread(GUEST, thread.id)).unwrap()
+		expect(after.posts.items[1].replies?.total).toBe(3)
+		expect(after.thread.replyCount).toBe(5)
+
+		expect((await core.locateFloor(GUEST, thread.ref, 5, { pageSize: 2 })).unwrap()).toEqual({
+			threadRef: thread.ref,
+			floor: 5,
+			page: 1,
+			parentFloor: 2,
+		})
+		expect((await core.locateFloor(GUEST, thread.ref, 3, { pageSize: 2 })).unwrap()).toMatchObject({
+			page: 2,
+			parentFloor: null,
+		})
+		expect(await codeOf(core.locateFloor(GUEST, thread.ref, 99))).toBe('not_found')
+		listen()
+	})
+
+	it('ranks hot threads by replies and engagement decaying with age', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { alice, bob, category } = await seed(core)
+		const open = async (title: string) =>
+			(await core.createThread(alice, { categoryId: category.id, title, body: 'x' })).unwrap()
+		const quiet = await open('quiet')
+		const liked = await open('liked')
+		const busy = await open('busy')
+		;(await core.createPost(bob, { threadId: busy.id, body: 'reply' })).unwrap()
+		await core.adjustEngagement(liked.id, 3)
+		// Engagement never goes below zero.
+		await core.adjustEngagement(quiet.id, -5)
+
+		const hot = await core.listRecentThreads(GUEST, {}, { sort: 'hot' })
+		expect(hot.items.map((item) => item.title)).toEqual(['liked', 'busy', 'quiet'])
 	})
 })
 

@@ -109,6 +109,11 @@ describe('3-Depth Stage Manager routing & revalidation', () => {
 			'/search/t/9?q=pg&threadsOnly=1&cpage=3#post-p1',
 		)
 
+		// A floor past the first goes through `?floor=`, which the thread page turns into its page.
+		expect(stageDetailHref(search, '9', 14)).toBe(
+			'/search/t/9?q=pg&threadsOnly=1&cpage=3&floor=14#post-14',
+		)
+
 		const profile = stageAt('/u/5', [['routes/user', '/u/5', userList]])
 		expect(stageDetailHref(profile, '9')).toBe('/u/5/t/9')
 	})

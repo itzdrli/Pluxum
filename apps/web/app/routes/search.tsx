@@ -339,7 +339,8 @@ function SearchHitRow({
 				{/* Kind tag and title share one line of text, like the rows of every other list. */}
 				<p className="[overflow-wrap:anywhere]">
 					<Tag tone={hit.opening ? 'accent' : 'neutral'} className="mr-2 align-[1px]">
-						{hit.opening ? '主题' : '回复'}
+						{/* Only notes have no title. */}
+						{hit.opening ? (hit.title === '' ? '动态' : '主题') : '回复'}
 					</Tag>
 					{/* The link's box covers the row, so the whole row opens the hit. */}
 					<StageLink
@@ -349,7 +350,7 @@ function SearchHitRow({
 						aria-current={isActive ? 'page' : undefined}
 						className="text-ink-strong text-ui font-bold after:absolute after:inset-0 hover:underline @lg/threads:text-title"
 					>
-						{hit.title}
+						{hit.title === '' ? `${hit.author.displayName} 的动态` : hit.title}
 					</StageLink>
 				</p>
 

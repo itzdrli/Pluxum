@@ -118,21 +118,22 @@ export class ForumReactionsPlugin extends BasePlugin {
 			eq(reactions.userId, userId),
 			eq(reactions.kind, LIKE),
 		)
-		const total = await this.database.transaction(async (tx) => {
-			if (on) {
-				await tx
-					.insert(reactions)
-					.values({ postId: located.value.postId, userId, kind: LIKE })
-					.onConflictDoNothing()
-			} else {
-				await tx.delete(reactions).where(key)
-			}
+		const { total, changed } = await this.database.transaction(async (tx) => {
+			const touched = on
+				? await tx
+						.insert(reactions)
+						.values({ postId: located.value.postId, userId, kind: LIKE })
+						.onConflictDoNothing()
+						.returning({ postId: reactions.postId })
+				: await tx.delete(reactions).where(key).returning({ postId: reactions.postId })
 			const [row] = await tx
 				.select({ value: count() })
 				.from(reactions)
 				.where(and(eq(reactions.postId, located.value.postId), eq(reactions.kind, LIKE)))
-			return row?.value ?? 0
+			return { total: row?.value ?? 0, changed: touched.length > 0 }
 		})
+		// A like counts towards the thread's place in "hot"; a repeated call changes nothing.
+		if (changed) await this.core.adjustEngagement(located.value.threadId, on ? 1 : -1)
 		return Result.ok({ count: total, reacted: on })
 	}
 }

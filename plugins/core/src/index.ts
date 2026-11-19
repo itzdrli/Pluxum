@@ -1,4 +1,5 @@
 import {
+	bodyLength,
 	defaultRolePolicy,
 	deriveHandleBase,
 	evaluatePolicies,
@@ -23,7 +24,9 @@ import {
 	type AssignableRole,
 	type BodyFormat,
 	type CategoryDto,
+	type CategoryKind,
 	type CategorySummaryDto,
+	type FloorLocationDto,
 	type CommunityDto,
 	type PaletteCommandDto,
 	type CategoryThreadsDto,
@@ -32,6 +35,7 @@ import {
 	type ForumErrorCode,
 	type ForumNotification,
 	type ForumResource,
+	type PageDto,
 	type PageRequest,
 	type PostDto,
 	type PreviewDto,
@@ -44,6 +48,7 @@ import {
 	type SearchRequest,
 	type ThreadDetailDto,
 	type ThreadDto,
+	type ThreadKind,
 	type UiSlotDto,
 	type FooterDto,
 	type SiteDto,
@@ -57,7 +62,22 @@ import {
 	type PluginDatabaseClient,
 	type PluginDatabaseHandle,
 } from '@pluxel/services/database'
-import { and, asc, count, desc, eq, gt, gte, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	gt,
+	gte,
+	ilike,
+	inArray,
+	isNull,
+	lte,
+	or,
+	sql,
+} from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import {
 	categories,
 	ForumDatabase,
@@ -93,6 +113,7 @@ import {
 	isThreadListing,
 	type CategoryListing,
 	type CommunityListing,
+	type OpeningSource,
 	type ThreadListing,
 } from './listings'
 import { ForumAdminTarget } from './admin-target'
@@ -142,6 +163,7 @@ export type {
 	ExtendableEntity,
 	UiSlotContribution,
 } from './extensions'
+export { answeredAuthorOf, threadPlace } from './hooks'
 export type {
 	PostAdmitEvent,
 	PostAdmitRejection,
@@ -176,6 +198,10 @@ const ACTIVE_WINDOW_DAYS = 7
 const COMMUNITY_LIST_SIZE = 5
 /** Listings past this page are read fresh: few people go there, and keys stay bounded. */
 const CACHED_PAGES = 3
+/** Replies inside a floor that ride along with it on the thread page; the rest load on request. */
+const REPLY_PREVIEW = 3
+/** At most this many replies of the floor a link points into are shown along with it. */
+const REPLY_EXPAND_MAX = 100
 
 export type CreateCategoryInput = Readonly<{
 	name: string
@@ -190,9 +216,26 @@ export type UpdateCategoryInput = Readonly<{
 	description?: string
 	position?: number
 }>
+/** A note goes to a `stream` category with an empty `title`. */
 export type CreateThreadInput = Readonly<{ categoryId: string; title: string; body: string }>
-export type UpdateThreadInput = Readonly<{ title?: string; pinned?: boolean; locked?: boolean }>
-export type CreatePostInput = Readonly<{ threadId: string; body: string }>
+/**
+ * `categoryId` moves the thread (the author, if they may start threads there, or a moderator).
+ * Moving a note to a board turns it into a topic and needs a `title`.
+ */
+export type UpdateThreadInput = Readonly<{
+	title?: string
+	pinned?: boolean
+	locked?: boolean
+	categoryId?: string
+}>
+/**
+ * `parentId`: the post this one answers. Answering a reply inside a floor puts the new reply in
+ * the same floor (one level only); answering the opening post is an ordinary reply.
+ */
+export type CreatePostInput = Readonly<{ threadId: string; body: string; parentId?: string }>
+/** `expandFloor`: a top-level floor on the page whose replies are all included (a link into it). */
+export type ThreadPageRequest = PageRequest & Readonly<{ expandFloor?: number }>
+export type ProfilePageRequest = PageRequest & Readonly<{ kind?: ThreadKind }>
 export type UpdatePostInput = Readonly<{ body: string }>
 export type EnsureUserInput = Readonly<{
 	subject: string
@@ -260,6 +303,23 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 const author = { id: users.id, handle: users.handle, displayName: users.displayName }
+const replyToUsers = alias(users, 'reply_to_users')
+const replyTo = {
+	id: replyToUsers.id,
+	handle: replyToUsers.handle,
+	displayName: replyToUsers.displayName,
+}
+
+const kindOf = (category: CategoryKind): ThreadKind => (category === 'stream' ? 'note' : 'topic')
+
+/** A user joined through a left join: all null when there is none. */
+function userOrNull(
+	row: Readonly<{ id: string | null; handle: string | null; displayName: string | null }> | null,
+): UserDto | null {
+	return row?.id && row.handle !== null && row.displayName !== null
+		? { id: row.id, handle: row.handle, displayName: row.displayName }
+		: null
+}
 
 type CategoryRow = typeof categories.$inferSelect
 type ThreadRow = typeof threads.$inferSelect
@@ -272,18 +332,20 @@ function toCategoryDto(row: CategoryRow): CategoryDto {
 		name: row.name,
 		description: row.description,
 		position: row.position,
+		kind: row.kind,
 		threadCount: row.threadCount,
 		postCount: row.postCount,
 	}
 }
 
-function toThreadDto(row: ThreadRow, by: UserDto): ThreadDto {
+function toThreadDto(row: ThreadRow, by: UserDto, category: CategoryKind): ThreadDto {
 	return {
 		id: row.id,
 		number: row.number,
 		slug: row.slug,
 		ref: formatThreadRef(row.number, row.slug),
 		categoryId: row.categoryId,
+		kind: kindOf(category),
 		title: row.title,
 		author: { id: by.id, handle: by.handle, displayName: by.displayName },
 		createdAt: row.createdAt.toISOString(),
@@ -501,6 +563,48 @@ export class ForumCorePlugin extends BasePlugin {
 			notes: this.footerLinks.notes(),
 			siteLinks: this.footerLinks.siteLinks(),
 		}
+	}
+
+	/** How long a note's body may be (code points), from config. */
+	noteBodyMax(): number {
+		return this.config.social.noteBodyMax
+	}
+
+	/**
+	 * The stream notes are posted to, when the viewer may see it, and whether they may post there.
+	 * Null without one.
+	 */
+	async streamFor(
+		principal: Principal,
+	): Promise<Readonly<{ category: CategorySummaryDto; canPost: boolean }> | null> {
+		const [row] = await this.database.read((db) =>
+			db
+				.select({ id: categories.id, slug: categories.slug, name: categories.name })
+				.from(categories)
+				.where(eq(categories.kind, 'stream'))
+				.orderBy(asc(categories.position), asc(categories.id))
+				.limit(1),
+		)
+		if (!row || !this.can(principal, 'category.view', { categoryId: row.id })) return null
+		return {
+			category: row,
+			canPost: this.can(principal, 'thread.create', { categoryId: row.id }),
+		}
+	}
+
+	/**
+	 * Privileged, for extensions that count interaction (likes, ...): adds `delta` points to a
+	 * thread's engagement, which ranks it in "hot" along with its replies. Never goes below zero.
+	 * The cached "hot" pages pick it up with the next write or when they expire.
+	 */
+	async adjustEngagement(threadId: string, delta: number): Promise<void> {
+		if (!isEntityId(threadId) || !Number.isSafeInteger(delta) || delta === 0) return
+		await this.database.transaction((tx) =>
+			tx
+				.update(threads)
+				.set({ engagement: sql`greatest(0, ${threads.engagement} + ${delta})` })
+				.where(eq(threads.id, threadId)),
+		)
 	}
 
 	/**
@@ -924,17 +1028,25 @@ export class ForumCorePlugin extends BasePlugin {
 		return Result.ok(enriched.get(updated.value.id) ?? updated.value)
 	}
 
-	/** Public profile of a user together with one page of their visible threads. */
+	/**
+	 * Public profile of a user together with one page of their visible topics, or of their notes
+	 * with `kind: 'note'`.
+	 */
 	async getUserProfile(
 		principal: Principal,
 		userRef: string,
-		paging: PageRequest = {},
+		paging: ProfilePageRequest = {},
 	): Promise<ForumResult<UserProfileDto>> {
 		const parsed = parseUserRef(userRef)
 		if (!parsed) return notFound('用户')
 		const { page, pageSize } = normalizePage(paging)
+		const wanted: ThreadKind = paging.kind === 'note' ? 'note' : 'topic'
 		const visibleCategories = await this.listCategories(principal)
 		const visibleCategoryIds = visibleCategories.map((category) => category.id)
+		const kindIds = (kind: CategoryKind) =>
+			visibleCategories.filter((category) => category.kind === kind).map(({ id }) => id)
+		const boardIds = kindIds('board')
+		const streamIds = kindIds('stream')
 
 		const read = await this.database.read(async (db) => {
 			const match = parsed.kind === 'id' ? eq(users.id, parsed.id) : eq(users.handle, parsed.handle)
@@ -962,17 +1074,27 @@ export class ForumCorePlugin extends BasePlugin {
 					account,
 					roles,
 					threadCount: 0,
+					noteCount: 0,
 					postCount: 0,
 					threadRows: [] as ThreadRow[],
+					openings: [] as OpeningSource[],
 				}
 			}
 
-			const visibleThreads = and(
-				eq(threads.authorId, account.id),
-				isNull(threads.deletedAt),
-				inArray(threads.categoryId, visibleCategoryIds),
-			)
-			const [threadTotal] = await db.select({ value: count() }).from(threads).where(visibleThreads)
+			const threadsIn = (ids: readonly string[]) =>
+				and(
+					eq(threads.authorId, account.id),
+					isNull(threads.deletedAt),
+					ids.length === 0 ? sql`false` : inArray(threads.categoryId, [...ids]),
+				)
+			const [threadTotal] = await db
+				.select({ value: count() })
+				.from(threads)
+				.where(threadsIn(boardIds))
+			const [noteTotal] = await db
+				.select({ value: count() })
+				.from(threads)
+				.where(threadsIn(streamIds))
 			const [postTotal] = await db
 				.select({ value: count() })
 				.from(posts)
@@ -988,17 +1110,26 @@ export class ForumCorePlugin extends BasePlugin {
 			const threadRows = await db
 				.select()
 				.from(threads)
-				.where(visibleThreads)
+				.where(threadsIn(wanted === 'note' ? streamIds : boardIds))
 				.orderBy(desc(threads.createdAt), desc(threads.id))
 				.limit(pageSize)
 				.offset((page - 1) * pageSize)
+			const openings =
+				wanted === 'note'
+					? await this.openingsOf(
+							db,
+							threadRows.map((row) => row.id),
+						)
+					: []
 
 			return {
 				account,
 				roles,
 				threadCount: threadTotal?.value ?? 0,
+				noteCount: noteTotal?.value ?? 0,
 				postCount: postTotal?.value ?? 0,
 				threadRows,
+				openings,
 			}
 		})
 		if (!read) return notFound('用户')
@@ -1008,10 +1139,14 @@ export class ForumCorePlugin extends BasePlugin {
 			handle: read.account.handle,
 			displayName: read.account.displayName,
 		}
-		const rawThreads = read.threadRows.map((row) => toThreadDto(row, baseUser))
+		const rawThreads = read.threadRows.map((row) =>
+			toThreadDto(row, baseUser, wanted === 'note' ? 'stream' : 'board'),
+		)
 		const [usersById, extendedThreads] = await Promise.all([
 			this.extendedUsers(principal, [baseUser]),
-			this.extended('thread', principal, rawThreads),
+			this.extended('thread', principal, rawThreads).then((list) =>
+				this.withOpenings(principal, list, read.openings),
+			),
 		])
 		const user = usersById.get(baseUser.id) ?? baseUser
 
@@ -1020,12 +1155,13 @@ export class ForumCorePlugin extends BasePlugin {
 			roles: read.roles,
 			createdAt: read.account.createdAt.toISOString(),
 			threadCount: read.threadCount,
+			noteCount: read.noteCount,
 			postCount: read.postCount,
 			threads: {
 				items: extendedThreads,
 				page,
 				pageSize,
-				total: read.threadCount,
+				total: wanted === 'note' ? read.noteCount : read.threadCount,
 			},
 			can: { edit: this.can(principal, 'user.edit', { userId: user.id }) },
 			ext: user.ext ?? {},
@@ -1223,6 +1359,11 @@ export class ForumCorePlugin extends BasePlugin {
 		if (!this.can(principal, 'category.manage', { categoryId })) return denied(principal)
 		if (!isEntityId(categoryId)) return notFound('版块')
 		const outcome = await this.database.transaction(async (tx) => {
+			const [current] = await tx
+				.select({ kind: categories.kind })
+				.from(categories)
+				.where(eq(categories.id, categoryId))
+			if (current?.kind === 'stream') return fail('conflict', '动态版块不能删除')
 			const [used] = await tx
 				.select({ id: threads.id })
 				.from(threads)
@@ -1242,9 +1383,10 @@ export class ForumCorePlugin extends BasePlugin {
 	// ── Threads ─────────────────────────────────────────────────────────────────────────────
 
 	/**
-	 * One page of threads across every category the viewer may see. `sort` is `active` (latest
-	 * activity, the default), `new` (latest started) or `hot` (most replies among threads active in
-	 * the last `HOT_WINDOW_DAYS` days).
+	 * One page of threads (topics and notes) across every category the viewer may see. `sort` is
+	 * `active` (latest activity, the default), `new` (latest started) or `hot`: replies plus
+	 * engagement, decaying with age (`(replies + engagement) / (hours + 2) ^ gravity`), among
+	 * threads active in the last `HOT_WINDOW_DAYS` days.
 	 */
 	async listRecentThreads(
 		principal: Principal,
@@ -1259,6 +1401,8 @@ export class ForumCorePlugin extends BasePlugin {
 		const categoriesById = new Map<string, CategorySummaryDto>(
 			visibleCategories.map(({ id, slug, name }) => [id, { id, slug, name }]),
 		)
+		const gravity = this.config.social.hotGravity
+		const hotScore = sql`(${threads.replyCount} + ${threads.engagement})::float8 / power(extract(epoch from (now() - ${threads.createdAt})) / 3600 + 2, ${gravity}::float8)`
 		const load = () =>
 			this.database.read(async (db): Promise<ThreadListing> => {
 				const visible = and(
@@ -1272,32 +1416,39 @@ export class ForumCorePlugin extends BasePlugin {
 					sort === 'new'
 						? [desc(threads.createdAt), desc(threads.id)]
 						: sort === 'hot'
-							? [desc(threads.replyCount), desc(threads.lastPostAt), desc(threads.id)]
+							? [desc(hotScore), desc(threads.lastPostAt), desc(threads.id)]
 							: [desc(threads.lastPostAt), desc(threads.id)]
 				const [total] = await db.select({ value: count() }).from(threads).where(visible)
 				const rows = await db
-					.select({ thread: threads, author })
+					.select({ thread: threads, author, kind: categories.kind })
 					.from(threads)
 					.innerJoin(users, eq(users.id, threads.authorId))
+					.innerJoin(categories, eq(categories.id, threads.categoryId))
 					.where(visible)
 					.orderBy(...order)
 					.limit(pageSize)
 					.offset((page - 1) * pageSize)
+				const list = rows.map((row) => toThreadDto(row.thread, row.author, row.kind))
 				return {
-					threads: rows.map((row) => toThreadDto(row.thread, row.author)),
+					threads: list,
+					openings: await this.noteOpenings(db, list),
 					total: total?.value ?? 0,
 				}
 			})
 		const read =
 			page <= CACHED_PAGES
 				? await this.cachedListing(
-						`recent:${sort}:${page}:${pageSize}:${digest(visibleIds.join(','))}`,
+						`recent:${sort}${sort === 'hot' ? gravity : ''}:${page}:${pageSize}:${digest(visibleIds.join(','))}`,
 						load,
 						isThreadListing,
 					)
 				: await load()
 
-		const extendedThreads = await this.extended('thread', principal, read.threads)
+		const extendedThreads = await this.withOpenings(
+			principal,
+			await this.extended('thread', principal, read.threads),
+			read.openings,
+		)
 		const items: RecentThreadDto[] = extendedThreads.flatMap((thread) => {
 			const category = categoriesById.get(thread.categoryId)
 			return category ? [{ ...thread, category }] : []
@@ -1409,9 +1560,11 @@ export class ForumCorePlugin extends BasePlugin {
 					.orderBy(desc(threads.pinned), desc(threads.lastPostAt), desc(threads.id))
 					.limit(pageSize)
 					.offset((page - 1) * pageSize)
+				const list = rows.map((row) => toThreadDto(row.thread, row.author, category.kind))
 				return {
 					category: toCategoryDto(category),
-					threads: rows.map((row) => toThreadDto(row.thread, row.author)),
+					threads: list,
+					openings: await this.noteOpenings(db, list),
 					total: total?.value ?? 0,
 				}
 			})
@@ -1430,7 +1583,11 @@ export class ForumCorePlugin extends BasePlugin {
 		return Result.ok({
 			category,
 			threads: {
-				items: await this.extended('thread', principal, listing.threads),
+				items: await this.withOpenings(
+					principal,
+					await this.extended('thread', principal, listing.threads),
+					listing.openings,
+				),
 				page,
 				pageSize,
 				total: listing.total,
@@ -1441,11 +1598,15 @@ export class ForumCorePlugin extends BasePlugin {
 		})
 	}
 
-	/** A thread with one page of its posts, oldest first. Deleted posts stay as placeholders. */
+	/**
+	 * A thread with one page of its top-level posts, oldest first; deleted ones stay as
+	 * placeholders. Each carries its first `REPLY_PREVIEW` replies (all of them, up to
+	 * `REPLY_EXPAND_MAX`, for `expandFloor`) and how many there are.
+	 */
 	async getThread(
 		principal: Principal,
 		threadRef: string,
-		paging: PageRequest = {},
+		paging: ThreadPageRequest = {},
 	): Promise<ForumResult<ThreadDetailDto>> {
 		if (!parseThreadRef(threadRef)) return notFound('主题')
 		const { page, pageSize } = normalizePage(paging)
@@ -1455,22 +1616,33 @@ export class ForumCorePlugin extends BasePlugin {
 				return notFound('主题')
 			}
 			const { thread, category } = found
-			const inThread = eq(posts.threadId, thread.id)
-			const [total] = await db.select({ value: count() }).from(posts).where(inThread)
+			const topLevel = and(eq(posts.threadId, thread.id), isNull(posts.parentId))
+			const [total] = await db.select({ value: count() }).from(posts).where(topLevel)
 			const rows = await db
 				.select({ post: posts, author })
 				.from(posts)
 				.innerJoin(users, eq(users.id, posts.authorId))
-				.where(inThread)
+				.where(topLevel)
 				.orderBy(asc(posts.number), asc(posts.id))
 				.limit(pageSize)
 				.offset((page - 1) * pageSize)
+			const expandId = rows.find((row) => row.post.number === paging.expandFloor)?.post.id
+			const replies = await this.replyPreviews(
+				db,
+				principal,
+				thread,
+				rows.map((row) => row.post.id),
+				expandId,
+			)
 			const resource = this.threadResource(thread)
 			return Result.ok({
-				thread: toThreadDto(thread, found.author),
+				thread: toThreadDto(thread, found.author, category.kind),
 				category: toCategoryDto(category),
 				posts: {
-					items: rows.map((row) => this.toPostDto(principal, row.post, row.author, thread)),
+					items: rows.map((row) => ({
+						...this.toPostDto(principal, row.post, row.author, thread),
+						replies: replies.get(row.post.id) ?? { items: [], total: 0 },
+					})),
 					page,
 					pageSize,
 					total: total?.value ?? 0,
@@ -1480,15 +1652,34 @@ export class ForumCorePlugin extends BasePlugin {
 					edit: this.can(principal, 'thread.edit', resource),
 					delete: this.can(principal, 'thread.delete', resource),
 					moderate: this.can(principal, 'thread.moderate', resource),
+					move:
+						this.can(principal, 'thread.moderate', resource) ||
+						this.can(principal, 'thread.edit', resource),
 				},
 			})
 		})
 		if (detail.isErr()) return detail
-		// Extensions answer after the core's own read has finished, each with one batch per entity.
-		const [[thread], items] = await Promise.all([
+		// Extensions answer after the core's own read has finished, each with one batch per entity:
+		// the replies inside floors go in the same batch as the floors.
+		const top = detail.value.posts.items
+		const nested = top.flatMap((post) => post.replies?.items ?? [])
+		const [[thread], extendedPosts] = await Promise.all([
 			this.extended('thread', principal, [detail.value.thread]),
-			this.extended('post', principal, detail.value.posts.items),
+			this.extended('post', principal, [...top, ...nested]),
 		])
+		const byId = new Map(extendedPosts.map((post) => [post.id, post]))
+		const items = top.map((post) => {
+			const extended = byId.get(post.id) ?? post
+			return post.replies
+				? {
+						...extended,
+						replies: {
+							total: post.replies.total,
+							items: post.replies.items.map((reply) => byId.get(reply.id) ?? reply),
+						},
+					}
+				: extended
+		})
 		return Result.ok({
 			...detail.value,
 			thread: thread ?? detail.value.thread,
@@ -1496,21 +1687,207 @@ export class ForumCorePlugin extends BasePlugin {
 		})
 	}
 
-	/** Creates a thread together with its opening post. */
+	/**
+	 * The first replies inside each of the given top-level posts and how many each has (deleted
+	 * replies are left out). `expandId` names one whose replies are all wanted.
+	 */
+	private async replyPreviews(
+		db: Db,
+		principal: Principal,
+		thread: ThreadRow,
+		parentIds: readonly string[],
+		expandId: string | undefined,
+	): Promise<Map<string, { items: PostDto[]; total: number }>> {
+		const previews = new Map<string, { items: PostDto[]; total: number }>()
+		if (parentIds.length === 0) return previews
+		const inFloors = and(
+			eq(posts.threadId, thread.id),
+			inArray(posts.parentId, [...parentIds]),
+			isNull(posts.deletedAt),
+		)
+		const totals = await db
+			.select({ parentId: posts.parentId, value: count() })
+			.from(posts)
+			.where(inFloors)
+			.groupBy(posts.parentId)
+		if (totals.length === 0) return previews
+		const ranked = db
+			.select({
+				id: posts.id,
+				parentId: posts.parentId,
+				rank: sql<number>`row_number() over (partition by ${posts.parentId} order by ${posts.number})`.as(
+					'rank',
+				),
+			})
+			.from(posts)
+			.where(inFloors)
+			.as('ranked')
+		const rows = await db
+			.select({ post: posts, author, replyTo })
+			.from(posts)
+			.innerJoin(ranked, eq(ranked.id, posts.id))
+			.innerJoin(users, eq(users.id, posts.authorId))
+			.leftJoin(replyToUsers, eq(replyToUsers.id, posts.replyToId))
+			.where(
+				or(
+					lte(ranked.rank, REPLY_PREVIEW),
+					expandId === undefined
+						? undefined
+						: and(eq(ranked.parentId, expandId), lte(ranked.rank, REPLY_EXPAND_MAX)),
+				),
+			)
+			.orderBy(asc(posts.number))
+		for (const { parentId, value } of totals) {
+			if (parentId !== null) previews.set(parentId, { items: [], total: value })
+		}
+		for (const row of rows) {
+			const preview = row.post.parentId === null ? undefined : previews.get(row.post.parentId)
+			preview?.items.push(
+				this.toPostDto(principal, row.post, row.author, thread, userOrNull(row.replyTo)),
+			)
+		}
+		return previews
+	}
+
+	/**
+	 * One page of the replies inside a top-level post ("楼中楼"), oldest first, without deleted
+	 * ones. `postId` is the top-level post.
+	 */
+	async listReplies(
+		principal: Principal,
+		postId: string,
+		paging: PageRequest = {},
+	): Promise<ForumResult<PageDto<PostDto>>> {
+		if (!isEntityId(postId)) return notFound('楼层')
+		const { page, pageSize } = normalizePage(paging)
+		const read = await this.database.read(async (db) => {
+			const [row] = await db
+				.select({ post: posts, thread: threads })
+				.from(posts)
+				.innerJoin(threads, eq(threads.id, posts.threadId))
+				.where(and(eq(posts.id, postId), isNull(threads.deletedAt)))
+			if (!row || !this.can(principal, 'thread.view', this.threadResource(row.thread))) {
+				return null
+			}
+			const inFloor = and(eq(posts.parentId, row.post.id), isNull(posts.deletedAt))
+			const [total] = await db.select({ value: count() }).from(posts).where(inFloor)
+			const rows = await db
+				.select({ post: posts, author, replyTo })
+				.from(posts)
+				.innerJoin(users, eq(users.id, posts.authorId))
+				.leftJoin(replyToUsers, eq(replyToUsers.id, posts.replyToId))
+				.where(inFloor)
+				.orderBy(asc(posts.number))
+				.limit(pageSize)
+				.offset((page - 1) * pageSize)
+			return {
+				items: rows.map((reply) =>
+					this.toPostDto(
+						principal,
+						reply.post,
+						reply.author,
+						row.thread,
+						userOrNull(reply.replyTo),
+					),
+				),
+				total: total?.value ?? 0,
+			}
+		})
+		if (!read) return notFound('楼层')
+		return Result.ok({
+			items: await this.extended('post', principal, read.items),
+			page,
+			pageSize,
+			total: read.total,
+		})
+	}
+
+	/**
+	 * Where floor `floor` of a thread is shown: the page of top-level posts that holds it, or holds
+	 * the floor it replies inside. What a link to `/t/<ref>/<floor>` resolves to.
+	 */
+	async locateFloor(
+		principal: Principal,
+		threadRef: string,
+		floor: number,
+		paging: PageRequest = {},
+	): Promise<ForumResult<FloorLocationDto>> {
+		if (!parseThreadRef(threadRef)) return notFound('主题')
+		if (!Number.isSafeInteger(floor) || floor < 1) return notFound('楼层')
+		const { pageSize } = normalizePage(paging)
+		const located = await this.database.read(async (db) => {
+			const found = await this.findThread(db, threadRef)
+			if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
+				return notFound('主题')
+			}
+			const { thread } = found
+			const [post] = await db
+				.select({ parentId: posts.parentId, number: posts.number })
+				.from(posts)
+				.where(and(eq(posts.threadId, thread.id), eq(posts.number, floor)))
+			if (!post) return notFound('楼层')
+			let topNumber = post.number
+			let parentFloor: number | null = null
+			if (post.parentId !== null) {
+				const [parent] = await db
+					.select({ number: posts.number })
+					.from(posts)
+					.where(eq(posts.id, post.parentId))
+				if (!parent) return notFound('楼层')
+				topNumber = parent.number
+				parentFloor = parent.number
+			}
+			const [before] = await db
+				.select({ value: count() })
+				.from(posts)
+				.where(
+					and(eq(posts.threadId, thread.id), isNull(posts.parentId), lte(posts.number, topNumber)),
+				)
+			return Result.ok({
+				threadRef: formatThreadRef(thread.number, thread.slug),
+				floor,
+				page: Math.max(1, Math.ceil((before?.value ?? 1) / pageSize)),
+				parentFloor,
+			})
+		})
+		return located
+	}
+
+	/**
+	 * Creates a thread together with its opening post. In a `stream` category it is a note: no
+	 * title, and a body of at most `noteBodyMax()`.
+	 */
 	async createThread(
 		principal: Principal,
 		input: CreateThreadInput,
 	): Promise<ForumResult<ThreadDto>> {
-		const title = validateThreadTitle(input.title)
-		if (!title.ok) return invalid(title.reason)
-		const body = validatePostBody(input.body)
-		if (!body.ok) return invalid(body.reason)
 		const { categoryId } = input
+		if (principal.userId === null) return denied(principal)
 		if (!isEntityId(categoryId)) return notFound('版块')
+		const [target] = await this.database.read((db) =>
+			db.select({ kind: categories.kind }).from(categories).where(eq(categories.id, categoryId)),
+		)
+		if (!target || !this.can(principal, 'category.view', { categoryId })) return notFound('版块')
+		const threadKind = kindOf(target.kind)
+		let titleValue = ''
+		if (threadKind === 'note') {
+			if (typeof input.title !== 'string' || input.title.trim() !== '') {
+				return invalid('动态不需要标题')
+			}
+		} else {
+			const title = validateThreadTitle(input.title)
+			if (!title.ok) return invalid(title.reason)
+			titleValue = title.value
+		}
+		const body = validatePostBody(
+			input.body,
+			threadKind === 'note' ? this.noteBodyMax() : undefined,
+		)
+		if (!body.ok) return invalid(body.reason)
 		if (!this.can(principal, 'thread.create', { categoryId })) return denied(principal)
 		const authorId = principal.userId
 		if (authorId === null) return denied(principal)
-		const slug = slugifyAsciiTitle(title.value)
+		const slug = slugifyAsciiTitle(titleValue)
 		const refused = await this.admit({ kind: 'thread.create', principal })
 		if (refused) return Result.err(refused)
 
@@ -1521,21 +1898,23 @@ export class ForumCorePlugin extends BasePlugin {
 				const [by] = await tx.select(author).from(users).where(eq(users.id, authorId))
 				if (!by) return denied(GUEST)
 				const [category] = await tx
-					.select({ id: categories.id })
+					.select({ id: categories.id, kind: categories.kind })
 					.from(categories)
 					.where(eq(categories.id, categoryId))
 				if (!category) return notFound('版块')
+				if (kindOf(category.kind) !== threadKind) return fail('conflict', '版块类型已变化，请重试')
 				const rejected = this.beforeWrite({
 					kind: 'thread.create',
 					principal,
 					categoryId,
-					title: title.value,
+					threadKind,
+					title: titleValue,
 					body: body.value,
 				})
 				if (rejected) return Result.err(rejected)
 				const [thread] = await tx
 					.insert(threads)
-					.values({ categoryId, authorId, title: title.value, slug, postSeq: 1 })
+					.values({ categoryId, authorId, title: titleValue, slug, postSeq: 1 })
 					.returning()
 				if (!thread) throw new Error('Thread insert returned no row')
 				const [opening] = await tx
@@ -1556,7 +1935,7 @@ export class ForumCorePlugin extends BasePlugin {
 						postCount: sql`${categories.postCount} + 1`,
 					})
 					.where(eq(categories.id, categoryId))
-				const dto = toThreadDto(thread, by)
+				const dto = toThreadDto(thread, by, category.kind)
 				return Result.ok({
 					dto,
 					event: {
@@ -1565,6 +1944,7 @@ export class ForumCorePlugin extends BasePlugin {
 						categoryId,
 						threadId: thread.id,
 						threadRef: dto.ref,
+						threadKind,
 						postId: opening.id,
 						authorId,
 						title: thread.title,
@@ -1579,14 +1959,20 @@ export class ForumCorePlugin extends BasePlugin {
 		return this.extendedResult('thread', principal, Result.ok(written.value.dto))
 	}
 
-	/** Renames a thread (`thread.edit`) and/or pins or locks it (`thread.moderate`). */
+	/**
+	 * Renames a thread (`thread.edit`), pins or locks it (`thread.moderate`) and/or moves it to
+	 * another board (`thread.moderate`, or `thread.edit` together with `thread.create` there).
+	 * A note has no title; moving it to a board turns it into a topic and takes one.
+	 */
 	async updateThread(
 		principal: Principal,
 		threadRef: string,
 		input: UpdateThreadInput,
 	): Promise<ForumResult<ThreadDto>> {
 		if (!parseThreadRef(threadRef)) return notFound('主题')
-		const patch: Partial<Pick<ThreadRow, 'title' | 'slug' | 'pinned' | 'locked'>> = {}
+		if (input.categoryId !== undefined && !isEntityId(input.categoryId)) return notFound('版块')
+		const patch: Partial<Pick<ThreadRow, 'title' | 'slug' | 'pinned' | 'locked' | 'categoryId'>> =
+			{}
 		if (input.title !== undefined) {
 			const title = validateThreadTitle(input.title)
 			if (!title.ok) return invalid(title.reason)
@@ -1610,23 +1996,49 @@ export class ForumCorePlugin extends BasePlugin {
 					return notFound('主题')
 				}
 				const resource = this.threadResource(found.thread)
+				const source = found.category
+				const moderator = this.can(principal, 'thread.moderate', resource)
+				let target: CategoryRow = source
+				if (input.categoryId !== undefined && input.categoryId !== source.id) {
+					const [row] = await tx
+						.select()
+						.from(categories)
+						.where(eq(categories.id, input.categoryId))
+					if (!row || !this.can(principal, 'category.view', { categoryId: row.id })) {
+						return notFound('版块')
+					}
+					if (row.kind === 'stream') return invalid('主题帖不能移到动态里')
+					const allowed =
+						moderator ||
+						(this.can(principal, 'thread.edit', resource) &&
+							this.can(principal, 'thread.create', { categoryId: row.id }))
+					if (!allowed) return denied(principal)
+					target = row
+					patch.categoryId = row.id
+				}
+				if (target.kind === 'stream' && patch.title !== undefined) {
+					return invalid('动态没有标题')
+				}
+				if (source.kind === 'stream' && target.kind !== 'stream' && patch.title === undefined) {
+					return invalid('转为主题帖需要一个标题')
+				}
 				if (patch.title !== undefined && !this.can(principal, 'thread.edit', resource)) {
 					return denied(principal)
 				}
-				if (
-					(patch.pinned !== undefined || patch.locked !== undefined) &&
-					!this.can(principal, 'thread.moderate', resource)
-				) {
+				if ((patch.pinned !== undefined || patch.locked !== undefined) && !moderator) {
 					return denied(principal)
 				}
 				if (Object.keys(patch).length === 0) {
-					return Result.ok({ dto: toThreadDto(found.thread, found.author), event: null })
+					return Result.ok({
+						dto: toThreadDto(found.thread, found.author, source.kind),
+						event: null,
+					})
 				}
 				if (patch.title !== undefined) {
 					const rejected = this.beforeWrite({
 						kind: 'thread.update',
 						principal,
-						categoryId: found.thread.categoryId,
+						categoryId: target.id,
 						threadId: found.thread.id,
 						title: patch.title,
 					})
@@ -1638,11 +2050,28 @@ export class ForumCorePlugin extends BasePlugin {
 					.where(eq(threads.id, found.thread.id))
 					.returning()
 				if (!row) return notFound('主题')
+				if (target.id !== source.id) {
+					const moved = found.thread.replyCount + 1
+					await tx
+						.update(categories)
+						.set({
+							threadCount: sql`${categories.threadCount} - 1`,
+							postCount: sql`${categories.postCount} - ${moved}`,
+						})
+						.where(eq(categories.id, source.id))
+					await tx
+						.update(categories)
+						.set({
+							threadCount: sql`${categories.threadCount} + 1`,
+							postCount: sql`${categories.postCount} + ${moved}`,
+						})
+						.where(eq(categories.id, target.id))
+				}
 				const [opening] = await tx
 					.select({ id: posts.id, body: posts.body })
 					.from(posts)
 					.where(and(eq(posts.threadId, found.thread.id), eq(posts.opening, true)))
-				const dto = toThreadDto(row, found.author)
+				const dto = toThreadDto(row, found.author, target.kind)
 				return Result.ok({
 					dto,
 					event: opening
@@ -1650,8 +2079,10 @@ export class ForumCorePlugin extends BasePlugin {
 								kind: 'thread.updated',
 								principal,
 								categoryId: row.categoryId,
+								previousCategoryId: source.id,
 								threadId: row.id,
 								threadRef: dto.ref,
+								threadKind: dto.kind,
 								postId: opening.id,
 								authorId: row.authorId,
 								title: row.title,
@@ -1709,10 +2140,12 @@ export class ForumCorePlugin extends BasePlugin {
 
 	// ── Posts ───────────────────────────────────────────────────────────────────────────────
 
+	/** Replies to a thread, or inside a floor of it with `parentId` (see `CreatePostInput`). */
 	async createPost(principal: Principal, input: CreatePostInput): Promise<ForumResult<PostDto>> {
 		const body = validatePostBody(input.body)
 		if (!body.ok) return invalid(body.reason)
 		if (!parseThreadRef(input.threadId)) return notFound('主题')
+		if (input.parentId !== undefined && !isEntityId(input.parentId)) return notFound('楼层')
 		const authorId = principal.userId
 		if (authorId !== null) {
 			const refused = await this.admit({ kind: 'post.create', principal })
@@ -1733,11 +2166,34 @@ export class ForumCorePlugin extends BasePlugin {
 				}
 				const [by] = await tx.select(author).from(users).where(eq(users.id, authorId))
 				if (!by) return denied(GUEST)
+				// Where the reply goes: a floor (one level only) or the thread itself.
+				let parent: Readonly<{ id: string; authorId: string }> | null = null
+				let answered: UserDto | null = null
+				if (input.parentId !== undefined) {
+					const [target] = await tx
+						.select({ post: posts, author })
+						.from(posts)
+						.innerJoin(users, eq(users.id, posts.authorId))
+						.where(and(eq(posts.id, input.parentId), eq(posts.threadId, thread.id)))
+					if (!target || target.post.deletedAt !== null) return notFound('楼层')
+					if (target.post.parentId !== null) {
+						const [floor] = await tx
+							.select({ id: posts.id, authorId: posts.authorId })
+							.from(posts)
+							.where(eq(posts.id, target.post.parentId))
+						if (!floor) return notFound('楼层')
+						parent = { id: floor.id, authorId: floor.authorId }
+						answered = target.author
+					} else if (!target.post.opening) {
+						parent = { id: target.post.id, authorId: target.post.authorId }
+					}
+				}
 				const rejected = this.beforeWrite({
 					kind: 'post.create',
 					principal,
 					categoryId: thread.categoryId,
 					threadId: thread.id,
+					parentId: parent?.id ?? null,
 					body: body.value,
 				})
 				if (rejected) return Result.err(rejected)
@@ -1757,6 +2213,8 @@ export class ForumCorePlugin extends BasePlugin {
 					.values({
 						threadId: thread.id,
 						number: updatedThread.postSeq,
+						parentId: parent?.id ?? null,
+						replyToId: answered?.id ?? null,
 						authorId,
 						body: body.value,
 						createdAt: now,
@@ -1768,17 +2226,22 @@ export class ForumCorePlugin extends BasePlugin {
 					.set({ postCount: sql`${categories.postCount} + 1` })
 					.where(eq(categories.id, thread.categoryId))
 				return Result.ok({
-					dto: this.toPostDto(principal, post, by, thread),
+					dto: this.toPostDto(principal, post, by, thread, answered),
 					event: {
 						kind: 'post.created',
 						principal,
 						categoryId: thread.categoryId,
 						threadId: thread.id,
 						threadRef: formatThreadRef(thread.number, thread.slug),
+						threadKind: kindOf(found.category.kind),
 						threadAuthorId: thread.authorId,
 						threadTitle: thread.title,
 						postId: post.id,
 						postNumber: post.number,
+						parentId: parent?.id ?? null,
+						parentAuthorId: parent?.authorId ?? null,
+						replyToAuthorId: answered?.id ?? null,
+						previousLastPostAt: thread.lastPostAt.toISOString(),
 						authorId,
 						body: post.body,
 						createdAt: post.createdAt.toISOString(),
@@ -1816,6 +2279,17 @@ export class ForumCorePlugin extends BasePlugin {
 				const resource = this.postResource(post, thread)
 				if (editorId === null || !this.can(principal, 'post.edit', resource)) {
 					return denied(principal)
+				}
+				if (post.opening) {
+					// A note's body keeps the note limit when it is edited.
+					const [category] = await tx
+						.select({ kind: categories.kind })
+						.from(categories)
+						.where(eq(categories.id, thread.categoryId))
+					const limit = this.noteBodyMax()
+					if (category?.kind === 'stream' && bodyLength(body.value) > limit) {
+						return invalid(`内容不能超过 ${limit} 个字符`)
+					}
 				}
 				const rejected = this.beforeWrite({
 					kind: 'post.update',
@@ -1905,6 +2379,78 @@ export class ForumCorePlugin extends BasePlugin {
 	}
 
 	// ── Internals ───────────────────────────────────────────────────────────────────────────
+
+	/** The opening posts of the notes in a listing, so a feed can show them as cards. */
+	private async noteOpenings(db: Db, list: readonly ThreadDto[]): Promise<OpeningSource[]> {
+		return this.openingsOf(
+			db,
+			list.filter((thread) => thread.kind === 'note').map((thread) => thread.id),
+		)
+	}
+
+	private async openingsOf(db: Db, noteIds: readonly string[]): Promise<OpeningSource[]> {
+		if (noteIds.length === 0) return []
+		const rows = await db
+			.select({
+				threadId: posts.threadId,
+				postId: posts.id,
+				body: posts.body,
+				createdAt: posts.createdAt,
+				editedAt: posts.editedAt,
+			})
+			.from(posts)
+			.where(and(inArray(posts.threadId, [...noteIds]), eq(posts.opening, true)))
+		return rows.map((row) => ({
+			...row,
+			createdAt: row.createdAt.toISOString(),
+			editedAt: row.editedAt?.toISOString() ?? null,
+		}))
+	}
+
+	/** Listed threads with each note's opening post rendered and extended under `opening`. */
+	private async withOpenings<T extends ThreadDto>(
+		principal: Principal,
+		list: readonly T[],
+		openings: readonly OpeningSource[],
+	): Promise<T[]> {
+		if (openings.length === 0) return [...list]
+		const threadsById = new Map(list.map((thread) => [thread.id, thread]))
+		const drafts: PostDto[] = []
+		for (const opening of openings) {
+			const thread = threadsById.get(opening.threadId)
+			if (!thread) continue
+			const resource: ForumResource = {
+				categoryId: thread.categoryId,
+				threadId: thread.id,
+				postId: opening.postId,
+				authorId: thread.author.id,
+				locked: thread.locked,
+			}
+			const rendered = this.renderBody(opening.body, opening.postId)
+			drafts.push({
+				id: opening.postId,
+				threadId: thread.id,
+				number: 1,
+				parentId: null,
+				replyTo: null,
+				author: thread.author,
+				body: opening.body,
+				bodyHtml: rendered.html,
+				bodyFormat: rendered.format,
+				createdAt: opening.createdAt,
+				editedAt: opening.editedAt,
+				deleted: false,
+				can: { edit: this.can(principal, 'post.edit', resource), delete: false },
+				ext: {},
+			})
+		}
+		const extended = await this.extended('post', principal, drafts)
+		const byThread = new Map(extended.map((post) => [post.threadId, post]))
+		return list.map((thread) => {
+			const opening = byThread.get(thread.id)
+			return opening ? { ...thread, opening } : thread
+		})
+	}
 
 	private threadResource(thread: ThreadRow): ForumResource {
 		return {
@@ -2035,7 +2581,13 @@ export class ForumCorePlugin extends BasePlugin {
 		return Result.ok(item ?? result.value)
 	}
 
-	private toPostDto(principal: Principal, post: PostRow, by: UserDto, thread: ThreadRow): PostDto {
+	private toPostDto(
+		principal: Principal,
+		post: PostRow,
+		by: UserDto,
+		thread: ThreadRow,
+		answered: UserDto | null = null,
+	): PostDto {
 		const deleted = post.deletedAt !== null
 		const resource = this.postResource(post, thread)
 		const rendered = deleted ? this.renderBody('', post.id) : this.renderBody(post.body, post.id)
@@ -2043,6 +2595,10 @@ export class ForumCorePlugin extends BasePlugin {
 			id: post.id,
 			threadId: post.threadId,
 			number: post.number,
+			parentId: post.parentId,
+			replyTo: answered
+				? { id: answered.id, handle: answered.handle, displayName: answered.displayName }
+				: null,
 			author: { id: by.id, handle: by.handle, displayName: by.displayName },
 			body: deleted ? '' : post.body,
 			bodyHtml: rendered.html,

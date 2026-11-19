@@ -17,6 +17,11 @@
 			"id": "0002_contact_email",
 			"file": "0002_contact_email.sql",
 			"checksum": "9fb44245b4e2c1beb6ca10cff6108d083b9210af671d76d018255aa301dc9b69"
+		},
+		{
+			"id": "0003_social",
+			"file": "0003_social.sql",
+			"checksum": "f4321667e5cc3453442027cd4ca9b72b630c835919363ed2550ff131114586a0"
 		}
 	]
 }

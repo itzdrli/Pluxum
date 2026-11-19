@@ -12,6 +12,7 @@ import {
 } from 'react-router'
 
 import type { Route } from './+types/home'
+import { NoteCard, NoteComposer } from '../components/forum/note-card'
 import { ThreadRow } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
 import { useDock } from '../components/dock/composer-dock'
@@ -50,9 +51,20 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 }
 
-// Creates a category; the API decides whether the visitor may.
+// Posts a note (`intent=note`) or creates a category; the API decides whether the visitor may.
 export async function action({ request }: Route.ActionArgs) {
 	const form = await request.formData()
+	if (textField(form, 'intent') === 'note') {
+		const stream = orThrow(await forumApi.meta(request)).stream
+		if (stream === null) return data({ noteError: '动态暂时不可用。' }, { status: 404 })
+		const result = await forumApi.createThread(request, {
+			categoryId: stream.id,
+			title: '',
+			body: textField(form, 'body'),
+		})
+		if (!result.ok) return data({ noteError: result.error.message }, { status: result.status })
+		return { posted: result.value.id }
+	}
 	const slug = textField(form, 'slug').trim()
 	const result = await forumApi.createCategory(request, {
 		name: textField(form, 'name'),
@@ -74,7 +86,10 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 	// Open while creating, via `?new=1`, or when the API rejected the last attempt.
 	const [mobileTab, setMobileTab] = useState<'categories' | 'recent'>('recent')
 	const [creating, setCreating] = useState(false)
-	const showForm = canManage && (creating || requestedNew || actionData?.error !== undefined)
+	const categoryError =
+		actionData !== undefined && 'error' in actionData ? actionData.error : undefined
+	const showForm = canManage && (creating || requestedNew || categoryError !== undefined)
+	const canPostNote = root?.meta?.viewer.can.postNote === true
 
 	const totalThreads = categories.reduce((sum, cat) => sum + cat.threadCount, 0)
 	const totalPosts = categories.reduce((sum, cat) => sum + cat.postCount, 0)
@@ -98,7 +113,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 						selected={mobileTab === 'recent'}
 						onSelect={() => withViewTransition(() => setMobileTab('recent'))}
 					>
-						动态
+						讨论
 					</HomeTab>
 					<HomeTab
 						selected={mobileTab === 'categories'}
@@ -144,7 +159,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 					</div>
 					{showForm && (
 						<NewCategory
-							error={actionData?.error}
+							error={categoryError}
 							nameMax={root?.meta?.limits.categoryNameMax}
 							onCancel={closeForm}
 						/>
@@ -154,6 +169,19 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 						className={mobileTab === 'recent' ? '' : 'max-lg:hidden'}
 					>
 						{!signedIn && <GuestWelcome root={root} />}
+						{canPostNote && (
+							<NoteComposer
+								max={root?.meta?.limits.noteBodyMax}
+								error={
+									actionData !== undefined && 'noteError' in actionData
+										? actionData.noteError
+										: undefined
+								}
+								resetKey={
+									actionData !== undefined && 'posted' in actionData ? actionData.posted : ''
+								}
+							/>
+						)}
 						{recentThreads.items.length === 0 ? (
 							<EmptyState icon={MessagesSquare} title="还没有讨论" />
 						) : (
@@ -163,15 +191,23 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 									as="ul"
 									className="divide-line divide-y max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0"
 								>
-									{recentThreads.items.map((item) => (
-										<ThreadRow
-											key={item.id}
-											thread={item}
-											href={`/c/${item.category.slug}/t/${item.ref}`}
-											category={item.category}
-											time={sort === 'new' ? 'created' : 'last'}
-										/>
-									))}
+									{recentThreads.items.map((item) =>
+										item.kind === 'note' ? (
+											<NoteCard
+												key={item.id}
+												thread={item}
+												href={`/c/${item.category.slug}/t/${item.ref}`}
+											/>
+										) : (
+											<ThreadRow
+												key={item.id}
+												thread={item}
+												href={`/c/${item.category.slug}/t/${item.ref}`}
+												category={item.category}
+												time={sort === 'new' ? 'created' : 'last'}
+											/>
+										),
+									)}
 								</Panel>
 							</div>
 						)}

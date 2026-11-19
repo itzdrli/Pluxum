@@ -2,6 +2,7 @@ import { MessagesSquare, Plus } from 'lucide-react'
 import { useParams, useRouteLoaderData } from 'react-router'
 
 import type { Route } from './+types/category'
+import { NoteCard } from '../components/forum/note-card'
 import { ThreadRow } from '../components/forum/rows'
 import { MobileCategoryBar } from '../components/shell/mobile-stage-bar'
 import {
@@ -24,6 +25,7 @@ import {
 	listShouldRevalidate,
 } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
+import { CategoryHeaderSlots } from '../slots/slots'
 import { pageTitle } from '../lib/site'
 
 export const handle = defineStage({ layer: 'list', nav: true, backLabel: '列表' })
@@ -61,19 +63,22 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const dock = useDock()
 	const newThread = `/c/${category.slug}/new`
+	// The stream holds notes, which are posted from the home page's box, not the topic composer.
+	const isStream = category.kind === 'stream'
+	const canCreate = can.createThread && !isStream
 
 	// Guests who could log in are offered that instead of a missing button.
 	const loginToPost =
-		!can.createThread && forum?.viewer.user === null && forum.auth.loginAvailable
+		!can.createThread && !isStream && forum?.viewer.user === null && forum.auth.loginAvailable
 			? `/api/forum/auth/login?returnTo=${encodeURIComponent(newThread)}`
 			: undefined
 	const action = (compact: boolean) =>
-		can.createThread && compact ? (
+		canCreate && compact ? (
 			// The narrow list's head has room for the icon only.
 			<IconButton label="发布主题" onPress={() => dock.openThread(category.slug)}>
 				<Plus aria-hidden />
 			</IconButton>
-		) : can.createThread ? (
+		) : canCreate ? (
 			<Button
 				tone="primary"
 				size={compact ? 'sm' : 'md'}
@@ -103,7 +108,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 								{category.name}
 							</StageLink>
 							<span className="ml-auto flex shrink-0 items-center">
-								{can.createThread || loginToPost !== undefined ? action(true) : null}
+								{canCreate || loginToPost !== undefined ? action(true) : null}
 								<FoldListButton />
 							</span>
 						</PaneBar>
@@ -114,11 +119,18 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 							actions={<div className="max-lg:hidden">{action(false)}</div>}
 						/>
 					)}
+					<CategoryHeaderSlots category={category} />
 					{threads.items.length === 0 ? (
 						<EmptyState
 							icon={MessagesSquare}
-							title={threads.total === 0 ? '这个版块还没有主题' : '这一页没有内容'}
-							hint={threads.total === 0 && can.createThread ? '来发布第一个主题吧。' : undefined}
+							title={
+								threads.total > 0
+									? '这一页没有内容'
+									: isStream
+										? '还没有动态'
+										: '这个版块还没有主题'
+							}
+							hint={threads.total === 0 && canCreate ? '来发布第一个主题吧。' : undefined}
 							action={threads.total === 0 ? action(detailOpen) : undefined}
 						/>
 					) : (
@@ -126,14 +138,23 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 							as="ul"
 							className="divide-line divide-y max-lg:-mx-4 max-lg:rounded-none max-lg:border-x-0"
 						>
-							{threads.items.map((thread) => (
-								<ThreadRow
-									key={thread.id}
-									thread={thread}
-									href={detail(thread.ref)}
-									isActive={thread.ref === openRef || thread.id === openRef}
-								/>
-							))}
+							{threads.items.map((thread) =>
+								thread.kind === 'note' ? (
+									<NoteCard
+										key={thread.id}
+										thread={thread}
+										href={detail(thread.ref)}
+										isActive={thread.ref === openRef || thread.id === openRef}
+									/>
+								) : (
+									<ThreadRow
+										key={thread.id}
+										thread={thread}
+										href={detail(thread.ref)}
+										isActive={thread.ref === openRef || thread.id === openRef}
+									/>
+								),
+							)}
 						</Panel>
 					)}
 					<Pager
@@ -145,7 +166,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 					{!detailOpen && (
 						<MobileCategoryBar
 							category={category}
-							canCreateThread={can.createThread}
+							canCreateThread={canCreate}
 							loginToPost={loginToPost}
 						/>
 					)}

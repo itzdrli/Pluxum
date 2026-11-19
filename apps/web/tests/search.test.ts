@@ -57,13 +57,13 @@ describe('search route & API helpers', () => {
 				{ postId: 'p2', postNumber: 5, threadId: 't1', threadRef: '1001-pg', opening: false },
 				stage,
 			),
-		).toBe('/search/t/1001-pg?q=PostgreSQL&cpage=2#post-5')
+		).toBe('/search/t/1001-pg?q=PostgreSQL&cpage=2&floor=5#post-5')
 		expect(
 			buildSearchHitHref(
 				{ postId: 'p25', postNumber: 25, threadId: 't1', threadRef: '1001-pg', opening: false },
 				stage,
 			),
-		).toBe('/search/t/1001-pg?q=PostgreSQL&cpage=2&page=2#post-25')
+		).toBe('/search/t/1001-pg?q=PostgreSQL&cpage=2&floor=25#post-25')
 		expect(
 			buildSearchHitHref(
 				{ postId: 'p25', postNumber: 25, threadId: 't1', threadRef: '1001-pg', opening: false },

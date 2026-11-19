@@ -56,7 +56,11 @@ async function loadCard(target: PreviewTarget): Promise<Card | null> {
 	if (detail === null) return null
 	return {
 		kind: 'thread',
-		title: detail.thread.title,
+		// A note has no title: it is named by its author.
+		title:
+			detail.thread.kind === 'note'
+				? `${detail.thread.author.displayName} 的动态`
+				: detail.thread.title,
 		category: detail.category.name,
 		author: detail.thread.author.displayName,
 		replies: detail.thread.replyCount,

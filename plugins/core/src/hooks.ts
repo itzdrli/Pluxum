@@ -1,4 +1,4 @@
-import type { ForumError, ForumErrorCode, Principal } from '@pluxum/domain'
+import type { ForumError, ForumErrorCode, Principal, ThreadKind } from '@pluxum/domain'
 import { EXTENSION_TIMEOUT_MS, TIMED_OUT, withTimeout } from './extensions'
 import { CONTRIBUTION_ID } from './policies'
 
@@ -8,6 +8,8 @@ export type PostBeforeWriteEvent =
 			kind: 'thread.create'
 			principal: Principal
 			categoryId: string
+			/** `note` for a post to the stream (its `title` is empty). */
+			threadKind: ThreadKind
 			title: string
 			body: string
 	  }>
@@ -23,6 +25,8 @@ export type PostBeforeWriteEvent =
 			principal: Principal
 			categoryId: string
 			threadId: string
+			/** The top-level post it replies inside, or null for a top-level reply. */
+			parentId: string | null
 			body: string
 	  }>
 	| Readonly<{
@@ -67,6 +71,7 @@ export type PostAfterWriteEvent =
 			categoryId: string
 			threadId: string
 			threadRef: string
+			threadKind: ThreadKind
 			postId: string
 			authorId: string
 			title: string
@@ -77,8 +82,11 @@ export type PostAfterWriteEvent =
 			kind: 'thread.updated'
 			principal: Principal
 			categoryId: string
+			/** Where the thread was before this write: differs from `categoryId` after a move. */
+			previousCategoryId: string
 			threadId: string
 			threadRef: string
+			threadKind: ThreadKind
 			postId: string
 			authorId: string
 			title: string
@@ -100,10 +108,20 @@ export type PostAfterWriteEvent =
 			categoryId: string
 			threadId: string
 			threadRef: string
+			threadKind: ThreadKind
 			threadAuthorId: string
+			/** Empty for a note. */
 			threadTitle: string
 			postId: string
 			postNumber: number
+			/** The top-level post this reply sits inside ("楼中楼"), or null for a top-level reply. */
+			parentId: string | null
+			/** Author of that top-level post; null for a top-level reply. */
+			parentAuthorId: string | null
+			/** Inside a floor: the author of the reply it answered, when it answered one. */
+			replyToAuthorId: string | null
+			/** The thread's last activity before this reply ("revived after 400 days"). */
+			previousLastPostAt: string
 			authorId: string
 			body: string
 			createdAt: string
@@ -131,6 +149,21 @@ export type PostAfterWriteEvent =
 			postId: string
 			authorId: string
 	  }>
+
+/**
+ * Who a new reply answers, and so who hears about it: inside a floor, the author of the reply it
+ * answered or else the floor's author; otherwise the thread's author.
+ */
+export function answeredAuthorOf(
+	event: Extract<PostAfterWriteEvent, Readonly<{ kind: 'post.created' }>>,
+): string {
+	return event.replyToAuthorId ?? event.parentAuthorId ?? event.threadAuthorId
+}
+
+/** How a notice names the place of a post: `《title》` for a topic, `动态` for a note. */
+export function threadPlace(kind: ThreadKind, title: string): string {
+	return kind === 'note' ? '动态' : `《${title}》`
+}
 
 /** Pre-write validation and/or post-write notification contributed by an extension plugin. */
 export type PostHookContribution = Readonly<{

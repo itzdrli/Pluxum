@@ -162,7 +162,7 @@ export function ThreadRow({
 						aria-current={isActive ? 'page' : undefined}
 						className="text-ink-strong text-ui font-bold after:absolute after:inset-0 @lg/threads:text-title"
 					>
-						{thread.title}
+						{thread.kind === 'note' ? `${thread.author.displayName} 的动态` : thread.title}
 					</StageLink>
 				</p>
 				<div className="text-ink-weak mt-1.5 flex items-center justify-between gap-3 text-meta">

@@ -1,6 +1,7 @@
 // Server-only: the forum core's managed database. Extension plugins never import these tables;
 // they keep their own and refer to the stable IDs (userId / threadId / postId) published in DTOs.
 import {
+	type AnyPgColumn,
 	boolean,
 	index,
 	integer,
@@ -49,6 +50,10 @@ export const categories = pgTable('categories', {
 	name: text('name').notNull(),
 	description: text('description').notNull().default(''),
 	position: integer('position').notNull().default(0),
+	/** `board` holds titled topics; `stream` holds notes and stays out of category navigation. */
+	kind: text('kind', { enum: ['board', 'stream'] })
+		.notNull()
+		.default('board'),
 	// Counters cover visible (not deleted) threads and posts and change with them in one transaction.
 	threadCount: integer('thread_count').notNull().default(0),
 	postCount: integer('post_count').notNull().default(0),
@@ -76,6 +81,8 @@ export const threads = pgTable(
 		locked: boolean('locked').notNull().default(false),
 		/** Visible posts after the opening post. */
 		replyCount: integer('reply_count').notNull().default(0),
+		/** Interaction points extensions add (likes, ...); counts towards "hot" with the replies. */
+		engagement: integer('engagement').notNull().default(0),
 		createdAt: createdAt(),
 		lastPostAt: timestamp('last_post_at', { withTimezone: true }).defaultNow().notNull(),
 		deletedAt: timestamp('deleted_at', { withTimezone: true }),
@@ -92,6 +99,10 @@ export const posts = pgTable(
 			.references(() => threads.id),
 		/** 1-based floor number inside the thread (`1` for the opening post). */
 		number: integer('number').notNull().default(1),
+		/** The top-level post of the same thread this one replies inside; null for a top-level post. */
+		parentId: uuid('parent_id').references((): AnyPgColumn => posts.id),
+		/** Author of the reply this one answers inside the floor, when it answered a reply. */
+		replyToId: uuid('reply_to_id').references(() => users.id),
 		authorId: uuid('author_id')
 			.notNull()
 			.references(() => users.id),
@@ -105,6 +116,7 @@ export const posts = pgTable(
 	},
 	(table) => [
 		index('posts_thread_idx').on(table.threadId, table.createdAt),
+		index('posts_thread_parent_idx').on(table.threadId, table.parentId, table.createdAt),
 		uniqueIndex('posts_thread_number_idx').on(table.threadId, table.number),
 	],
 )

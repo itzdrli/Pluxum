@@ -545,6 +545,29 @@
 		white-space: pre-wrap;
 	}
 
+	/* A note as a card in a list: images stay thumbnails, and a long note folds to a few lines. */
+	.note-body {
+		font-size: var(--fs-ui);
+		line-height: 1.7;
+	}
+	.note-body img {
+		max-height: 220px;
+		width: auto;
+	}
+	.note-body--folded {
+		max-height: calc(1.7em * 6);
+		overflow: hidden;
+	}
+	.note-body--fade {
+		mask-image: linear-gradient(to bottom, #000 calc(100% - 2em), transparent);
+	}
+
+	/* Replies inside a floor ("楼中楼"): a quieter, tighter block under the floor's body. */
+	.floor-replies .post-body {
+		font-size: var(--fs-ui);
+		line-height: 1.7;
+	}
+
 	/*
 	 * Rendered post content. The markup comes from the content renderer and is limited by the
 	 * forum core's allowlist, so only these elements can appear.

@@ -329,10 +329,13 @@ export class ForumApiPlugin extends BasePlugin {
 			app
 				.get(
 					'/users/:id',
-					{ query: schema.paging, response: schema.userProfile },
+					{ query: schema.profileQuery, response: schema.userProfile },
 					async ({ request, params, query }) =>
 						valueOf(
-							await this.core.getUserProfile(await this.viewer(request), params.id, pageOf(query)),
+							await this.core.getUserProfile(await this.viewer(request), params.id, {
+								...pageOf(query),
+								kind: query.kind,
+							}),
 						),
 				)
 				.patch(
@@ -400,10 +403,27 @@ export class ForumApiPlugin extends BasePlugin {
 				)
 				.get(
 					'/threads/:id',
-					{ query: schema.paging, response: schema.threadDetail },
+					{ query: schema.threadQuery, response: schema.threadDetail },
 					async ({ request, params, query }) =>
 						valueOf(
-							await this.core.getThread(await this.viewer(request), params.id, pageOf(query)),
+							await this.core.getThread(await this.viewer(request), params.id, {
+								...pageOf(query),
+								expandFloor: queryInt(query.expand),
+							}),
+						),
+				)
+				// Which page shows a floor (and which floor it replies inside), for `/t/<ref>/<floor>`.
+				.get(
+					'/threads/:id/floors/:floor',
+					{ query: schema.paging, response: schema.floorLocation },
+					async ({ request, params, query }) =>
+						valueOf(
+							await this.core.locateFloor(
+								await this.viewer(request),
+								params.id,
+								queryInt(params.floor) ?? 0,
+								pageOf(query),
+							),
 						),
 				)
 				.patch(
@@ -417,7 +437,7 @@ export class ForumApiPlugin extends BasePlugin {
 				)
 				.post(
 					'/threads/:id/posts',
-					{ body: schema.postBody, response: { 201: schema.post } },
+					{ body: schema.createPostBody, response: { 201: schema.post } },
 					async ({ request, params, body, status }) =>
 						status(
 							201,
@@ -425,6 +445,7 @@ export class ForumApiPlugin extends BasePlugin {
 								await this.core.createPost(await this.actor(request), {
 									threadId: params.id,
 									body: body.body,
+									parentId: body.parentId,
 								}),
 							),
 						),
@@ -444,6 +465,15 @@ export class ForumApiPlugin extends BasePlugin {
 						)
 						return { threadRef: located.threadRef, postNumber: located.postNumber }
 					},
+				)
+				// The replies inside a top-level post ("楼中楼"), page by page.
+				.get(
+					'/posts/:id/replies',
+					{ query: schema.paging, response: schema.replyPage },
+					async ({ request, params, query }) =>
+						valueOf(
+							await this.core.listReplies(await this.viewer(request), params.id, pageOf(query)),
+						),
 				)
 				.patch(
 					'/posts/:id',
@@ -528,15 +558,20 @@ export class ForumApiPlugin extends BasePlugin {
 
 	private async meta(request: Request): Promise<MetaDto> {
 		const principal = await this.viewer(request)
-		const user =
+		const [user, stream] = await Promise.all([
 			principal.userId === null
 				? null
-				: (await this.core.getUser(principal.userId, principal)).unwrapOr(null)
+				: this.core.getUser(principal.userId, principal).then((found) => found.unwrapOr(null)),
+			this.core.streamFor(principal),
+		])
 		return {
 			viewer: {
 				user,
 				roles: [...principal.roles],
-				can: { manageCategories: this.core.can(principal, 'category.manage') },
+				can: {
+					manageCategories: this.core.can(principal, 'category.manage'),
+					postNote: stream?.canPost ?? false,
+				},
 			},
 			auth: { loginAvailable: this.auth.loginAvailable() },
 			search: { available: this.core.searchAvailable() },
@@ -544,10 +579,12 @@ export class ForumApiPlugin extends BasePlugin {
 				categoryNameMax: LIMITS.categoryNameMax,
 				threadTitleMax: LIMITS.threadTitleMax,
 				postBodyMax: LIMITS.postBodyMax,
+				noteBodyMax: this.core.noteBodyMax(),
 				displayNameMax: LIMITS.displayNameMax,
 				handleMax: LIMITS.handleMax,
 			},
 			content: { format: this.core.contentFormat() },
+			stream: stream?.category ?? null,
 			uiSlots: this.core.uiSlots(),
 			site: this.core.site(),
 			footer: this.core.footer(),

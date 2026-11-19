@@ -303,11 +303,16 @@ describe('ForumApiPlugin', () => {
 		expect(meta.viewer).toEqual({
 			user: null,
 			roles: ['guest'],
-			can: { manageCategories: false },
+			can: { manageCategories: false, postNote: false },
 		})
 		expect(meta.auth).toEqual({ loginAvailable: true })
 		expect(meta.limits.threadTitleMax).toBeGreaterThan(0)
-		expect(await api.ok('GET', '/categories')).toEqual({ items: [] })
+		expect(meta.limits.noteBodyMax).toBe(500)
+		expect(meta.stream).toMatchObject({ slug: 'stream', name: '动态' })
+		// The stream the core's migration seeds is the only category so far.
+		expect(await api.ok('GET', '/categories')).toEqual({
+			items: [expect.objectContaining({ slug: 'stream', kind: 'stream' })],
+		})
 
 		expect(await api.call('POST', '/categories', { name: 'General' })).toEqual({
 			status: 401,
@@ -365,6 +370,27 @@ describe('ForumApiPlugin', () => {
 			postNumber: 2,
 		})
 
+		// A reply inside floor 2, its page of replies, and where floor 3 is shown.
+		const inner = await api.ok<PostDto>('POST', `/threads/${thread.ref}/posts`, {
+			body: 'Inside',
+			parentId: reply.id,
+		})
+		expect(inner).toMatchObject({ number: 3, parentId: reply.id, replyTo: null })
+		const expanded = await api.ok<ThreadDetailDto>('GET', `/threads/${thread.ref}?expand=2`)
+		expect(expanded.posts.total).toBe(2)
+		expect(expanded.posts.items[1].replies).toMatchObject({ total: 1 })
+		expect(await api.ok('GET', `/posts/${reply.id}/replies`)).toMatchObject({
+			total: 1,
+			items: [{ id: inner.id }],
+		})
+		expect(await api.ok('GET', `/threads/${thread.ref}/floors/3?pageSize=1`)).toEqual({
+			threadRef: thread.ref,
+			floor: 3,
+			page: 2,
+			parentFloor: 2,
+		})
+		expect((await api.call('GET', `/threads/${thread.ref}/floors/9`)).status).toBe(404)
+
 		expect(await api.ok<PostDto>('PATCH', `/posts/${reply.id}`, { body: 'Edited' })).toMatchObject({
 			body: 'Edited',
 		})
@@ -383,9 +409,26 @@ describe('ForumApiPlugin', () => {
 			user: { id: userId, handle: 'dev', displayName: 'Dev' },
 			roles: ['member', 'admin'],
 			threadCount: 1,
-			postCount: 2,
+			noteCount: 0,
+			postCount: 3,
 			can: { edit: true },
 		})
+
+		// A note in the stream, turned into a topic.
+		const note = await api.ok<ThreadDto>('POST', '/threads', {
+			categoryId: meta.stream!.id,
+			title: '',
+			body: 'Short',
+		})
+		expect(note).toMatchObject({ kind: 'note', title: '' })
+		const notes = await api.ok<UserProfileDto>('GET', '/users/dev?kind=note')
+		expect(notes.threads.items.map((item) => item.opening?.body)).toEqual(['Short'])
+		expect(
+			await api.ok<ThreadDto>('PATCH', `/threads/${note.ref}`, {
+				categoryId: category.id,
+				title: 'Grown',
+			}),
+		).toMatchObject({ kind: 'topic', title: 'Grown', categoryId: category.id })
 		expect(
 			await api.ok<UserDto>('PATCH', `/users/${userId}`, {
 				displayName: 'Developer',
