@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { useParams, useRouteLoaderData } from 'react-router'
 
 import { toggleFocusReading } from '../../lib/focus'
-import { withViewTransition } from '../../lib/view-transition'
 import type { loader as rootLoader } from '../../root'
 import { useDock } from '../dock/composer-dock'
 import { toggleRail, useRailPreference } from './rail-state'
@@ -68,7 +67,7 @@ export function GlobalShortcuts() {
 				case '[': {
 					if (depth !== 2) return
 					event.preventDefault()
-					withViewTransition(toggleFocusReading)
+					toggleFocusReading()
 					return
 				}
 				case '\\': {

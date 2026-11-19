@@ -430,7 +430,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	}
 
 	return (
-		<div className="mx-auto max-w-[880px] group-data-[focus=true]/detail:max-w-[1040px]">
+		<div className="mx-auto max-w-[880px] transition-[max-width] duration-300 ease-[var(--stage-ease)] group-data-[focus=true]/detail:max-w-[1040px]">
 			{paneBar}
 			{mainContent}
 		</div>

@@ -1,4 +1,12 @@
-import { type ComponentProps, useCallback, useLayoutEffect, useMemo, useRef } from 'react'
+import {
+	type ComponentProps,
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+} from 'react'
 import {
 	Link,
 	Outlet,
@@ -12,7 +20,6 @@ import {
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 import { toggleFocusReading, useFocusReading } from '../../lib/focus'
-import { withViewTransition } from '../../lib/view-transition'
 import { jumpPaneTo, useSmoothScroll } from './smooth-scroll'
 import { IconButton } from '../ui/button'
 
@@ -104,7 +111,18 @@ export function StageMotionSync() {
 const LIST_WIDE =
 	'min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-list] lg:overflow-x-hidden lg:overflow-y-auto lg:px-10 lg:pt-0 lg:pb-7'
 const LIST_NARROW =
-	'border-line-soft bg-page w-[280px] shrink-0 border-r px-4 pb-5 [view-transition-name:stage-list-side] max-lg:hidden lg:overflow-x-hidden lg:overflow-y-auto xl:w-[320px] 2xl:w-[380px]'
+	'border-line-soft bg-page shrink-0 border-r pb-5 [view-transition-name:stage-list-side] max-lg:hidden lg:overflow-x-hidden lg:overflow-y-auto'
+/** The narrow list's width, open and folded away (focus reading). */
+const LIST_NARROW_OPEN = 'w-[280px] px-4 xl:w-[320px] 2xl:w-[380px]'
+const LIST_NARROW_FOLDED = 'w-0 px-0 border-transparent opacity-0'
+/**
+ * The narrow list's content keeps (about) its open width while the pane folds, so it is clipped
+ * rather than rewrapped line by line. 16px less than the room inside, for a classic scrollbar.
+ */
+const LIST_NARROW_CONTENT = 'min-w-[231px] xl:min-w-[271px] 2xl:min-w-[331px]'
+/** Folding and unfolding animate the width, as the category column does. */
+const FOLD_MOTION =
+	'transition-[width,padding,opacity,border-color] duration-300 ease-[var(--stage-ease)]'
 const DETAIL =
 	'bg-page min-w-0 flex-1 px-4 py-5 [view-transition-name:stage-detail] lg:overflow-x-hidden lg:overflow-y-auto lg:px-10 lg:pt-0 lg:pb-7'
 
@@ -114,7 +132,7 @@ const DETAIL =
  */
 export function FoldListButton() {
 	return (
-		<IconButton label="收起主题列表（[）" onPress={() => withViewTransition(toggleFocusReading)}>
+		<IconButton label="收起主题列表（[）" onPress={toggleFocusReading}>
 			<PanelLeftClose aria-hidden />
 		</IconButton>
 	)
@@ -165,16 +183,34 @@ export function StageSplit({
 		if (detailRef.current !== null) jumpPaneTo(detailRef.current, 0)
 	}, [stage.detailKey, detailPage, location.hash])
 
+	// Folding animates only once the page has painted: focus reading is restored from storage right
+	// after hydration, and the list should simply be folded on arrival, not fold before your eyes.
+	const [settled, setSettled] = useState(false)
+	useEffect(() => {
+		let second = 0
+		const first = requestAnimationFrame(() => {
+			second = requestAnimationFrame(() => setSettled(true))
+		})
+		return () => {
+			cancelAnimationFrame(first)
+			cancelAnimationFrame(second)
+		}
+	}, [])
+	const motion = settled ? FOLD_MOTION : ''
+
 	return (
 		<div className="flex min-h-0 w-full flex-1 lg:overflow-hidden">
-			{/* The folded list leaves a strip where it was, with the way to open it again. */}
-			{focus && (
-				<div className="border-line-soft bg-page flex w-10 shrink-0 flex-col items-center border-r max-lg:hidden">
+			{/* The folded list leaves a strip where it was, with the way to open it again. It is there
+			    whenever a detail is open, at no width until the list folds, so it can grow in. */}
+			{detailOpen && (
+				<div
+					inert={!focus}
+					className={`border-line-soft bg-page flex shrink-0 flex-col items-center overflow-hidden border-r max-lg:hidden ${motion} ${
+						focus ? 'w-10' : 'w-0 border-transparent opacity-0'
+					}`}
+				>
 					<div className="flex h-[var(--h-pane-bar)] shrink-0 items-center">
-						<IconButton
-							label="展开主题列表（[）"
-							onPress={() => withViewTransition(toggleFocusReading)}
-						>
+						<IconButton label="展开主题列表（[）" onPress={toggleFocusReading}>
 							<PanelLeftOpen aria-hidden />
 						</IconButton>
 					</div>
@@ -190,11 +226,18 @@ export function StageSplit({
 				ref={listRef}
 				aria-label={label}
 				data-list-pane
-				className={`${detailOpen ? LIST_NARROW : LIST_WIDE}${focus ? ' hidden!' : ''}`}
+				inert={focus}
+				className={
+					detailOpen
+						? `${LIST_NARROW} ${motion} ${focus ? LIST_NARROW_FOLDED : LIST_NARROW_OPEN}`
+						: LIST_WIDE
+				}
 			>
 				<div
 					className={
-						detailOpen ? '@container/threads' : '@container/threads mx-auto max-w-[1040px]'
+						detailOpen
+							? `@container/threads ${LIST_NARROW_CONTENT}`
+							: '@container/threads mx-auto max-w-[1040px]'
 					}
 				>
 					{children(detailOpen)}
