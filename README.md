@@ -5,170 +5,46 @@
   </picture>
 </h1>
 
-A plugin-first forum on [Pluxel](https://github.com/PluxelJS/pluxel): a small, stable core with every feature
-delivered as a plugin that can be started, stopped and configured from Workbench. The roadmap and decisions
-live in `../FORUM_PLAN.md`.
+A plugin-first forum on [Pluxel](https://github.com/PluxelJS/pluxel). The host stays small; each feature is a plugin that can be started, stopped and configured from Workbench.
 
 ## Layout
 
-| Path                                           | Role                                                                                             |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `host/`                                        | Pluxel application: plugin catalog, services (PGlite database, Workbench, Vault), runtime policy |
-| `host/web/`                                    | Placeholder page served by the host; `host/web/dev/` holds dev-console operations                |
-| `apps/web/`                                    | Forum frontend: React Router 8 SSR + HeroUI v3; proxies `/api/forum/**` to the host              |
-| `plugins/api/`                                 | Fixed HTTP ingress under `/api/forum`                                                            |
-| `plugins/redis/`                               | Provider of the official `Redis` capability (connection catalog, Lua scripts)                    |
-| `plugins/{audit,http,todo}`, `packages/domain` | Template examples kept as a reference until the forum core lands                                 |
-| `compose.dev.yaml`                             | Local infrastructure: `pluxum-valkey` on `127.0.0.1:6380`                                        |
-| `compose.yaml`, `Dockerfile`                   | Deployment: images and the one-file production stack ([docs/deploy.md](docs/deploy.md))          |
-
-## Deploy
-
-Prebuilt images and one compose file (PostgreSQL, Valkey, server, web, optional Caddy for HTTPS):
-see [docs/deploy.md](docs/deploy.md).
+| Path                         | Role                                                                                                 |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `apps/web/`                  | Forum frontend: React Router SSR and HeroUI. Proxies `/api/forum/**` to the host.                    |
+| `host/`                      | Pluxel application: plugin catalog, database, Workbench, Vault and runtime policy.                   |
+| `host/web/`                  | Placeholder on the host origin. `host/web/dev/` holds dev-console scripts.                           |
+| `plugins/`                   | One package per feature. `api` is the `/api/forum` ingress; `redis` is the Redis connection catalog. |
+| `packages/domain/`           | Shared forum types and rules, with no Pluxel dependency.                                             |
+| `compose.dev.yaml`           | Local Valkey (`pluxum-valkey` on `127.0.0.1:6380`).                                                  |
+| `compose.yaml`, `Dockerfile` | Production images and the one-file stack. See [docs/deploy.md](docs/deploy.md).                      |
 
 ## Develop
 
 ```sh
 mise trust && mise install
 docker compose -f compose.dev.yaml up -d
-node <pluxel-checkout>/packages/cli/bin/pluxel.mjs source install   # source-linked framework
-vp run hooks:install
-vp run dev        # Pitchfork: `app` (Pluxel host, :5173) and `web` (React Router, :3000)
-vp run verify     # governance, lint/format/types, tests, production builds
-```
-
-`REDIS_CONNECTIONS` (in `mise.toml`) seeds the Redis connection catalog; `FORUM_TEST_REDIS_URL` enables the
-live Redis test. Machine-local public origins go in the ignored `mise.local.toml`
-(`PLUXEL_PUBLIC_ORIGIN` for the host/Workbench, `FORUM_WEB_PUBLIC_ORIGIN` for the frontend).
-
-Auto start, provider routing and env-derived plugin config are declared in `host/src/runtime-state.ts`.
-A saved Workbench edit of the same field or plugin wins over the declaration (`saved-first`); remove the
-saved value to return to the declared one.
-
-## Template reference
-
-The rest of this file is the upstream template's guide; package names now use `@pluxum/*`.
-
-Coding agents: read [AGENTS.md](./AGENTS.md), then use the
-[pluxel-development skill](.agents/skills/pluxel-development/SKILL.md), available after workspace setup.
-The skill routes development, service diagnostics and live operations to the relevant tools and documentation.
-
-Start with the [current upstream Pluxel documentation](https://github.com/PluxelJS/pluxel/blob/main/docs/index.md),
-or find source inspection, live operations and tests with `vp exec pluxel docs development/index.md`, then run:
-
-```sh
-mise trust
-mise install
 vp install
-vp run setup
-# In an initialized Git repository:
-vp run hooks:install
-vp run dev
+vp run setup          # workspace links for the Pluxel CLI
+vp run hooks:install  # once the Git repo exists
+vp run dev            # host (`app`, :5173) and frontend (`web`, :3000)
+vp run verify         # governance, lint, types, tests, production builds
 ```
 
-`vp run dev` starts or reuses the Pitchfork service and prints the running Vite application and Workbench URLs on every invocation. The `package.json` setting `pluxel.dev.default` selects `app`, declared as `{ "root": "host/web", "pitchfork": "app" }`. The `local` profile runs the same root in the foreground through `vp run dev:local`. Startup verifies service ownership through the enabled console and does not restart an existing service. Other projects can use a foreground `command` instead of `pitchfork`; Pluxel console operations do not require Pitchfork.
+`vp run dev` prints the application and Workbench URLs, and reuses a Pitchfork service that is already running.
 
-Use `vp exec pluxel dev status` to inspect the Vite instance and application, and `vp exec pluxel dev run host/web/dev/check.ts` to execute a console script inside that root. Neither command calls Pitchfork or starts a stopped service. One package may declare several profiles, using the same or different Vite roots; an explicit `--profile <name>` takes precedence over `pluxel.dev.default`, then a sole profile is selected automatically. The default must name an existing profile. Cross-directory calls use `--root <project-path>` to find the configuration. If several live instances match the profile, select `--instance <id>`; this cannot bypass profile ownership. Save the returned `receipt` for `dev result <receipt>` or `dev cancel <receipt>`: it remains bound to the original process after a restart. See the [console guide](https://github.com/PluxelJS/pluxel/blob/main/docs/development/dev-console.md) for scripts, foreground commands and direct Vite connections.
+With a local Pluxel checkout, run that checkout's `pluxel source install --root <this repo>` so `@pluxel/*` resolves to the checkout.
 
-For continuous or multi-file edits while the application is running, use the console guide's HMR batch workflow: `dev hmr pause`, edit and check, then `dev hmr apply` and verify the result. Failed updates remain paused; use `dev hmr resume` only after verification if the original mode was auto. These commands use the same profile and instance selection as `dev run`.
+`REDIS_CONNECTIONS` in `mise.toml` seeds the Redis catalog. `FORUM_TEST_REDIS_URL` enables the live Redis test. Machine-local public origins go in the ignored `mise.local.toml`: `PLUXEL_PUBLIC_ORIGIN` for the host and Workbench, `FORUM_WEB_PUBLIC_ORIGIN` for the frontend.
 
-The host declares its fixed Plugin catalog and optional sources in `host/src/app.ts`.
-Vite development and production execution consume that same `defineHostApplication(factory)` declaration.
-The application factory returns an explicit service list; `servicesPreset()` from `@pluxel/services/preset` combines base services,
-Vault, Management and optional Workbench. Core logging is selected explicitly with `config.logger: logtape()`
-from `@pluxel/core/config`; storage uses `config.storage: zenfs(...)` from the same entry.
-The preset does not configure logging or storage. `host/web/` is an independent private workspace package
-for browser-only React source and frontend dependencies; `host/` owns the Vite and Pluxel application
-configuration, installs the workspace Plugins and serves the page and Plugin routes on
-the application origin shown by the running Vite server (the proxy URL for `app`, or the local URL for `local`). See the [workspace guide](https://github.com/PluxelJS/pluxel/blob/main/docs/development/workspace-toolchain.md) for tool setup, proxy configuration and agent workflows.
+Plugin config declared in `host/src/runtime-state.ts` applies until Workbench saves the same field. Delete the saved value to return to the declaration.
 
-The CLI bundles pncat; use `pluxel pncat` without installing a separate `pncat` dependency.
-Configuration helpers come from `@pluxel/cli/pncat`. Versions are grouped by
-`pncat.config.ts`; use `vp exec pluxel pncat add <package>` to add dependencies, `vp exec pluxel pncat migrate`
-to migrate declarations, `vp exec pluxel workspace sync` to align existing catalog versions, and `vp exec pluxel pncat clean`
-to remove unused entries. Sync never changes package manifests. Packages still
-declare every dependency they directly use: the root centralizes version policy, not dependency ownership.
-The governance check rejects bare third-party version specifiers, so every external version remains visible
-in one named catalog while internal workspace and peer edges retain their package-owned contracts.
-The starter policy already recognizes common React UI, testing, backend/data and build-tool ecosystems;
-extend the rules in `pncat.config.ts` when the product adopts a new dependency family.
+## Deploy
 
-Vite Task runs each package build through its standard `build` script and native `compile` task, preserving dependency order and build outputs.
-The host first builds its web assets, then `vp pack` reads the `pack` block from `host/vite.config.ts`.
-That block imports [`host/tsdown.config.ts`](host/tsdown.config.ts), which uses `pluxel({ delivery: 'modules' })` from `@pluxel/rolldown` and copies
-`host/web/dist` into `host/dist/public`. The host finally runs
-`pluxel distribution create` after that write so the distribution manifest covers browser assets.
+Prebuilt images and one compose file (PostgreSQL, Valkey, server, web, optional Caddy): [docs/deploy.md](docs/deploy.md).
 
-Workbench is enabled by default at `/__pluxel/workbench`, alongside the product SPA at `/`.
-Both use one origin and one Vite listener. `pitchfork.toml` manages the `app` service,
-assigns its internal port and waits for readiness. The project's HTTP proxy configuration
-uses one shared public port, `8088`, with URLs such as `http://app.<workspace-directory>.localhost:8088`.
-Starting the service also starts the supervisor when needed. No user config, certificates, sudo,
-DNS setup or hosts changes are required for browsers that resolve `.localhost`. Existing supervisors
-keep their startup settings; see the workspace guide before restarting a shared supervisor.
+## Further reading
 
-Use `pitchfork status app`, `pitchfork logs app`, `pitchfork restart app` and
-`pitchfork stop app` to inspect and manage the service. Vite owns source hot reload;
-Pitchfork owns process lifetime. Set `PLUXEL_WORKBENCH=false` in `pitchfork.local.toml`
-under `[daemons.app.env]` and restart `app` to disable Workbench locally.
-The `app` and `local` profiles are alternative ways to run the same application and share its default data directory. Profiles separate console routing, not data. Run `pitchfork stop app` before `vp run dev:local` when using the same data; for concurrent processes, explicitly set a distinct `PLUXEL_DATA_ROOT` for each.
-
-For foreground debugging with console access, use `vp run dev:local`. The supplied `local` profile runs `vp run @pluxum/host#dev:server` and the CLI binds the foreground process automatically. Use `pluxel dev status --profile local` and `pluxel dev run <script> --profile local` for that instance; Ctrl+C stops it.
-
-`mise.toml` pins Node, pnpm, Vite+, hk and Pitchfork. `hk.pkl` owns changed-file linting and
-formatting (`hk check` / `hk fix`); install its Git hooks explicitly after
-`git init`. Full workspace checks remain `vp run verify`, also used in CI.
-
-The application declares `.pluxel/managed-plugins/entries/*.mjs` as a source. `PLUXEL_DATA_ROOT`
-selects the data directory relative to the execution root; development uses `host/web`, while both
-production launchers use `host`. Set the same absolute path to share data between them, and keep it outside `host/dist`.
-Publish precompiled ESM there to make Plugins available in the catalog; availability does not start them.
-The declaration validates and freezes data. Native startup accepts one snapshot; Vite owns live observation.
-
-`vp run build` emits modules delivery: `host/dist/app.mjs` exports the factory and product, package dependencies
-remain installed, and each example Plugin builds its public `dist/index.mjs` before the host. Local
-Plugin/Node/Workbench artifacts are compiled. `vp run @pluxum/host#start`
-runs `host/start.mjs` in native Node and serves the compiled SPA and Workbench Shell. Publish sources before
-starting a fresh process to accept their new versions. The launcher binds before evaluating business imports;
-do not preload the application or its dependency graph. The host declares every package in the official
-shared list directly so binding does not depend on workspace hoisting.
-
-For continuous production updates, run `vp run @pluxum/host#start:vite` after building. The independent
-`host/vite.runtime.config.ts` loads the same compiled factory; `host/start-vite.mjs` owns the production session
-and closes it on shutdown. It serves compiled assets and business HTTP/WebSocket without a development
-console or browser Vite middleware. For a deployment that omits development dependencies, first declare
-its execution tools as runtime dependencies with `cd host && vp exec pluxel pncat add @pluxel/host-vite vite`.
-Native deployment keeps these tools in development dependencies. Development continues to use `host/vite.config.ts` and the source factory.
-
-## What the example demonstrates
-
-- `packages/domain` provides framework-neutral Todo value rules with ordinary Vitest tests.
-- `plugins/todo` owns Todo state and one exported Valibot config schema. The host reuses that
-  schema to validate the `EXAMPLE_TODO_MAX_ITEMS` first-start seed read by the application factory.
-  Todo rows and their next ID use the Plugin's native TinyBase Store. The seed title applies only
-  when no saved snapshot exists; an empty saved collection stays empty. Methods update memory
-  synchronously, and the Host saves changes and drains pending writes on close.
-  Add application-specific environment variables to your deployment configuration explicitly.
-- `plugins/http` declares `TodoPlugin` as a required constructor dependency and validates HTTP input.
-- `plugins/todo` observes `AuditPlugin` through `definePluginRef()` as an optional integration.
-- Plugin tests use the Pluxel Vitest preset and the smallest matching core/runtime test host.
-- `host/web` is the `@pluxum/host-web` workspace package and declares its frontend-only dependencies.
-- `host/vite.config.ts` serves that source and lets generation-scoped Elysia routes claim `/api` before SPA fallback.
-- `host` records `@pluxum/host-web` as a build input, installs the workspace Plugins and owns one application declaration for development and production.
-
-Open the application URL printed by `vp run dev`. The Todo UI calls the same-origin Plugin-owned
-`/api/example/todos` routes to list, create, complete and remove items.
-
-## Verify the complete workspace
-
-```sh
-vp run verify
-```
-
-This runs governance checks, formatting, Pluxel Oxlint rules, type checking, tests and the production
-application build. To create a real publishable plugin package alongside the examples, use:
-
-```sh
-pluxel new --name @your-scope/your-plugin plugins
-```
+- Frontend strings: [docs/i18n.md](docs/i18n.md)
+- Coding agents: [AGENTS.md](./AGENTS.md)
+- Pluxel: [upstream docs](https://github.com/PluxelJS/pluxel/blob/main/docs/index.md), or `vp exec pluxel docs` after setup
