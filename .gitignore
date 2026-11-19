@@ -25,3 +25,6 @@ hk.local.pkl
 .react-router/
 apps/web/build/
 apps/web/.build-check/
+
+# Compiled Lingui catalogs (`lingui compile`); the Vite plugin compiles the .po files itself
+apps/web/app/locales/*.js
