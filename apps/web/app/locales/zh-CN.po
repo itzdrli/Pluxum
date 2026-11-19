@@ -11,8 +11,17 @@ msgstr ""
 msgid "{label}（{mode}）"
 msgstr "{label}（{mode}）"
 
+#: app/components/shell/shell.tsx
+msgid "{siteName} 首页"
+msgstr "{siteName} 首页"
+
+#: app/components/shell/user-menu.tsx
+msgid "个人资料"
+msgstr "个人资料"
+
 #: app/components/shell/theme-picker.tsx
 #: app/components/shell/user-menu.tsx
+msgctxt "colour theme"
 msgid "主题"
 msgstr "主题"
 
@@ -20,30 +29,184 @@ msgstr "主题"
 msgid "主题与语言"
 msgstr "主题与语言"
 
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "主题已锁定"
+msgstr "主题已锁定"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "主题已锁定，仅版主可回复"
+msgstr "主题已锁定，仅版主可回复"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "主题快捷栏"
+msgstr "主题快捷栏"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "主题操作"
+msgstr "主题操作"
+
 #: app/components/shell/theme-picker.tsx
 msgid "亮色"
 msgstr "亮色"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "写下你的回复"
+msgstr "写下你的回复"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "写回复…"
+msgstr "写回复…"
 
 #: app/root.tsx
 msgid "出错了"
 msgstr "出错了"
 
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "切换版块"
+msgstr "切换版块"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "切换版块，当前：{categoryName}"
+msgstr "切换版块，当前：{categoryName}"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "发帖"
+msgstr "发帖"
+
 #: app/root.tsx
 msgid "发生了意外错误。"
 msgstr "发生了意外错误。"
 
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "发表回复"
+msgstr "发表回复"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "取消"
+msgstr "取消"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "回到顶部"
+msgstr "回到顶部"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "回复内容"
+msgstr "回复内容"
+
+#: app/components/shell/user-menu.tsx
+msgid "审核"
+msgstr "审核"
+
+#: app/components/shell/user-menu.tsx
+msgid "成员"
+msgstr "成员"
+
+#: app/components/shell/site-footer.tsx
+msgid "搜索"
+msgstr "搜索"
+
 #: app/components/shell/theme-picker.tsx
 msgid "暗色"
 msgstr "暗色"
+
+#: app/components/shell/user-menu.tsx
+msgid "未登录"
+msgstr "未登录"
+
+#: app/components/shell/user-menu.tsx
+msgid "游客"
+msgstr "游客"
+
+#: app/components/shell/user-menu.tsx
+msgid "版主"
+msgstr "版主"
+
+#: app/components/shell/site-footer.tsx
+msgid "版块"
+msgstr "版块"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "版块快捷栏"
+msgstr "版块快捷栏"
+
+#: app/components/shell/mobile-stage-bar.tsx
+#: app/components/shell/user-menu.tsx
+msgid "登录"
+msgstr "登录"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "登录后回复"
+msgstr "登录后回复"
+
+#: app/components/shell/shell.tsx
+msgid "登录服务暂时不可用，请稍后再试。"
+msgstr "登录服务暂时不可用，请稍后再试。"
+
+#: app/components/shell/shell.tsx
+msgid "登录没有完成，请重试。"
+msgstr "登录没有完成，请重试。"
+
+#: app/components/shell/site-footer.tsx
+msgid "站内"
+msgstr "站内"
+
+#: app/components/shell/user-menu.tsx
+msgid "管理员"
+msgstr "管理员"
 
 #: app/components/shell/locale-switcher.tsx
 #: app/components/shell/user-menu.tsx
 msgid "语言"
 msgstr "语言"
 
+#: app/components/shell/user-menu.tsx
+msgid "账号"
+msgstr "账号"
+
+#: app/components/shell/user-menu.tsx
+msgid "账号：{name}"
+msgstr "账号：{name}"
+
+#: app/components/shell/mobile-stage-bar.tsx
+msgid "跳到最新回复"
+msgstr "跳到最新回复"
+
+#: app/components/shell/shell.tsx
+msgid "跳到正文"
+msgstr "跳到正文"
+
+#: app/lib/stage.ts
+msgid "返回"
+msgstr "返回"
+
+#: app/routes/user.tsx
+msgid "返回主页"
+msgstr "返回主页"
+
+#: app/routes/category.tsx
+msgid "返回列表"
+msgstr "返回列表"
+
+#: app/routes/search.tsx
+msgid "返回结果"
+msgstr "返回结果"
+
+#: app/components/shell/mobile-stage-bar.tsx
 #: app/root.tsx
 msgid "返回首页"
 msgstr "返回首页"
+
+#: app/components/shell/user-menu.tsx
+msgid "退出"
+msgstr "退出"
+
+#: app/components/shell/user-menu.tsx
+msgid "退出所有设备"
+msgstr "退出所有设备"
+
+#: app/components/shell/site-footer.tsx
+msgid "页脚链接"
+msgstr "页脚链接"
 
 #: app/root.tsx
 msgid "页面不存在。"

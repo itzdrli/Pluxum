@@ -1,4 +1,5 @@
 import type { ShouldRevalidateFunctionArgs } from 'react-router'
+import { msg } from '@lingui/core/macro'
 import { describe, expect, it } from 'vitest'
 
 import { shouldStartRich } from '../app/components/composer/composer'
@@ -21,13 +22,13 @@ import {
 	type StageMatch,
 } from '../app/lib/stage'
 
-const categoryList = defineStage({ layer: 'list', nav: true, backLabel: '列表' })
+const categoryList = defineStage({ layer: 'list', nav: true, backLabel: msg`返回列表` })
 const searchList = defineStage({
 	layer: 'list',
 	carry: ['q', 'categoryId', 'authorId', 'threadsOnly'],
-	backLabel: '结果',
+	backLabel: msg`返回结果`,
 })
-const userList = defineStage({ layer: 'list', backLabel: '主页' })
+const userList = defineStage({ layer: 'list', backLabel: msg`返回主页` })
 const detail = defineStage({ layer: 'detail' })
 
 function stageAt(href: string, chain: ReadonlyArray<[string, string, unknown]>) {
@@ -86,7 +87,7 @@ describe('3-Depth Stage Manager routing & revalidation', () => {
 			depth: 2,
 			listHref: '/c/general?cpage=2',
 			detailKey: '/c/general/t/42',
-			backLabel: '列表',
+			backLabel: msg`返回列表`,
 		})
 		expect(
 			stageAt('/c/general/new', [
@@ -103,7 +104,7 @@ describe('3-Depth Stage Manager routing & revalidation', () => {
 			depth: 2,
 			nav: false,
 			listHref: '/search?q=pg&threadsOnly=1&cpage=3',
-			backLabel: '结果',
+			backLabel: msg`返回结果`,
 		})
 		expect(stageDetailHref(search, '9', 'p1')).toBe(
 			'/search/t/9?q=pg&threadsOnly=1&cpage=3#post-p1',

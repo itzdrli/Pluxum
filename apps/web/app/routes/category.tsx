@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro'
 import { MessagesSquare, Plus } from 'lucide-react'
 import { useParams, useRouteLoaderData } from 'react-router'
 
@@ -28,7 +29,7 @@ import type { loader as rootLoader } from '../root'
 import { CategoryHeaderSlots } from '../slots/slots'
 import { pageTitle } from '../lib/site'
 
-export const handle = defineStage({ layer: 'list', nav: true, backLabel: '列表' })
+export const handle = defineStage({ layer: 'list', nav: true, backLabel: msg`返回列表` })
 
 export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
 	const root = matches[0].loaderData

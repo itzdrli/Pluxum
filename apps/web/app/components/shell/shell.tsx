@@ -1,4 +1,7 @@
 import type { MetaDto } from '@pluxum/domain'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Link, useLocation } from 'react-router'
 
 import { PaletteTrigger } from '../palette/palette-trigger'
@@ -11,9 +14,9 @@ import { SiteFooter } from './site-footer'
 import { UserMenu } from './user-menu'
 
 // Reasons forum-api appends to `/?login=` when a login could not be completed.
-const LOGIN_ERRORS: Readonly<Record<string, string>> = {
-	rejected: '登录没有完成，请重试。',
-	unavailable: '登录服务暂时不可用，请稍后再试。',
+const LOGIN_ERRORS: Readonly<Record<string, MessageDescriptor>> = {
+	rejected: msg`登录没有完成，请重试。`,
+	unavailable: msg`登录服务暂时不可用，请稍后再试。`,
 }
 
 /** Width of the reading column for standard standalone pages. */
@@ -21,10 +24,12 @@ export const CONTENT_WIDTH = 'mx-auto w-full max-w-[1040px] px-4'
 
 /** Top bar, page column and footer around every page, error pages included. */
 export function Shell({ meta, children }: { meta: MetaDto | null; children: React.ReactNode }) {
+	const { t, i18n } = useLingui()
 	const location = useLocation()
 	const here = location.pathname + location.search
 	const searchParams = new URLSearchParams(location.search)
-	const loginError = LOGIN_ERRORS[searchParams.get('login') ?? '']
+	const loginErrorMessage = LOGIN_ERRORS[searchParams.get('login') ?? '']
+	const loginError = loginErrorMessage === undefined ? undefined : i18n._(loginErrorMessage)
 	// Which columns and how tall: every page declares its part through `handle.stage`.
 	const stage = useStage()
 	const isSplitStage = stage.split
@@ -41,7 +46,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 				href="#main"
 				className="bg-accent text-page sr-only z-50 px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
 			>
-				跳到正文
+				<Trans>跳到正文</Trans>
 			</a>
 			{/* Wide screens with the rail have no top bar: the rail carries the way home, search and the
 			    account, and each pane opens with a head of its own. Phones, and pages without the rail
@@ -54,7 +59,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 					<Link
 						to="/"
 						viewTransition
-						aria-label={`${siteName} 首页`}
+						aria-label={t`${siteName} 首页`}
 						className="text-ink-strong flex shrink-0 items-center gap-2 font-bold"
 					>
 						<LogoMark className="size-8 shrink-0" />

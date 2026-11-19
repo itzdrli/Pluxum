@@ -1,5 +1,6 @@
 import type { CategoryDto } from '@pluxum/domain'
 import { buttonVariants } from '@heroui/react'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { ArrowLeft, Check, ChevronsUpDown, Hash, Lock, PenLine, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Form, useNavigation, useRouteLoaderData } from 'react-router'
@@ -70,8 +71,10 @@ export function MobileCategoryBar({
 	canCreateThread: boolean
 	loginToPost: string | undefined
 }) {
+	const { t } = useLingui()
 	const stageData = useRouteLoaderData<typeof forumStageLoader>('routes/forum-stage')
 	const categories = stageData?.categories ?? [category]
+	const categoryName = category.name
 	const [switcherOpen, setSwitcherOpen] = useState(false)
 
 	useEffect(() => {
@@ -87,13 +90,13 @@ export function MobileCategoryBar({
 	return (
 		<>
 			<MobileBarSpacer />
-			<nav aria-label="版块快捷栏" className={BAR_CLASS}>
-				<BarBack to="/" label="返回首页" />
+			<nav aria-label={t`版块快捷栏`} className={BAR_CLASS}>
+				<BarBack to="/" label={t`返回首页`} />
 
 				<button
 					type="button"
 					onClick={() => setSwitcherOpen(true)}
-					aria-label={`切换版块，当前：${category.name}`}
+					aria-label={t`切换版块，当前：${categoryName}`}
 					className="border-line bg-control text-ink-strong hover:bg-hover active:bg-pressed h-control flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-[2px] border px-3 text-ui font-bold"
 				>
 					<span className="flex min-w-0 items-center gap-1.5">
@@ -111,12 +114,12 @@ export function MobileCategoryBar({
 						className="shrink-0"
 					>
 						<Plus aria-hidden />
-						发帖
+						<Trans>发帖</Trans>
 					</ButtonLink>
 				) : (
 					loginToPost !== undefined && (
 						<ButtonAnchor href={loginToPost} tone="primary" className="shrink-0">
-							登录
+							<Trans>登录</Trans>
 						</ButtonAnchor>
 					)
 				)}
@@ -125,7 +128,7 @@ export function MobileCategoryBar({
 			<BottomSheet
 				isOpen={switcherOpen}
 				onOpenChange={setSwitcherOpen}
-				title="切换版块"
+				title={t`切换版块`}
 				bodyClassName="min-h-0 flex-1 overflow-y-auto py-1.5"
 			>
 				{(close) => (
@@ -189,6 +192,7 @@ export function MobileThreadBar({
 	bodyMax: number | undefined
 	menu: readonly MenuItem[]
 }) {
+	const { t, i18n } = useLingui()
 	const stage = useStage()
 	const submitting = useNavigation().formData?.get('intent') === 'reply'
 	const [replyOpen, setReplyOpen] = useState(false)
@@ -251,7 +255,7 @@ export function MobileThreadBar({
 	const barMenu: MenuItem[] = [
 		{
 			id: 'floor-jump',
-			label: jumpDirection === 'top' ? '回到顶部' : '跳到最新回复',
+			label: jumpDirection === 'top' ? t`回到顶部` : t`跳到最新回复`,
 			onAction: handleFloorJump,
 		},
 		...menu,
@@ -260,8 +264,8 @@ export function MobileThreadBar({
 	return (
 		<>
 			<MobileBarSpacer />
-			<nav aria-label="主题快捷栏" className={BAR_CLASS}>
-				<BarBack to={stage.listHref ?? '/'} label={`返回${stage.backLabel}`} />
+			<nav aria-label={t`主题快捷栏`} className={BAR_CLASS}>
+				<BarBack to={stage.listHref ?? '/'} label={i18n._(stage.backLabel)} />
 
 				{canReply ? (
 					<button
@@ -270,39 +274,47 @@ export function MobileThreadBar({
 						className="border-line bg-page text-ink-weak hover:border-ink-weak hover:text-ink h-control flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[2px] border px-3 text-ui"
 					>
 						<PenLine aria-hidden size={14} className="shrink-0" />
-						<span className="truncate">写回复…</span>
+						<span className="truncate">
+							<Trans>写回复…</Trans>
+						</span>
 					</button>
 				) : locked ? (
 					<span className="text-ink-weak h-control flex min-w-0 flex-1 items-center justify-center gap-1.5 text-meta">
 						<Lock aria-hidden size={13} className="shrink-0" />
-						<span className="truncate">主题已锁定</span>
+						<span className="truncate">
+							<Trans>主题已锁定</Trans>
+						</span>
 					</span>
 				) : loginHref !== undefined ? (
 					<ButtonAnchor href={loginHref} tone="primary" className="min-w-0 flex-1">
-						登录后回复
+						<Trans>登录后回复</Trans>
 					</ButtonAnchor>
 				) : (
 					<div className="flex-1" />
 				)}
 
-				<ActionMenu label="主题操作" items={barMenu} size="md" />
+				<ActionMenu label={t`主题操作`} items={barMenu} size="md" />
 			</nav>
 
 			{canReply && (
-				<BottomSheet isOpen={replyOpen} onOpenChange={setReplyOpen} title="发表回复">
+				<BottomSheet isOpen={replyOpen} onOpenChange={setReplyOpen} title={t`发表回复`}>
 					{(close) => (
 						<Form method="post" className="flex flex-col gap-3">
 							<input type="hidden" name="intent" value="reply" />
-							{locked && <Notice icon={Lock}>主题已锁定，仅版主可回复</Notice>}
+							{locked && (
+								<Notice icon={Lock}>
+									<Trans>主题已锁定，仅版主可回复</Trans>
+								</Notice>
+							)}
 							<FormError message={replyError} />
 							<Composer
 								key={`${threadId}-${postsTotal}`}
-								label="回复内容"
+								label={t`回复内容`}
 								hideLabel
 								required
 								maxLength={bodyMax}
 								rows={4}
-								placeholder="写下你的回复"
+								placeholder={t`写下你的回复`}
 								autoFocus
 								deferRich
 							/>
@@ -310,10 +322,10 @@ export function MobileThreadBar({
 							    scrolls the send button out of reach. */}
 							<div className="border-line-soft bg-panel sticky bottom-0 -mx-4 -mb-3 flex justify-end gap-2 border-t px-4 py-3">
 								<Button tone="ghost" onPress={close}>
-									取消
+									<Trans>取消</Trans>
 								</Button>
 								<Button type="submit" tone="primary" isPending={submitting}>
-									发表回复
+									<Trans>发表回复</Trans>
 								</Button>
 							</div>
 						</Form>

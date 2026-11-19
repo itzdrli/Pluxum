@@ -1,4 +1,5 @@
 import { parseThreadRef, type CategoryDto, type Role, type UserDto } from '@pluxum/domain'
+import { msg } from '@lingui/core/macro'
 import { CalendarDays, MessagesSquare } from 'lucide-react'
 import { useState } from 'react'
 import {
@@ -60,7 +61,7 @@ const PROFILE_CARRY = ['tab'] as const
 export const handle = defineStage({
 	layer: 'list',
 	nav: true,
-	backLabel: '主页',
+	backLabel: msg`返回主页`,
 	carry: PROFILE_CARRY,
 })
 

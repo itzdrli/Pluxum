@@ -1,4 +1,5 @@
 import { LIMITS, type CategoryDto, type SearchHitDto } from '@pluxum/domain'
+import { msg } from '@lingui/core/macro'
 import { Search, SearchX } from 'lucide-react'
 import { Form, useNavigation, useParams, useRouteLoaderData } from 'react-router'
 
@@ -44,7 +45,7 @@ export const handle = defineStage({
 	layer: 'list',
 	nav: true,
 	carry: SEARCH_CARRY,
-	backLabel: '结果',
+	backLabel: msg`返回结果`,
 })
 
 export type ParsedSearchUrl = Readonly<{

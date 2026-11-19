@@ -1,5 +1,7 @@
 import type { MetaDto, UserDto } from '@pluxum/domain'
 import { Dropdown, Popover } from '@heroui/react'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Ellipsis, LogIn, Palette } from 'lucide-react'
 import { useRef, useState } from 'react'
@@ -12,7 +14,12 @@ import { NARROW_QUERY, useMediaQuery } from '../../lib/media'
 import { LocaleSwitcher } from './locale-switcher'
 import { ThemeSwatches } from './theme-picker'
 
-const ROLE_LABELS = { guest: '游客', member: '成员', moderator: '版主', admin: '管理员' } as const
+const ROLE_LABELS = {
+	guest: msg`游客`,
+	member: msg`成员`,
+	moderator: msg`版主`,
+	admin: msg`管理员`,
+} as const satisfies Record<string, MessageDescriptor>
 
 /**
  * Login link, or the signed-in account with its menu. `variant="bar"` is the top bar's avatar
@@ -30,6 +37,7 @@ export function UserMenu({
 	variant?: Variant
 	collapsed?: boolean
 }) {
+	const { t } = useLingui()
 	const user = meta?.viewer.user
 	if (!user) {
 		const loginHref = `/api/forum/auth/login?returnTo=${encodeURIComponent(here)}`
@@ -41,15 +49,17 @@ export function UserMenu({
 							data-testid="viewer"
 							href={loginHref}
 							tone="primary"
-							aria-label="登录"
+							aria-label={t`登录`}
 							className="flex-1 rail-mini:w-10 rail-mini:flex-none rail-mini:px-0"
 						>
 							<LogIn aria-hidden />
-							<span className="rail-mini:hidden">登录</span>
+							<span className="rail-mini:hidden">
+								<Trans>登录</Trans>
+							</span>
 						</ButtonAnchor>
 					) : (
 						<span data-testid="viewer" className="text-ink-weak flex-1 text-meta rail-mini:hidden">
-							未登录
+							<Trans>未登录</Trans>
 						</span>
 					)}
 					<GuestThemeButton placement={collapsed ? 'right bottom' : 'top end'} />
@@ -64,11 +74,11 @@ export function UserMenu({
 				{meta?.auth.loginAvailable ? (
 					// A document navigation, not a client-side one: the API redirects to the identity provider.
 					<ButtonAnchor data-testid="viewer" href={loginHref} tone="primary">
-						登录
+						<Trans>登录</Trans>
 					</ButtonAnchor>
 				) : (
 					<span data-testid="viewer" className="text-ink-weak text-meta">
-						未登录
+						<Trans>未登录</Trans>
 					</span>
 				)}
 			</>
@@ -105,6 +115,7 @@ function AccountMenu({
 	variant: Variant
 	collapsed: boolean
 }) {
+	const { t, i18n } = useLingui()
 	const name = user.displayName
 	const navigate = useNavigate()
 	const narrow = useMediaQuery(NARROW_QUERY)
@@ -113,10 +124,10 @@ function AccountMenu({
 	const logout = useRef<HTMLFormElement>(null)
 	const logoutAll = useRef<HTMLFormElement>(null)
 	const items: ReadonlyArray<{ id: string; label: string }> = [
-		{ id: 'profile', label: '个人资料' },
-		...(showModeration ? [{ id: 'moderation', label: '审核' }] : []),
-		{ id: 'logout', label: '退出' },
-		{ id: 'logout-all', label: '退出所有设备' },
+		{ id: 'profile', label: t`个人资料` },
+		...(showModeration ? [{ id: 'moderation', label: t`审核` }] : []),
+		{ id: 'logout', label: t`退出` },
+		{ id: 'logout-all', label: t`退出所有设备` },
 	]
 	const act = (key: string) => {
 		if (key === 'profile') void navigate(`/u/${user.handle}`, { viewTransition: true })
@@ -131,7 +142,9 @@ function AccountMenu({
 			<UserAvatar user={user} />
 			<div className="min-w-0">
 				<p className="text-ink-strong truncate font-bold">{name}</p>
-				{role !== undefined && <p className="text-ink-weak text-meta">{ROLE_LABELS[role]}</p>}
+				{role !== undefined && (
+					<p className="text-ink-weak text-meta">{i18n._(ROLE_LABELS[role])}</p>
+				)}
 			</div>
 		</div>
 	)
@@ -149,7 +162,7 @@ function AccountMenu({
 			<>
 				{forms}
 				<NarrowAccountMenu
-					label={`账号：${name}`}
+					label={t`账号：${name}`}
 					triggerClass={triggerClass}
 					user={user}
 					header={header}
@@ -168,14 +181,14 @@ function AccountMenu({
 					// The rail's foot: who is signed in, the whole row opening the menu.
 					<Dropdown.Trigger
 						data-testid="viewer"
-						aria-label={`账号：${name}`}
+						aria-label={t`账号：${name}`}
 						className="hover:bg-hover active:bg-pressed flex h-14 w-full cursor-pointer items-center gap-2.5 overflow-hidden pr-2 pl-[18px] text-left whitespace-nowrap outline-none data-[focus-visible=true]:outline-2 data-[focus-visible=true]:-outline-offset-2 data-[focus-visible=true]:outline-[var(--c-accent)]"
 					>
 						<UserAvatar user={user} />
 						<span className="min-w-0 flex-1 leading-tight transition-opacity duration-200 rail-mini:opacity-0">
 							<span className="text-ink-strong block truncate font-bold">{name}</span>
 							{role !== undefined && (
-								<span className="text-ink-weak block text-meta">{ROLE_LABELS[role]}</span>
+								<span className="text-ink-weak block text-meta">{i18n._(ROLE_LABELS[role])}</span>
 							)}
 						</span>
 						<Ellipsis
@@ -188,7 +201,7 @@ function AccountMenu({
 					// Only the avatar: name and role are inside the menu.
 					<Dropdown.Trigger
 						data-testid="viewer"
-						aria-label={`账号：${name}`}
+						aria-label={t`账号：${name}`}
 						className={triggerClass}
 					>
 						<UserAvatar user={user} size="lg" />
@@ -199,7 +212,7 @@ function AccountMenu({
 					className="min-w-52"
 				>
 					<div className="border-line border-b px-3 py-2.5">{header}</div>
-					<Dropdown.Menu aria-label="账号" onAction={(key) => act(String(key))}>
+					<Dropdown.Menu aria-label={t`账号`} onAction={(key) => act(String(key))}>
 						{items.map((item) => (
 							<Dropdown.Item key={item.id} id={item.id} textValue={item.label}>
 								{item.label}
@@ -208,7 +221,7 @@ function AccountMenu({
 					</Dropdown.Menu>
 					<div className="border-line flex items-center justify-between gap-3 border-t px-3 py-2.5">
 						<span className="text-ink-weak text-meta">
-							<Trans>主题</Trans>
+							<Trans context="colour theme">主题</Trans>
 						</span>
 						<ThemeSwatches />
 					</div>
@@ -239,6 +252,7 @@ function NarrowAccountMenu({
 	items: ReadonlyArray<{ id: string; label: string }>
 	onAction: (key: string) => void
 }) {
+	const { t } = useLingui()
 	const [open, setOpen] = useState(false)
 	// Close when the page changes underneath it (the profile item navigates).
 	const pageKey = useLocation().key
@@ -259,7 +273,7 @@ function NarrowAccountMenu({
 			>
 				<UserAvatar user={user} size="lg" />
 			</button>
-			<BottomSheet isOpen={open} onOpenChange={setOpen} title="账号" bodyClassName="py-1">
+			<BottomSheet isOpen={open} onOpenChange={setOpen} title={t`账号`} bodyClassName="py-1">
 				{(close) => (
 					<>
 						<div className="border-line border-b px-4 pt-2 pb-3">{header}</div>
@@ -281,7 +295,7 @@ function NarrowAccountMenu({
 						</ul>
 						<div className="border-line flex items-center justify-between gap-3 border-t px-4 py-3">
 							<span className="text-ink-weak text-meta">
-								<Trans>主题</Trans>
+								<Trans context="colour theme">主题</Trans>
 							</span>
 							<ThemeSwatches />
 						</div>
@@ -312,7 +326,7 @@ function GuestThemeButton({ placement }: { placement: Placement }) {
 				>
 					<div className="flex items-center justify-between gap-3">
 						<span className="text-ink-weak text-meta">
-							<Trans>主题</Trans>
+							<Trans context="colour theme">主题</Trans>
 						</span>
 						<ThemeSwatches />
 					</div>

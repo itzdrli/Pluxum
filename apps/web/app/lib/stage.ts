@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+
 /**
  * The stage: one interaction model shared by every forum page.
  *
@@ -39,8 +42,8 @@ export type StageListSpec = Readonly<{
 	 * (`LIST_PAGE_PARAM`) is always carried.
 	 */
 	carry?: readonly string[]
-	/** Label of the mobile "back to list" control, e.g. 列表 / 结果. */
-	backLabel: string
+	/** Label of the mobile "back to list" control, a whole message: 返回列表 / 返回结果. */
+	backLabel: MessageDescriptor
 }>
 
 export type StageDetailSpec = Readonly<{ layer: 'detail' }>
@@ -66,7 +69,7 @@ export type ResolvedStage = Readonly<{
 	listHref: string | null
 	/** Pathname of the list, the base for detail links. */
 	listPath: string | null
-	backLabel: string
+	backLabel: MessageDescriptor
 	/** Identity of the list content: changes when its path, filters or page change. */
 	listKey: string | null
 	/** Identity of the open detail (pathname without query), null at depth < 2. */
@@ -160,7 +163,7 @@ export function resolveStage(matches: readonly StageMatch[], url: URL): Resolved
 			split: page?.nav === true,
 			listHref: null,
 			listPath: null,
-			backLabel: '返回',
+			backLabel: msg`返回`,
 			listKey: null,
 			detailKey: null,
 		}

@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { Link2, Mail, Rss } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { Link, useRouteLoaderData } from 'react-router'
@@ -60,11 +61,12 @@ const COPYRIGHT_YEAR = new Date().getFullYear()
  * links, then theme swatches and icon links, then the notes. Pinned to the rail's bottom.
  */
 export function SiteFooterCompact() {
+	const { t } = useLingui()
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const { groups, icons, notes, siteLinks: showSiteLinks } = footerOf(root)
 	const links = [
 		...(showSiteLinks && root?.meta?.search.available === true
-			? [{ label: '搜索', href: '/search' }]
+			? [{ label: t`搜索`, href: '/search' }]
 			: []),
 		...groups.flatMap((group) => group.links),
 	]
@@ -119,15 +121,16 @@ export function SiteFooterCompact() {
  * and notes, then theme swatches and icon links.
  */
 export function SiteFooter() {
+	const { t } = useLingui()
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const { name, tagline } = siteOf(root)
 	const { groups, icons, notes, siteLinks: showSiteLinks } = footerOf(root)
 	const searchAvailable = root?.meta?.search.available === true
 	const siteLinks: FooterLink[] = [
-		{ label: '版块', href: '/' },
-		...(searchAvailable ? [{ label: '搜索', href: '/search' }] : []),
+		{ label: t`版块`, href: '/' },
+		...(searchAvailable ? [{ label: t`搜索`, href: '/search' }] : []),
 	]
-	const columns = showSiteLinks ? [{ title: '站内', links: siteLinks }, ...groups] : groups
+	const columns = showSiteLinks ? [{ title: t`站内`, links: siteLinks }, ...groups] : groups
 
 	return (
 		<footer className="border-line bg-panel border-t">
@@ -141,7 +144,7 @@ export function SiteFooter() {
 						{tagline !== '' && <p className="text-ink-weak text-ui leading-relaxed">{tagline}</p>}
 					</div>
 					<nav
-						aria-label="页脚链接"
+						aria-label={t`页脚链接`}
 						className="grid grid-cols-2 gap-x-10 gap-y-6 sm:grid-cols-3 md:flex md:gap-x-16"
 					>
 						{columns.map((group) => (

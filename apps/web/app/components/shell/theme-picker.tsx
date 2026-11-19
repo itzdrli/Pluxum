@@ -48,7 +48,7 @@ export function ThemeSwatches({ className }: { className?: string }) {
 	return (
 		<div
 			role="group"
-			aria-label={t`主题`}
+			aria-label={t({ message: '主题', context: 'colour theme' })}
 			className={`flex items-center gap-1.5 ${className ?? ''}`}
 		>
 			{THEMES.map((theme) => {
