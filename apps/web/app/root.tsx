@@ -12,7 +12,10 @@ import '@fontsource/noto-sans-sc/400.css'
 import '@fontsource/noto-sans-sc/700.css'
 import '@fontsource/jetbrains-mono/400.css'
 import '@fontsource/jetbrains-mono/700.css'
+import { I18nProvider } from '@lingui/react'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Home, TriangleAlert } from 'lucide-react'
+import { useMemo } from 'react'
 import {
 	isRouteErrorResponse,
 	Links,
@@ -38,6 +41,9 @@ import { ButtonLink } from './components/ui/button'
 import { forumApi } from './lib/forum-api.server'
 import { siteOf } from './lib/site'
 import { focusFromRequest } from './lib/focus'
+import { createI18n } from './lib/i18n'
+import { loadMessages } from './lib/i18n.server'
+import { DEFAULT_LOCALE, localeFromRequest } from './lib/locale'
 import { railFromRequest } from './lib/rail'
 import { isDarkTheme, themeFromRequest } from './lib/theme'
 
@@ -57,9 +63,14 @@ export async function loader({ request }: Route.LoaderArgs) {
 		if (unread.ok) unreadNotifications = unread.value.count
 	}
 	// The shell still renders when the API is down; the page below reports the failure itself.
+	const locale = localeFromRequest(request)
 	return {
 		meta: forumMeta,
 		unreadNotifications,
+		locale,
+		// The whole catalog rides along with the document, so the browser hydrates in the same
+		// language the server rendered. Switching language revalidates this loader.
+		messages: await loadMessages(locale),
 		theme: themeFromRequest(request),
 		rail: railFromRequest(request),
 		focusReading: focusFromRequest(request),
@@ -80,9 +91,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	// Routes' own meta() replaces the root's, so the site-wide social card is written here.
 	const root = useRouteLoaderData<typeof loader>('root')
 	const origin = root?.origin
+	const locale = root?.locale ?? DEFAULT_LOCALE
+	// Without a root loader result (it failed) the source language, Chinese, is shown as written.
+	const i18n = useMemo(() => createI18n(locale, root?.messages), [locale, root?.messages])
 	return (
 		// HeroUI picks its light or dark base from the class; app.css maps every colour from data-theme.
-		<html lang="zh-CN" data-theme={theme} className={isDarkTheme(theme) ? 'dark' : 'light'}>
+		<html lang={locale} data-theme={theme} className={isDarkTheme(theme) ? 'dark' : 'light'}>
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -95,7 +109,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<Links />
 			</head>
 			<body>
-				{children}
+				<I18nProvider i18n={i18n}>{children}</I18nProvider>
 				<ScrollRestoration />
 				<Scripts />
 			</body>
@@ -123,8 +137,9 @@ export default function App({ loaderData }: Route.ComponentProps) {
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 	// Present when only a page below failed; the shell then still knows who is browsing.
 	const root = useRouteLoaderData<typeof loader>('root')
+	const { t } = useLingui()
 	let status: number | undefined
-	let details = '发生了意外错误。'
+	let details = t`发生了意外错误。`
 	let stack: string | undefined
 	if (isRouteErrorResponse(error)) {
 		status = error.status
@@ -133,7 +148,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 			typeof error.data === 'string' && error.data !== ''
 				? error.data
 				: error.status === 404
-					? '页面不存在。'
+					? t`页面不存在。`
 					: details
 	} else if (import.meta.env.DEV && error instanceof Error) {
 		details = error.message
@@ -144,12 +159,12 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 			<div className="flex flex-col items-center gap-3 py-16 text-center">
 				<TriangleAlert aria-hidden size={24} className="text-ink-weak" strokeWidth={1.75} />
 				<h1 className="text-ink-strong text-[32px] leading-none font-bold tabular-nums">
-					{status ?? '出错了'}
+					{status ?? t`出错了`}
 				</h1>
 				<p className="text-ink max-w-md">{details}</p>
 				<ButtonLink to="/" tone="secondary" className="mt-2">
 					<Home aria-hidden />
-					返回首页
+					<Trans>返回首页</Trans>
 				</ButtonLink>
 			</div>
 			{stack !== undefined && (

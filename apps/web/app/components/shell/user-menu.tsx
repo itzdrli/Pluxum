@@ -1,5 +1,6 @@
 import type { MetaDto, UserDto } from '@pluxum/domain'
 import { Dropdown, Popover } from '@heroui/react'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Ellipsis, LogIn, Palette } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
@@ -8,6 +9,7 @@ import { ButtonAnchor, IconButton } from '../ui/button'
 import { BottomSheet } from '../ui/bottom-sheet'
 import { UserAvatar } from '../forum/user-avatar'
 import { NARROW_QUERY, useMediaQuery } from '../../lib/media'
+import { LocaleSwitcher } from './locale-switcher'
 import { ThemeSwatches } from './theme-picker'
 
 const ROLE_LABELS = { guest: '游客', member: '成员', moderator: '版主', admin: '管理员' } as const
@@ -205,8 +207,16 @@ function AccountMenu({
 						))}
 					</Dropdown.Menu>
 					<div className="border-line flex items-center justify-between gap-3 border-t px-3 py-2.5">
-						<span className="text-ink-weak text-meta">主题</span>
+						<span className="text-ink-weak text-meta">
+							<Trans>主题</Trans>
+						</span>
 						<ThemeSwatches />
+					</div>
+					<div className="border-line flex items-center justify-between gap-3 border-t px-3 py-2.5">
+						<span className="text-ink-weak text-meta">
+							<Trans>语言</Trans>
+						</span>
+						<LocaleSwitcher />
 					</div>
 				</Dropdown.Popover>
 			</Dropdown>
@@ -270,8 +280,16 @@ function NarrowAccountMenu({
 							))}
 						</ul>
 						<div className="border-line flex items-center justify-between gap-3 border-t px-4 py-3">
-							<span className="text-ink-weak text-meta">主题</span>
+							<span className="text-ink-weak text-meta">
+								<Trans>主题</Trans>
+							</span>
 							<ThemeSwatches />
+						</div>
+						<div className="border-line flex items-center justify-between gap-3 border-t px-4 py-3">
+							<span className="text-ink-weak text-meta">
+								<Trans>语言</Trans>
+							</span>
+							<LocaleSwitcher />
 						</div>
 					</>
 				)}
@@ -281,18 +299,29 @@ function NarrowAccountMenu({
 }
 
 function GuestThemeButton({ placement }: { placement: Placement }) {
+	const { t } = useLingui()
 	return (
 		<Popover>
-			<IconButton label="切换主题" className="text-ink-weak hover:text-ink-strong">
+			<IconButton label={t`主题与语言`} className="text-ink-weak hover:text-ink-strong">
 				<Palette aria-hidden />
 			</IconButton>
 			<Popover.Content placement={placement} className="p-0">
 				<Popover.Dialog
-					aria-label="主题"
-					className="flex items-center gap-3 px-3 py-2.5 outline-none"
+					aria-label={t`主题与语言`}
+					className="flex flex-col gap-2.5 px-3 py-2.5 outline-none"
 				>
-					<span className="text-ink-weak text-meta">主题</span>
-					<ThemeSwatches />
+					<div className="flex items-center justify-between gap-3">
+						<span className="text-ink-weak text-meta">
+							<Trans>主题</Trans>
+						</span>
+						<ThemeSwatches />
+					</div>
+					<div className="flex items-center justify-between gap-3">
+						<span className="text-ink-weak text-meta">
+							<Trans>语言</Trans>
+						</span>
+						<LocaleSwitcher />
+					</div>
 				</Popover.Dialog>
 			</Popover.Content>
 		</Popover>

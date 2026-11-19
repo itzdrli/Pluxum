@@ -1,6 +1,8 @@
 // Forum frontend: React Router (framework mode, SSR) on its own Node process. The browser only
 // talks to this origin; /api/forum/** is forwarded to the Pluxel host (app/routes/api-forum.ts).
+import { lingui } from '@lingui/vite-plugin'
 import { reactRouter } from '@react-router/dev/vite'
+import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite-plus'
 
@@ -9,7 +11,14 @@ import { defineConfig } from 'vite-plus'
 const devOrigin = process.env.FORUM_WEB_DEV_ORIGIN ?? process.env.FORUM_WEB_PUBLIC_ORIGIN
 
 export default defineConfig({
-	plugins: [tailwindcss(), reactRouter()],
+	// Lingui's `t`/`<Trans>` macros are compiled by its Babel plugin (run through rolldown); the
+	// `lingui()` plugin makes `import('./x.po')` return the compiled catalog.
+	plugins: [
+		tailwindcss(),
+		reactRouter(),
+		lingui(),
+		babel({ plugins: ['@lingui/babel-plugin-lingui-macro'] }),
+	],
 	build: {
 		// Tablets and phones often run vendor browsers on an older Chromium. A chunk with syntax the
 		// engine cannot parse stops hydration, and every click becomes a full page load, so lower

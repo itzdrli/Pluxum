@@ -14,6 +14,7 @@ export default defineConfig({
 				/^@fontsource\//,
 				/^@heroui\//,
 				/^@internationalized\//,
+				/^@lingui\//,
 				/^@react-aria\//,
 				/^@react-router\//,
 				/^@mantine\//,
@@ -72,7 +73,9 @@ export default defineConfig({
 			name: 'tooling',
 			match: [
 				/^@types\//,
+				'@babel/core',
 				'@napi-rs/cli',
+				'@rolldown/plugin-babel',
 				'electron',
 				'electron-builder',
 				'sass-embedded',

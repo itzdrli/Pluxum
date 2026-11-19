@@ -6,6 +6,7 @@ import { isInternalHref, type FooterIcon, type FooterLink } from '../../lib/foot
 import { footerOf, siteOf } from '../../lib/site'
 import type { loader as rootLoader } from '../../root'
 import { LogoMark } from './logo-mark'
+import { LocaleSwitcher } from './locale-switcher'
 import { ThemeSwatches } from './theme-picker'
 
 /** The GitHub mark; lucide no longer ships brand icons. */
@@ -170,8 +171,9 @@ export function SiteFooter() {
 						))}
 					</p>
 					<div className="flex items-center gap-4">
-						{/* Phones switch theme from the user menu; the footer stays quiet. */}
-						<div className="hidden md:block">
+						{/* Phones switch theme and language from the user menu; the footer stays quiet. */}
+						<div className="hidden items-center gap-4 md:flex">
+							<LocaleSwitcher />
 							<ThemeSwatches />
 						</div>
 						{icons.length > 0 && (

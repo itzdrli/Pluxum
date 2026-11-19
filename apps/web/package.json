@@ -7,6 +7,8 @@
 		"build": "react-router build",
 		"start": "react-router-serve ./build/server/index.js",
 		"postinstall": "react-router typegen",
+		"i18n:extract": "lingui extract",
+		"i18n:check": "lingui extract --clean && lingui compile --strict",
 		"typecheck": "react-router typegen && tsc --noEmit --pretty false",
 		"test": "vitest run"
 	},
@@ -25,6 +27,8 @@
 		"@react-aria/ssr": "catalog:frontend",
 		"@react-aria/utils": "catalog:frontend",
 		"@internationalized/date": "catalog:frontend",
+		"@lingui/core": "catalog:frontend",
+		"@lingui/react": "catalog:frontend",
 		"@fontsource/ibm-plex-sans": "catalog:frontend",
 		"@fontsource/noto-sans-sc": "catalog:frontend",
 		"@fontsource/jetbrains-mono": "catalog:frontend",
@@ -40,7 +44,14 @@
 		"@tiptap/suggestion": "catalog:frontend"
 	},
 	"devDependencies": {
+		"@lingui/babel-plugin-lingui-macro": "catalog:frontend",
+		"@lingui/cli": "catalog:frontend",
+		"@lingui/conf": "catalog:frontend",
+		"@lingui/format-po": "catalog:frontend",
+		"@lingui/vite-plugin": "catalog:frontend",
 		"@react-router/dev": "catalog:frontend",
+		"@babel/core": "catalog:tooling",
+		"@rolldown/plugin-babel": "catalog:tooling",
 		"@tailwindcss/vite": "catalog:frontend",
 		"tailwindcss": "catalog:frontend",
 		"typescript": "catalog:tooling",

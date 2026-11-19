@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { useSyncExternalStore } from 'react'
 import { useRouteLoaderData } from 'react-router'
 
@@ -43,17 +44,24 @@ export function useTheme(): ThemeId {
  */
 export function ThemeSwatches({ className }: { className?: string }) {
 	const current = useTheme()
+	const { t } = useLingui()
 	return (
-		<div role="group" aria-label="主题" className={`flex items-center gap-1.5 ${className ?? ''}`}>
+		<div
+			role="group"
+			aria-label={t`主题`}
+			className={`flex items-center gap-1.5 ${className ?? ''}`}
+		>
 			{THEMES.map((theme) => {
 				const selected = theme.id === current
+				const label = theme.label
+				const mode = theme.dark ? t`暗色` : t`亮色`
 				return (
 					<button
 						key={theme.id}
 						type="button"
 						data-theme={theme.id}
 						aria-pressed={selected}
-						aria-label={`${theme.label}（${theme.dark ? '暗色' : '亮色'}）`}
+						aria-label={t`${label}（${mode}）`}
 						title={theme.label}
 						onClick={(event) => {
 							if (selected) return

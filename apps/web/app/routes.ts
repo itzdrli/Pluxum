@@ -25,4 +25,7 @@ export default [
 	route('ext/:extId/:action', 'routes/ext-action.ts'),
 	// Resource route: forwards the forum API to the Pluxel host on this same origin.
 	route('api/forum/*', 'routes/api-forum.ts'),
+	// Any other URL: matching a route lets the root loader run, so the 404 page is in the visitor's
+	// language and keeps the shell's data like every other page.
+	route('*', 'routes/not-found.tsx'),
 ] satisfies RouteConfig
