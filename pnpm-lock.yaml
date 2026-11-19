@@ -58,9 +58,6 @@ catalogs:
     '@mantine/hooks':
       specifier: 9.7.4
       version: 9.7.4
-    '@openuidev/react-lang':
-      specifier: 1.1.0
-      version: 1.1.0
     '@react-aria/ssr':
       specifier: ^3.10.1
       version: 3.10.1
@@ -145,9 +142,6 @@ catalogs:
     tailwindcss:
       specifier: ^4.3.4
       version: 4.3.5
-    zod:
-      specifier: 4.6.7
-      version: 4.6.7
   prod:
     '@electric-sql/pglite':
       specifier: ^0.5.15
@@ -248,9 +242,6 @@ importers:
       '@internationalized/date':
         specifier: catalog:frontend
         version: 3.12.4
-      '@openuidev/react-lang':
-        specifier: catalog:frontend
-        version: 1.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(zod@4.6.7)
       '@react-aria/ssr':
         specifier: catalog:frontend
         version: 3.10.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -314,9 +305,6 @@ importers:
       react-router:
         specifier: catalog:frontend
         version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      zod:
-        specifier: catalog:frontend
-        version: 4.6.7
     devDependencies:
       '@pluxum/domain':
         specifier: workspace:*
@@ -1871,45 +1859,6 @@ packages:
     resolution: {integrity: sha512-/dTk3vV/v8+RIEUP7XOCkqRCVU0tqL3Ia9VTzHt38IDysGQmX7T56tM2IpwCLAWXubH7TyrcY54Stjsvcrbjqw==}
     engines: {node: '>= 10'}
 
-  '@openuidev/devtools@0.3.1':
-    resolution: {integrity: sha512-kOCCsRGwY0w6xL1rVL1zOa9CO97ZrG6YGasRZyCv7FXaDAzbFkEgFy+FhYx6EP7sPKhkgr/jBqunADzhevpBDw==}
-    peerDependencies:
-      '@openuidev/observability': '>=0.0.4 <0.1.0'
-      '@openuidev/react-lang': '>=1.0.0 <2.0.0'
-      react: ^18.3.1 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-    peerDependenciesMeta:
-      '@openuidev/react-lang':
-        optional: true
-
-  '@openuidev/lang-core@1.1.1':
-    resolution: {integrity: sha512-bZFkf0/CBqS551gykL6kHVVOn35ZfoRg73nDELTPPxO3NQOc29SIVznhIeE323xSth23I0pGusSimblNv4bZvg==}
-    peerDependencies:
-      '@modelcontextprotocol/sdk': '>=1.0.0'
-      zod: ^3.25.0 || ^4.0.0
-    peerDependenciesMeta:
-      '@modelcontextprotocol/sdk':
-        optional: true
-
-  '@openuidev/observability@0.0.4':
-    resolution: {integrity: sha512-4fjIrWu3TqTlfDE/m7cG10CH1vV7wQk5GPwMOmXeF9vJtkg92dg4Bdk3AjKgud7H7Xypwwjgt52VcLGZCE2CJQ==}
-
-  '@openuidev/react-lang@1.1.0':
-    resolution: {integrity: sha512-Winq28Li/anC6VhY3NhKPFkRudag9fwFlf5IzIysWJ1GkwuTX3jPAEzhYPScBplcVUNngAzkB8QHppWFymb50A==}
-    peerDependencies:
-      '@modelcontextprotocol/sdk': '>=1.0.0'
-      react: '*'
-      react-dom: '*'
-      react-native: '*'
-      zod: ^3.25.0 || ^4.0.0
-    peerDependenciesMeta:
-      '@modelcontextprotocol/sdk':
-        optional: true
-      react-dom:
-        optional: true
-      react-native:
-        optional: true
-
   '@oxc-project/runtime@0.155.0':
     resolution: {integrity: sha512-VbW9raczGS5ZZ1FMunUBYHe4uV/R684qlQCoMdE3n5JT1PcqQsvmFpMYkF8AD+W04fBLGAq6Tr7YsTk0jjvDBA==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -3264,10 +3213,6 @@ packages:
     resolution: {integrity: sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==}
     engines: {node: '>= 20.19.0'}
 
-  ci-info@4.5.0:
-    resolution: {integrity: sha512-d1uM8k5UZEyPza1n/MG3ko8nKupKN0KJpFsipgPcgaCCvV+IqIfJ+NzTjetlLM+UcXZx3+cLrNr76+eAO7G1Mw==}
-    engines: {node: '>=8'}
-
   client-only@0.0.1:
     resolution: {integrity: sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==}
 
@@ -3724,11 +3669,6 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
-
-  lucide-react@0.575.0:
-    resolution: {integrity: sha512-VuXgKZrk0uiDlWjGGXmKV6MSk9Yy4l10qgVvzGn2AWBx1Ylt0iBexKOAoA6I7JO3m+M9oeovJd3yYENfkUbOeg==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   lucide-react@1.72.0:
     resolution: {integrity: sha512-fbF5i1GU8GODETa3Q7rXqrJrcx3iPYrQtxthom103zGx+Z0BGwKYAW9s+9435ohYJ7hQm0av0PoZcqI1CRwNrg==}
@@ -4454,9 +4394,6 @@ packages:
     resolution: {integrity: sha512-XrBh9ZiQK5mJVRxZBAvD6LwRyAYrK3MFtH3+onyuxFL5hFD44EC3QOmIC1FjTj6H2MMwq46/NAI+NZxLZPZgxg==}
     engines: {node: '>=14.18.0'}
 
-  zod@4.6.7:
-    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
-
 snapshots:
 
   '@adobe/react-spectrum-ui@1.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
@@ -4840,32 +4777,6 @@ snapshots:
       '@node-rs/jieba-win32-arm64-msvc': 2.0.4
       '@node-rs/jieba-win32-ia32-msvc': 2.0.4
       '@node-rs/jieba-win32-x64-msvc': 2.0.4
-
-  '@openuidev/devtools@0.3.1(@openuidev/observability@0.0.4)(@openuidev/react-lang@1.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(zod@4.6.7))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
-    dependencies:
-      '@openuidev/observability': 0.0.4
-      lucide-react: 0.575.0(react@19.3.1)
-      react: 19.3.1
-      react-dom: 19.3.1(react@19.3.1)
-    optionalDependencies:
-      '@openuidev/react-lang': 1.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(zod@4.6.7)
-
-  '@openuidev/lang-core@1.1.1(zod@4.6.7)':
-    dependencies:
-      ci-info: 4.5.0
-      zod: 4.6.7
-
-  '@openuidev/observability@0.0.4': {}
-
-  '@openuidev/react-lang@1.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(zod@4.6.7)':
-    dependencies:
-      '@openuidev/devtools': 0.3.1(@openuidev/observability@0.0.4)(@openuidev/react-lang@1.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(zod@4.6.7))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@openuidev/lang-core': 1.1.1(zod@4.6.7)
-      '@openuidev/observability': 0.0.4
-      react: 19.3.1
-      zod: 4.6.7
-    optionalDependencies:
-      react-dom: 19.3.1(react@19.3.1)
 
   '@oxc-project/runtime@0.155.0': {}
 
@@ -6023,8 +5934,6 @@ snapshots:
     dependencies:
       readdirp: 5.1.1
 
-  ci-info@4.5.0: {}
-
   client-only@0.0.1: {}
 
   clsx@2.1.1: {}
@@ -6434,10 +6343,6 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
-
-  lucide-react@0.575.0(react@19.3.1):
-    dependencies:
-      react: 19.3.1
 
   lucide-react@1.72.0(@types/react@19.3.0)(react@19.3.1):
     dependencies:
@@ -7254,5 +7159,3 @@ snapshots:
     dependencies:
       '@yuku-toolchain/types': 0.19.0
       yuku-core: 0.19.0
-
-  zod@4.6.7: {}

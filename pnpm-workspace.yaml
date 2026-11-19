@@ -7,8 +7,6 @@ packages:
 
 allowBuilds:
   esbuild: true
-  # Its postinstall only sends install telemetry (PostHog); nothing needs building.
-  '@openuidev/lang-core': false
 
 catalogs:
   backend:
@@ -33,7 +31,6 @@ catalogs:
     '@internationalized/date': ^3.12.4
     '@mantine/core': 9.7.4
     '@mantine/hooks': 9.7.4
-    '@openuidev/react-lang': 1.1.0
     '@react-aria/ssr': ^3.10.1
     '@react-aria/utils': ^3.34.1
     '@react-router/dev': ^8.5.1
@@ -63,7 +60,6 @@ catalogs:
     react-dom: 19.3.1
     react-router: ^8.5.1
     tailwindcss: ^4.3.4
-    zod: 4.6.7
   # Published compatibility of plugin peers, apart from the versions installed.
   frontend-peer:
     '@mantine/core': 9.7.3

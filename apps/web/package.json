@@ -29,8 +29,6 @@
 		"@fontsource/noto-sans-sc": "catalog:frontend",
 		"@fontsource/jetbrains-mono": "catalog:frontend",
 		"lucide-react": "catalog:frontend",
-		"@openuidev/react-lang": "catalog:frontend",
-		"zod": "catalog:frontend",
 		"@tiptap/react": "catalog:frontend",
 		"@tiptap/pm": "catalog:frontend",
 		"@tiptap/core": "catalog:frontend",

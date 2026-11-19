@@ -23,8 +23,6 @@ export default [
 	route('t/:id/:floor?', 'routes/thread-shortlink.ts'),
 	// Write actions of extension plugins, called by their slot components.
 	route('ext/:extId/:action', 'routes/ext-action.ts'),
-	// Development only: renders the OpenUI component library from a fixed OpenUI Lang sample.
-	route('dev/openui', 'routes/dev-openui.tsx'),
 	// Resource route: forwards the forum API to the Pluxel host on this same origin.
 	route('api/forum/*', 'routes/api-forum.ts'),
 ] satisfies RouteConfig
