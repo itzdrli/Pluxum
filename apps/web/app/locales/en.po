@@ -1176,7 +1176,7 @@ msgstr "Search is not enabled"
 
 #: app/components/palette/palette-trigger.tsx
 msgid "搜索或输入命令"
-msgstr "Search or type a command"
+msgstr "Search or command"
 
 #: app/lib/api-errors.ts
 msgid "搜索服务暂时不可用"
