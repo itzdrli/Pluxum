@@ -82,12 +82,15 @@ const workspacePackageNames = new Set(
 for (const { manifestPath, manifest } of packageManifests) {
 	for (const field of dependencyFields) {
 		for (const [name, specifier] of Object.entries(manifest[field] ?? {})) {
-			const catalogName = catalogEntries.get(name)
-			const expectedSpecifier = catalogName && catalogSpecifier(catalogName)
-			if (expectedSpecifier && specifier !== expectedSpecifier) {
-				errors.push(`${relative(manifestPath)}: ${field}.${name} must use ${expectedSpecifier}`)
+			// A `*-peer` catalog holds published peer ranges only; installs use the main catalog.
+			const catalogNames = (catalogEntries.get(name) ?? []).filter(
+				(catalogName) => field === 'peerDependencies' || !isPeerCatalog(catalogName),
+			)
+			const expected = catalogNames.map(catalogSpecifier)
+			if (expected.length > 0 && !expected.includes(specifier)) {
+				errors.push(`${relative(manifestPath)}: ${field}.${name} must use ${expected.join(' or ')}`)
 			}
-			if (!catalogName && !workspacePackageNames.has(name)) {
+			if (!catalogEntries.has(name) && !workspacePackageNames.has(name)) {
 				errors.push(`${relative(manifestPath)}: ${field}.${name} must be governed by a catalog`)
 			}
 		}
@@ -149,11 +152,22 @@ function parseCatalogEntries(source) {
 		const match = line.match(new RegExp(`^${indentation}(?:'([^']+)'|"([^"]+)"|([^:]+)):\\s`))
 		const packageName = match?.[1] ?? match?.[2] ?? match?.[3]
 		if (packageName && catalogName) {
-			if (entries.has(packageName)) throw new Error(`duplicate catalog entry: ${packageName}`)
-			entries.set(packageName, catalogName)
+			// The same package may sit in a main catalog and a `*-peer` one, never in two main ones.
+			const names = entries.get(packageName) ?? []
+			const clash = names.find((name) => !isPeerCatalog(name) && !isPeerCatalog(catalogName))
+			if (clash || names.includes(catalogName)) {
+				throw new Error(
+					`duplicate catalog entry: ${packageName} (${clash ?? catalogName}, ${catalogName})`,
+				)
+			}
+			entries.set(packageName, [...names, catalogName])
 		}
 	}
 	return entries
+}
+
+function isPeerCatalog(name) {
+	return name.endsWith('-peer')
 }
 
 function catalogSpecifier(name) {
