@@ -32,7 +32,15 @@ const createHost = () =>
 
 type Host = Awaited<ReturnType<typeof createHost>>
 
-const error = (code: string) => ({ error: { code, message: expect.any(String) } })
+/** An error body: its code and a message, and the key (with params) when the API sends one. */
+const error = (code: string, key?: string, params?: Record<string, string | number>) => ({
+	error: {
+		code,
+		message: expect.any(String),
+		...(key === undefined ? {} : { key }),
+		...(params === undefined ? {} : { params }),
+	},
+})
 
 const ORIGIN = 'https://forum.test'
 const CLEARED: Logout = { setCookie: 'session=; Max-Age=0', providerUrl: null }
@@ -317,7 +325,7 @@ describe('ForumApiPlugin', () => {
 
 		expect(await api.call('POST', '/categories', { name: 'General' })).toEqual({
 			status: 401,
-			body: { error: { code: 'unauthenticated', message: expect.any(String) } },
+			body: error('unauthenticated', 'auth.required'),
 		})
 		expect(
 			await api.call('POST', '/threads', { categoryId: MISSING_ID, title: 't', body: 'b' }),
@@ -506,22 +514,22 @@ describe('ForumApiPlugin', () => {
 		// A member without elevated roles cannot manage categories.
 		expect(await api.call('POST', '/categories', { name: 'General' })).toEqual({
 			status: 403,
-			body: error('forbidden'),
+			body: error('forbidden', 'permission.denied'),
 		})
 		expect(await api.call('GET', `/threads/${MISSING_ID}`)).toEqual({
 			status: 404,
-			body: error('not_found'),
+			body: error('not_found', 'entity.not_found', { entity: 'thread' }),
 		})
 		expect(await api.call('GET', '/threads/not-an-id')).toMatchObject({ status: 404 })
 		expect(await api.call('GET', '/categories/nope/threads')).toMatchObject({ status: 404 })
 		// Schema violations and rule violations both come back as `invalid`.
 		expect(await api.call('POST', '/threads', { title: 'no category' })).toEqual({
 			status: 422,
-			body: error('invalid'),
+			body: error('invalid', 'request.invalid'),
 		})
 		expect(await api.call('PATCH', `/posts/${MISSING_ID}`, { body: '   ' })).toEqual({
 			status: 422,
-			body: error('invalid'),
+			body: error('invalid', 'field.empty', { field: 'content' }),
 		})
 	})
 
@@ -545,7 +553,7 @@ describe('ForumApiPlugin', () => {
 		// A browser on another site rides on the cookie; its Origin header gives it away.
 		expect(await create({ origin: 'https://evil.test' })).toEqual({
 			status: 403,
-			body: error('forbidden'),
+			body: error('forbidden', 'request.cross_site'),
 		})
 		expect((await create({ origin: ORIGIN })).status).toBe(201)
 
@@ -554,7 +562,7 @@ describe('ForumApiPlugin', () => {
 		expect((await down.ok<MetaDto>('GET', '/meta')).viewer.roles).toEqual(['guest'])
 		expect(await down.call('POST', '/categories', { name: 'Later' })).toEqual({
 			status: 503,
-			body: error('unavailable'),
+			body: error('unavailable', 'login.unavailable'),
 		})
 	})
 
@@ -651,7 +659,7 @@ describe('ForumApiPlugin', () => {
 		})
 		expect(await api.call('POST', '/preview', { body: '  ' })).toEqual({
 			status: 422,
-			body: error('invalid'),
+			body: error('invalid', 'field.empty', { field: 'content' }),
 		})
 		expect((await client(host).call('POST', '/preview', { body: 'x' })).status).toBe(401)
 	})
@@ -671,14 +679,14 @@ describe('ForumApiPlugin', () => {
 
 		expect(await api.call('GET', '/search?q=乒乓')).toEqual({
 			status: 503,
-			body: error('unavailable'),
+			body: error('unavailable', 'search.disabled'),
 		})
 
 		await host.start(SimpleSearchPlugin)
 		expect((await api.ok<MetaDto>('GET', '/meta')).search).toEqual({ available: true })
 		expect(await api.call('GET', '/search?q=')).toEqual({
 			status: 422,
-			body: error('invalid'),
+			body: error('invalid', 'field.empty', { field: 'search_query' }),
 		})
 
 		const page = await api.ok<SearchPageDto>('GET', '/search?q=乒乓&threadsOnly=1')
@@ -725,7 +733,7 @@ describe('ext ingress', () => {
 		// A write needs a login, valid input and the right method, and comes from this site.
 		expect(await guest.call('POST', '/ext/test-echo/shout', { text: 'hi' })).toEqual({
 			status: 401,
-			body: error('unauthenticated'),
+			body: error('unauthenticated', 'auth.required'),
 		})
 		const shouted = await api.call('POST', '/ext/test-echo/shout', { text: 'hi' })
 		expect(shouted).toEqual({ status: 200, body: { text: 'HI', by: expect.any(String) } })
@@ -733,7 +741,7 @@ describe('ext ingress', () => {
 			// oxlint-disable-next-line no-await-in-loop -- four small sequential requests keep the failure readable
 			expect(await api.call('POST', '/ext/test-echo/shout', bad)).toEqual({
 				status: 422,
-				body: error('invalid'),
+				body: error('invalid', 'request.invalid'),
 			})
 		}
 		expect((await api.call('GET', '/ext/test-echo/shout')).status).toBe(405)
@@ -754,7 +762,7 @@ describe('ext ingress', () => {
 		})
 		expect(await api.call('GET', '/ext/test-echo/broken')).toEqual({
 			status: 500,
-			body: error('internal'),
+			body: error('internal', 'server.internal'),
 		})
 		expect((await api.call('GET', '/ext/test-echo/nope')).status).toBe(404)
 		expect((await api.call('GET', '/ext/other/whoami')).status).toBe(404)
@@ -770,7 +778,7 @@ describe('ext ingress', () => {
 		expect(host.require(ForumApiPlugin).extActionKeys()).toEqual([])
 		expect(await guest.call('GET', '/ext/test-echo/whoami')).toEqual({
 			status: 404,
-			body: error('not_found'),
+			body: error('not_found', 'route.not_found'),
 		})
 
 		await host.start(EchoExtPlugin)

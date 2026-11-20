@@ -23,6 +23,38 @@ msgstr "“{tooLargeName}”超过 {maxSize}。"
 msgid "{accepted}，单个不超过 {maxSize}"
 msgstr "{accepted}，单个不超过 {maxSize}"
 
+#: app/lib/notices.ts
+msgid "{actor} 关注了你"
+msgstr "{actor} 关注了你"
+
+#: app/lib/notices.ts
+msgid "{actor} 回复了你的主题《{title}》"
+msgstr "{actor} 回复了你的主题《{title}》"
+
+#: app/lib/notices.ts
+msgid "{actor} 回复了你的动态"
+msgstr "{actor} 回复了你的动态"
+
+#: app/lib/notices.ts
+msgid "{actor} 在《{title}》中回复了你"
+msgstr "{actor} 在《{title}》中回复了你"
+
+#: app/lib/notices.ts
+msgid "{actor} 在《{title}》中提到了你"
+msgstr "{actor} 在《{title}》中提到了你"
+
+#: app/lib/notices.ts
+msgid "{actor} 在动态中回复了你"
+msgstr "{actor} 在动态中回复了你"
+
+#: app/lib/notices.ts
+msgid "{actor} 在动态中提到了你"
+msgstr "{actor} 在动态中提到了你"
+
+#: app/lib/notices.ts
+msgid "{actor} 采纳了你的回答"
+msgstr "{actor} 采纳了你的回答"
+
 #: app/routes/thread.tsx
 msgid "{author} 的动态"
 msgstr "{author} 的动态"
@@ -74,6 +106,10 @@ msgstr "{hours, plural, other {#小时后}}"
 #: app/lib/api-errors.ts
 msgid "{hours} 小时"
 msgstr "{hours} 小时"
+
+#: app/lib/notices.ts
+msgid "{kind, select, unknown {未知用户} member {论坛成员} other {未知用户}}"
+msgstr "{kind, select, unknown {未知用户} member {论坛成员} other {未知用户}}"
 
 #: app/components/shell/theme-picker.tsx
 msgid "{label}（{mode}）"

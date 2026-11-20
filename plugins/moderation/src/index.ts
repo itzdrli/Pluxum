@@ -1,4 +1,5 @@
 import {
+	placeholderUser,
 	failure,
 	isEntityId,
 	normalizePage,
@@ -474,12 +475,7 @@ export class ForumModerationPlugin extends BasePlugin {
 		await Promise.all(
 			uniqueIds.map(async (userId) => {
 				const resolved = await this.core.getUser(userId, viewer)
-				byId.set(
-					userId,
-					resolved.isOk()
-						? resolved.value
-						: { id: userId, handle: userId, displayName: '未知用户' },
-				)
+				byId.set(userId, resolved.isOk() ? resolved.value : placeholderUser(userId))
 			}),
 		)
 		return byId
@@ -497,28 +493,16 @@ export class ForumModerationPlugin extends BasePlugin {
 			postId: row.postId,
 			reason: row.reason,
 			status: row.status,
-			reporter: usersById.get(row.reporterId) ?? {
-				id: row.reporterId,
-				handle: row.reporterId,
-				displayName: '未知用户',
-			},
+			reporter: usersById.get(row.reporterId) ?? placeholderUser(row.reporterId),
 			targetAuthor:
 				row.targetAuthorId === null
 					? null
-					: (usersById.get(row.targetAuthorId) ?? {
-							id: row.targetAuthorId,
-							handle: row.targetAuthorId,
-							displayName: '未知用户',
-						}),
+					: (usersById.get(row.targetAuthorId) ?? placeholderUser(row.targetAuthorId)),
 			resolutionNote: row.resolutionNote,
 			resolvedBy:
 				row.resolvedBy === null
 					? null
-					: (usersById.get(row.resolvedBy) ?? {
-							id: row.resolvedBy,
-							handle: row.resolvedBy,
-							displayName: '未知用户',
-						}),
+					: (usersById.get(row.resolvedBy) ?? placeholderUser(row.resolvedBy)),
 			resolvedAt: row.resolvedAt === null ? null : row.resolvedAt.toISOString(),
 			createdAt: row.createdAt.toISOString(),
 		}
@@ -948,21 +932,13 @@ export class ForumModerationPlugin extends BasePlugin {
 
 		const items: ModerationLogDto[] = rows.map((row) => ({
 			id: row.id,
-			actor: usersById.get(row.actorId) ?? {
-				id: row.actorId,
-				handle: row.actorId,
-				displayName: '未知用户',
-			},
+			actor: usersById.get(row.actorId) ?? placeholderUser(row.actorId),
 			action: row.action,
 			targetType: row.targetType,
 			targetId: row.targetId,
 			targetUser:
 				row.targetType === 'user'
-					? (usersById.get(row.targetId) ?? {
-							id: row.targetId,
-							handle: row.targetId,
-							displayName: '未知用户',
-						})
+					? (usersById.get(row.targetId) ?? placeholderUser(row.targetId))
 					: null,
 			detail: row.detail,
 			createdAt: row.createdAt.toISOString(),

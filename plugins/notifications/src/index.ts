@@ -1,8 +1,12 @@
 import {
 	failure,
 	isEntityId,
+	isNoticeKey,
 	normalizePage,
+	noticeDetail,
+	placeholderUser,
 	type ForumNotification,
+	type NoticeDetail,
 	type NotificationDto,
 	type NotificationPageDto,
 	type Principal,
@@ -12,7 +16,6 @@ import { ForumApiPlugin } from '@pluxum/api'
 import {
 	answeredAuthorOf,
 	ForumCorePlugin,
-	threadPlace,
 	type ForumResult,
 	type PostAfterWriteEvent,
 } from '@pluxum/core'
@@ -62,6 +65,11 @@ export const NotificationItem = Type.Object({
 	recipientId: Type.String(),
 	kind: Type.String(),
 	title: Type.String(),
+	titleKey: Type.Union([Type.String(), Type.Null()]),
+	titleParams: Type.Union([
+		Type.Record(Type.String(), Type.Union([Type.String(), Type.Number()])),
+		Type.Null(),
+	]),
 	body: Type.Union([Type.String(), Type.Null()]),
 	path: Type.Union([Type.String(), Type.Null()]),
 	threadId: Type.Union([Type.String(), Type.Null()]),
@@ -259,6 +267,8 @@ export class ForumNotificationsPlugin extends BasePlugin {
 					recipientId: notification.recipientId,
 					kind: notification.kind,
 					title: notification.title,
+					titleKey: notification.titleKey ?? null,
+					titleParams: notification.titleParams ?? null,
 					body: notification.body ?? null,
 					path: notification.path ?? null,
 					threadId: optionalEntityId(notification.threadId),
@@ -279,18 +289,13 @@ export class ForumNotificationsPlugin extends BasePlugin {
 		const actorResult = await this.core.getUser(event.authorId)
 		const actor: UserDto = actorResult.isOk()
 			? actorResult.value
-			: { id: event.authorId, handle: event.authorId, displayName: '论坛成员' }
+			: placeholderUser(event.authorId, 'member')
 		const excerpt = summarizeReplyBody(event.body, this.config.excerptChars)
 		const notification: ForumNotification = {
 			id: isEntityId(event.postId) ? event.postId : crypto.randomUUID(),
 			recipientId,
 			kind: event.parentId === null ? 'thread.reply' : 'post.reply',
-			title:
-				event.parentId !== null
-					? `${actor.displayName} 在${threadPlace(event.threadKind, event.threadTitle)}中回复了你`
-					: event.threadKind === 'note'
-						? `${actor.displayName} 回复了你的动态`
-						: `${actor.displayName} 回复了你的主题《${event.threadTitle}》`,
+			...noticeFields(replyNotice(actor.displayName, event)),
 			...(excerpt === undefined ? {} : { body: excerpt }),
 			path: `/t/${event.threadRef}/${event.postNumber}`,
 			threadId: event.threadId,
@@ -345,12 +350,7 @@ export class ForumNotificationsPlugin extends BasePlugin {
 		await Promise.all(
 			actorIds.map(async (actorId) => {
 				const resolved = await this.core.getUser(actorId, principal)
-				actorsById.set(
-					actorId,
-					resolved.isOk()
-						? resolved.value
-						: { id: actorId, handle: actorId, displayName: '未知用户' },
-				)
+				actorsById.set(actorId, resolved.isOk() ? resolved.value : placeholderUser(actorId))
 			}),
 		)
 
@@ -359,18 +359,14 @@ export class ForumNotificationsPlugin extends BasePlugin {
 			recipientId: row.recipientId,
 			kind: row.kind,
 			title: row.title,
+			titleKey: isNoticeKey(row.titleKey) ? row.titleKey : null,
+			titleParams: row.titleParams ?? null,
 			body: row.body,
 			path: row.path,
 			threadId: row.threadId,
 			postId: row.postId,
 			actor:
-				row.actorId === null
-					? null
-					: (actorsById.get(row.actorId) ?? {
-							id: row.actorId,
-							handle: row.actorId,
-							displayName: '未知用户',
-						}),
+				row.actorId === null ? null : (actorsById.get(row.actorId) ?? placeholderUser(row.actorId)),
 			read: row.readAt !== null,
 			readAt: row.readAt === null ? null : row.readAt.toISOString(),
 			createdAt: row.createdAt.toISOString(),
@@ -457,4 +453,27 @@ export class ForumNotificationsPlugin extends BasePlugin {
 		)
 		return Result.ok({ marked: updated.length, unreadCount: 0 })
 	}
+}
+
+/** The fields of a notification that say its title: the Chinese text, and the key and params behind it. */
+function noticeFields(
+	detail: NoticeDetail,
+): Pick<ForumNotification, 'title' | 'titleKey' | 'titleParams'> {
+	return { title: detail.title, titleKey: detail.key, titleParams: detail.params }
+}
+
+/** The title of a reply notice: the one who answered, and where (the reader's own thread or a floor in it). */
+function replyNotice(
+	actor: string,
+	event: Extract<PostAfterWriteEvent, { kind: 'post.created' }>,
+): NoticeDetail {
+	const note = event.threadKind === 'note'
+	if (event.parentId !== null) {
+		return note
+			? noticeDetail('notice.reply.in_note', { actor })
+			: noticeDetail('notice.reply.in_topic', { actor, title: event.threadTitle })
+	}
+	return note
+		? noticeDetail('notice.reply.note', { actor })
+		: noticeDetail('notice.reply.topic', { actor, title: event.threadTitle })
 }

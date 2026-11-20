@@ -1,4 +1,5 @@
 import {
+	placeholderUser,
 	errorDetail,
 	failure,
 	failureOf,
@@ -822,11 +823,7 @@ export class ForumCorePlugin extends BasePlugin {
 			opening: hit.opening,
 			title: hit.title,
 			snippetHtml: sanitizeSearchSnippet(hit.snippetHtml),
-			author: authorsById.get(hit.authorId) ?? {
-				id: hit.authorId,
-				handle: hit.authorId,
-				displayName: '未知用户',
-			},
+			author: authorsById.get(hit.authorId) ?? placeholderUser(hit.authorId),
 			createdAt: hit.createdAt,
 		}))
 		return Result.ok({ items, page, pageSize, total: raw.total })

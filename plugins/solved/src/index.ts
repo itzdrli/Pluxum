@@ -1,5 +1,13 @@
 import { createHash } from 'node:crypto'
-import { failure, isEntityId, type Principal, type UserDto } from '@pluxum/domain'
+import {
+	failure,
+	isEntityId,
+	noticeDetail,
+	type ForumNotification,
+	type NoticeDetail,
+	type Principal,
+	type UserDto,
+} from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult, type PostAfterWriteEvent } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
@@ -282,7 +290,7 @@ export class ForumSolvedPlugin extends BasePlugin {
 				id: acceptNoticeId(postId),
 				recipientId,
 				kind: 'post.accepted',
-				title: `${actor.value.displayName} 采纳了你的回答`,
+				...noticeFields(noticeDetail('notice.accepted', { actor: actor.value.displayName })),
 				...(place.excerpt === '' ? {} : { body: place.excerpt }),
 				path: `/t/${place.threadRef}/${place.floor}`,
 				threadId,
@@ -295,4 +303,11 @@ export class ForumSolvedPlugin extends BasePlugin {
 			this.ctx.logger.error('could not send the accepted notice', { error, postId })
 		}
 	}
+}
+
+/** The fields of a notification that say its title. */
+function noticeFields(
+	detail: NoticeDetail,
+): Pick<ForumNotification, 'title' | 'titleKey' | 'titleParams'> {
+	return { title: detail.title, titleKey: detail.key, titleParams: detail.params }
 }

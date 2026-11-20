@@ -28,6 +28,7 @@ import { data } from 'react-router'
 
 import type { feedQuery } from './home'
 import { apiErrorText } from './api-errors'
+import { localizeBody } from './notices'
 import { i18nFromRequest } from './i18n.server'
 
 const DEFAULT_API_INTERNAL = 'http://127.0.0.1:5173'
@@ -85,6 +86,14 @@ async function apiErrorOf(request: Request, body: unknown): Promise<ApiError | n
 	return { code, message }
 }
 
+function parseJson(raw: string): unknown {
+	try {
+		return raw === '' ? null : JSON.parse(raw)
+	} catch {
+		return null
+	}
+}
+
 type CallInit = Readonly<{ method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'; body?: unknown }>
 
 /**
@@ -113,7 +122,16 @@ async function call<T>(request: Request, path: string, init: CallInit = {}): Pro
 		return { ok: false, status: 502, error: await unavailableOf(request) }
 	}
 	// 204 (a delete) has no body; it reads as null.
-	const body: unknown = await response.json().catch(() => null)
+	const raw = await response.text().catch(() => '')
+	const body: unknown = parseJson(raw)
+	// Notification titles and stand-in users arrive as keys: word them in the visitor's language.
+	if (
+		response.ok &&
+		body !== null &&
+		(raw.includes('"titleKey"') || raw.includes('"placeholder"'))
+	) {
+		localizeBody(await i18nFromRequest(request), body)
+	}
 	if (!response.ok) {
 		return {
 			ok: false,

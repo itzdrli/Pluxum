@@ -1,5 +1,6 @@
 import type { Role } from './permissions'
 import type { ErrorKey, ErrorParams } from './errors'
+import type { NoticeKey, NoticeParams } from './notices'
 
 // Wire shapes shared by forum-api and the frontend. Timestamps are ISO 8601 strings.
 
@@ -135,7 +136,10 @@ export type ForumNotification = Readonly<{
 	id: string
 	recipientId: string
 	kind: string
+	/** The finished Chinese title; `titleKey` and `titleParams` let a client word it itself. */
 	title: string
+	titleKey?: NoticeKey
+	titleParams?: NoticeParams
 	body?: string
 	path?: string
 	threadId?: string
@@ -150,6 +154,8 @@ export type NotificationDto = Readonly<{
 	recipientId: string
 	kind: string
 	title: string
+	titleKey: NoticeKey | null
+	titleParams: NoticeParams | null
 	body: string | null
 	path: string | null
 	threadId: string | null

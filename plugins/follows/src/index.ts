@@ -1,5 +1,12 @@
 import { createHash } from 'node:crypto'
-import { failure, isEntityId, type Principal } from '@pluxum/domain'
+import {
+	failure,
+	isEntityId,
+	noticeDetail,
+	type ForumNotification,
+	type NoticeDetail,
+	type Principal,
+} from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type Followed, type ForumResult } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
@@ -342,7 +349,7 @@ export class ForumFollowsPlugin extends BasePlugin {
 				id: followNoticeId(followerId, targetId),
 				recipientId: targetId,
 				kind: 'user.followed',
-				title: `${actor.value.displayName} 关注了你`,
+				...noticeFields(noticeDetail('notice.follow', { actor: actor.value.displayName })),
 				path: `/u/${actor.value.handle}`,
 				actor: actor.value,
 				createdAt: new Date().toISOString(),
@@ -352,4 +359,11 @@ export class ForumFollowsPlugin extends BasePlugin {
 			this.ctx.logger.error('could not send the follow notice', { error, followerId, targetId })
 		}
 	}
+}
+
+/** The fields of a notification that say its title. */
+function noticeFields(
+	detail: NoticeDetail,
+): Pick<ForumNotification, 'title' | 'titleKey' | 'titleParams'> {
+	return { title: detail.title, titleKey: detail.key, titleParams: detail.params }
 }

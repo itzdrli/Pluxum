@@ -23,6 +23,38 @@ msgstr "“{tooLargeName}” is over {maxSize}."
 msgid "{accepted}，单个不超过 {maxSize}"
 msgstr "{accepted}; up to {maxSize} each"
 
+#: app/lib/notices.ts
+msgid "{actor} 关注了你"
+msgstr "{actor} followed you"
+
+#: app/lib/notices.ts
+msgid "{actor} 回复了你的主题《{title}》"
+msgstr "{actor} replied to your thread “{title}”"
+
+#: app/lib/notices.ts
+msgid "{actor} 回复了你的动态"
+msgstr "{actor} replied to your note"
+
+#: app/lib/notices.ts
+msgid "{actor} 在《{title}》中回复了你"
+msgstr "{actor} replied to you in “{title}”"
+
+#: app/lib/notices.ts
+msgid "{actor} 在《{title}》中提到了你"
+msgstr "{actor} mentioned you in “{title}”"
+
+#: app/lib/notices.ts
+msgid "{actor} 在动态中回复了你"
+msgstr "{actor} replied to you in a note"
+
+#: app/lib/notices.ts
+msgid "{actor} 在动态中提到了你"
+msgstr "{actor} mentioned you in a note"
+
+#: app/lib/notices.ts
+msgid "{actor} 采纳了你的回答"
+msgstr "{actor} accepted your answer"
+
 #: app/routes/thread.tsx
 msgid "{author} 的动态"
 msgstr "{author}'s note"
@@ -74,6 +106,10 @@ msgstr "{hours, plural, one {in # hour} other {in # hours}}"
 #: app/lib/api-errors.ts
 msgid "{hours} 小时"
 msgstr "{hours, plural, one {# hour} other {# hours}}"
+
+#: app/lib/notices.ts
+msgid "{kind, select, unknown {未知用户} member {论坛成员} other {未知用户}}"
+msgstr "{kind, select, unknown {Unknown user} member {Forum member} other {Unknown user}}"
 
 #: app/components/shell/theme-picker.tsx
 msgid "{label}（{mode}）"
