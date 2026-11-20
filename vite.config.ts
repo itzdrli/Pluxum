@@ -30,6 +30,7 @@ export default defineConfig({
 					'@pluxum/search#check-tests',
 					'@pluxum/moderation#check-tests',
 					'@pluxum/footer#check-tests',
+					'@pluxum/og#check-tests',
 					'@pluxum/web#typecheck',
 					'@pluxum/web#test',
 				],

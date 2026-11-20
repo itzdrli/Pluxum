@@ -9,6 +9,8 @@ import {
 	RedisRatesBackendPlugin,
 } from '@pluxel/plugin-redis'
 import { S3 } from '@pluxel/plugin-storage'
+import { FontsConfig, FontsPlugin } from '@pluxel/plugin-fonts'
+import { TakumiPlugin } from '@pluxel/plugin-takumi'
 import * as v from 'valibot'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAttachmentsPlugin, ForumStorageConfig, ForumStoragePlugin } from '@pluxum/attachments'
@@ -22,6 +24,7 @@ import { ForumMarkdownPlugin } from '@pluxum/markdown'
 import { ForumMentionsPlugin } from '@pluxum/mentions'
 import { ForumModerationPlugin } from '@pluxum/moderation'
 import { ForumNotificationsPlugin } from '@pluxum/notifications'
+import { ForumOgPlugin } from '@pluxum/og'
 import { ForumOutlinePlugin } from '@pluxum/outline'
 import { ForumRatesPlugin } from '@pluxum/rates'
 import { ForumReactionsPlugin } from '@pluxum/reactions'
@@ -56,6 +59,10 @@ export const appPlugins = [
 	ForumMentionsPlugin,
 	ForumFollowsPlugin,
 	ForumSolvedPlugin,
+	// Social card images: Takumi draws them with the fonts FontsPlugin holds.
+	FontsPlugin,
+	TakumiPlugin,
+	ForumOgPlugin,
 	// No VaultAdminPlugin: in the standalone bundle it lowers @pluxel/services from source while
 	// the host uses its dist, so its Vault token never matches. Each forum plugin manages its own
 	// secrets on its Workbench page.
@@ -93,6 +100,7 @@ export type AppConfigEnv = Readonly<{
 	FORUM_TEST_LOGIN_TOKEN_SHA256?: string
 	REDIS_CONNECTIONS?: string
 	S3_BUCKETS?: string
+	FONT_FILES?: string
 }>
 
 /** Declared config; a plugin's saved record (Workbench edits) replaces its declared one. */
@@ -105,6 +113,7 @@ export function appConfig(env: AppConfigEnv): HostConfigOptions {
 			...storageConfigRecord(env.S3_BUCKETS),
 			...authConfigRecord(env),
 			...mailConfigRecord(env),
+			...fontsConfigRecord(env.FONT_FILES),
 		],
 	}
 }
@@ -242,6 +251,21 @@ function mailConfigRecord(env: AppConfigEnv) {
 		{
 			owner: ForumMailPlugin.nodeAddress(),
 			config: v.parse(ForumMailConfig, { siteUrl: new URL(siteUrl).origin }),
+		},
+	]
+}
+
+/**
+ * Declared config of FontsPlugin: FONT_FILES (JSON array of absolute paths) are the fonts social
+ * cards draw with; a CJK one is needed for Chinese. CJK fonts often pass the default 16 MiB file
+ * limit (WenQuanYi Zen Hei is 16.8 MB), so the limit is raised for them and for uploads.
+ */
+function fontsConfigRecord(raw: string | undefined) {
+	const files = set(raw) === undefined ? [] : parseJsonEnv('FONT_FILES', raw ?? '')
+	return [
+		{
+			owner: FontsPlugin.nodeAddress(),
+			config: v.parse(FontsConfig, { files, maxFontBytes: 64 * 1024 * 1024 }),
 		},
 	]
 }

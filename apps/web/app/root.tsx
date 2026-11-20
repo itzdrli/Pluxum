@@ -23,6 +23,7 @@ import {
 	Outlet,
 	Scripts,
 	ScrollRestoration,
+	useMatches,
 	useRouteLoaderData,
 } from 'react-router'
 
@@ -39,7 +40,7 @@ import { PaletteProvider } from './components/palette/command-palette'
 import { LightboxProvider } from './components/ui/lightbox'
 import { ButtonLink } from './components/ui/button'
 import { forumApi } from './lib/forum-api.server'
-import { siteOf } from './lib/site'
+import { siteOf, threadCardsAvailable } from './lib/site'
 import { focusFromRequest } from './lib/focus'
 import { createI18n } from './lib/i18n'
 import { loadMessages } from './lib/i18n.server'
@@ -88,11 +89,20 @@ export const links: Route.LinksFunction = () => [
 	{ rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
 ]
 
+function hasSocialImage(handle: unknown): boolean {
+	return typeof handle === 'object' && handle !== null && 'socialImage' in handle
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
 	const theme = useTheme()
 	// Routes' own meta() replaces the root's, so the site-wide social card is written here.
 	const root = useRouteLoaderData<typeof loader>('root')
 	const origin = root?.origin
+	// A route whose handle says `socialImage` writes its own og:image while cards are served.
+	const matches = useMatches()
+	const ownImage =
+		threadCardsAvailable(root) &&
+		matches.some((match) => hasSocialImage(match.handle) && match.loaderData !== undefined)
 	const locale = root?.locale ?? DEFAULT_LOCALE
 	// Without a root loader result (it failed) the source language, Chinese, is shown as written.
 	const i18n = useMemo(() => createI18n(locale, root?.messages), [locale, root?.messages])
@@ -103,9 +113,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<meta property="og:site_name" content={siteOf(root).name} />
-				{origin !== undefined && <meta property="og:image" content={`${origin}/og.png`} />}
-				<meta property="og:image:width" content="1200" />
-				<meta property="og:image:height" content="630" />
+				{origin !== undefined && !ownImage && (
+					<>
+						<meta property="og:image" content={`${origin}/og.png`} />
+						<meta property="og:image:width" content="1200" />
+						<meta property="og:image:height" content="630" />
+					</>
+				)}
 				<meta name="twitter:card" content="summary_large_image" />
 				<Meta />
 				<Links />

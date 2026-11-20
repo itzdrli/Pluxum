@@ -220,9 +220,11 @@ overrides:
   '@pluxel/host': link:.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
   '@pluxel/host-vite': link:.pluxel/sources/6b76349dc399/pluxel+host-vite-e7663d385b22
   '@pluxel/plugin-cache': link:.pluxel/sources/6b76349dc399/pluxel+plugin-cache-3bd15591b12e
+  '@pluxel/plugin-fonts': link:.pluxel/sources/6b76349dc399/pluxel+plugin-fonts-0ca726e1368f
   '@pluxel/plugin-rates': link:.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
   '@pluxel/plugin-redis': link:.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
   '@pluxel/plugin-storage': link:.pluxel/sources/6b76349dc399/pluxel+plugin-storage-5689af5b2082
+  '@pluxel/plugin-takumi': link:.pluxel/sources/6b76349dc399/pluxel+plugin-takumi-fc7b4730f12a
   '@pluxel/rolldown': link:.pluxel/sources/6b76349dc399/pluxel+rolldown-024b50fbff58
   '@pluxel/services': link:.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
   '@pluxel/test': link:.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -420,6 +422,9 @@ importers:
       '@pluxel/plugin-cache':
         specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-cache-3bd15591b12e
         version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-cache-3bd15591b12e
+      '@pluxel/plugin-fonts':
+        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-fonts-0ca726e1368f
+        version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-fonts-0ca726e1368f
       '@pluxel/plugin-rates':
         specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
         version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
@@ -429,6 +434,9 @@ importers:
       '@pluxel/plugin-storage':
         specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-storage-5689af5b2082
         version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-storage-5689af5b2082
+      '@pluxel/plugin-takumi':
+        specifier: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-takumi-fc7b4730f12a
+        version: link:../.pluxel/sources/6b76349dc399/pluxel+plugin-takumi-fc7b4730f12a
       '@pluxel/services':
         specifier: link:../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -471,6 +479,9 @@ importers:
       '@pluxum/notifications':
         specifier: workspace:*
         version: link:../plugins/notifications
+      '@pluxum/og':
+        specifier: workspace:*
+        version: link:../plugins/og
       '@pluxum/outline':
         specifier: workspace:*
         version: link:../plugins/outline
@@ -1253,6 +1264,52 @@ importers:
       '@pluxel/host':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+      '@pluxel/test':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@pluxum/api':
+        specifier: workspace:*
+        version: link:../api
+      '@pluxum/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@pluxum/core':
+        specifier: workspace:*
+        version: link:../core
+      typescript:
+        specifier: catalog:tooling
+        version: 7.0.2
+      vite-plus:
+        specifier: catalog:tooling
+        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
+      vitest:
+        specifier: catalog:test
+        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2)))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))
+
+  plugins/og:
+    dependencies:
+      '@pluxel/core':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/plugin-fonts':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-fonts-0ca726e1368f
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-fonts-0ca726e1368f
+      '@pluxel/plugin-takumi':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-takumi-fc7b4730f12a
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-takumi-fc7b4730f12a
+      '@pluxum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+    devDependencies:
+      '@pluxel/cli':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+      '@pluxel/services':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f

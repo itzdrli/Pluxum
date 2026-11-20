@@ -1,0 +1,59 @@
+{
+	"name": "@pluxum/og",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"@pluxel/hmr": "./src/index.ts",
+			"default": "./dist/index.mjs"
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"build": "vp run compile",
+		"test": "vp run check-tests",
+		"typecheck": "vp run check-types"
+	},
+	"dependencies": {
+		"@pluxum/domain": "workspace:*"
+	},
+	"devDependencies": {
+		"@pluxel/cli": "catalog:pluxel",
+		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/host": "catalog:pluxel",
+		"@pluxel/plugin-fonts": "catalog:pluxel",
+		"@pluxel/plugin-takumi": "catalog:pluxel",
+		"@pluxel/services": "catalog:pluxel",
+		"@pluxel/test": "catalog:pluxel",
+		"@pluxum/api": "workspace:*",
+		"@pluxum/auth": "workspace:*",
+		"@pluxum/core": "workspace:*",
+		"typescript": "catalog:tooling",
+		"vite-plus": "catalog:tooling",
+		"vitest": "catalog:test"
+	},
+	"peerDependencies": {
+		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/plugin-fonts": "catalog:pluxel",
+		"@pluxel/plugin-takumi": "catalog:pluxel",
+		"@pluxum/api": "*",
+		"@pluxum/core": "*"
+	},
+	"pluxel": {
+		"artifactRoot": "dist",
+		"nodeArtifacts": true,
+		"workbenchArtifacts": true,
+		"pluginPackages": {
+			"@pluxum/api": "required",
+			"@pluxum/core": "required",
+			"@pluxel/plugin-fonts": "required",
+			"@pluxel/plugin-takumi": "required"
+		}
+	},
+	"publishConfig": {
+		"exports": {
+			".": "./dist/index.mjs",
+			"./package.json": "./package.json"
+		}
+	}
+}

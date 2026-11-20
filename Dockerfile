@@ -45,7 +45,12 @@ ENV NODE_ENV=production \
 	PLUXEL_DATA_ROOT=/data/.pluxel \
 	PLUXEL_HOST_BIND=0.0.0.0 \
 	PLUXEL_HOST_PORT=3000 \
-	PLUXUM_ADMIN_PORT=8080
+	PLUXUM_ADMIN_PORT=8080 \
+	FONT_FILES='["/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"]'
+# A CJK font for the social card images (see FONT_FILES).
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends fonts-wqy-zenhei \
+	&& rm -rf /var/lib/apt/lists/*
 COPY --from=build /src/pluxum/host/dist /app
 RUN mkdir -p /data && chown node:node /data
 USER node

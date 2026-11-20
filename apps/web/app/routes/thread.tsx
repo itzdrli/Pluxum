@@ -52,10 +52,21 @@ import {
 } from '../slots/slots'
 import { i18nOfRoot } from '../lib/i18n'
 import { i18nFromRequest } from '../lib/i18n.server'
-import { pageTitle } from '../lib/site'
+import { pageTitle, socialImageMeta, threadCardUrl } from '../lib/site'
 
 // Mounted under every list route (category, search, profile); the list decides where closing goes.
-export const handle = defineStage({ layer: 'detail' })
+// `socialImage`: the root layout leaves og:image to this page's meta (a card of the thread).
+export const handle = { ...defineStage({ layer: 'detail' }), socialImage: true }
+
+/** A post's Markdown as plain words for a meta description: no images, link targets or marks. */
+function plainWords(markdown: string): string {
+	return markdown
+		.replaceAll(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+		.replaceAll(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+		.replaceAll(/[#*_>`~|]+/g, ' ')
+		.replaceAll(/\s+/g, ' ')
+		.trim()
+}
 
 /** A note has no title: its page is named by the start of what it says. */
 function headingOf(i18n: I18n, thread: ThreadDto, opening: PostDto | undefined): string {
@@ -73,14 +84,23 @@ export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescrip
 	const root = matches[0].loaderData
 	const i18n = i18nOfRoot(root)
 	if (!loaderData) return [{ title: pageTitle(root) }]
+	const { thread, category } = loaderData
 	const opening = loaderData.posts.items.find((post) => post.number === 1)
+	const heading = headingOf(i18n, thread, opening)
+	const canonical = `/c/${category.slug}/t/${thread.ref}`
+	const card = threadCardUrl(root, thread.ref)
+	const words = Array.from(opening?.deleted ? '' : plainWords(opening?.body ?? ''))
+	const description = words.length > 150 ? `${words.slice(0, 150).join('')}…` : words.join('')
 	return [
-		{ title: pageTitle(root, headingOf(i18n, loaderData.thread, opening)) },
-		{
-			tagName: 'link',
-			rel: 'canonical',
-			href: `/c/${loaderData.category.slug}/t/${loaderData.thread.ref}`,
-		},
+		{ title: pageTitle(root, heading) },
+		{ tagName: 'link', rel: 'canonical', href: canonical },
+		{ property: 'og:type', content: 'article' },
+		{ property: 'og:title', content: heading },
+		...(description === '' ? [] : [{ property: 'og:description', content: description }]),
+		...(root?.origin === undefined
+			? []
+			: [{ property: 'og:url', content: `${root.origin}${canonical}` }]),
+		...(card === undefined ? [] : socialImageMeta(card)),
 	]
 }
 

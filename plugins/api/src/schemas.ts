@@ -193,6 +193,7 @@ export const meta = t.Object({
 				t.Literal('composer.toolbar'),
 				t.Literal('composer.editor'),
 				t.Literal('shell.actions'),
+				t.Literal('thread.social'),
 			]),
 			extId: t.String(),
 		}),

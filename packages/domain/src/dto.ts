@@ -332,6 +332,8 @@ export const UI_SLOTS = [
 	'composer.toolbar',
 	'composer.editor',
 	'shell.actions',
+	/** No component: a running extension here serves the thread page's social card image. */
+	'thread.social',
 ] as const
 export type UiSlot = (typeof UI_SLOTS)[number]
 
