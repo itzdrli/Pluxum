@@ -1,7 +1,18 @@
 {
 	"name": "@pluxum/og",
-	"private": true,
+	"version": "0.0.0",
+	"description": "Social card (Open Graph) images for Pluxum threads, drawn with Takumi.",
+	"license": "AGPL-3.0-only",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/itzdrli/Pluxum.git",
+		"directory": "plugins/og"
+	},
 	"type": "module",
+	"files": [
+		"dist",
+		"!**/*.map"
+	],
 	"exports": {
 		".": {
 			"@pluxel/hmr": "./src/index.ts",
@@ -36,8 +47,8 @@
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/plugin-fonts": "catalog:pluxel",
 		"@pluxel/plugin-takumi": "catalog:pluxel",
-		"@pluxum/api": "*",
-		"@pluxum/core": "*"
+		"@pluxum/api": "workspace:^",
+		"@pluxum/core": "workspace:^"
 	},
 	"pluxel": {
 		"artifactRoot": "dist",
@@ -54,6 +65,7 @@
 		"exports": {
 			".": "./dist/index.mjs",
 			"./package.json": "./package.json"
-		}
+		},
+		"access": "public"
 	}
 }

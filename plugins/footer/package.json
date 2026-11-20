@@ -1,7 +1,18 @@
 {
 	"name": "@pluxum/footer",
-	"private": true,
+	"version": "0.0.0",
+	"description": "Configurable site footer links and notes for Pluxum.",
+	"license": "AGPL-3.0-only",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/itzdrli/Pluxum.git",
+		"directory": "plugins/footer"
+	},
 	"type": "module",
+	"files": [
+		"dist",
+		"!**/*.map"
+	],
 	"exports": {
 		".": {
 			"@pluxel/hmr": "./src/index.ts",
@@ -31,7 +42,7 @@
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
-		"@pluxum/core": "*",
+		"@pluxum/core": "workspace:^",
 		"@pluxel/core": "catalog:pluxel"
 	},
 	"pluxel": {
@@ -46,6 +57,7 @@
 		"exports": {
 			".": "./dist/index.mjs",
 			"./package.json": "./package.json"
-		}
+		},
+		"access": "public"
 	}
 }

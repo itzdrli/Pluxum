@@ -1,7 +1,18 @@
 {
 	"name": "@pluxum/moderation",
-	"private": true,
+	"version": "0.0.0",
+	"description": "Reports, moderation queue, audit log, word filter and bans for Pluxum.",
+	"license": "AGPL-3.0-only",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/itzdrli/Pluxum.git",
+		"directory": "plugins/moderation"
+	},
 	"type": "module",
+	"files": [
+		"dist",
+		"!**/*.map"
+	],
 	"exports": {
 		".": {
 			"@pluxel/hmr": "./src/index.ts",
@@ -36,9 +47,9 @@
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
-		"@pluxum/api": "workspace:*",
-		"@pluxum/auth": "workspace:*",
-		"@pluxum/core": "workspace:*",
+		"@pluxum/api": "workspace:^",
+		"@pluxum/auth": "workspace:^",
+		"@pluxum/core": "workspace:^",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel"
 	},
@@ -56,6 +67,7 @@
 		"exports": {
 			".": "./dist/index.mjs",
 			"./package.json": "./package.json"
-		}
+		},
+		"access": "public"
 	}
 }

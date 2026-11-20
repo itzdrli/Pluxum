@@ -1,7 +1,18 @@
 {
 	"name": "@pluxum/reactions",
-	"private": true,
+	"version": "0.0.0",
+	"description": "Likes and \"useful\" reactions on Pluxum posts.",
+	"license": "AGPL-3.0-only",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/itzdrli/Pluxum.git",
+		"directory": "plugins/reactions"
+	},
 	"type": "module",
+	"files": [
+		"dist",
+		"!**/*.map"
+	],
 	"exports": {
 		".": {
 			"@pluxel/hmr": "./src/index.ts",
@@ -36,8 +47,8 @@
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
-		"@pluxum/api": "*",
-		"@pluxum/core": "*",
+		"@pluxum/api": "workspace:^",
+		"@pluxum/core": "workspace:^",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel"
 	},
@@ -54,6 +65,7 @@
 		"exports": {
 			".": "./dist/index.mjs",
 			"./package.json": "./package.json"
-		}
+		},
+		"access": "public"
 	}
 }

@@ -19,6 +19,7 @@
 	"devDependencies": {
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/rolldown": "catalog:pluxel",
+		"tegami": "catalog:tooling",
 		"typescript": "catalog:tooling",
 		"vite-plus": "catalog:tooling",
 		"vitest": "catalog:test"

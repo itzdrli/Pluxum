@@ -1,0 +1,10 @@
+import { defineConfig } from 'vite-plus/pack'
+
+export default defineConfig({
+	tsconfig: './tsconfig.json',
+	entry: { index: 'src/index.ts' },
+	dts: { eager: true, sourcemap: true },
+	format: ['esm'],
+	sourcemap: true,
+	clean: true,
+})

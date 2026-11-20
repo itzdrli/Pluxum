@@ -13,6 +13,7 @@ export default defineConfig({
 				cache: false,
 			},
 			'verify:checks': { command: 'vp check', cache: false },
+			tegami: { command: 'node scripts/tegami.mjs', cache: false },
 			'workspace:build': { command: [], dependsOn: ['@pluxum/host#compile', '@pluxum/web#build'] },
 			'workspace:test': {
 				command: [],

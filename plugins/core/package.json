@@ -1,7 +1,18 @@
 {
 	"name": "@pluxum/core",
-	"private": true,
+	"version": "0.0.0",
+	"description": "Pluxum forum core: users, roles, categories, threads, posts and the extension registries.",
+	"license": "AGPL-3.0-only",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/itzdrli/Pluxum.git",
+		"directory": "plugins/core"
+	},
 	"type": "module",
+	"files": [
+		"dist",
+		"!**/*.map"
+	],
 	"exports": {
 		".": {
 			"@pluxel/hmr": "./src/index.ts",
@@ -63,6 +74,7 @@
 		"exports": {
 			".": "./dist/index.mjs",
 			"./package.json": "./package.json"
-		}
+		},
+		"access": "public"
 	}
 }

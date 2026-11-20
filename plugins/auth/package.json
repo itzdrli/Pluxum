@@ -1,7 +1,18 @@
 {
 	"name": "@pluxum/auth",
-	"private": true,
+	"version": "0.0.0",
+	"description": "OpenID Connect login for Pluxum, with server-side sessions in Redis.",
+	"license": "AGPL-3.0-only",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/itzdrli/Pluxum.git",
+		"directory": "plugins/auth"
+	},
 	"type": "module",
+	"files": [
+		"dist",
+		"!**/*.map"
+	],
 	"exports": {
 		".": {
 			"@pluxel/hmr": "./src/index.ts",
@@ -41,7 +52,7 @@
 		"@pluxel/plugin-redis": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/workbench": "catalog:pluxel",
-		"@pluxum/core": "*"
+		"@pluxum/core": "workspace:^"
 	},
 	"pluxel": {
 		"artifactRoot": "dist",
@@ -56,6 +67,7 @@
 		"exports": {
 			".": "./dist/index.mjs",
 			"./package.json": "./package.json"
-		}
+		},
+		"access": "public"
 	}
 }

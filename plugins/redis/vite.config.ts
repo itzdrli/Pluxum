@@ -1,7 +1,9 @@
+import packConfig from './tsdown.config'
 import { defineConfig } from 'vite-plus'
 import { buildTask, checkCache } from '../../scripts/vite-tasks'
 
 export default defineConfig({
+	pack: packConfig,
 	run: {
 		tasks: {
 			compile: buildTask('pluxel build'),
