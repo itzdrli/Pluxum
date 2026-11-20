@@ -1,6 +1,8 @@
 import { workbench } from '@pluxel/workbench'
 import * as v from 'valibot'
 import * as f from 'valibot-form'
+import { MAIL_LOCALE_LABELS } from './config'
+import { MAIL_LOCALES } from './templates'
 
 const MailStatus = v.pipe(
 	v.object({
@@ -45,7 +47,24 @@ const TestInput = v.object({
 		f.formMeta({ title: '收件地址' }),
 		f.stringMeta({ placeholder: 'you@example.com' }),
 	),
+	locale: v.optional(
+		v.pipe(
+			v.picklist(['default', ...MAIL_LOCALES]),
+			f.formMeta({ title: '邮件语言' }),
+			f.picklistMeta({ labels: { default: '站点默认', ...MAIL_LOCALE_LABELS } }),
+		),
+		'default',
+	),
+	template: v.optional(
+		v.pipe(
+			v.picklist(['test', 'notification']),
+			f.formMeta({ title: '模板' }),
+			f.picklistMeta({ labels: { test: '测试邮件', notification: '示例通知' } }),
+		),
+		'test',
+	),
 })
+export type MailTestInput = v.InferOutput<typeof TestInput>
 
 export const MailWorkbench = workbench.define({
 	mail: workbench.content({

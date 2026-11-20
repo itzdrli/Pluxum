@@ -1,0 +1,1 @@
+ALTER TABLE "mail_preferences" ADD COLUMN "locale" text;

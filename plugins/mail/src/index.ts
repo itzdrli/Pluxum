@@ -1,4 +1,4 @@
-import { failure } from '@pluxum/domain'
+import { failure, noticeDetail } from '@pluxum/domain'
 import type { ForumNotification, Principal } from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult } from '@pluxum/core'
@@ -21,7 +21,8 @@ import {
 import { ForumMailConfig, isSendable } from './config'
 import { MailDatabase, mailPreferences } from './database'
 import { fromOf, MailQueue, smtpTransport, type MailSender } from './smtp'
-import { MailWorkbench, type MailStatus } from './workbench'
+import { MAIL_LOCALES, type MailLocale } from './templates'
+import { MailWorkbench, type MailStatus, type MailTestInput } from './workbench'
 
 export { ForumMailConfig } from './config'
 export { maskEmail, normalizeEmail, notificationMail } from './compose'
@@ -33,6 +34,9 @@ export const MAIL_CHANNEL_ID = 'forum-mail.smtp'
 /** Vault record (in this plugin's namespace) holding the SMTP password. */
 export const SMTP_PASSWORD_KEY = 'smtp-password'
 
+const [chinese, english] = MAIL_LOCALES
+const MailLocaleOrDefault = Type.Union([Type.Literal(chinese), Type.Literal(english), Type.Null()])
+
 export const MailAddressResult = Type.Object({
 	/** Whether the forum sends mail at all right now. */
 	available: Type.Boolean(),
@@ -40,11 +44,16 @@ export const MailAddressResult = Type.Object({
 	email: Type.Union([Type.String(), Type.Null()]),
 	/** Whether the account wants notification mail (on unless switched off). */
 	enabled: Type.Boolean(),
+	/** The account's language override, or null to use the site default. */
+	locale: MailLocaleOrDefault,
 })
 export type MailAddressResult = Static<typeof MailAddressResult>
 
 const EmptyInput = Type.Object({})
-const PreferenceInput = Type.Object({ enabled: Type.Boolean() })
+const PreferenceInput = Type.Union([
+	Type.Object({ enabled: Type.Boolean(), locale: Type.Optional(MailLocaleOrDefault) }),
+	Type.Object({ enabled: Type.Optional(Type.Boolean()), locale: MailLocaleOrDefault }),
+])
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error))
 
@@ -121,7 +130,7 @@ export class ForumMailPlugin extends BasePlugin {
 				login: true,
 				input: PreferenceInput,
 				output: MailAddressResult,
-				handle: ({ principal, input }) => this.setEnabled(principal, input.enabled),
+				handle: ({ principal, input }) => this.setPreferences(principal, input),
 			}),
 		)
 		this.ctx.workbench?.publish(MailWorkbench, { mail: () => this.workbenchContent() })
@@ -137,6 +146,10 @@ export class ForumMailPlugin extends BasePlugin {
 	private site(): MailSite {
 		const url = this.config.siteUrl
 		return { name: this.core.site().name, url: url === '' ? undefined : url }
+	}
+
+	private templatesFor(locale: MailLocale) {
+		return locale === 'en' ? this.config.templatesEn : this.config.templatesZhCN
 	}
 
 	private sender(): MailSender | null {
@@ -164,13 +177,21 @@ export class ForumMailPlugin extends BasePlugin {
 
 	private async deliver(notification: ForumNotification): Promise<void> {
 		if (!this.available()) return
-		const [contact, wanted] = await Promise.all([
+		const [contact, preferences] = await Promise.all([
 			this.core.contactEmail(notification.recipientId),
-			this.wantsMail(notification.recipientId),
+			this.preferencesOf(notification.recipientId),
 		])
 		const email = contact === null ? null : normalizeEmail(contact)
-		if (email === null || !wanted) return
-		if (!this.queue.push(notificationMail(email, notification, this.site()))) {
+		if (email === null || !preferences.enabled) return
+		const locale = preferences.locale ?? this.config.defaultLocale
+		const message = notificationMail(
+			email,
+			notification,
+			this.site(),
+			locale,
+			this.templatesFor(locale),
+		)
+		if (!this.queue.push(message)) {
 			throw new Error('The mail queue is full')
 		}
 	}
@@ -189,23 +210,22 @@ export class ForumMailPlugin extends BasePlugin {
 
 	// ── Preference ──────────────────────────────────────────────────────────────────────────
 
-	/** Whether the account wants notification mail; on unless switched off. */
-	private async wantsMail(userId: string): Promise<boolean> {
+	private async preferencesOf(userId: string) {
 		const [row] = await this.database.read((db) =>
 			db
-				.select({ enabled: mailPreferences.enabled })
+				.select({ enabled: mailPreferences.enabled, locale: mailPreferences.locale })
 				.from(mailPreferences)
 				.where(eq(mailPreferences.userId, userId)),
 		)
-		return row?.enabled ?? true
+		return row ?? { enabled: true, locale: null }
 	}
 
 	private async stateOf(userId: string): Promise<MailAddressResult> {
-		const [email, enabled] = await Promise.all([
+		const [email, preferences] = await Promise.all([
 			this.core.contactEmail(userId),
-			this.wantsMail(userId),
+			this.preferencesOf(userId),
 		])
-		return { available: this.available(), email, enabled }
+		return { available: this.available(), email, ...preferences }
 	}
 
 	/** Where the signed-in account's notification mail goes, and whether it wants it. */
@@ -216,34 +236,72 @@ export class ForumMailPlugin extends BasePlugin {
 	}
 
 	/** Switches notification mail on or off for the signed-in account. */
-	async setEnabled(
+	setEnabled(principal: Principal, enabled: boolean): Promise<ForumResult<MailAddressResult>> {
+		return this.setPreferences(principal, { enabled })
+	}
+
+	/** Updates only the fields the account chose. */
+	async setPreferences(
 		principal: Principal,
-		enabled: boolean,
+		input: Static<typeof PreferenceInput>,
 	): Promise<ForumResult<MailAddressResult>> {
 		const userId = principal.userId
 		if (userId === null) return Result.err(failure('unauthenticated', 'auth.required'))
-		const now = new Date()
+		const { enabled, locale } = input
+		const updatedAt = new Date()
 		await this.database.transaction((tx) =>
 			tx
 				.insert(mailPreferences)
-				.values({ userId, enabled, updatedAt: now })
-				.onConflictDoUpdate({ target: mailPreferences.userId, set: { enabled, updatedAt: now } }),
+				.values({ userId, enabled: enabled ?? true, locale: locale ?? null, updatedAt })
+				.onConflictDoUpdate({
+					target: mailPreferences.userId,
+					set: { enabled, locale, updatedAt },
+				}),
 		)
 		return Result.ok(await this.stateOf(userId))
 	}
 
 	// ── Workbench ───────────────────────────────────────────────────────────────────────────
 
+	private exampleNotification(to: string, site: MailSite, locale: MailLocale): MailMessage {
+		const actor = 'Alex'
+		const title = locale === 'en' ? 'Welcome to the forum' : '欢迎来到论坛'
+		const detail = noticeDetail('notice.reply.topic', { actor, title })
+		return notificationMail(
+			to,
+			{
+				id: 'example',
+				recipientId: 'example',
+				kind: 'thread.reply',
+				title: detail.title,
+				titleKey: detail.key,
+				titleParams: detail.params,
+				body: locale === 'en' ? 'Thanks for starting the discussion!' : '谢谢你发起讨论！',
+				path: '/',
+				createdAt: new Date().toISOString(),
+			},
+			site,
+			locale,
+			this.templatesFor(locale),
+		)
+	}
+
 	private workbenchContent() {
 		return {
 			load: async () => ({ status: await this.status() }),
 			actions: {
-				sendTest: async ({ to }: { to: string }) => {
+				sendTest: async ({ to, locale, template }: MailTestInput) => {
 					if (!this.available()) {
 						return { ok: false, message: '邮件没有开启，或设置不完整（服务器、发件地址、密码）' }
 					}
 					try {
-						await this.sendNow(testMail(to, this.site()))
+						const language = locale === 'default' ? this.config.defaultLocale : locale
+						const site = this.site()
+						const message =
+							template === 'notification'
+								? this.exampleNotification(to, site, language)
+								: testMail(to, site, language, this.templatesFor(language))
+						await this.sendNow(message)
 						return { ok: true, message: `测试邮件已发往 ${to}` }
 					} catch (error) {
 						this.ctx.logger.warn('test mail failed', { error })

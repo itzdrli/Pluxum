@@ -1,8 +1,65 @@
 import * as v from 'valibot'
 import * as f from 'valibot-form'
+import {
+	DEFAULT_MAIL_LOCALE,
+	DEFAULT_TEMPLATES,
+	MAIL_LOCALES,
+	validTemplate,
+	type MailLocale,
+} from './templates'
 
 const SMTP = { id: 'smtp', title: 'SMTP', order: 0 }
 const SENDER = { id: 'sender', title: '发件人', order: 1 }
+const TEMPLATES = { id: 'templates', title: '邮件模板', order: 2 }
+const SITE_TOKEN = ['siteName'] as const
+const TITLE_TOKENS = ['siteName', 'title'] as const
+const BODY_TOKENS = ['siteName', 'title', 'body'] as const
+
+export const MAIL_LOCALE_LABELS = { 'zh-CN': '简体中文', en: 'English' }
+
+function templateField(
+	label: string,
+	fallback: string,
+	placeholders: readonly string[],
+	rows?: number,
+) {
+	const tokens = placeholders.map((name) => `{${name}}`).join('、')
+	return v.optional(
+		v.pipe(
+			v.string(),
+			v.trim(),
+			v.maxLength(rows === undefined ? 240 : 4000),
+			v.check((value) => validTemplate(value, placeholders), `可用占位符：${tokens}`),
+			f.formMeta({ title: label, description: `留空用内置文案。可用：${tokens}` }),
+			f.stringMeta(
+				rows === undefined
+					? { placeholder: fallback }
+					: { control: 'textarea', rows, placeholder: fallback },
+			),
+		),
+		fallback,
+	)
+}
+
+function templates(locale: MailLocale) {
+	const defaults = DEFAULT_TEMPLATES[locale]
+	return v.optional(
+		v.pipe(
+			v.object({
+				notificationSubject: templateField('通知主题', defaults.notificationSubject, TITLE_TOKENS),
+				notificationBody: templateField('通知正文', defaults.notificationBody, BODY_TOKENS, 4),
+				viewLabel: templateField('查看按钮', defaults.viewLabel, SITE_TOKEN),
+				footer: templateField('通知页脚', defaults.footer, SITE_TOKEN, 2),
+				settingsLabel: templateField('邮件设置链接', defaults.settingsLabel, SITE_TOKEN),
+				testSubject: templateField('测试邮件主题', defaults.testSubject, SITE_TOKEN),
+				testBody: templateField('测试邮件正文', defaults.testBody, SITE_TOKEN, 3),
+			}),
+			f.formMeta({ title: MAIL_LOCALE_LABELS[locale], section: TEMPLATES }),
+			f.objectMeta({ variant: 'stack' }),
+		),
+		{},
+	)
+}
 
 /**
  * SMTP settings, edited in Workbench. The password is not configuration: it lives in this
@@ -107,6 +164,20 @@ export const ForumMailConfig = v.object({
 		),
 		'',
 	),
+	defaultLocale: v.optional(
+		v.pipe(
+			v.picklist(MAIL_LOCALES),
+			f.formMeta({
+				title: '默认邮件语言',
+				description: '用户没选邮件语言时使用。',
+				section: TEMPLATES,
+			}),
+			f.picklistMeta({ labels: MAIL_LOCALE_LABELS }),
+		),
+		DEFAULT_MAIL_LOCALE,
+	),
+	templatesZhCN: templates('zh-CN'),
+	templatesEn: templates('en'),
 })
 export type ForumMailConfig = v.InferOutput<typeof ForumMailConfig>
 

@@ -1,4 +1,4 @@
-import type { ForumNotification, Principal } from '@pluxum/domain'
+import { noticeDetail, type ForumNotification, type Principal } from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAuth, type Authentication } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
@@ -17,6 +17,7 @@ import {
 	notificationMail,
 	SMTP_PASSWORD_KEY,
 } from '../src'
+import { MailWorkbench } from '../src/workbench'
 import { startSmtpServer } from './smtp-server'
 
 @Plugin(ForumAuth)
@@ -85,7 +86,9 @@ function textOf(raw: string): string {
 }
 
 const servers: Array<{ close: () => Promise<void> }> = []
+const hosts: Array<{ dispose: () => Promise<void> }> = []
 afterEach(async () => {
+	await Promise.all(hosts.splice(0).map((host) => host.dispose()))
 	await Promise.all(servers.splice(0).map((server) => server.close()))
 })
 
@@ -93,8 +96,10 @@ async function boot(options: { password?: string } = {}) {
 	const smtp = await startSmtpServer(options)
 	servers.push(smtp)
 	const host = await createTestHost({
+		workbench: true,
 		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) }), vault()],
 	})
+	hosts.push(host)
 	await host.commit((change) => {
 		change.start(ForumCorePlugin)
 		change.start(FakeAuth)
@@ -145,6 +150,7 @@ describe('forum mail plugin', () => {
 			available: false,
 			email: null,
 			enabled: true,
+			locale: null,
 		})
 		expect(await configure()).toMatchObject({ ok: true, application: 'applied' })
 
@@ -158,6 +164,7 @@ describe('forum mail plugin', () => {
 			available: true,
 			email: 'Alice@Example.COM',
 			enabled: true,
+			locale: null,
 		})
 		await core.deliverNotification(notice(aliceId, 'Bob 回复了你的主题《测试》'))
 		await mail.idle()
@@ -183,6 +190,93 @@ describe('forum mail plugin', () => {
 		await core.deliverNotification(notice(aliceId, '邮箱没了'))
 		await mail.idle()
 		expect(smtp.mails).toHaveLength(2)
+	})
+
+	it('applies saved templates and respects the recipient language and opt-out', async () => {
+		const { core, mail, smtp, signUp, configure, host } = await boot()
+		const recipient = await signUp('Recipient')
+		const userId = recipient.userId ?? ''
+		await core.setContactEmail(userId, 'recipient@example.com')
+		expect(
+			await configure({
+				defaultLocale: 'en',
+				templatesEn: {
+					notificationSubject: '[{siteName}] {title}',
+					notificationBody: 'New activity at {siteName}\n\n{title}\n\n{body}',
+					viewLabel: 'Open thread',
+				},
+			}),
+		).toMatchObject({ ok: true, application: 'applied' })
+		expect(
+			await host.config.patch(ForumMailPlugin, {
+				set: { templatesEn: { notificationSubject: '{unknown}' } },
+			}),
+		).toMatchObject({ ok: false })
+		const detail = noticeDetail('notice.reply.topic', { actor: 'Alex', title: 'Test' })
+		const notification = {
+			...notice(userId, detail.title),
+			titleKey: detail.key,
+			titleParams: detail.params,
+		}
+
+		await core.deliverNotification(notification)
+		await mail.idle()
+		const english = textOf(smtp.mails[0]?.data ?? '')
+		expect(english).toContain('Alex replied to your thread')
+		expect(english).toContain('New activity at Pluxum')
+		expect(english).toContain('Open thread')
+		expect(english).toContain('回复的摘要')
+
+		await mail.setEnabled(recipient, false)
+		expect((await mail.setPreferences(recipient, { locale: 'zh-CN' })).unwrap()).toMatchObject({
+			enabled: false,
+			locale: 'zh-CN',
+		})
+		await core.deliverNotification(notification)
+		await mail.idle()
+		expect(smtp.mails).toHaveLength(1)
+
+		expect((await mail.setEnabled(recipient, true)).unwrap().locale).toBe('zh-CN')
+		await core.deliverNotification(notification)
+		await mail.idle()
+		expect(textOf(smtp.mails[1]?.data ?? '')).toContain(detail.title)
+
+		await mail.setPreferences(recipient, { locale: null })
+		await core.deliverNotification(notification)
+		await mail.idle()
+		expect(textOf(smtp.mails[2]?.data ?? '')).toContain('Alex replied to your thread')
+	})
+
+	it('sends both test and example notification templates through the Workbench action', async () => {
+		const { host, smtp, configure } = await boot()
+		expect(
+			await configure({
+				defaultLocale: 'en',
+				templatesEn: { testBody: 'Delivered from {siteName}.', viewLabel: 'Read the example' },
+			}),
+		).toMatchObject({ ok: true, application: 'applied' })
+		using opened = await host.workbench.open({
+			target: ForumMailPlugin,
+			entry: MailWorkbench.mail,
+			principal: { provider: 'local', subject: 'local' },
+		})
+		expect(await opened.root.subscribeDto(() => {})).toMatchObject({ ok: true })
+		await expect(
+			opened.root.runDto('sendTest', { to: 'preview@example.com' }),
+		).resolves.toMatchObject({
+			action: { ok: true },
+		})
+		await expect(
+			opened.root.runDto('sendTest', {
+				to: 'preview@example.com',
+				locale: 'en',
+				template: 'notification',
+			}),
+		).resolves.toMatchObject({
+			action: { ok: true },
+		})
+		expect(textOf(smtp.mails[0]?.data ?? '')).toContain('Delivered from Pluxum.')
+		expect(textOf(smtp.mails[1]?.data ?? '')).toContain('Read the example')
 	})
 
 	it('logs in with the password kept in Vault, and stays off without it', async () => {

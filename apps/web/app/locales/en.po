@@ -1609,6 +1609,10 @@ msgstr "Remove link"
 msgid "站内"
 msgstr "On this site"
 
+#: app/slots/forum-mail/mail-settings.tsx
+msgid "站点默认语言"
+msgstr "Site default"
+
 #: app/components/forum/post.tsx
 msgid "第 {number} 楼的操作"
 msgstr "Actions for floor {number}"
@@ -1902,6 +1906,10 @@ msgstr "Notification filter"
 #: app/slots/forum-mail/mail-settings.tsx
 msgid "邮件提醒"
 msgstr "Email notifications"
+
+#: app/slots/forum-mail/mail-settings.tsx
+msgid "邮件语言"
+msgstr "Email language"
 
 #: app/slots/forum-solved/solved.tsx
 msgid "采纳为答案"

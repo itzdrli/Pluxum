@@ -8,6 +8,8 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { apiErrorTextOfBody } from '../../lib/api-errors'
 
 import { FormError, Panel, SectionLabel } from '../../components/ui/display'
+import { NativeSelect } from '../../components/ui/field'
+import { isLocaleId, LOCALES, type LocaleId } from '../../lib/locale'
 import type { loader as rootLoader } from '../../root'
 
 const EXT_ID = 'forum-mail'
@@ -16,6 +18,7 @@ type MailState = Readonly<{
 	available: boolean
 	email: string | null
 	enabled: boolean
+	locale: LocaleId | null
 }>
 
 function isMailState(value: unknown): value is MailState {
@@ -27,7 +30,9 @@ function isMailState(value: unknown): value is MailState {
 		'email' in value &&
 		(value.email === null || typeof value.email === 'string') &&
 		'enabled' in value &&
-		typeof value.enabled === 'boolean'
+		typeof value.enabled === 'boolean' &&
+		'locale' in value &&
+		(value.locale === null || isLocaleId(value.locale))
 	)
 }
 
@@ -59,7 +64,7 @@ async function call(i18n: I18n, action: string, input?: unknown): Promise<Outcom
  * address of its own; mail goes to the one the sign-in provider gives, so it is changed there.
  */
 export function MailSettings({ profile }: { profile: UserProfileDto }) {
-	const { i18n } = useLingui()
+	const { t, i18n } = useLingui()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
 	const isSelf = viewer?.user?.id === profile.user.id
 	const [state, setState] = useState<MailState | null>(null)
@@ -82,10 +87,10 @@ export function MailSettings({ profile }: { profile: UserProfileDto }) {
 	if (!isSelf || state === null || !state.available) return null
 	const email = state.email
 
-	async function toggle(enabled: boolean) {
+	async function updatePreference(input: { enabled: boolean } | { locale: LocaleId | null }) {
 		setBusy(true)
 		setError(undefined)
-		const outcome = await call(i18n, 'preference', { enabled })
+		const outcome = await call(i18n, 'preference', input)
 		setBusy(false)
 		if (outcome.ok) setState(outcome.state)
 		else setError(outcome.error)
@@ -115,11 +120,33 @@ export function MailSettings({ profile }: { profile: UserProfileDto }) {
 								className="accent-accent size-4"
 								checked={state.enabled}
 								disabled={busy}
-								onChange={(event) => void toggle(event.currentTarget.checked)}
+								onChange={(event) =>
+									void updatePreference({ enabled: event.currentTarget.checked })
+								}
 							/>
 							<span>
 								<Trans>有人回复或提到我时发邮件给我</Trans>
 							</span>
+						</label>
+						<label className="text-ink flex flex-wrap items-center gap-2.5">
+							<span>{t`邮件语言`}</span>
+							<NativeSelect
+								value={state.locale ?? ''}
+								disabled={busy}
+								onChange={(event) => {
+									const value = event.currentTarget.value
+									if (value === '' || isLocaleId(value)) {
+										void updatePreference({ locale: value === '' ? null : value })
+									}
+								}}
+							>
+								<option value="">{t`站点默认语言`}</option>
+								{LOCALES.map(({ id, label }) => (
+									<option key={id} value={id} lang={id}>
+										{label}
+									</option>
+								))}
+							</NativeSelect>
 						</label>
 						<p className="text-ink-weak text-meta flex items-start gap-1.5">
 							<Mail aria-hidden className="mt-[0.2em] size-3.5 shrink-0" />

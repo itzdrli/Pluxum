@@ -1,4 +1,12 @@
 import type { ForumNotification } from '@pluxum/domain'
+import {
+	DEFAULT_MAIL_LOCALE,
+	DEFAULT_TEMPLATES,
+	mailNoticeTitle,
+	renderTemplate,
+	type MailLocale,
+	type MailTemplates,
+} from './templates'
 
 /** A message ready for the transport: plain text plus an equivalent HTML part. */
 export type MailMessage = Readonly<{
@@ -68,63 +76,84 @@ function subjectOf(value: string): string {
 	return chars.length <= 120 ? single : `${chars.slice(0, 119).join('')}…`
 }
 
-function layout(site: MailSite, paragraphs: readonly string[], footer: string): string {
-	const body = paragraphs.map((paragraph) => `<p style="margin:0 0 16px">${paragraph}</p>`).join('')
+function layout(site: MailSite, locale: MailLocale, body: string, footer = ''): string {
+	const footerHtml =
+		footer === '' ? '' : `<p style="margin:24px 0 0;color:#77756f;font-size:13px">${footer}</p>`
 	return (
-		'<!doctype html><html><body style="margin:0;padding:24px;background:#f6f6f4;' +
+		`<!doctype html><html lang="${locale}"><body style="margin:0;padding:24px;background:#f6f6f4;` +
 		"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans SC',sans-serif;" +
 		'color:#1f1f1d;font-size:15px;line-height:1.6">' +
 		'<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;padding:24px 28px">' +
 		`<p style="margin:0 0 20px;font-weight:600">${escapeHtml(site.name)}</p>` +
 		body +
-		`<p style="margin:24px 0 0;color:#77756f;font-size:13px">${footer}</p>` +
+		footerHtml +
 		'</div></body></html>'
 	)
 }
 
-/** The mail for one forum notification. */
+function bodyHtml(text: string): string {
+	return `<p style="margin:0 0 16px">${escapeHtml(text).replaceAll(/\r\n?|\n/g, '<br>')}</p>`
+}
+
+/** The mail for one forum notification. Templates are plain text, even in the HTML part. */
 export function notificationMail(
 	to: string,
 	notification: ForumNotification,
 	site: MailSite,
+	locale: MailLocale = DEFAULT_MAIL_LOCALE,
+	templates: MailTemplates = DEFAULT_TEMPLATES[locale],
 ): MailMessage {
 	const link = linkTo(site, notification.path)
 	const settings = linkTo(site, `/u/${notification.recipientId}`)
-	const lines = [notification.title, ...(notification.body ? [notification.body] : [])]
-	const footerText = settings
-		? `不想再收到邮件？在个人资料页关闭邮件通知：${settings}`
-		: '不想再收到邮件？在论坛的个人资料页关闭邮件通知。'
-	const text = [...lines, ...(link ? [`查看：${link}`] : []), '', '—', site.name, footerText].join(
-		'\n\n',
-	)
-	const html = layout(
-		site,
-		[
-			escapeHtml(notification.title),
-			...(notification.body
-				? [`<span style="color:#55534e">${escapeHtml(notification.body)}</span>`]
-				: []),
-			...(link
-				? [
-						`<a href="${escapeHtml(link)}" style="display:inline-block;padding:8px 16px;` +
-							'background:#1f1f1d;color:#fff;border-radius:6px;text-decoration:none">查看</a>',
-					]
-				: []),
-		],
-		settings
-			? `不想再收到邮件？<a href="${escapeHtml(settings)}" style="color:#77756f">在个人资料页关闭邮件通知</a>。`
-			: '不想再收到邮件？在论坛的个人资料页关闭邮件通知。',
-	)
-	return { to, subject: subjectOf(notification.title), text, html }
+	const defaults = DEFAULT_TEMPLATES[locale]
+	const values = {
+		siteName: site.name,
+		title: mailNoticeTitle(notification, locale),
+		body: notification.body,
+	}
+	const render = (field: keyof MailTemplates) =>
+		renderTemplate(templates[field] || defaults[field], values)
+	const body = render('notificationBody')
+	const view = render('viewLabel')
+	const footer = render('footer')
+	const settingsLabel = render('settingsLabel')
+	const text = [
+		body,
+		...(link ? [`${view}: ${link}`] : []),
+		`—\n${site.name}`,
+		footer,
+		...(settings ? [`${settingsLabel}: ${settings}`] : []),
+	]
+		.filter(Boolean)
+		.join('\n\n')
+	const button = link
+		? `<p style="margin:0 0 16px"><a href="${escapeHtml(link)}" style="display:inline-block;padding:8px 16px;background:#1f1f1d;color:#fff;border-radius:6px;text-decoration:none">${escapeHtml(view)}</a></p>`
+		: ''
+	const settingsHtml = settings
+		? `<br><a href="${escapeHtml(settings)}" style="color:#77756f">${escapeHtml(settingsLabel)}</a>`
+		: ''
+	return {
+		to,
+		subject: subjectOf(render('notificationSubject') || values.title || site.name),
+		text,
+		html: layout(site, locale, bodyHtml(body) + button, escapeHtml(footer) + settingsHtml),
+	}
 }
 
 /** The mail Workbench sends to check the SMTP settings. */
-export function testMail(to: string, site: MailSite): MailMessage {
-	const text = `这是一封测试邮件：${site.name} 的 SMTP 设置可以正常发信。`
+export function testMail(
+	to: string,
+	site: MailSite,
+	locale: MailLocale,
+	templates: MailTemplates,
+): MailMessage {
+	const defaults = DEFAULT_TEMPLATES[locale]
+	const values = { siteName: site.name }
+	const text = renderTemplate(templates.testBody || defaults.testBody, values)
 	return {
 		to,
-		subject: subjectOf(`${site.name} 测试邮件`),
+		subject: subjectOf(renderTemplate(templates.testSubject || defaults.testSubject, values)),
 		text,
-		html: layout(site, [escapeHtml(text)], '由 Workbench 发送。'),
+		html: layout(site, locale, bodyHtml(text)),
 	}
 }
