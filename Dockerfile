@@ -17,7 +17,7 @@ RUN corepack enable
 # --- Framework checkout -------------------------------------------------------------------------
 FROM base AS pluxel
 ARG PLUXEL_REPO=https://github.com/PluxelJS/pluxel.git
-ARG PLUXEL_REF=f09aa542f
+ARG PLUXEL_REF=89cbbbce
 WORKDIR /src/pluxel
 RUN git clone --filter=blob:none "${PLUXEL_REPO}" . \
 	&& git -c advice.detachedHead=false checkout "${PLUXEL_REF}" \
