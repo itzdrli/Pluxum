@@ -58,9 +58,12 @@ export function CategoryRow({ category }: { category: CategoryDto }) {
 export function UnreadDot({
 	thread,
 	hidden = false,
+	className = 'mr-2',
 }: {
 	thread: Pick<ThreadDto, 'ext' | 'lastPostAt'>
 	hidden?: boolean
+	/** Where it sits: by default inline before a title. */
+	className?: string
 }) {
 	const { t } = useLingui()
 	if (hidden || !isUnread(thread)) return null
@@ -70,7 +73,7 @@ export function UnreadDot({
 			role="img"
 			aria-label={t`有未读内容`}
 			title={t`有未读内容`}
-			className="bg-accent mr-2 mb-px inline-block size-2 rounded-full align-middle"
+			className={`bg-accent mb-px inline-block size-2 shrink-0 rounded-full align-middle ${className}`}
 		/>
 	)
 }

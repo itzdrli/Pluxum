@@ -87,7 +87,6 @@ export function NoteCard({
 				)}
 				<div className="min-w-0 flex-1">
 					<p className="text-ink-weak flex min-w-0 items-center gap-x-2 text-meta">
-						<UnreadDot thread={thread} hidden={isActive} />
 						{showAuthor && (
 							<StageLink
 								to={`/u/${thread.author.handle}`}
@@ -122,6 +121,8 @@ export function NoteCard({
 								<Trans context="screen-reader suffix after a note's time">的动态</Trans>
 							</span>
 						</StageLink>
+						{/* A note has no title to lead with: the mark closes its line, at the card's edge. */}
+						<UnreadDot thread={thread} hidden={isActive} className="ml-auto" />
 					</p>
 					{opening !== undefined && (
 						<>
