@@ -590,12 +590,13 @@ export class ForumApiPlugin extends BasePlugin {
 
 	private async meta(request: Request): Promise<MetaDto> {
 		const principal = await this.viewer(request)
-		const [user, stream, following] = await Promise.all([
+		const [user, stream, following, ghostUserId] = await Promise.all([
 			principal.userId === null
 				? null
 				: this.core.getUser(principal.userId, principal).then((found) => found.unwrapOr(null)),
 			this.core.streamFor(principal),
 			this.core.followingOf(principal),
+			this.core.findGhostId(),
 		])
 		return {
 			viewer: {
@@ -624,6 +625,7 @@ export class ForumApiPlugin extends BasePlugin {
 			},
 			content: { format: this.core.contentFormat() },
 			stream: stream?.category ?? null,
+			ghostUserId,
 			uiSlots: this.core.uiSlots(),
 			site: this.core.site(),
 			footer: this.core.footer(),

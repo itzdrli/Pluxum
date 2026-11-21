@@ -443,6 +443,8 @@ export type MetaDto = Readonly<{
 	}>
 	/** The stream notes are posted to, or null when there is none the viewer may see. */
 	stream: CategorySummaryDto | null
+	/** The Ghost account (deleted accounts' posts), drawn with its own avatar; null until it exists. */
+	ghostUserId: string | null
 	/** Slots filled by the extensions that are running, in display order. */
 	uiSlots: UiSlotDto[]
 	site: SiteDto

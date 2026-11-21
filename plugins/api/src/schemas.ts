@@ -182,6 +182,7 @@ export const meta = t.Object({
 	}),
 	content: t.Object({ format: bodyFormat }),
 	stream: t.Union([categorySummary, t.Null()]),
+	ghostUserId: t.Union([t.String(), t.Null()]),
 	uiSlots: t.Array(
 		t.Object({
 			// Mirrors UI_SLOTS in @pluxum/domain; a missing name fails type-checking of `/meta`.

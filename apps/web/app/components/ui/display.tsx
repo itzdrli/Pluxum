@@ -69,14 +69,24 @@ const AVATAR_SIZES = {
 export function Avatar({
 	name,
 	src,
+	art,
 	size = 'md',
 }: {
 	name: string
 	src?: string
+	/** A drawing in place of the monogram (Ghost's), filling the box. */
+	art?: React.ReactNode
 	size?: keyof typeof AVATAR_SIZES
 }) {
 	const [failed, setFailed] = useState<string | null>(null)
 	const box = `border-line inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[2px] border select-none ${AVATAR_SIZES[size]}`
+	if (art !== undefined) {
+		return (
+			<span aria-hidden className={`bg-control ${box}`}>
+				{art}
+			</span>
+		)
+	}
 	if (src !== undefined && failed !== src) {
 		return (
 			<span aria-hidden className={`bg-control ${box}`}>
