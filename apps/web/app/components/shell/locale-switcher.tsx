@@ -38,14 +38,16 @@ export function LocaleSwitcher({ className }: { className?: string }) {
 						type="button"
 						lang={locale.id}
 						aria-pressed={selected}
+						aria-label={locale.short}
+						title={locale.short}
 						onClick={() => choose(locale.id)}
-						className={`cursor-pointer rounded-[2px] border px-1.5 py-0.5 transition-colors ${
+						className={`cursor-pointer min-w-7 rounded-[2px] border px-1.5 py-0.5 text-center transition-colors ${
 							selected
 								? 'border-accent text-ink-strong'
 								: 'border-line text-ink-weak hover:border-ink-weak hover:text-ink-strong'
 						}`}
 					>
-						{locale.label}
+						{locale.short}
 					</button>
 				)
 			})}

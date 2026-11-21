@@ -2,9 +2,9 @@
 // the tests all read a request's language the same way. Catalogs live in app/locales/<id>.po.
 
 export const LOCALES = [
-	// `label` is each language's own name and is never translated.
-	{ id: 'zh-CN', label: '简体中文' },
-	{ id: 'en', label: 'English' },
+	// `label` is each language's own name and is never translated; `short` is what its button shows.
+	{ id: 'zh-CN', label: '简体中文', short: '中' },
+	{ id: 'en', label: 'English', short: 'EN' },
 ] as const
 
 export type LocaleId = (typeof LOCALES)[number]['id']
