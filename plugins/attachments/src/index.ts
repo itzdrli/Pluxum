@@ -277,6 +277,21 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 		// Fail fast if the configured bucket is not present in the active S3 catalog.
 		this.s3.bucket(this.config.bucketId)
 		this.database = await this.ctx.require(Database).use(AttachmentsDatabase)
+		// A removed account's avatar goes; its uploads stay in the posts, as Ghost's.
+		this.ctx.effects.defer(
+			this.core.registerUserRemoval({
+				id: `${ATTACHMENTS_EXT_ID}.removal`,
+				remove: async ({ userId, ghostId }) => {
+					await this.dropAvatar(userId)
+					await this.database.transaction((tx) =>
+						tx
+							.update(attachments)
+							.set({ uploaderId: ghostId })
+							.where(eq(attachments.uploaderId, userId)),
+					)
+				},
+			}),
+		)
 		// Limits are read on every upload; a new bucket only takes effect on restart.
 		this.configs.onUpdate(this.config, ({ applied, desired }) => {
 			if (desired.bucketId !== applied.bucketId) {
@@ -529,6 +544,12 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 			return Result.err(failure('forbidden', 'permission.denied'))
 		}
 
+		await this.dropAvatar(targetUserId)
+		return Result.ok({ avatarUrl: null })
+	}
+
+	/** Deletes a user's avatar row, its attachment and the stored image, if there is one. */
+	private async dropAvatar(userId: string): Promise<void> {
 		const removed = await this.database.transaction(async (tx) => {
 			const [existing] = await tx
 				.select({
@@ -537,20 +558,18 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 				})
 				.from(userAvatars)
 				.innerJoin(attachments, eq(attachments.id, userAvatars.attachmentId))
-				.where(eq(userAvatars.userId, targetUserId))
+				.where(eq(userAvatars.userId, userId))
 			if (!existing) return undefined
-			await tx.delete(userAvatars).where(eq(userAvatars.userId, targetUserId))
+			await tx.delete(userAvatars).where(eq(userAvatars.userId, userId))
 			await tx.delete(attachments).where(eq(attachments.id, existing.attachmentId))
 			return existing.objectKey
 		})
-
 		if (removed) {
 			await this.s3
 				.bucket(this.config.bucketId)
 				.client.deleteObject(removed)
 				.catch(() => {})
 		}
-		return Result.ok({ avatarUrl: null })
 	}
 
 	/** Uploads a post attachment (image or allowed document) and returns its reference DTO. */

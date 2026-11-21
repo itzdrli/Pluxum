@@ -83,6 +83,7 @@ import {
 	inArray,
 	isNull,
 	lte,
+	ne,
 	or,
 	sql,
 	type SQL,
@@ -140,8 +141,17 @@ import {
 	SearchProviderRegistry,
 	type SearchProviderContribution,
 } from './search'
+import {
+	GHOST_DISPLAY_NAME,
+	GHOST_HANDLE,
+	GHOST_SUBJECT,
+	UserRemovalRegistry,
+	type UserRemovalContribution,
+} from './removals'
 
 export type { ContentRendererContribution } from './content'
+export { GHOST_DISPLAY_NAME, GHOST_HANDLE, GHOST_SUBJECT } from './removals'
+export type { UserRemoval, UserRemovalContribution } from './removals'
 export { ForumCoreConfig } from './config'
 export {
 	FOOTER_GROUP_MAX,
@@ -304,10 +314,6 @@ export type IndexablePost = Readonly<{
 type Db = Pick<PluginDatabaseClient<typeof ForumDatabase>, 'select'>
 
 const BUILT_IN_POLICY_ID = 'forum-core.roles'
-/** Subject prefix of deleted accounts: no login method issues it, so nothing signs in as them. */
-export const ERASED_SUBJECT_PREFIX = 'erased:'
-/** The name a deleted account's posts show. */
-export const ERASED_DISPLAY_NAME = '已注销用户'
 
 const fail = <K extends ErrorKey>(
 	code: ForumErrorCode,
@@ -407,6 +413,9 @@ export class ForumCorePlugin extends BasePlugin {
 	private readonly paletteCommands = new PaletteCommandRegistry()
 	private readonly postHooks = new PostHookRegistry()
 	private readonly notificationChannels = new NotificationChannelRegistry()
+	private readonly userRemovals = new UserRemovalRegistry()
+	/** Ghost's user ID once it exists; it never changes after that. */
+	private ghostId: string | undefined
 	private readonly searchProviders = new SearchProviderRegistry()
 	private readonly cache = new ForumCacheRegistry()
 	private readonly followGraph = new FollowGraphRegistry()
@@ -739,6 +748,14 @@ export class ForumCorePlugin extends BasePlugin {
 		return this.notificationChannels.register(contribution)
 	}
 
+	/**
+	 * Registers a plugin's part in removing an account (see `removeUser`). The returned disposer
+	 * must be handed to the contributor's `ctx.effects`. Throws on an invalid or duplicate ID.
+	 */
+	registerUserRemoval(contribution: UserRemovalContribution): () => void {
+		return this.userRemovals.register(contribution)
+	}
+
 	/** IDs of the registered notification channels, in registration order. */
 	notificationChannelIds(): string[] {
 		return this.notificationChannels.ids()
@@ -750,6 +767,8 @@ export class ForumCorePlugin extends BasePlugin {
 	 * others.
 	 */
 	async deliverNotification(notification: ForumNotification): Promise<string[]> {
+		// Nobody reads Ghost's notifications.
+		if (notification.recipientId === (await this.findGhostId())) return []
 		return this.notificationChannels.deliver(notification, (error, channelId) =>
 			this.ctx.logger.error('notification channel failed', {
 				error,
@@ -1019,7 +1038,7 @@ export class ForumCorePlugin extends BasePlugin {
 						: [base, `${base}-${inserted.number}`, `u${inserted.number}`]
 				const candidates = rawCandidates.flatMap((candidate) => {
 					const checked = validateHandle(candidate)
-					return checked.ok ? [checked.value] : []
+					return checked.ok && checked.value !== GHOST_HANDLE ? [checked.value] : []
 				})
 				const takenRows =
 					candidates.length === 0
@@ -1092,33 +1111,74 @@ export class ForumCorePlugin extends BasePlugin {
 	}
 
 	/**
-	 * Privileged: what is left of an account its owner deleted. The posts stay, under the name
-	 * `已注销用户` and the handle `deleted-<number>`; the subject no login method issues, the
-	 * contact address and the roles go. Callers end the account's sessions themselves.
+	 * Privileged: removes an account the way GitHub does. Everything it authored (topics, notes,
+	 * replies, edits) moves to the Ghost account (`/u/ghost`), every plugin's removal handler runs
+	 * (see `registerUserRemoval`), then the account and its roles are deleted. Callers end the
+	 * account's sessions themselves.
 	 */
-	async eraseUser(userId: string): Promise<ForumResult<UserDto>> {
+	async removeUser(userId: string): Promise<ForumResult<void>> {
 		if (!isEntityId(userId)) return notFound('user')
-		const erase = (suffix: string) =>
-			this.database.transaction(async (tx) => {
-				await tx.delete(userRoles).where(eq(userRoles.userId, userId))
-				return tx
-					.update(users)
-					.set({
-						subject: sql`${ERASED_SUBJECT_PREFIX} || ${users.id}`,
-						handle: sql`'deleted-' || ${users.number} || ${suffix}`,
-						displayName: ERASED_DISPLAY_NAME,
-						email: null,
-					})
-					.where(eq(users.id, userId))
-					.returning(author)
-			})
-		// Someone may have picked `deleted-<number>` as their own handle.
-		const [user] = await erase('').catch((error: unknown) => {
-			if (!isUniqueViolation(error)) throw error
-			return erase(`-${crypto.randomUUID().slice(0, 8)}`)
+		const ghostId = await this.ensureGhost()
+		if (userId === ghostId) return fail('forbidden', 'permission.denied')
+		const [exists] = await this.database.read((db) =>
+			db.select({ id: users.id }).from(users).where(eq(users.id, userId)),
+		)
+		if (!exists) return notFound('user')
+		await this.userRemovals.run({ userId, ghostId }, (error, contributionId) =>
+			this.ctx.logger.error('user removal handler failed', { error, contributionId, userId }),
+		)
+		await this.database.transaction(async (tx) => {
+			await tx.update(threads).set({ authorId: ghostId }).where(eq(threads.authorId, userId))
+			await tx.update(posts).set({ authorId: ghostId }).where(eq(posts.authorId, userId))
+			await tx.update(posts).set({ replyToId: ghostId }).where(eq(posts.replyToId, userId))
+			await tx
+				.update(postRevisions)
+				.set({ editorId: ghostId })
+				.where(eq(postRevisions.editorId, userId))
+			await tx.delete(users).where(eq(users.id, userId))
 		})
-		if (user) await this.listingsChanged()
-		return user ? Result.ok(user) : notFound('user')
+		await this.listingsChanged()
+		return Result.ok(undefined)
+	}
+
+	/** Ghost's user ID, or null until the first account was removed. */
+	async findGhostId(): Promise<string | null> {
+		if (this.ghostId !== undefined) return this.ghostId
+		const [row] = await this.database.read((db) =>
+			db.select({ id: users.id }).from(users).where(eq(users.subject, GHOST_SUBJECT)),
+		)
+		if (row) this.ghostId = row.id
+		return row?.id ?? null
+	}
+
+	/** Creates Ghost on first use: `ghost`, or `ghost-<number>` when an older account has that handle. */
+	private async ensureGhost(): Promise<string> {
+		const found = await this.findGhostId()
+		if (found !== null) return found
+		const id = await this.database.transaction(async (tx) => {
+			const [taken] = await tx
+				.select({ id: users.id })
+				.from(users)
+				.where(eq(users.handle, GHOST_HANDLE))
+			const [row] = await tx
+				.insert(users)
+				.values({
+					subject: GHOST_SUBJECT,
+					handle: taken ? `${GHOST_HANDLE}-${crypto.randomUUID().slice(0, 8)}` : GHOST_HANDLE,
+					displayName: GHOST_DISPLAY_NAME,
+				})
+				.onConflictDoNothing({ target: users.subject })
+				.returning({ id: users.id })
+			if (row) return row.id
+			const [existing] = await tx
+				.select({ id: users.id })
+				.from(users)
+				.where(eq(users.subject, GHOST_SUBJECT))
+			if (!existing) throw new Error('Ghost is missing right after its upsert')
+			return existing.id
+		})
+		this.ghostId = id
+		return id
 	}
 
 	async getUser(userRef: string, viewer: Principal = GUEST): Promise<ForumResult<UserDto>> {
@@ -1151,6 +1211,8 @@ export class ForumCorePlugin extends BasePlugin {
 			patch.handle = handle.value
 		}
 
+		// Read before the transaction: a read inside it would wait on the transaction's connection.
+		const ghostId = await this.findGhostId()
 		const updated = await this.database
 			.transaction(async (tx): Promise<ForumResult<UserDto>> => {
 				const match =
@@ -1158,8 +1220,10 @@ export class ForumCorePlugin extends BasePlugin {
 				const [current] = await tx.select(author).from(users).where(match)
 				if (!current) return notFound('user')
 				if (!this.can(principal, 'user.edit', { userId: current.id })) return denied(principal)
+				if (current.id === ghostId) return fail('forbidden', 'permission.denied')
 				if (Object.keys(patch).length === 0) return Result.ok(current)
 				if (patch.handle !== undefined && patch.handle !== current.handle) {
+					if (patch.handle === GHOST_HANDLE) return fail('conflict', 'handle.taken')
 					const [taken] = await tx
 						.select({ id: users.id })
 						.from(users)
@@ -1320,7 +1384,11 @@ export class ForumCorePlugin extends BasePlugin {
 				pageSize,
 				total: wanted === 'note' ? read.noteCount : read.threadCount,
 			},
-			can: { edit: this.can(principal, 'user.edit', { userId: user.id }) },
+			can: {
+				edit:
+					user.id !== (await this.findGhostId()) &&
+					this.can(principal, 'user.edit', { userId: user.id }),
+			},
 			ext: user.ext ?? {},
 		})
 	}
@@ -1354,8 +1422,12 @@ export class ForumCorePlugin extends BasePlugin {
 		const { page, pageSize } = normalizePage(input)
 		const query = input.query?.trim().slice(0, 64) ?? ''
 		const pattern = `%${query.replaceAll(/[\\%_]/g, (char) => `\\${char}`)}%`
-		const where =
-			query === '' ? undefined : or(ilike(users.handle, pattern), ilike(users.displayName, pattern))
+		const where = and(
+			ne(users.subject, GHOST_SUBJECT),
+			query === ''
+				? undefined
+				: or(ilike(users.handle, pattern), ilike(users.displayName, pattern)),
+		)
 		return this.database.read(async (db) => {
 			const [totalRow] = await db.select({ value: count() }).from(users).where(where)
 			const rows = await db
@@ -1403,7 +1475,10 @@ export class ForumCorePlugin extends BasePlugin {
 		if (!isAssignableRole(role)) return invalid(errorDetail('role.unknown'))
 		if (!isEntityId(userId)) return notFound('user')
 		return this.database.transaction(async (tx) => {
-			const [user] = await tx.select({ id: users.id }).from(users).where(eq(users.id, userId))
+			const [user] = await tx
+				.select({ id: users.id })
+				.from(users)
+				.where(and(eq(users.id, userId), ne(users.subject, GHOST_SUBJECT)))
 			if (!user) return notFound('user')
 			await tx.insert(userRoles).values({ userId, role }).onConflictDoNothing()
 			return Result.ok()
@@ -1660,10 +1735,12 @@ export class ForumCorePlugin extends BasePlugin {
 			`community:${digest(visibleIds.join(','))}`,
 			() =>
 				this.database.read(async (db): Promise<CommunityListing> => {
-					const [members] = await db.select({ value: count() }).from(users)
+					const member = ne(users.subject, GHOST_SUBJECT)
+					const [members] = await db.select({ value: count() }).from(users).where(member)
 					const newest = await db
 						.select({ id: users.id, handle: users.handle, displayName: users.displayName })
 						.from(users)
+						.where(member)
 						.orderBy(desc(users.number))
 						.limit(COMMUNITY_LIST_SIZE)
 					const since = new Date(Date.now() - ACTIVE_WINDOW_DAYS * 86_400_000)
@@ -1687,6 +1764,7 @@ export class ForumCorePlugin extends BasePlugin {
 											isNull(threads.deletedAt),
 											isNull(posts.deletedAt),
 											gte(posts.createdAt, since),
+											member,
 										),
 									)
 									.groupBy(users.id, users.handle, users.displayName, users.number)

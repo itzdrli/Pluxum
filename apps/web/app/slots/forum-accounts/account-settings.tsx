@@ -251,7 +251,7 @@ export function AccountSettings({ profile }: { profile: UserProfileDto }) {
 				{editing === 'delete' ? (
 					<form className="flex flex-col gap-3 px-4 py-3" onSubmit={(e) => void deleteAccount(e)}>
 						<p className="text-ink">
-							<Trans>注销后无法恢复。发过的内容会保留，署名改为「已注销用户」。</Trans>
+							<Trans>注销后无法恢复，发过的内容会转到 Ghost 名下。</Trans>
 						</p>
 						<FormError message={error} />
 						<TextInputField

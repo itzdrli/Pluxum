@@ -162,6 +162,20 @@ export class ForumNotificationsPlugin extends BasePlugin {
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(NotificationsDatabase)
+		// A removed account's inbox goes; what it did to others now reads as Ghost's.
+		this.ctx.effects.defer(
+			this.core.registerUserRemoval({
+				id: `${NOTIFICATIONS_EXT_ID}.removal`,
+				remove: ({ userId, ghostId }) =>
+					this.database.transaction(async (tx) => {
+						await tx.delete(notifications).where(eq(notifications.recipientId, userId))
+						await tx
+							.update(notifications)
+							.set({ actorId: ghostId })
+							.where(eq(notifications.actorId, userId))
+					}),
+			}),
+		)
 		// The excerpt length is read per notification, so a new value applies as is.
 		this.configs.onUpdate(this.config, () => {})
 

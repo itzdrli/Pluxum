@@ -115,6 +115,47 @@ export class ForumReactionsPlugin extends BasePlugin {
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(ReactionsDatabase)
+		// Reactions stay counted, as Ghost's. One Ghost already gave on the same post is dropped.
+		this.ctx.effects.defer(
+			this.core.registerUserRemoval({
+				id: `${REACTIONS_EXT_ID}.removal`,
+				remove: ({ userId, ghostId }) =>
+					this.database.transaction(async (tx) => {
+						const mine = await tx
+							.select({ postId: reactions.postId })
+							.from(reactions)
+							.where(eq(reactions.userId, userId))
+						const clashes =
+							mine.length === 0
+								? []
+								: await tx
+										.select({ postId: reactions.postId, kind: reactions.kind })
+										.from(reactions)
+										.where(
+											and(
+												eq(reactions.userId, ghostId),
+												inArray(
+													reactions.postId,
+													mine.map((row) => row.postId),
+												),
+											),
+										)
+						for (const clash of clashes) {
+							// oxlint-disable-next-line no-await-in-loop -- rare, and inside one transaction.
+							await tx
+								.delete(reactions)
+								.where(
+									and(
+										eq(reactions.userId, userId),
+										eq(reactions.postId, clash.postId),
+										eq(reactions.kind, clash.kind),
+									),
+								)
+						}
+						await tx.update(reactions).set({ userId: ghostId }).where(eq(reactions.userId, userId))
+					}),
+			}),
+		)
 		// Weights are read per reaction; a saved change applies as is.
 		this.configs.onUpdate(this.config, () => {})
 		this.ctx.effects.defer(

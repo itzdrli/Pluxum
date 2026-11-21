@@ -92,6 +92,16 @@ export class ForumMailPlugin extends BasePlugin {
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(MailDatabase)
+		this.ctx.effects.defer(
+			this.core.registerUserRemoval({
+				id: `${MAIL_EXT_ID}.removal`,
+				remove: async ({ userId }) => {
+					await this.database.transaction((tx) =>
+						tx.delete(mailPreferences).where(eq(mailPreferences.userId, userId)),
+					)
+				},
+			}),
+		)
 		await this.reconnect(this.config)
 		this.configs.onUpdate(this.config, async ({ desired }) => {
 			await this.reconnect(v.parse(ForumMailConfig, desired))

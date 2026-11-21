@@ -141,6 +141,23 @@ export class ForumAccountsPlugin extends BasePlugin {
 		this.ctx.effects.defer(
 			this.core.registerUiSlots({ id: ACCOUNTS_EXT_ID, slots: ['user.profile.tabs'] }),
 		)
+		// However a forum user is removed, its login goes with it.
+		this.ctx.effects.defer(
+			this.core.registerUserRemoval({
+				id: `${ACCOUNTS_EXT_ID}.removal`,
+				remove: ({ userId }) =>
+					this.database.transaction(async (tx) => {
+						const gone = await tx
+							.delete(accounts)
+							.where(eq(accounts.userId, userId))
+							.returning({ id: accounts.id })
+						for (const { id } of gone) {
+							// oxlint-disable-next-line no-await-in-loop -- one account per user.
+							await tx.delete(passwordResets).where(eq(passwordResets.accountId, id))
+						}
+					}),
+			}),
+		)
 		this.ctx.workbench?.publish(AccountsWorkbench, { accounts: () => this.workbenchContent() })
 		this.ctx.require(ElysiaApp).group(ACCOUNTS_PREFIX, (app) =>
 			app
@@ -393,8 +410,8 @@ export class ForumAccountsPlugin extends BasePlugin {
 	}
 
 	/**
-	 * Deletes the account: the login goes, and Forum Core keeps the posts under `已注销用户`.
-	 * Ends every session and removes the cookie.
+	 * Deletes the account: the login goes, and Forum Core hands everything it wrote to Ghost
+	 * before removing the forum user. Ends every session and removes the cookie.
 	 */
 	async deleteAccount(request: Request, raw: unknown): Promise<Response> {
 		this.sameOrigin(request)
@@ -404,8 +421,8 @@ export class ForumAccountsPlugin extends BasePlugin {
 			await tx.delete(passwordResets).where(eq(passwordResets.accountId, account.id))
 			await tx.delete(accounts).where(eq(accounts.id, account.id))
 		})
-		const erased = await this.core.eraseUser(account.userId)
-		if (erased.isErr())
+		const removed = await this.core.removeUser(account.userId)
+		if (removed.isErr())
 			this.ctx.logger.warn('deleted account had no forum user', { userId: account.userId })
 		const { setCookie } = await this.auth.logout(request)
 		await this.auth.revokeUserSessions(account.userId)

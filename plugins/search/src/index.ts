@@ -113,6 +113,19 @@ export class ForumSearchPlugin extends BasePlugin {
 		this.tokenizer = createSearchTokenizer(this.config.customWords)
 		this.database = await this.ctx.require(Database).use(SearchDatabase)
 		this.ctx.effects.defer(
+			this.core.registerUserRemoval({
+				id: 'forum-search.removal',
+				remove: async ({ userId, ghostId }) => {
+					await this.database.transaction((tx) =>
+						tx
+							.update(searchDocuments)
+							.set({ authorId: ghostId })
+							.where(eq(searchDocuments.authorId, userId)),
+					)
+				},
+			}),
+		)
+		this.ctx.effects.defer(
 			this.core.registerPaletteCommands({
 				id: 'forum-search',
 				commands: [{ id: 'page', label: '搜索', keywords: ['查找', 'search'], href: '/search' }],

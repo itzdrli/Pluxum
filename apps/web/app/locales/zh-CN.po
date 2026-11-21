@@ -1543,8 +1543,8 @@ msgid "注册"
 msgstr "注册"
 
 #: app/slots/forum-accounts/account-settings.tsx
-msgid "注销后无法恢复。发过的内容会保留，署名改为「已注销用户」。"
-msgstr "注销后无法恢复。发过的内容会保留，署名改为「已注销用户」。"
+msgid "注销后无法恢复，发过的内容会转到 Ghost 名下。"
+msgstr "注销后无法恢复，发过的内容会转到 Ghost 名下。"
 
 #: app/slots/forum-accounts/account-settings.tsx
 msgid "注销账号"

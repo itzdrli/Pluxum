@@ -90,6 +90,22 @@ export class ForumSolvedPlugin extends BasePlugin {
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(SolvedDatabase)
 		this.ctx.effects.defer(
+			this.core.registerUserRemoval({
+				id: `${SOLVED_EXT_ID}.removal`,
+				remove: ({ userId, ghostId }) =>
+					this.database.transaction(async (tx) => {
+						await tx
+							.update(solutions)
+							.set({ answerAuthorId: ghostId })
+							.where(eq(solutions.answerAuthorId, userId))
+						await tx
+							.update(solutions)
+							.set({ acceptedBy: ghostId })
+							.where(eq(solutions.acceptedBy, userId))
+					}),
+			}),
+		)
+		this.ctx.effects.defer(
 			this.core.registerEntityExtension({
 				id: SOLVED_EXT_ID,
 				entity: 'thread',

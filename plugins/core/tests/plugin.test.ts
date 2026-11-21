@@ -285,6 +285,54 @@ describe('ForumCorePlugin', () => {
 		expect(second.items.map((user) => user.id)).toEqual([ada.id])
 	})
 
+	it('removes an account, handing what it wrote to Ghost', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { admin, alice, bob, category } = await seed(core)
+		const thread = (
+			await core.createThread(alice, { categoryId: category.id, title: 'Hi', body: 'Opening' })
+		).unwrap()
+		;(await core.createPost(alice, { threadId: thread.id, body: 'Mine too' })).unwrap()
+		;(await core.createPost(bob, { threadId: thread.id, body: 'Bob here' })).unwrap()
+		const handlers: string[] = []
+		const dispose = core.registerUserRemoval({
+			id: 'test.removal',
+			remove: ({ userId, ghostId }) => {
+				handlers.push(`${userId}>${ghostId}`)
+			},
+		})
+		// Nobody new gets the handle, even before Ghost exists.
+		expect(
+			(await core.ensureUser({ subject: 'test:ghosty', displayName: 'Ghost' })).unwrap().handle,
+		).not.toBe('ghost')
+
+		;(await core.removeUser(alice.userId!)).unwrap()
+		dispose()
+		const ghost = (await core.getUser('ghost')).unwrap()
+		expect(ghost.displayName).toBe('Ghost')
+		expect(handlers).toEqual([`${alice.userId}>${ghost.id}`])
+		expect(await codeOf(core.getUser(alice.userId!))).toBe('not_found')
+		const profile = (await core.getUserProfile(admin, 'ghost')).unwrap()
+		expect(profile).toMatchObject({ threadCount: 1, postCount: 2, can: { edit: false } })
+		const page = (await core.getThread(GUEST, thread.id)).unwrap()
+		expect(page.thread.author.id).toBe(ghost.id)
+
+		// Ghost is nobody's member, can't be edited, given roles or removed, and gets no mail.
+		expect((await core.listUsers()).items.map((user) => user.handle)).not.toContain('ghost')
+		expect((await core.communityPulse(GUEST)).newMembers.map((user) => user.id)).not.toContain(
+			ghost.id,
+		)
+		expect(await codeOf(core.updateProfile(admin, 'ghost', { displayName: 'Boo' }))).toBe(
+			'forbidden',
+		)
+		expect(await codeOf(core.updateProfile(bob, bob.userId!, { handle: 'ghost' }))).toBe('conflict')
+		expect(await codeOf(core.grantRole(ghost.id, 'admin'))).toBe('not_found')
+		expect(await codeOf(core.removeUser(ghost.id))).toBe('forbidden')
+		// A second removal reuses the same Ghost.
+		;(await core.removeUser(bob.userId!)).unwrap()
+		expect((await core.getUserProfile(GUEST, 'ghost')).unwrap().postCount).toBe(3)
+	})
+
 	it('reads user profiles and lets members or admins update display names', async () => {
 		await using host = await createHost()
 		const core = await host.start(ForumCorePlugin)

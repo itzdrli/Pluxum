@@ -302,7 +302,7 @@ describe('forum accounts plugin', () => {
 		).toBe(200)
 	})
 
-	it('deletes an account, keeping the posts under a stand-in name', async () => {
+	it('deletes an account, handing it to Ghost', async () => {
 		await using env = await boot()
 		const { userId } = (
 			await env.post('/register', { email: 'a@b.co', password: 'my password', displayName: 'Ada' })
@@ -314,10 +314,8 @@ describe('forum accounts plugin', () => {
 		expect(gone.cookie).toBeTruthy()
 		expect(FakeAuth.revoked).toContain(userId)
 
-		const user = (await env.core.getUser(userId)).unwrap()
-		expect(user).toMatchObject({ displayName: '已注销用户' })
-		expect(user.handle).toMatch(/^deleted-\d+$/)
-		expect(await env.core.contactEmail(userId)).toBeNull()
+		expect((await env.core.getUser(userId)).isErr()).toBe(true)
+		expect((await env.core.getUser('ghost')).unwrap().displayName).toBe('Ghost')
 		expect(await env.core.findUserBySubject(`local:${userId}`)).toBeNull()
 		expect((await env.post('/login', { email: 'a@b.co', password: 'my password' })).status).toBe(
 			422,

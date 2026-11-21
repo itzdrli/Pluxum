@@ -12,7 +12,7 @@ import { ForumCorePlugin, type Followed, type ForumResult } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
 import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
-import { and, count, desc, eq, inArray } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, or } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import { follows, FollowsDatabase, followSettings } from './database'
 
@@ -96,6 +96,24 @@ export class ForumFollowsPlugin extends BasePlugin {
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(FollowsDatabase)
+		// Follows are personal: a removed account's go, both ways, and nobody follows Ghost for it.
+		this.ctx.effects.defer(
+			this.core.registerUserRemoval({
+				id: `${FOLLOWS_EXT_ID}.removal`,
+				remove: ({ userId }) =>
+					this.database.transaction(async (tx) => {
+						await tx
+							.delete(follows)
+							.where(
+								or(
+									eq(follows.followerId, userId),
+									and(eq(follows.targetKind, 'user'), eq(follows.targetId, userId)),
+								),
+							)
+						await tx.delete(followSettings).where(eq(followSettings.userId, userId))
+					}),
+			}),
+		)
 		this.ctx.effects.defer(
 			this.core.registerFollowGraph({
 				id: FOLLOW_GRAPH_ID,

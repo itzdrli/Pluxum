@@ -240,6 +240,36 @@ export class ForumModerationPlugin extends BasePlugin {
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(ModerationDatabase)
+		// A removed account's ban goes with it; reports and the log keep their record, as Ghost's.
+		this.ctx.effects.defer(
+			this.core.registerUserRemoval({
+				id: `${MODERATION_EXT_ID}.removal`,
+				remove: async ({ userId, ghostId }) => {
+					await this.database.transaction(async (tx) => {
+						await tx.delete(bans).where(eq(bans.userId, userId))
+						await tx.update(bans).set({ bannedBy: ghostId }).where(eq(bans.bannedBy, userId))
+						await tx.update(bans).set({ revokedBy: ghostId }).where(eq(bans.revokedBy, userId))
+						await tx
+							.update(reports)
+							.set({ reporterId: ghostId })
+							.where(eq(reports.reporterId, userId))
+						await tx
+							.update(reports)
+							.set({ targetAuthorId: ghostId })
+							.where(eq(reports.targetAuthorId, userId))
+						await tx
+							.update(reports)
+							.set({ resolvedBy: ghostId })
+							.where(eq(reports.resolvedBy, userId))
+						await tx
+							.update(moderationLogs)
+							.set({ actorId: ghostId })
+							.where(eq(moderationLogs.actorId, userId))
+					})
+					this.activeBans.delete(userId)
+				},
+			}),
+		)
 		await this.preloadActiveBans()
 		// Blocked words are read on every write, so a new list applies as soon as it is saved.
 		this.configs.onUpdate(this.config, () => {})

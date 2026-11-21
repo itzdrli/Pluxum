@@ -44,6 +44,16 @@ export class ForumReadsPlugin extends BasePlugin {
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(ReadsDatabase)
 		this.ctx.effects.defer(
+			this.core.registerUserRemoval({
+				id: `${READS_EXT_ID}.removal`,
+				remove: ({ userId }) =>
+					this.database.transaction(async (tx) => {
+						await tx.delete(threadReads).where(eq(threadReads.userId, userId))
+						await tx.delete(readerBaselines).where(eq(readerBaselines.userId, userId))
+					}),
+			}),
+		)
+		this.ctx.effects.defer(
 			this.core.registerEntityExtension({
 				id: READS_EXT_ID,
 				entity: 'thread',
