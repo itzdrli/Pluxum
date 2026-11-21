@@ -30,6 +30,8 @@ import {
 import type { loader as rootLoader } from '../root'
 import { CategoryHeaderSlots } from '../slots/slots'
 import { pageTitle } from '../lib/site'
+import { i18nOfRoot } from '../lib/i18n'
+import { STREAM_LABEL } from '../lib/stream'
 
 export const handle = defineStage({ layer: 'list', nav: true, backLabel: msg`返回列表` })
 
@@ -37,9 +39,11 @@ export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescrip
 	const root = matches[0].loaderData
 	if (!loaderData) return [{ title: pageTitle(root) }]
 	const { category } = loaderData
+	// The stream carries the interface's word for notes and no blurb of its own.
+	const isStream = category.kind === 'stream'
 	return [
-		{ title: pageTitle(root, category.name) },
-		...(category.description === ''
+		{ title: pageTitle(root, isStream ? i18nOfRoot(root)._(STREAM_LABEL) : category.name) },
+		...(isStream || category.description === ''
 			? []
 			: [{ name: 'description', content: category.description }]),
 	]
@@ -60,16 +64,17 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 export const shouldRevalidate = listShouldRevalidate()
 
 export default function Category({ loaderData }: Route.ComponentProps) {
-	const { t } = useLingui()
+	const { t, i18n } = useLingui()
 	const { category, threads, can } = loaderData
-	const categoryName = category.name
+	// The stream is built in: its name is the interface's word for notes, and it has no blurb.
+	const isStream = category.kind === 'stream'
+	const categoryName = isStream ? i18n._(STREAM_LABEL) : category.name
 	const openRef = useOpenThreadRef()
 	const { detail } = useStageLinks()
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const dock = useDock()
 	const newThread = `/c/${category.slug}/new`
 	// The stream holds notes, written in the note box (here and on the home page), not the topic composer.
-	const isStream = category.kind === 'stream'
 	const canCreate = can.createThread && !isStream
 	const canPostNote = isStream && forum?.viewer.can.postNote === true
 	const [fresh, setFresh] = useState<string | null>(null)
@@ -101,7 +106,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 		) : undefined
 
 	return (
-		<StageSplit label={t`${categoryName} 主题列表`} short={category.name}>
+		<StageSplit label={t`${categoryName} 主题列表`} short={categoryName}>
 			{(detailOpen) => (
 				<>
 					{detailOpen ? (
@@ -112,7 +117,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 								prefetch="intent"
 								className="text-ink-strong hover:text-accent min-w-0 truncate text-heading font-bold"
 							>
-								{category.name}
+								{categoryName}
 							</StageLink>
 							<span className="ml-auto flex shrink-0 items-center">
 								{canCreate || loginToPost !== undefined ? action(true) : null}
@@ -121,8 +126,8 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 						</PaneBar>
 					) : (
 						<PageHeader
-							title={category.name}
-							description={category.description}
+							title={categoryName}
+							description={isStream ? '' : category.description}
 							actions={<div className="max-lg:hidden">{action(false)}</div>}
 						/>
 					)}

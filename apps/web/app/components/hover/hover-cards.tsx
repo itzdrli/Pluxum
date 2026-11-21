@@ -7,13 +7,14 @@ import { useLingui } from '@lingui/react/macro'
 import { withoutLeadingTitle } from '../../lib/post-html'
 import { excerptOf, previewTarget, type PreviewTarget } from '../../lib/preview'
 import { UserHeaderSlots } from '../../slots/slots'
+import { STREAM_LABEL } from '../../lib/stream'
 
 type Card =
 	| Readonly<{
 			kind: 'thread'
 			/** Null for a note: it has no title and is named by its author. */
 			title: string | null
-			category: string
+			category: string | null
 			author: string
 			replies: number
 			floor: number | null
@@ -59,7 +60,8 @@ async function loadCard(target: PreviewTarget): Promise<Card | null> {
 	return {
 		kind: 'thread',
 		title: detail.thread.kind === 'note' ? null : detail.thread.title,
-		category: detail.category.name,
+		// The stream is shown by the interface's word for notes, in the reader's language.
+		category: detail.category.kind === 'stream' ? null : detail.category.name,
 		author: detail.thread.author.displayName,
 		replies: detail.thread.replyCount,
 		floor: target.floor,
@@ -91,7 +93,7 @@ function cardFor(target: PreviewTarget): Promise<Card | null> {
  * which cannot hover, are left alone.
  */
 export function HoverCards() {
-	const { t } = useLingui()
+	const { t, i18n } = useLingui()
 	const [open, setOpen] = useState<{ anchor: HTMLAnchorElement; target: PreviewTarget } | null>(
 		null,
 	)
@@ -180,7 +182,7 @@ export function HoverCards() {
 							{shown.title ?? t`${noteAuthor} 的动态`}
 						</p>
 						<p className="text-ink-weak flex flex-wrap items-center gap-x-2 text-meta">
-							<span>{shown.category}</span>
+							<span>{shown.category ?? i18n._(STREAM_LABEL)}</span>
 							<span aria-hidden>·</span>
 							<span>{shown.author}</span>
 							<span className="flex items-center gap-1 tabular-nums">

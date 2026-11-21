@@ -28,6 +28,7 @@ import { forumApi, orThrow } from '../lib/forum-api.server'
 import { stageShouldRevalidate } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
 import { siteOf } from '../lib/site'
+import { STREAM_LABEL } from '../lib/stream'
 
 /**
  * The stage frame around every list and detail route. It owns the category navigation: a column
@@ -239,7 +240,7 @@ function CategoryNavPanel({
 	root: ReturnType<typeof useRouteLoaderData<typeof rootLoader>>
 	collapsed: boolean
 }) {
-	const { t } = useLingui()
+	const { t, i18n } = useLingui()
 	const meta = root?.meta
 	// Staff reach the moderation page from the frame too, not only from the account menu.
 	const moderationOn =
@@ -267,7 +268,7 @@ function CategoryNavPanel({
 					<RailLink
 						to={`/c/${stream.slug}`}
 						icon={NotebookPen}
-						label={stream.name}
+						label={i18n._(STREAM_LABEL)}
 						active={activeSlug === stream.slug}
 						collapsed={collapsed}
 					/>

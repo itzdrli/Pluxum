@@ -12,6 +12,7 @@ import { BottomSheet } from '../ui/bottom-sheet'
 import { Button, ButtonAnchor, ButtonLink } from '../ui/button'
 import { FormError, Notice } from '../ui/display'
 import { ActionMenu, type MenuItem } from '../ui/overlay'
+import { STREAM_LABEL } from '../../lib/stream'
 
 // Every bar shares one view-transition name, so switching bars cross-fades in place. Its controls
 // are all `md` (40px on touch screens): one height across the bar, no per-control sizes.
@@ -71,10 +72,10 @@ export function MobileCategoryBar({
 	canCreateThread: boolean
 	loginToPost: string | undefined
 }) {
-	const { t } = useLingui()
+	const { t, i18n } = useLingui()
 	const stageData = useRouteLoaderData<typeof forumStageLoader>('routes/forum-stage')
 	const categories = stageData?.categories ?? [category]
-	const categoryName = category.name
+	const categoryName = category.kind === 'stream' ? i18n._(STREAM_LABEL) : category.name
 	const [switcherOpen, setSwitcherOpen] = useState(false)
 
 	useEffect(() => {
@@ -101,7 +102,7 @@ export function MobileCategoryBar({
 				>
 					<span className="flex min-w-0 items-center gap-1.5">
 						<Hash aria-hidden size={14} className="text-accent shrink-0" />
-						<span className="truncate">{category.name}</span>
+						<span className="truncate">{categoryName}</span>
 					</span>
 					<ChevronsUpDown aria-hidden size={14} className="text-ink-weak shrink-0" />
 				</button>

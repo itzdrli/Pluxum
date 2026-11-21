@@ -42,6 +42,7 @@ import { useFocusReading } from '../lib/focus'
 import { ThreadContext } from '../lib/thread-context'
 import { defineStage, listPathOf, pagePathOf } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
+import { STREAM_LABEL } from '../lib/stream'
 import type { loader as forumStageLoader } from './forum-stage'
 import {
 	PostAfterSlots,
@@ -228,6 +229,8 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const { t, i18n } = useLingui()
 	const { thread, category, posts, can } = loaderData
 	const noteAuthor = thread.author.displayName
+	// The stream is built in: it carries the interface's word for notes, not its stored name.
+	const categoryName = category.kind === 'stream' ? i18n._(STREAM_LABEL) : category.name
 	const replyCount = thread.replyCount
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const dock = useDock()
@@ -420,7 +423,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 						className="min-w-0 flex-1"
 						items={[
 							{ label: t`版块`, to: '/' },
-							{ label: category.name, to: `/c/${category.slug}` },
+							{ label: categoryName, to: `/c/${category.slug}` },
 						]}
 					/>
 				)}
@@ -461,7 +464,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 								prefetch="intent"
 								className="hover:text-ink-strong lg:hidden"
 							>
-								{category.name}
+								{categoryName}
 							</StageLink>
 							<ThreadFlags thread={thread} />
 							<span className="flex items-center gap-1 tabular-nums">

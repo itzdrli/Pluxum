@@ -38,6 +38,7 @@ import { defineStage } from '../lib/stage'
 import { withViewTransition } from '../lib/view-transition'
 import type { loader as rootLoader } from '../root'
 import { siteOf } from '../lib/site'
+import { STREAM_LABEL } from '../lib/stream'
 
 export const handle = defineStage({ layer: 'page', nav: true, wide: true })
 
@@ -504,7 +505,8 @@ function HomeTab({
 }
 
 /** The stream in the phone tab, above the categories: where every note is, on a page of its own. */
-function StreamItem({ stream }: { stream: { slug: string; name: string } }) {
+function StreamItem({ stream }: { stream: { slug: string } }) {
+	const { i18n } = useLingui()
 	return (
 		<li>
 			<StageLink
@@ -518,7 +520,9 @@ function StreamItem({ stream }: { stream: { slug: string; name: string } }) {
 				>
 					<NotebookPen size={16} />
 				</span>
-				<span className="text-ink-strong min-w-0 flex-1 truncate font-bold">{stream.name}</span>
+				<span className="text-ink-strong min-w-0 flex-1 truncate font-bold">
+					{i18n._(STREAM_LABEL)}
+				</span>
 			</StageLink>
 		</li>
 	)

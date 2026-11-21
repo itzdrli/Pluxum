@@ -678,6 +678,7 @@ msgstr "Loading…"
 msgid "加载失败，请重试。"
 msgstr "Failed to load. Please try again."
 
+#: app/lib/stream.ts
 #: app/routes/search.tsx
 #: app/routes/user.tsx
 msgctxt "tab: notes"
