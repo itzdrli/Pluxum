@@ -100,6 +100,7 @@ export type AppConfigEnv = Readonly<{
 	FORUM_OIDC_ISSUER?: string
 	FORUM_OIDC_CLIENT_ID?: string
 	FORUM_OIDC_PROVIDER_LOGOUT?: string
+	FORUM_OIDC_BUTTON_LABEL?: string
 	FORUM_ADMIN_SUBJECTS?: string
 	FORUM_TEST_LOGIN_TOKEN_SHA256?: string
 	REDIS_CONNECTIONS?: string
@@ -197,6 +198,7 @@ const set = (value: string | undefined): string | undefined => (value === '' ? u
  * - FORUM_WEB_PUBLIC_ORIGIN: the forum frontend's origin as browsers see it;
  * - FORUM_OIDC_ISSUER + FORUM_OIDC_CLIENT_ID: the Zitadel instance and the forum's OIDC application;
  * - FORUM_OIDC_PROVIDER_LOGOUT=true: logging out of the forum also ends the Zitadel session;
+ * - FORUM_OIDC_BUTTON_LABEL: the sign-in page's provider button text (e.g. "Sign in with OIDC");
  * - FORUM_ADMIN_SUBJECTS: comma-separated Zitadel user IDs that become forum admins at login;
  * - FORUM_TEST_LOGIN_TOKEN_SHA256: hex SHA-256 of the test-login token; unset keeps test login off.
  * The client secret is never an environment value here; it lives in the plugin's Vault record.
@@ -234,6 +236,9 @@ function authConfigRecord(env: AppConfigEnv) {
 								issuer,
 								clientId,
 								providerLogout: env.FORUM_OIDC_PROVIDER_LOGOUT === 'true',
+								...(set(env.FORUM_OIDC_BUTTON_LABEL) === undefined
+									? {}
+									: { buttonLabel: set(env.FORUM_OIDC_BUTTON_LABEL) }),
 							},
 						}),
 				adminSubjects,

@@ -415,6 +415,8 @@ export type MetaDto = Readonly<{
 		loginAvailable: boolean
 		/** Sign-in through the configured OpenID Connect provider (`/api/forum/auth/login`). */
 		provider: boolean
+		/** The provider button's text set by the operator; null keeps the web app's wording. */
+		providerLabel: string | null
 		/** Sign-in with email and password (the Forum Accounts plugin is running). */
 		password: boolean
 	}>

@@ -320,7 +320,12 @@ describe('ForumApiPlugin', () => {
 			can: { manageCategories: false, postNote: false },
 			following: { available: false, any: false },
 		})
-		expect(meta.auth).toEqual({ loginAvailable: true, provider: true, password: false })
+		expect(meta.auth).toEqual({
+			loginAvailable: true,
+			provider: true,
+			providerLabel: null,
+			password: false,
+		})
 		expect(meta.limits.threadTitleMax).toBeGreaterThan(0)
 		expect(meta.limits.noteBodyMax).toBe(500)
 		expect(meta.stream).toMatchObject({ slug: 'stream', name: '动态' })

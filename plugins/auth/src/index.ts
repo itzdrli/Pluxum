@@ -99,6 +99,11 @@ export abstract class ForumAuth extends BasePlugin {
 		return this.passwordLogins.size > 0
 	}
 
+	/** What the sign-in page's provider button says, or null for the web app's own wording. */
+	providerLabel(): string | null {
+		return null
+	}
+
 	/** Whether a provider login can be started (public origin and provider are configured). */
 	abstract loginAvailable(): boolean
 	/** The forum's public origin (`https://forum.example`), or null while it is not configured. */
@@ -206,9 +211,12 @@ export class ForumAuthPlugin extends ForumAuth {
 		// Login settings apply without a restart. A value that would fail a start throws here
 		// instead, which leaves it saved but not applied and the running login untouched.
 		this.configs.onUpdate(this.config, ({ applied, desired }) => {
+			// The button text is display only: changing it keeps the cached discovery and keys.
+			const settings = (oidc: typeof desired.oidc) =>
+				oidc === undefined ? null : { ...oidc, buttonLabel: undefined }
 			const oidcChanged =
 				applied.publicOrigin !== desired.publicOrigin ||
-				JSON.stringify(applied.oidc) !== JSON.stringify(desired.oidc)
+				JSON.stringify(settings(applied.oidc)) !== JSON.stringify(settings(desired.oidc))
 			this.oidc = this.prepare(desired, oidcChanged ? undefined : this.oidc)
 		})
 		this.ctx.workbench?.publish(AuthWorkbench, { login: () => this.loginContent() })
@@ -298,6 +306,11 @@ export class ForumAuthPlugin extends ForumAuth {
 
 	override loginAvailable(): boolean {
 		return this.oidc !== undefined
+	}
+
+	override providerLabel(): string | null {
+		const label = this.config.oidc?.buttonLabel ?? ''
+		return this.oidc !== undefined && label !== '' ? label : null
 	}
 
 	override publicOrigin(): string | null {

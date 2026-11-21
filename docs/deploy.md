@@ -28,6 +28,8 @@ Fill in `.env`:
   `https://<PLUXUM_DOMAIN>/api/forum/auth/callback`. A public (PKCE) client needs nothing else; a
   confidential client's secret is entered in Workbench after the first start (step 3).
   `FORUM_ADMIN_SUBJECTS` lists provider user IDs (the `sub` claim) that become admins when they sign in.
+  `FORUM_OIDC_BUTTON_LABEL` sets the provider button's text on the sign-in page (e.g. `Sign in with OIDC`);
+  it can also be changed later in Forum Auth's settings.
 
 ## 2. Start
 

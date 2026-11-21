@@ -290,11 +290,20 @@ describe.skipIf(!liveUrl)('ForumAuthPlugin with Redis sessions', () => {
 			status: 'authenticated',
 			userId: user.id,
 		})
+		expect(auth.providerLabel()).toBeNull()
 		expect(auth.passwordLoginAvailable()).toBe(false)
 		const withdraw = auth.registerPasswordLogin()
 		expect(auth.passwordLoginAvailable()).toBe(true)
 		withdraw()
 		expect(auth.passwordLoginAvailable()).toBe(false)
+	})
+
+	it("shows the operator's provider button text", async () => {
+		await using host = await createHost()
+		const { auth } = await start(host, {
+			oidc: { issuer: ISSUER, clientId: CLIENT_ID, buttonLabel: '  Sign in with OIDC ' },
+		})
+		expect(auth.providerLabel()).toBe('Sign in with OIDC')
 	})
 
 	it('takes the name from UserInfo when the ID token has none, also for an existing account', async () => {

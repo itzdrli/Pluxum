@@ -610,6 +610,7 @@ export class ForumApiPlugin extends BasePlugin {
 			auth: {
 				loginAvailable: this.auth.loginAvailable() || this.auth.passwordLoginAvailable(),
 				provider: this.auth.loginAvailable(),
+				providerLabel: this.auth.providerLabel(),
 				password: this.auth.passwordLoginAvailable(),
 			},
 			search: { available: this.core.searchAvailable() },

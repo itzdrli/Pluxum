@@ -43,6 +43,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const returnTo = safeReturnTo(url.searchParams.get('returnTo'))
 	const forumMeta = orThrow(await forumApi.meta(request))
 	if (forumMeta.viewer.user !== null) throw redirect(returnTo)
+	const providerLabel = forumMeta.auth.providerLabel
 	const providerHref = forumMeta.auth.provider
 		? `/api/forum/auth/login?returnTo=${encodeURIComponent(returnTo)}`
 		: null
@@ -54,7 +55,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 			)
 		: null
 	const mode = options?.registration === true ? modeOf(url) : 'login'
-	return { returnTo, providerHref, options, mode }
+	return { returnTo, providerHref, providerLabel, options, mode }
 }
 
 type ActionResponse = Readonly<{ error: string }>
@@ -93,7 +94,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function LoginRoute({ loaderData, actionData }: Route.ComponentProps) {
 	const { t } = useLingui()
-	const { returnTo, providerHref, options, mode } = loaderData
+	const { returnTo, providerHref, providerLabel, options, mode } = loaderData
 	const navigation = useNavigation()
 	const busy = navigation.state === 'submitting'
 	const register = mode === 'register'
@@ -168,7 +169,8 @@ export default function LoginRoute({ loaderData, actionData }: Route.ComponentPr
 				{providerHref !== null && (
 					// A document navigation: the API redirects to the identity provider.
 					<ButtonAnchor href={providerHref}>
-						<Trans>用外部账号登录</Trans>
+						{/* The operator's text (Forum Auth › 登录按钮文字) is shown as written. */}
+						{providerLabel ?? <Trans>用外部账号登录</Trans>}
 					</ButtonAnchor>
 				)}
 			</div>

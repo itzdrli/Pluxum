@@ -83,6 +83,19 @@ export const ForumAuthConfig = v.object({
 					),
 					['openid', 'profile', 'email'],
 				),
+				/** What the sign-in page's provider button says; empty keeps the translated default. */
+				buttonLabel: v.optional(
+					v.pipe(
+						v.string(),
+						v.trim(),
+						v.maxLength(40),
+						f.formMeta({
+							title: '登录按钮文字',
+							description: '登录页上外部账号按钮的文字，例如 Sign in with OIDC。留空用默认文字。',
+						}),
+					),
+					'',
+				),
 				/** After a local logout, also end the provider's own session (RP-initiated logout). */
 				providerLogout: v.optional(
 					v.pipe(
