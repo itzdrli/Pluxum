@@ -271,6 +271,10 @@ export class ForumFollowsPlugin extends BasePlugin {
 		if (kind === 'user' && targetId === followerId) {
 			return Result.err(failure('invalid', 'follow.self'))
 		}
+		// Ghost holds deleted accounts' posts; there is nobody to follow.
+		if (on && kind === 'user' && targetId === (await this.core.findGhostId())) {
+			return Result.err(failure('forbidden', 'permission.denied'))
+		}
 		const key = and(
 			eq(follows.followerId, followerId),
 			eq(follows.targetKind, kind),

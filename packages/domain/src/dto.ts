@@ -315,6 +315,11 @@ export type UserProfileDto = Readonly<{
 	noteCount: number
 	can: Readonly<{ edit: boolean }>
 	ext: ExtensionData
+	/**
+	 * The Ghost account, which holds what deleted accounts wrote: its counts are zero and its
+	 * list empty, and clients show only its name.
+	 */
+	ghost: boolean
 }>
 
 /** The places in the frontend where extension plugins may show a component of their own. */

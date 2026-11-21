@@ -1370,6 +1370,22 @@ export class ForumCorePlugin extends BasePlugin {
 			),
 		])
 		const user = usersById.get(baseUser.id) ?? baseUser
+		const ghost = user.id === (await this.findGhostId())
+		if (ghost) {
+			// Ghost is a name, not a member: what it holds stays in the threads, not on a page.
+			return Result.ok({
+				user,
+				roles: read.roles,
+				createdAt: read.account.createdAt.toISOString(),
+				threadCount: 0,
+				noteCount: 0,
+				postCount: 0,
+				threads: { items: [], page, pageSize, total: 0 },
+				can: { edit: false },
+				ext: {},
+				ghost,
+			})
+		}
 
 		return Result.ok({
 			user,
@@ -1384,12 +1400,9 @@ export class ForumCorePlugin extends BasePlugin {
 				pageSize,
 				total: wanted === 'note' ? read.noteCount : read.threadCount,
 			},
-			can: {
-				edit:
-					user.id !== (await this.findGhostId()) &&
-					this.can(principal, 'user.edit', { userId: user.id }),
-			},
+			can: { edit: this.can(principal, 'user.edit', { userId: user.id }) },
 			ext: user.ext ?? {},
+			ghost,
 		})
 	}
 

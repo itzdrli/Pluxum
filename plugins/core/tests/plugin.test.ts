@@ -312,8 +312,16 @@ describe('ForumCorePlugin', () => {
 		expect(ghost.displayName).toBe('Ghost')
 		expect(handlers).toEqual([`${alice.userId}>${ghost.id}`])
 		expect(await codeOf(core.getUser(alice.userId!))).toBe('not_found')
+		// Its page shows only the name: no counts, no list.
 		const profile = (await core.getUserProfile(admin, 'ghost')).unwrap()
-		expect(profile).toMatchObject({ threadCount: 1, postCount: 2, can: { edit: false } })
+		expect(profile).toMatchObject({
+			ghost: true,
+			threadCount: 0,
+			postCount: 0,
+			can: { edit: false },
+		})
+		expect(profile.threads.items).toEqual([])
+		expect((await core.getUserProfile(admin, bob.userId!)).unwrap().ghost).toBe(false)
 		const page = (await core.getThread(GUEST, thread.id)).unwrap()
 		expect(page.thread.author.id).toBe(ghost.id)
 
@@ -330,7 +338,9 @@ describe('ForumCorePlugin', () => {
 		expect(await codeOf(core.removeUser(ghost.id))).toBe('forbidden')
 		// A second removal reuses the same Ghost.
 		;(await core.removeUser(bob.userId!)).unwrap()
-		expect((await core.getUserProfile(GUEST, 'ghost')).unwrap().postCount).toBe(3)
+		expect(
+			(await core.getThread(GUEST, thread.id)).unwrap().posts.items.map((post) => post.author.id),
+		).toEqual([ghost.id, ghost.id, ghost.id])
 	})
 
 	it('reads user profiles and lets members or admins update display names', async () => {

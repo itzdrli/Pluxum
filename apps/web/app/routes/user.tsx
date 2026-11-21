@@ -108,7 +108,8 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 export default function UserProfile({ loaderData, actionData }: Route.ComponentProps) {
 	const { t, i18n } = useLingui()
-	const { user, roles, createdAt, threadCount, noteCount, postCount, threads, can } = loaderData
+	const { user, roles, createdAt, threadCount, noteCount, postCount, threads, can, ghost } =
+		loaderData
 	const [searchParams] = useSearchParams()
 	const tab = searchParams.get('tab') === 'notes' ? 'notes' : 'topics'
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
@@ -134,9 +135,11 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 							<UserAvatar user={user} size="sm" />
 							<div className="min-w-0 flex-1 leading-tight">
 								<p className="text-ink-strong truncate font-bold">{user.displayName}</p>
-								<p className="text-ink-weak text-meta tabular-nums">
-									{tab === 'notes' ? t`${noteCount} 动态` : t`${threadCount} 主题`}
-								</p>
+								{!ghost && (
+									<p className="text-ink-weak text-meta tabular-nums">
+										{tab === 'notes' ? t`${noteCount} 动态` : t`${threadCount} 主题`}
+									</p>
+								)}
 							</div>
 							<FoldListButton />
 						</PaneBar>
@@ -185,16 +188,21 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 												</Tag>
 											)}
 										</div>
-										<p className="text-ink-weak mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta">
-											<span className="flex items-center gap-1">
-												<CalendarDays aria-hidden size={12} />
-												<Trans>加入于</Trans> <Timestamp iso={createdAt} />
-											</span>
-											<span className="tabular-nums">{t`${threadCount} 主题`}</span>
-											<span className="tabular-nums">{t`${noteCount} 动态`}</span>
-											<span className="tabular-nums">{t`${postCount} 回复`}</span>
-										</p>
-										<UserHeaderSlots user={user} />
+										{/* Ghost holds deleted accounts' posts: only its name is shown. */}
+										{!ghost && (
+											<>
+												<p className="text-ink-weak mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta">
+													<span className="flex items-center gap-1">
+														<CalendarDays aria-hidden size={12} />
+														<Trans>加入于</Trans> <Timestamp iso={createdAt} />
+													</span>
+													<span className="tabular-nums">{t`${threadCount} 主题`}</span>
+													<span className="tabular-nums">{t`${noteCount} 动态`}</span>
+													<span className="tabular-nums">{t`${postCount} 回复`}</span>
+												</p>
+												<UserHeaderSlots user={user} />
+											</>
+										)}
 									</>
 								)}
 							</div>
@@ -205,18 +213,20 @@ export default function UserProfile({ loaderData, actionData }: Route.ComponentP
 							)}
 						</Panel>
 
-						<div className="flex flex-col gap-6">
-							<ProfileSlots profile={loaderData} />
-							<section>
-								<ProfileListTabs user={user} tab={tab} />
-								<UserThreads
-									threads={threads}
-									categories={categories}
-									activeId={openRef}
-									detail={detail}
-								/>
-							</section>
-						</div>
+						{!ghost && (
+							<div className="flex flex-col gap-6">
+								<ProfileSlots profile={loaderData} />
+								<section>
+									<ProfileListTabs user={user} tab={tab} />
+									<UserThreads
+										threads={threads}
+										categories={categories}
+										activeId={openRef}
+										detail={detail}
+									/>
+								</section>
+							</div>
+						)}
 					</>
 				)
 			}

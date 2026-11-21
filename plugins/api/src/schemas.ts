@@ -155,6 +155,7 @@ export const userProfile = t.Object({
 	noteCount: t.Number(),
 	can: t.Object({ edit: t.Boolean() }),
 	ext,
+	ghost: t.Boolean(),
 })
 
 export const meta = t.Object({

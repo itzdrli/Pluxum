@@ -20,7 +20,7 @@ type Card =
 			floor: number | null
 			excerpt: string
 	  }>
-	| Readonly<{ kind: 'user'; user: UserDto; threads: number; posts: number }>
+	| Readonly<{ kind: 'user'; user: UserDto; threads: number; posts: number; ghost: boolean }>
 
 const OPEN_DELAY_MS = 350
 const CLOSE_DELAY_MS = 180
@@ -51,6 +51,7 @@ async function loadCard(target: PreviewTarget): Promise<Card | null> {
 					user: profile.user,
 					threads: profile.threadCount,
 					posts: profile.postCount,
+					ghost: profile.ghost,
 				}
 	}
 	const detail = await getJson<ThreadDetailDto>(
@@ -198,10 +199,16 @@ export function HoverCards() {
 				) : (
 					<>
 						<p className="text-ink-strong font-bold">{shown.user.displayName}</p>
-						<p className="text-ink-weak text-meta tabular-nums">
-							@{shown.user.handle} · {t`${threads} 主题`} · {t`${posts} 回复`}
-						</p>
-						<UserHeaderSlots user={shown.user} compact />
+						{shown.ghost ? (
+							<p className="text-ink-weak text-meta">@{shown.user.handle}</p>
+						) : (
+							<>
+								<p className="text-ink-weak text-meta tabular-nums">
+									@{shown.user.handle} · {t`${threads} 主题`} · {t`${posts} 回复`}
+								</p>
+								<UserHeaderSlots user={shown.user} compact />
+							</>
+						)}
 					</>
 				)}
 			</div>
