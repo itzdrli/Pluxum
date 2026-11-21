@@ -304,6 +304,10 @@ export type IndexablePost = Readonly<{
 type Db = Pick<PluginDatabaseClient<typeof ForumDatabase>, 'select'>
 
 const BUILT_IN_POLICY_ID = 'forum-core.roles'
+/** Subject prefix of deleted accounts: no login method issues it, so nothing signs in as them. */
+export const ERASED_SUBJECT_PREFIX = 'erased:'
+/** The name a deleted account's posts show. */
+export const ERASED_DISPLAY_NAME = '已注销用户'
 
 const fail = <K extends ErrorKey>(
 	code: ForumErrorCode,
@@ -1083,6 +1087,36 @@ export class ForumCorePlugin extends BasePlugin {
 				.where(eq(users.id, userId))
 				.returning(author),
 		)
+		if (user) await this.listingsChanged()
+		return user ? Result.ok(user) : notFound('user')
+	}
+
+	/**
+	 * Privileged: what is left of an account its owner deleted. The posts stay, under the name
+	 * `已注销用户` and the handle `deleted-<number>`; the subject no login method issues, the
+	 * contact address and the roles go. Callers end the account's sessions themselves.
+	 */
+	async eraseUser(userId: string): Promise<ForumResult<UserDto>> {
+		if (!isEntityId(userId)) return notFound('user')
+		const erase = (suffix: string) =>
+			this.database.transaction(async (tx) => {
+				await tx.delete(userRoles).where(eq(userRoles.userId, userId))
+				return tx
+					.update(users)
+					.set({
+						subject: sql`${ERASED_SUBJECT_PREFIX} || ${users.id}`,
+						handle: sql`'deleted-' || ${users.number} || ${suffix}`,
+						displayName: ERASED_DISPLAY_NAME,
+						email: null,
+					})
+					.where(eq(users.id, userId))
+					.returning(author)
+			})
+		// Someone may have picked `deleted-<number>` as their own handle.
+		const [user] = await erase('').catch((error: unknown) => {
+			if (!isUniqueViolation(error)) throw error
+			return erase(`-${crypto.randomUUID().slice(0, 8)}`)
+		})
 		if (user) await this.listingsChanged()
 		return user ? Result.ok(user) : notFound('user')
 	}

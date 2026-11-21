@@ -86,6 +86,7 @@ describe('API error texts', () => {
 		sameChinese('account.registration_closed')
 		sameChinese('account.reset_invalid')
 		sameChinese('account.reset_unavailable')
+		sameChinese('account.password_wrong')
 		sameChinese('search.disabled')
 		sameChinese('search.unavailable')
 		sameChinese('category.slug_taken')

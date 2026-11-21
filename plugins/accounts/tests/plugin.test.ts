@@ -1,4 +1,4 @@
-import { ForumAuth, type Authentication } from '@pluxum/auth'
+import { ForumAuth, type Authentication, type Logout } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { Plugin } from '@pluxel/core'
 import { MemoryRatesBackendPlugin, RatesPlugin } from '@pluxel/plugin-rates'
@@ -42,8 +42,8 @@ class FakeAuth extends ForumAuth {
 	override completeLogin(): never {
 		throw new Error('not used')
 	}
-	override logout(): never {
-		throw new Error('not used')
+	override logout(): Promise<Logout> {
+		return Promise.resolve({ setCookie: 's=; Path=/; Max-Age=0', providerUrl: null })
 	}
 	override logoutEverywhere(): never {
 		throw new Error('not used')
@@ -74,16 +74,22 @@ async function boot(initialConfig: Record<string, unknown> = {}) {
 		change.start(RatesPlugin)
 		change.start(ForumAccountsPlugin, { initialConfig })
 	})
-	const post = async (path: string, payload: unknown, origin: string | null = ORIGIN) => {
+	const send = async (
+		path: string,
+		payload: unknown,
+		origin: string | null = ORIGIN,
+		cookie: string | null = null,
+	) => {
 		const response = await host.http.fetch(
 			new Request(new URL(`/api/forum/accounts${path}`, host.http.origin), {
-				method: 'POST',
+				method: payload === undefined ? 'GET' : 'POST',
 				headers: {
 					'content-type': 'application/json',
 					'x-forwarded-for': '203.0.113.7',
 					...(origin === null ? {} : { origin }),
+					...(cookie === null ? {} : { cookie }),
 				},
-				body: JSON.stringify(payload),
+				body: payload === undefined ? undefined : JSON.stringify(payload),
 			}),
 		)
 		const text = await response.text()
@@ -95,13 +101,22 @@ async function boot(initialConfig: Record<string, unknown> = {}) {
 			body: response.headers.get('content-type')?.includes('json') ? JSON.parse(text) : text,
 		}
 	}
+	const post = (path: string, payload: unknown, origin: string | null = ORIGIN) =>
+		send(path, payload, origin)
+	/** As the signed-in member `userId` (the fake session cookie). */
+	const as = (userId: string) => ({
+		get: (path: string) => send(path, undefined, ORIGIN, `s=${userId}`),
+		post: (path: string, payload: unknown) => send(path, payload, ORIGIN, `s=${userId}`),
+	})
 	return {
 		host,
+		as,
 		[Symbol.asyncDispose]: () => host[Symbol.asyncDispose](),
 		core: host.require(ForumCorePlugin),
 		auth: host.require(FakeAuth),
 		accounts: host.require(ForumAccountsPlugin),
 		post,
+		send,
 	}
 }
 
@@ -245,6 +260,76 @@ describe('forum accounts plugin', () => {
 		expect((await env.post('/reset-request', { email: 'a@b.co' })).body.error.key).toBe(
 			'account.reset_unavailable',
 		)
+	})
+
+	it('shows and changes the own account, asking for the password each time', async () => {
+		await using env = await boot()
+		const { userId } = (
+			await env.post('/register', { email: 'a@b.co', password: 'old password', displayName: 'A' })
+		).body
+		const me = env.as(userId)
+		expect((await env.send('/me', undefined)).status).toBe(401)
+		expect((await me.get('/me')).body.account).toMatchObject({ email: 'a@b.co' })
+		// A member who signs in another way has no account here.
+		const other = (await env.core.ensureUser({ subject: 'oidc:1', displayName: 'O' })).unwrap()
+		expect((await env.as(other.id).get('/me')).body).toEqual({ account: null, passwordMin: 8 })
+
+		const wrong = await me.post('/password', { current: 'nope nope', password: 'new password' })
+		expect(wrong).toMatchObject({ status: 422, body: { error: { key: 'account.password_wrong' } } })
+		const changed = await me.post('/password', {
+			current: 'old password',
+			password: 'new password',
+		})
+		expect(changed).toMatchObject({ status: 200, body: { userId } })
+		expect(changed.cookie).toContain(`s=${userId}`)
+		expect(FakeAuth.revoked).toContain(userId)
+		expect((await env.post('/login', { email: 'a@b.co', password: 'new password' })).status).toBe(
+			200,
+		)
+
+		await env.post('/register', { email: 'c@d.co', password: 'password c', displayName: 'C' })
+		expect(
+			(await me.post('/email', { password: 'new password', email: 'C@D.co' })).body.error.key,
+		).toBe('account.email_taken')
+		const moved = await me.post('/email', { password: 'new password', email: 'Ada@New.co' })
+		expect(moved).toMatchObject({ status: 200, body: { account: { email: 'Ada@new.co' } } })
+		expect(await env.core.contactEmail(userId)).toBe('Ada@new.co')
+		expect((await env.post('/login', { email: 'a@b.co', password: 'new password' })).status).toBe(
+			422,
+		)
+		expect(
+			(await env.post('/login', { email: 'ada@new.co', password: 'new password' })).status,
+		).toBe(200)
+	})
+
+	it('deletes an account, keeping the posts under a stand-in name', async () => {
+		await using env = await boot()
+		const { userId } = (
+			await env.post('/register', { email: 'a@b.co', password: 'my password', displayName: 'Ada' })
+		).body
+		const me = env.as(userId)
+		expect((await me.post('/delete', { password: 'not mine!' })).status).toBe(422)
+		const gone = await me.post('/delete', { password: 'my password' })
+		expect(gone.status).toBe(200)
+		expect(gone.cookie).toBeTruthy()
+		expect(FakeAuth.revoked).toContain(userId)
+
+		const user = (await env.core.getUser(userId)).unwrap()
+		expect(user).toMatchObject({ displayName: '已注销用户' })
+		expect(user.handle).toMatch(/^deleted-\d+$/)
+		expect(await env.core.contactEmail(userId)).toBeNull()
+		expect(await env.core.findUserBySubject(`local:${userId}`)).toBeNull()
+		expect((await env.post('/login', { email: 'a@b.co', password: 'my password' })).status).toBe(
+			422,
+		)
+		// The address is free again, for a new account.
+		const again = await env.post('/register', {
+			email: 'a@b.co',
+			password: 'my password',
+			displayName: 'Ada',
+		})
+		expect(again.status).toBe(201)
+		expect(again.body.userId).not.toBe(userId)
 	})
 
 	it('withdraws password login when it stops', async () => {

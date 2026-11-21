@@ -100,6 +100,7 @@ const TEXT: Readonly<Record<ErrorKey, (i18n: I18n, params: Params) => string>> =
 	'account.reset_invalid': (i18n) => t(i18n)`重设链接无效或已过期，请重新申请`,
 	'account.reset_unavailable': (i18n) =>
 		t(i18n)`本站没有配置邮件，不能通过邮箱重设密码，请联系管理员`,
+	'account.password_wrong': (i18n) => t(i18n)`当前密码不对`,
 	'search.disabled': (i18n) => t(i18n)`搜索服务未启用`,
 	'search.unavailable': (i18n) => t(i18n)`搜索服务暂时不可用`,
 	'category.slug_taken': (i18n) => t(i18n)`版块标识已被使用`,

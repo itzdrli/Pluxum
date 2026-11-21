@@ -71,6 +71,7 @@ export type ErrorSpecs = {
 	'account.registration_closed': undefined
 	'account.reset_invalid': undefined
 	'account.reset_unavailable': undefined
+	'account.password_wrong': undefined
 	// Search
 	'search.disabled': undefined
 	'search.unavailable': undefined
@@ -204,6 +205,7 @@ export const ERROR_TEXT: Texts = {
 	'account.registration_closed': () => '本站暂不开放注册',
 	'account.reset_invalid': () => '重设链接无效或已过期，请重新申请',
 	'account.reset_unavailable': () => '本站没有配置邮件，不能通过邮箱重设密码，请联系管理员',
+	'account.password_wrong': () => '当前密码不对',
 	'search.disabled': () => '搜索服务未启用',
 	'search.unavailable': () => '搜索服务暂时不可用',
 	'category.slug_taken': () => '版块标识已被使用',

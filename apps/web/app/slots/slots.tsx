@@ -15,6 +15,7 @@ import { useLingui } from '@lingui/react/macro'
 
 import type { MenuItem } from '../components/ui/overlay'
 import type { loader as rootLoader } from '../root'
+import { AccountSettings } from './forum-accounts/account-settings'
 import { AttachmentsFooter } from './forum-attachments/attachments'
 import { AvatarEditor } from './forum-attachments/avatar'
 import { MailSettings } from './forum-mail/mail-settings'
@@ -106,6 +107,7 @@ const EXTENSIONS: Readonly<Record<string, SlotComponents>> = {
 		'user.profile.tabs': UserBanTab,
 	},
 	'forum-mail': { 'user.profile.tabs': MailSettings },
+	'forum-accounts': { 'user.profile.tabs': AccountSettings },
 }
 
 /**

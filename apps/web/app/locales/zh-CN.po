@@ -466,6 +466,7 @@ msgid "你没有在这个版块发布主题的权限。"
 msgstr "你没有在这个版块发布主题的权限。"
 
 #: app/components/forum/post.tsx
+#: app/slots/forum-accounts/account-settings.tsx
 msgid "保存"
 msgstr "保存"
 
@@ -480,6 +481,18 @@ msgstr "保存资料"
 #: app/routes/home.tsx
 msgid "信息流"
 msgstr "信息流"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "修改"
+msgstr "修改"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "修改于"
+msgstr "修改于"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "修改密码"
+msgstr "修改密码"
 
 #: app/routes/thread.tsx
 msgid "修改标题"
@@ -789,6 +802,7 @@ msgstr "发送重设链接"
 #: app/routes/thread-new.tsx
 #: app/routes/thread.tsx
 #: app/routes/user.tsx
+#: app/slots/forum-accounts/account-settings.tsx
 #: app/slots/forum-moderation/report-button.tsx
 msgid "取消"
 msgstr "取消"
@@ -988,12 +1002,17 @@ msgid "审核队列"
 msgstr "审核队列"
 
 #: app/routes/login.tsx
+#: app/slots/forum-accounts/account-settings.tsx
 msgid "密码"
 msgstr "密码"
 
 #: app/lib/api-errors.ts
 msgid "密码不能超过 {max} 个字符"
 msgstr "密码不能超过 {max} 个字符"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "密码已修改，其他设备已退出"
+msgstr "密码已修改，其他设备已退出"
 
 #: app/lib/api-errors.ts
 msgid "密码至少需要 {min} 个字符"
@@ -1113,6 +1132,14 @@ msgstr "帖子举报"
 msgid "引用"
 msgstr "引用"
 
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "当前密码"
+msgstr "当前密码"
+
+#: app/lib/api-errors.ts
+msgid "当前密码不对"
+msgstr "当前密码不对"
+
 #: app/routes/moderation.tsx
 msgid "当前筛选下没有举报记录"
 msgstr "当前筛选下没有举报记录"
@@ -1228,6 +1255,7 @@ msgstr "搜索结果"
 msgid "撤销"
 msgstr "撤销"
 
+#: app/slots/forum-accounts/account-settings.tsx
 #: app/slots/forum-attachments/avatar.tsx
 #: app/slots/forum-attachments/shared.ts
 #: app/slots/forum-follows/follow.tsx
@@ -1277,6 +1305,7 @@ msgid "新发布"
 msgstr "新发布"
 
 #: app/routes/reset-password.tsx
+#: app/slots/forum-accounts/account-settings.tsx
 msgid "新密码"
 msgstr "新密码"
 
@@ -1284,6 +1313,10 @@ msgstr "新密码"
 #: app/routes/home.tsx
 msgid "新建版块"
 msgstr "新建版块"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "新邮箱"
+msgstr "新邮箱"
 
 #: app/components/composer/rich-editor.tsx
 msgid "无序列表"
@@ -1321,6 +1354,10 @@ msgstr "暂时还没有收到通知。"
 #: app/components/shell/theme-picker.tsx
 msgid "暗色"
 msgstr "暗色"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "更换"
+msgstr "更换"
 
 #: app/slots/forum-attachments/avatar.tsx
 msgid "更换头像"
@@ -1505,6 +1542,14 @@ msgstr "没有账号？注册"
 msgid "注册"
 msgstr "注册"
 
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "注销后无法恢复。发过的内容会保留，署名改为「已注销用户」。"
+msgstr "注销后无法恢复。发过的内容会保留，署名改为「已注销用户」。"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "注销账号"
+msgstr "注销账号"
+
 #: app/lib/roles.ts
 msgid "游客"
 msgstr "游客"
@@ -1629,6 +1674,10 @@ msgstr "登录服务暂时不可用，请稍后再试。"
 msgid "登录没有完成，请重试。"
 msgstr "登录没有完成，请重试。"
 
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "登录账号"
+msgstr "登录账号"
+
 #: app/slots/forum-mail/mail-settings.tsx
 msgid "登录账号没有已验证的邮箱，收不到邮件提醒。"
 msgstr "登录账号没有已验证的邮箱，收不到邮件提醒。"
@@ -1738,6 +1787,7 @@ msgstr "编辑资料"
 msgid "缺少举报目标"
 msgstr "缺少举报目标"
 
+#: app/slots/forum-accounts/account-settings.tsx
 #: app/slots/forum-attachments/shared.ts
 #: app/slots/forum-follows/follow.tsx
 #: app/slots/forum-mail/mail-settings.tsx
@@ -1994,12 +2044,17 @@ msgstr "邮件语言"
 
 #: app/routes/login.tsx
 #: app/routes/reset-password.tsx
+#: app/slots/forum-accounts/account-settings.tsx
 msgid "邮箱"
 msgstr "邮箱"
 
 #: app/lib/api-errors.ts
 msgid "邮箱地址无效"
 msgstr "邮箱地址无效"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "邮箱已更换"
+msgstr "邮箱已更换"
 
 #: app/lib/api-errors.ts
 msgid "邮箱或密码不对"

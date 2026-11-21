@@ -466,6 +466,7 @@ msgid "你没有在这个版块发布主题的权限。"
 msgstr "You do not have permission to post threads in this category."
 
 #: app/components/forum/post.tsx
+#: app/slots/forum-accounts/account-settings.tsx
 msgid "保存"
 msgstr "Save"
 
@@ -480,6 +481,18 @@ msgstr "Save profile"
 #: app/routes/home.tsx
 msgid "信息流"
 msgstr "Feed"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "修改"
+msgstr "Change"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "修改于"
+msgstr "Changed"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "修改密码"
+msgstr "Change password"
 
 #: app/routes/thread.tsx
 msgid "修改标题"
@@ -789,6 +802,7 @@ msgstr "Send reset link"
 #: app/routes/thread-new.tsx
 #: app/routes/thread.tsx
 #: app/routes/user.tsx
+#: app/slots/forum-accounts/account-settings.tsx
 #: app/slots/forum-moderation/report-button.tsx
 msgid "取消"
 msgstr "Cancel"
@@ -988,12 +1002,17 @@ msgid "审核队列"
 msgstr "Moderation queue"
 
 #: app/routes/login.tsx
+#: app/slots/forum-accounts/account-settings.tsx
 msgid "密码"
 msgstr "Password"
 
 #: app/lib/api-errors.ts
 msgid "密码不能超过 {max} 个字符"
 msgstr "Password can be at most {max} characters"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "密码已修改，其他设备已退出"
+msgstr "Password changed; other devices were signed out"
 
 #: app/lib/api-errors.ts
 msgid "密码至少需要 {min} 个字符"
@@ -1113,6 +1132,14 @@ msgstr "Post report"
 msgid "引用"
 msgstr "Quote"
 
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "当前密码"
+msgstr "Current password"
+
+#: app/lib/api-errors.ts
+msgid "当前密码不对"
+msgstr "The current password is wrong"
+
 #: app/routes/moderation.tsx
 msgid "当前筛选下没有举报记录"
 msgstr "No reports match this filter"
@@ -1228,6 +1255,7 @@ msgstr "Search results"
 msgid "撤销"
 msgstr "Undo"
 
+#: app/slots/forum-accounts/account-settings.tsx
 #: app/slots/forum-attachments/avatar.tsx
 #: app/slots/forum-attachments/shared.ts
 #: app/slots/forum-follows/follow.tsx
@@ -1277,6 +1305,7 @@ msgid "新发布"
 msgstr "Newly posted"
 
 #: app/routes/reset-password.tsx
+#: app/slots/forum-accounts/account-settings.tsx
 msgid "新密码"
 msgstr "New password"
 
@@ -1284,6 +1313,10 @@ msgstr "New password"
 #: app/routes/home.tsx
 msgid "新建版块"
 msgstr "New category"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "新邮箱"
+msgstr "New email"
 
 #: app/components/composer/rich-editor.tsx
 msgid "无序列表"
@@ -1321,6 +1354,10 @@ msgstr "No notifications yet."
 #: app/components/shell/theme-picker.tsx
 msgid "暗色"
 msgstr "Dark"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "更换"
+msgstr "Change"
 
 #: app/slots/forum-attachments/avatar.tsx
 msgid "更换头像"
@@ -1505,6 +1542,14 @@ msgstr "No account? Sign up"
 msgid "注册"
 msgstr "Sign up"
 
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "注销后无法恢复。发过的内容会保留，署名改为「已注销用户」。"
+msgstr "This cannot be undone. Your posts stay, signed “已注销用户” (deleted user)."
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "注销账号"
+msgstr "Delete account"
+
 #: app/lib/roles.ts
 msgid "游客"
 msgstr "Guest"
@@ -1629,6 +1674,10 @@ msgstr "The sign-in service is temporarily unavailable. Please try again later."
 msgid "登录没有完成，请重试。"
 msgstr "Sign-in did not complete. Please try again."
 
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "登录账号"
+msgstr "Sign-in"
+
 #: app/slots/forum-mail/mail-settings.tsx
 msgid "登录账号没有已验证的邮箱，收不到邮件提醒。"
 msgstr "Your sign-in account has no verified email address, so you cannot receive email notifications."
@@ -1738,6 +1787,7 @@ msgstr "Edit profile"
 msgid "缺少举报目标"
 msgstr "The report has no target"
 
+#: app/slots/forum-accounts/account-settings.tsx
 #: app/slots/forum-attachments/shared.ts
 #: app/slots/forum-follows/follow.tsx
 #: app/slots/forum-mail/mail-settings.tsx
@@ -1994,12 +2044,17 @@ msgstr "Email language"
 
 #: app/routes/login.tsx
 #: app/routes/reset-password.tsx
+#: app/slots/forum-accounts/account-settings.tsx
 msgid "邮箱"
 msgstr "Email"
 
 #: app/lib/api-errors.ts
 msgid "邮箱地址无效"
 msgstr "Invalid email address"
+
+#: app/slots/forum-accounts/account-settings.tsx
+msgid "邮箱已更换"
+msgstr "Email changed"
 
 #: app/lib/api-errors.ts
 msgid "邮箱或密码不对"
