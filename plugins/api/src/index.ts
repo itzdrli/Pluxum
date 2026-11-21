@@ -607,7 +607,11 @@ export class ForumApiPlugin extends BasePlugin {
 				},
 				following,
 			},
-			auth: { loginAvailable: this.auth.loginAvailable() },
+			auth: {
+				loginAvailable: this.auth.loginAvailable() || this.auth.passwordLoginAvailable(),
+				provider: this.auth.loginAvailable(),
+				password: this.auth.passwordLoginAvailable(),
+			},
 			search: { available: this.core.searchAvailable() },
 			limits: {
 				categoryNameMax: LIMITS.categoryNameMax,

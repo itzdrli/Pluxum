@@ -1,6 +1,6 @@
 import { createWorkbenchRenderer } from '@pluxel/workbench/react'
-import type { BrandAssetKind } from '@pluxum/domain'
-import { BRAND_UPLOAD_CHUNK_BYTES, ForumCoreWorkbench } from '../workbench.ts'
+import { BRAND_UPLOAD_CHUNK_BYTES, type BrandAssetKind } from '@pluxum/domain'
+import { ForumCoreWorkbench } from '../workbench.ts'
 import type {
 	AdminCategoryInput,
 	AdminResult,

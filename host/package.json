@@ -23,6 +23,7 @@
 		"@pluxel/plugin-takumi": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/workbench": "catalog:pluxel",
+		"@pluxum/accounts": "workspace:*",
 		"@pluxum/api": "workspace:*",
 		"@pluxum/attachments": "workspace:*",
 		"@pluxum/auth": "workspace:*",

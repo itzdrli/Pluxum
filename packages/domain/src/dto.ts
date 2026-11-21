@@ -387,6 +387,9 @@ export type ThemeId = (typeof THEME_IDS)[number]
 export const BRAND_ASSET_KINDS = ['logo', 'icon', 'social'] as const
 export type BrandAssetKind = (typeof BRAND_ASSET_KINDS)[number]
 
+/** Workbench messages are small, so a brand image goes up in chunks of at most this many bytes. */
+export const BRAND_UPLOAD_CHUNK_BYTES = 48 * 1024
+
 export function isBrandAssetKind(value: unknown): value is BrandAssetKind {
 	return typeof value === 'string' && (BRAND_ASSET_KINDS as readonly string[]).includes(value)
 }
@@ -408,8 +411,12 @@ export type SiteDto = Readonly<{
 export type MetaDto = Readonly<{
 	viewer: ViewerDto
 	auth: Readonly<{
-		/** Whether the forum can start a login right now (an identity provider is configured). */
+		/** Whether the forum can sign anyone in right now, by any method. */
 		loginAvailable: boolean
+		/** Sign-in through the configured OpenID Connect provider (`/api/forum/auth/login`). */
+		provider: boolean
+		/** Sign-in with email and password (the Forum Accounts plugin is running). */
+		password: boolean
 	}>
 	search: Readonly<{
 		/** Whether a search provider plugin is currently running. */

@@ -22,6 +22,10 @@ WORKDIR /src/pluxel
 RUN git clone --filter=blob:none "${PLUXEL_REPO}" . \
 	&& git -c advice.detachedHead=false checkout "${PLUXEL_REF}" \
 	&& git submodule update --init --depth 1 --recursive
+# Framework fixes not yet in PLUXEL_REF. `git apply` fails once a fix is upstream: then delete
+# its patch and bump PLUXEL_REF.
+COPY docker/pluxel-patches/ /tmp/pluxel-patches/
+RUN for patch in /tmp/pluxel-patches/*.patch; do git apply "$patch"; done
 RUN pnpm install --frozen-lockfile
 RUN pnpm exec vp run @pluxel/cli#compile
 

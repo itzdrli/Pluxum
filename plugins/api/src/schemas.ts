@@ -164,7 +164,7 @@ export const meta = t.Object({
 		can: t.Object({ manageCategories: t.Boolean(), postNote: t.Boolean() }),
 		following: t.Object({ available: t.Boolean(), any: t.Boolean() }),
 	}),
-	auth: t.Object({ loginAvailable: t.Boolean() }),
+	auth: t.Object({ loginAvailable: t.Boolean(), provider: t.Boolean(), password: t.Boolean() }),
 	search: t.Object({ available: t.Boolean() }),
 	limits: t.Object({
 		categoryNameMax: t.Number(),

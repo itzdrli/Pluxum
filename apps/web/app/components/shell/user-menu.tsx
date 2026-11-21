@@ -12,6 +12,7 @@ import { NARROW_QUERY, useMediaQuery } from '../../lib/media'
 import { ROLE_LABELS } from '../../lib/roles'
 import { LocaleSwitcher } from './locale-switcher'
 import { ThemeSwatches } from './theme-picker'
+import { loginHref } from '../../lib/login'
 
 /**
  * Login link, or the signed-in account with its menu. `variant="bar"` is the top bar's avatar
@@ -32,14 +33,14 @@ export function UserMenu({
 	const { t } = useLingui()
 	const user = meta?.viewer.user
 	if (!user) {
-		const loginHref = `/api/forum/auth/login?returnTo=${encodeURIComponent(here)}`
+		const signInHref = loginHref(meta?.auth, here)
 		if (variant === 'rail') {
 			return (
 				<div className="flex items-center gap-2 overflow-hidden px-3 py-3 rail-mini:flex-col">
 					{meta?.auth.loginAvailable ? (
 						<ButtonAnchor
 							data-testid="viewer"
-							href={loginHref}
+							href={signInHref}
 							tone="primary"
 							aria-label={t`登录`}
 							className="flex-1 rail-mini:w-10 rail-mini:flex-none rail-mini:px-0"
@@ -64,8 +65,8 @@ export function UserMenu({
 			<>
 				<GuestThemeButton placement="bottom end" />
 				{meta?.auth.loginAvailable ? (
-					// A document navigation, not a client-side one: the API redirects to the identity provider.
-					<ButtonAnchor data-testid="viewer" href={loginHref} tone="primary">
+					// A document navigation: the API may redirect to the identity provider.
+					<ButtonAnchor data-testid="viewer" href={signInHref} tone="primary">
 						<Trans>登录</Trans>
 					</ButtonAnchor>
 				) : (

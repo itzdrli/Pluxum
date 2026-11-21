@@ -87,6 +87,12 @@ class FakeAuth extends ForumAuth {
 		throw new Error('not used')
 	}
 
+	override publicOrigin(): string | null {
+		return null
+	}
+	override openSession(): never {
+		throw new Error('not used')
+	}
 	override testLoginAvailable(): boolean {
 		return false
 	}

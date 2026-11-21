@@ -32,6 +32,7 @@ import { CategoryHeaderSlots } from '../slots/slots'
 import { pageTitle } from '../lib/site'
 import { i18nOfRoot } from '../lib/i18n'
 import { STREAM_LABEL } from '../lib/stream'
+import { loginHref } from '../lib/login'
 
 export const handle = defineStage({ layer: 'list', nav: true, backLabel: msg`返回列表` })
 
@@ -82,7 +83,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 	// Guests who could log in are offered that instead of a missing button.
 	const loginToPost =
 		!can.createThread && !isStream && forum?.viewer.user === null && forum.auth.loginAvailable
-			? `/api/forum/auth/login?returnTo=${encodeURIComponent(newThread)}`
+			? loginHref(forum.auth, newThread)
 			: undefined
 	const action = (compact: boolean) =>
 		canCreate && compact ? (

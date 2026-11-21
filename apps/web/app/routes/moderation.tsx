@@ -14,7 +14,7 @@ import {
 	ShieldOff,
 	Trash2,
 } from 'lucide-react'
-import { data, Form, useNavigation } from 'react-router'
+import { data, Form, useNavigation, useRouteLoaderData } from 'react-router'
 import type { I18n, MessageDescriptor } from '@lingui/core'
 import { msg, t as tm } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
@@ -36,6 +36,8 @@ import { Pager } from '../components/ui/pager'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { defineStage } from '../lib/stage'
 import { i18nOfRoot } from '../lib/i18n'
+import { loginHref } from '../lib/login'
+import type { loader as rootLoader } from '../root'
 import { i18nFromRequest } from '../lib/i18n.server'
 import { pageTitle } from '../lib/site'
 
@@ -288,6 +290,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function ModerationRoute({ loaderData, actionData }: Route.ComponentProps) {
+	const rootAuth = useRouteLoaderData<typeof rootLoader>('root')?.meta?.auth
 	const { t, i18n } = useLingui()
 	const { available, loggedIn, authorized, loginAvailable, tab, status, queue, logs } = loaderData
 	const queueTotal = queue?.total ?? 0
@@ -310,11 +313,7 @@ export default function ModerationRoute({ loaderData, actionData }: Route.Compon
 					title={t`请先登录`}
 					action={
 						loginAvailable ? (
-							<ButtonAnchor
-								href="/api/forum/auth/login?returnTo=%2Fmoderation"
-								tone="primary"
-								size="sm"
-							>
+							<ButtonAnchor href={loginHref(rootAuth, '/moderation')} tone="primary" size="sm">
 								<Trans>登录</Trans>
 							</ButtonAnchor>
 						) : undefined

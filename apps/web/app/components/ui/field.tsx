@@ -26,12 +26,23 @@ export function TextInputField({
 	autoFocus,
 	className,
 	pattern,
-}: FieldBase & { pattern?: string }) {
+	type,
+	autoComplete,
+	minLength,
+}: FieldBase & {
+	pattern?: string
+	type?: 'text' | 'email' | 'password'
+	autoComplete?: string
+	minLength?: number
+}) {
 	return (
 		<TextField
 			name={name}
 			isRequired={required}
 			maxLength={maxLength}
+			minLength={minLength}
+			type={type}
+			autoComplete={autoComplete}
 			defaultValue={defaultValue}
 			className={className}
 			fullWidth

@@ -105,6 +105,12 @@ class FakeAuth extends ForumAuth {
 	/** Toggled by a test to play a configured token hash. */
 	static testLoginOn = false
 
+	override publicOrigin(): string | null {
+		return null
+	}
+	override openSession(): never {
+		throw new Error('not used')
+	}
 	override testLoginAvailable(): boolean {
 		return FakeAuth.testLoginOn
 	}
@@ -314,7 +320,7 @@ describe('ForumApiPlugin', () => {
 			can: { manageCategories: false, postNote: false },
 			following: { available: false, any: false },
 		})
-		expect(meta.auth).toEqual({ loginAvailable: true })
+		expect(meta.auth).toEqual({ loginAvailable: true, provider: true, password: false })
 		expect(meta.limits.threadTitleMax).toBeGreaterThan(0)
 		expect(meta.limits.noteBodyMax).toBe(500)
 		expect(meta.stream).toMatchObject({ slug: 'stream', name: '动态' })

@@ -1,4 +1,10 @@
-import { ERROR_TEXT, errorDetail, type ErrorArgs, type ErrorKey } from '@pluxum/domain'
+import {
+	ERROR_TEXT,
+	errorDetail,
+	RATE_BUCKETS,
+	type ErrorArgs,
+	type ErrorKey,
+} from '@pluxum/domain'
 import { describe, expect, it } from 'vitest'
 
 import { apiErrorText, apiErrorTextOfBody } from '../app/lib/api-errors'
@@ -72,6 +78,14 @@ describe('API error texts', () => {
 		sameChinese('position.not_integer')
 		sameChinese('role.unknown')
 		sameChinese('account.invalid_subject')
+		sameChinese('account.email_invalid')
+		sameChinese('account.email_taken')
+		sameChinese('account.password_short', { min: 8 })
+		sameChinese('account.password_long', { max: 256 })
+		sameChinese('account.credentials')
+		sameChinese('account.registration_closed')
+		sameChinese('account.reset_invalid')
+		sameChinese('account.reset_unavailable')
 		sameChinese('search.disabled')
 		sameChinese('search.unavailable')
 		sameChinese('category.slug_taken')
@@ -98,7 +112,7 @@ describe('API error texts', () => {
 		sameChinese('report.no_target')
 		sameChinese('report.duplicate')
 		sameChinese('report.bad_status')
-		for (const bucket of ['threads', 'replies', 'edits'] as const) {
+		for (const bucket of RATE_BUCKETS) {
 			for (const seconds of [1, 59, 60, 61, 3599, 3600, 7300]) {
 				sameChinese('rate.limited', { bucket, seconds })
 			}
@@ -125,6 +139,9 @@ describe('API error texts', () => {
 		)
 		expect(say(errorDetail('rate.limited', { bucket: 'replies', seconds: 300 }))).toBe(
 			'You are replying too fast. Try again in 5 minutes',
+		)
+		expect(say(errorDetail('rate.limited', { bucket: 'logins', seconds: 120 }))).toBe(
+			'You are signing in too fast. Try again in 2 minutes',
 		)
 		expect(say(errorDetail('upload.type_unsupported', { types: 'PDF,ZIP' }))).toBe(
 			'Unsupported file type (supported: PDF, ZIP)',

@@ -54,6 +54,7 @@ import {
 import { i18nOfRoot } from '../lib/i18n'
 import { i18nFromRequest } from '../lib/i18n.server'
 import { pageTitle, socialImageMeta, threadCardUrl } from '../lib/site'
+import { loginHref as signInHref } from '../lib/login'
 
 // Mounted under every list route (category, search, profile); the list decides where closing goes.
 // `socialImage`: the root layout leaves og:image to this page's meta (a card of the thread).
@@ -374,7 +375,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 	const replyError = actionData?.intent === 'reply' ? actionData.error : undefined
 	const loginHref =
 		forum?.viewer.user === null && forum.auth.loginAvailable
-			? `/api/forum/auth/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`
+			? signInHref(forum.auth, `${location.pathname}${location.search}`)
 			: undefined
 
 	const threadActions = (

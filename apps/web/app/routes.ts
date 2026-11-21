@@ -19,6 +19,8 @@ export default [
 		]),
 		route('notifications', 'routes/notifications.tsx'),
 		route('moderation', 'routes/moderation.tsx'),
+		route('login', 'routes/login.tsx'),
+		route('reset-password', 'routes/reset-password.tsx'),
 	]),
 	route('t/:id/:floor?', 'routes/thread-shortlink.ts'),
 	// Write actions of extension plugins, called by their slot components.

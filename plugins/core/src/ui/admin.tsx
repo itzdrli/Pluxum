@@ -513,9 +513,6 @@ function BrandPanel({ host }: { host: Host }) {
 			{brand.data.map((asset) => (
 				<BrandSlot key={asset.kind} host={host} asset={asset} />
 			))}
-			<Text size="sm" c="dimmed">
-				站点名称、标语和默认主题在 Forum Core 的设置里。
-			</Text>
 		</Stack>
 	)
 }

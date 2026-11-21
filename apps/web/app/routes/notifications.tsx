@@ -1,6 +1,6 @@
 import type { NotificationDto } from '@pluxum/domain'
 import { Bell, BellOff, LogIn } from 'lucide-react'
-import { data, Form, useFetcher, useNavigation } from 'react-router'
+import { data, Form, useFetcher, useNavigation, useRouteLoaderData } from 'react-router'
 import { t as tm } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 
@@ -22,6 +22,8 @@ import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server
 import { defineStage } from '../lib/stage'
 import { resolveNotificationHref } from '../slots/forum-notifications/href'
 import { i18nOfRoot } from '../lib/i18n'
+import { loginHref } from '../lib/login'
+import type { loader as rootLoader } from '../root'
 import { i18nFromRequest } from '../lib/i18n.server'
 import { pageTitle } from '../lib/site'
 
@@ -145,6 +147,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function NotificationsRoute({ loaderData, actionData }: Route.ComponentProps) {
+	const rootAuth = useRouteLoaderData<typeof rootLoader>('root')?.meta?.auth
 	const { t } = useLingui()
 	const { available, loggedIn, loginAvailable, unreadOnly, notifications } = loaderData
 	const total = notifications?.total ?? 0
@@ -170,11 +173,7 @@ export default function NotificationsRoute({ loaderData, actionData }: Route.Com
 					title={t`请先登录`}
 					action={
 						loginAvailable ? (
-							<ButtonAnchor
-								href="/api/forum/auth/login?returnTo=%2Fnotifications"
-								tone="primary"
-								size="sm"
-							>
+							<ButtonAnchor href={loginHref(rootAuth, '/notifications')} tone="primary" size="sm">
 								<Trans>登录</Trans>
 							</ButtonAnchor>
 						) : undefined

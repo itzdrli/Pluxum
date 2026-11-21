@@ -57,9 +57,6 @@ export type AdminBrandAsset = Readonly<{
 	maxBytes: number
 }>
 
-/** Workbench messages are small, so an image goes up in chunks of at most this many bytes. */
-export const BRAND_UPLOAD_CHUNK_BYTES = 48 * 1024
-
 /** The forum admin page's API; every method acts as a forum admin. */
 export interface ForumAdminApi extends RpcTarget {
 	categoriesDto(): Promise<readonly AdminCategory[]>

@@ -60,8 +60,8 @@ msgid "{author} 的动态"
 msgstr "{author}'s note"
 
 #: app/lib/api-errors.ts
-msgid "{bucket, select, threads {发主题} replies {回帖} edits {编辑} other {操作}}"
-msgstr "{bucket, select, threads {You are posting threads} replies {You are replying} edits {You are editing} other {You are doing that}}"
+msgid "{bucket, select, threads {发主题} replies {回帖} edits {编辑} logins {登录} signups {注册} resets {重设密码} other {操作}}"
+msgstr "{bucket, select, threads {You are posting threads} replies {You are replying} edits {You are editing} logins {You are signing in} signups {You are signing up} resets {You are asking for reset links} other {You are doing that}}"
 
 #: app/routes/home.tsx
 msgid "{categoryCount} 版块"
@@ -305,6 +305,11 @@ msgstr "Cross-site requests are not allowed"
 #: app/routes/moderation.tsx
 msgid "不支持的审核操作"
 msgstr "Unsupported moderation action"
+
+#: app/routes/login.tsx
+#: app/routes/reset-password.tsx
+msgid "不支持的操作"
+msgstr "Unsupported action"
 
 #: app/lib/api-errors.ts
 msgid "不支持的文件类型（支持 {types}）"
@@ -772,6 +777,10 @@ msgstr "An unexpected error occurred."
 msgid "发表回复"
 msgstr "Post reply"
 
+#: app/routes/reset-password.tsx
+msgid "发送重设链接"
+msgstr "Send reset link"
+
 #: app/components/composer/rich-editor.tsx
 #: app/components/forum/post.tsx
 #: app/components/shell/mobile-stage-bar.tsx
@@ -952,6 +961,10 @@ msgstr "Avatars must be PNG, JPEG, WebP or GIF images"
 msgid "头像图片不能超过 {limit}"
 msgstr "The avatar cannot be larger than {limit}"
 
+#: app/routes/reset-password.tsx
+msgid "如果这个邮箱注册过，重设链接已经发出。"
+msgstr "If this address has an account, a reset link is on its way."
+
 #: app/components/shell/user-menu.tsx
 #: app/routes/forum-stage.tsx
 #: app/routes/moderation.tsx
@@ -973,6 +986,18 @@ msgstr "Moderation view"
 #: app/routes/moderation.tsx
 msgid "审核队列"
 msgstr "Moderation queue"
+
+#: app/routes/login.tsx
+msgid "密码"
+msgstr "Password"
+
+#: app/lib/api-errors.ts
+msgid "密码不能超过 {max} 个字符"
+msgstr "Password can be at most {max} characters"
+
+#: app/lib/api-errors.ts
+msgid "密码至少需要 {min} 个字符"
+msgstr "Password must be at least {min} characters"
 
 #: app/components/composer/composer.tsx
 msgid "富文本"
@@ -1051,6 +1076,10 @@ msgstr "Link copied"
 msgid "已封禁"
 msgstr "Banned"
 
+#: app/routes/login.tsx
+msgid "已有账号？登录"
+msgstr "Have an account? Sign in"
+
 #: app/components/forum/post.tsx
 msgid "已编辑"
 msgstr "edited"
@@ -1091,6 +1120,10 @@ msgstr "No reports match this filter"
 #: app/routes/moderation.tsx
 msgid "待处理"
 msgstr "Open"
+
+#: app/routes/login.tsx
+msgid "忘记密码"
+msgstr "Forgot password"
 
 #: app/slots/forum-moderation/report-button.tsx
 msgid "恶意灌水或偏离主题"
@@ -1243,6 +1276,10 @@ msgstr "New members"
 msgid "新发布"
 msgstr "Newly posted"
 
+#: app/routes/reset-password.tsx
+msgid "新密码"
+msgstr "New password"
+
 #: app/routes/forum-stage.tsx
 #: app/routes/home.tsx
 msgid "新建版块"
@@ -1264,6 +1301,7 @@ msgstr "Invalid account identifier"
 msgid "无法从名称生成标识，请手动填写"
 msgstr "A slug could not be made from the name; please enter one"
 
+#: app/routes/login.tsx
 #: app/routes/user.tsx
 msgid "昵称"
 msgstr "Display name"
@@ -1332,6 +1370,18 @@ msgstr "Unread"
 #: app/routes/notifications.tsx
 msgid "未读通知 · {total}"
 msgstr "Unread notifications · {total}"
+
+#: app/lib/api-errors.ts
+msgid "本站暂不开放注册"
+msgstr "Sign-ups are closed"
+
+#: app/lib/api-errors.ts
+msgid "本站没有配置邮件，不能通过邮箱重设密码，请联系管理员"
+msgstr "This forum cannot send mail, so passwords cannot be reset by email. Ask an administrator."
+
+#: app/routes/reset-password.tsx
+msgid "本站没有配置邮件，请联系管理员重设密码。"
+msgstr "This forum cannot send mail. Ask an administrator to reset your password."
 
 #: app/components/forum/note-card.tsx
 msgid "条回复"
@@ -1447,6 +1497,14 @@ msgstr "You do not have permission to do that"
 msgid "没有权限访问审核队列"
 msgstr "You do not have access to the moderation queue"
 
+#: app/routes/login.tsx
+msgid "没有账号？注册"
+msgstr "No account? Sign up"
+
+#: app/routes/login.tsx
+msgid "注册"
+msgstr "Sign up"
+
 #: app/lib/roles.ts
 msgid "游客"
 msgstr "Guest"
@@ -1492,6 +1550,10 @@ msgstr "That category slug is already in use"
 msgid "版块类型已变化，请重试"
 msgstr "The category type changed. Please try again"
 
+#: app/routes/login.tsx
+msgid "用外部账号登录"
+msgstr "Sign in with another account"
+
 #: app/routes/user.tsx
 msgid "用户名"
 msgstr "Username"
@@ -1531,6 +1593,7 @@ msgstr "Leave empty to generate it from the name"
 #: app/components/palette/command-palette.tsx
 #: app/components/shell/mobile-stage-bar.tsx
 #: app/components/shell/user-menu.tsx
+#: app/routes/login.tsx
 #: app/routes/moderation.tsx
 #: app/routes/notifications.tsx
 #: app/routes/thread.tsx
@@ -1550,6 +1613,7 @@ msgid "登录后回复"
 msgstr "Log in to reply"
 
 #: app/lib/api-errors.ts
+#: app/routes/login.tsx
 msgid "登录尚未配置"
 msgstr "Sign-in is not configured"
 
@@ -1714,6 +1778,10 @@ msgstr "Discussions"
 msgid "论坛服务暂时不可用"
 msgstr "The forum service is temporarily unavailable"
 
+#: app/routes/reset-password.tsx
+msgid "设置新密码"
+msgstr "Set new password"
+
 #: app/components/shell/locale-switcher.tsx
 #: app/components/shell/user-menu.tsx
 msgid "语言"
@@ -1814,6 +1882,10 @@ msgstr "Back to profile"
 msgid "返回列表"
 msgstr "Back to list"
 
+#: app/routes/reset-password.tsx
+msgid "返回登录"
+msgstr "Back to sign in"
+
 #: app/routes/search.tsx
 msgid "返回结果"
 msgstr "Back to results"
@@ -1857,6 +1929,10 @@ msgstr "“Helpful” is not on in this category"
 #: app/routes/category.tsx
 msgid "这个版块还没有主题"
 msgstr "This category has no threads yet"
+
+#: app/lib/api-errors.ts
+msgid "这个邮箱已经注册过了"
+msgstr "This email address already has an account"
 
 #: app/slots/forum-attachments/avatar.tsx
 msgid "这张图片无法读取。"
@@ -1916,6 +1992,19 @@ msgstr "Email notifications"
 msgid "邮件语言"
 msgstr "Email language"
 
+#: app/routes/login.tsx
+#: app/routes/reset-password.tsx
+msgid "邮箱"
+msgstr "Email"
+
+#: app/lib/api-errors.ts
+msgid "邮箱地址无效"
+msgstr "Invalid email address"
+
+#: app/lib/api-errors.ts
+msgid "邮箱或密码不对"
+msgstr "Wrong email or password"
+
 #: app/slots/forum-solved/solved.tsx
 msgid "采纳为答案"
 msgstr "Accept as answer"
@@ -1923,6 +2012,14 @@ msgstr "Accept as answer"
 #: app/components/composer/rich-editor.tsx
 msgid "重做"
 msgstr "Redo"
+
+#: app/routes/reset-password.tsx
+msgid "重设密码"
+msgstr "Reset password"
+
+#: app/lib/api-errors.ts
+msgid "重设链接无效或已过期，请重新申请"
+msgstr "This reset link is invalid or has expired. Ask for a new one."
 
 #: app/components/composer/rich-editor.tsx
 msgid "链接"

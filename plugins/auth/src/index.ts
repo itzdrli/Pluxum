@@ -80,8 +80,34 @@ export type Logout = Readonly<{
  * forum-api owns the URLs and calls into this capability; nothing here mounts a route.
  */
 export abstract class ForumAuth extends BasePlugin {
-	/** Whether a login can be started at all (public origin and provider are configured). */
+	private readonly passwordLogins = new Set<symbol>()
+
+	/**
+	 * Says that a plugin (Forum Accounts) signs people in with email and password, so the web app
+	 * offers that form. The returned disposer must be handed to the contributor's `ctx.effects`.
+	 */
+	registerPasswordLogin(): () => void {
+		const token = Symbol('password-login')
+		this.passwordLogins.add(token)
+		return () => {
+			this.passwordLogins.delete(token)
+		}
+	}
+
+	/** Whether a running plugin signs people in with email and password. */
+	passwordLoginAvailable(): boolean {
+		return this.passwordLogins.size > 0
+	}
+
+	/** Whether a provider login can be started (public origin and provider are configured). */
 	abstract loginAvailable(): boolean
+	/** The forum's public origin (`https://forum.example`), or null while it is not configured. */
+	abstract publicOrigin(): string | null
+	/**
+	 * Opens a session for an account another login method has already verified (email and
+	 * password) and returns the `Set-Cookie` value that hands it to the browser.
+	 */
+	abstract openSession(userId: string, userAgent: string | null): Promise<string>
 	/** Resolves the session of a request. Requests without a session cookie never touch Redis. */
 	abstract authenticate(request: Request): Promise<Authentication>
 	/**
@@ -272,6 +298,15 @@ export class ForumAuthPlugin extends ForumAuth {
 
 	override loginAvailable(): boolean {
 		return this.oidc !== undefined
+	}
+
+	override publicOrigin(): string | null {
+		return this.config.publicOrigin ?? null
+	}
+
+	override async openSession(userId: string, userAgent: string | null): Promise<string> {
+		const id = await this.sessions.create({ userId, sid: undefined, userAgent })
+		return this.cookie(id, this.config.session.absoluteTtlSeconds)
 	}
 
 	override async authenticate(request: Request): Promise<Authentication> {

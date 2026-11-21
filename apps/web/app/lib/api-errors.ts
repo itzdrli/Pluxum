@@ -85,6 +85,21 @@ const TEXT: Readonly<Record<ErrorKey, (i18n: I18n, params: Params) => string>> =
 	'position.not_integer': (i18n) => t(i18n)`排序必须是整数`,
 	'role.unknown': (i18n) => t(i18n)`未知的角色`,
 	'account.invalid_subject': (i18n) => t(i18n)`无效的账号标识`,
+	'account.email_invalid': (i18n) => t(i18n)`邮箱地址无效`,
+	'account.email_taken': (i18n) => t(i18n)`这个邮箱已经注册过了`,
+	'account.password_short': (i18n, params) => {
+		const min = count(params, 'min')
+		return t(i18n)`密码至少需要 ${min} 个字符`
+	},
+	'account.password_long': (i18n, params) => {
+		const max = count(params, 'max')
+		return t(i18n)`密码不能超过 ${max} 个字符`
+	},
+	'account.credentials': (i18n) => t(i18n)`邮箱或密码不对`,
+	'account.registration_closed': (i18n) => t(i18n)`本站暂不开放注册`,
+	'account.reset_invalid': (i18n) => t(i18n)`重设链接无效或已过期，请重新申请`,
+	'account.reset_unavailable': (i18n) =>
+		t(i18n)`本站没有配置邮件，不能通过邮箱重设密码，请联系管理员`,
 	'search.disabled': (i18n) => t(i18n)`搜索服务未启用`,
 	'search.unavailable': (i18n) => t(i18n)`搜索服务暂时不可用`,
 	'category.slug_taken': (i18n) => t(i18n)`版块标识已被使用`,
@@ -113,9 +128,15 @@ const TEXT: Readonly<Record<ErrorKey, (i18n: I18n, params: Params) => string>> =
 	'report.bad_status': (i18n) => t(i18n)`无效的举报状态筛选`,
 	'rate.limited': (i18n, params) => {
 		const bucket = text(params, 'bucket')
-		const what = t(
-			i18n,
-		)`${select(bucket, { threads: '发主题', replies: '回帖', edits: '编辑', other: '操作' })}`
+		const what = t(i18n)`${select(bucket, {
+			threads: '发主题',
+			replies: '回帖',
+			edits: '编辑',
+			logins: '登录',
+			signups: '注册',
+			resets: '重设密码',
+			other: '操作',
+		})}`
 		const wait = waitText(i18n, count(params, 'seconds'))
 		return t(i18n)`${what}太频繁了，请 ${wait}后再试`
 	},

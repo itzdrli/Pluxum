@@ -143,6 +143,55 @@ async function call<T>(request: Request, path: string, init: CallInit = {}): Pro
 	return { ok: true, value: body as T }
 }
 
+export type AccountOptions = Readonly<{
+	registration: boolean
+	reset: boolean
+	passwordMin: number
+}>
+
+/**
+ * One call to Forum Accounts (`/api/forum/accounts/*`) for a sign-in form. Like `call`, plus the
+ * session cookie it hands out, and the visitor's address and browser for its rate limits and
+ * session list.
+ */
+export async function accountsCall<T>(
+	request: Request,
+	path: string,
+	body?: unknown,
+): Promise<Readonly<{ result: ApiResult<T>; setCookie: string | null }>> {
+	const headers = new Headers({ accept: 'application/json' })
+	for (const name of ['cookie', 'origin', 'user-agent', 'x-forwarded-for']) {
+		const value = request.headers.get(name)
+		if (value !== null) headers.set(name, value)
+	}
+	if (body !== undefined) headers.set('content-type', 'application/json')
+	let response: Response
+	try {
+		response = await fetch(forumApiUrl(`/api/forum/accounts${path}`), {
+			method: body === undefined ? 'GET' : 'POST',
+			headers,
+			body: body === undefined ? undefined : JSON.stringify(body),
+			signal: request.signal,
+		})
+	} catch (error) {
+		if (request.signal.aborted) throw error
+		return {
+			result: { ok: false, status: 502, error: await unavailableOf(request) },
+			setCookie: null,
+		}
+	}
+	const parsed: unknown = parseJson(await response.text().catch(() => ''))
+	if (!response.ok) {
+		const error = (await apiErrorOf(request, parsed)) ?? (await unavailableOf(request))
+		return { result: { ok: false, status: response.status, error }, setCookie: null }
+	}
+	return {
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the accounts plugin answers these shapes; see plugins/accounts.
+		result: { ok: true, value: parsed as T },
+		setCookie: response.headers.get('set-cookie'),
+	}
+}
+
 /** For loaders: the value, or the API's failure as a route error response with the same status. */
 export function orThrow<T>(result: ApiResult<T>): T {
 	if (!result.ok) throw data(result.error.message, { status: result.status })

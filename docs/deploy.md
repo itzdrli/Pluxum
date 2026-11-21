@@ -8,8 +8,8 @@ compose file:
 | `ghcr.io/itzdrli/pluxum-server` | Pluxel host with every forum plugin, bundled into one standalone program  |
 | `ghcr.io/itzdrli/pluxum-web`    | Forum frontend (React Router SSR); forwards `/api/forum/**` to the server |
 
-You need a Linux machine with Docker Compose, a domain, and an OpenID Connect provider for sign-in
-(Zitadel, Keycloak, Authentik, Auth0, …). Pluxum has no local accounts.
+You need a Linux machine with Docker Compose and a domain. People sign up with email and password
+out of the box; an OpenID Connect provider (Zitadel, Keycloak, Authentik, Auth0, …) is optional.
 
 ## 1. Configure
 
@@ -23,10 +23,11 @@ Fill in `.env`:
 
 - `PLUXUM_DOMAIN`: the forum's domain. HTTPS is required (sign-in cookies are `Secure`).
 - `POSTGRES_PASSWORD`: any long random string (`openssl rand -hex 24`).
-- `FORUM_OIDC_ISSUER`, `FORUM_OIDC_CLIENT_ID`: create an application at your provider with the redirect URI
+- Optional, to also sign in through an identity provider: `FORUM_OIDC_ISSUER`, `FORUM_OIDC_CLIENT_ID`.
+  Create an application at your provider with the redirect URI
   `https://<PLUXUM_DOMAIN>/api/forum/auth/callback`. A public (PKCE) client needs nothing else; a
   confidential client's secret is entered in Workbench after the first start (step 3).
-- `FORUM_ADMIN_SUBJECTS`: your user ID at the provider (the `sub` claim), so you become admin when you sign in.
+  `FORUM_ADMIN_SUBJECTS` lists provider user IDs (the `sub` claim) that become admins when they sign in.
 
 ## 2. Start
 
@@ -59,8 +60,14 @@ only accepts the origin `http://localhost:<PLUXUM_ADMIN_PORT>`. Never publish th
 
 Things to set there after the first start:
 
+- **Become admin**: sign up on the forum, then tick 管理员 next to your account in **论坛管理 › 用户**.
+- **Brand**: **论坛管理 › 品牌** takes your logo, site icon and link preview image; the site name,
+  tagline and default theme are in **Forum Core**'s settings, the footer in **Forum Footer**'s.
+- **Forum Accounts**: open or close sign-ups. Without mail, its **账号** page makes one-time password
+  reset links for you to hand out.
 - **Forum Auth**: the client secret if your OIDC client is confidential, then _check the login service_.
-- **Forum Mail**: SMTP server and password, to send reply and mention notifications.
+- **Forum Mail**: SMTP server and password, to send reply and mention notifications and let people
+  reset their own passwords.
 - **Forum Storage**: attachments are stored in the server volume by default; switch to an S3-compatible
   bucket here if you prefer.
 

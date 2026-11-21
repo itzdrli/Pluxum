@@ -1,5 +1,6 @@
 import {
 	BRAND_ASSET_KINDS,
+	BRAND_UPLOAD_CHUNK_BYTES,
 	isAssignableRole,
 	isBrandAssetKind,
 	type BrandAssetKind,
@@ -9,7 +10,6 @@ import { assertWorkbenchDto } from '@pluxel/workbench/server'
 import { RpcTarget } from 'capnweb'
 import { BRAND_ASSET_RULES } from './brand'
 import type { ForumCorePlugin } from './index'
-import { BRAND_UPLOAD_CHUNK_BYTES } from './workbench'
 import type {
 	AdminBrandAsset,
 	AdminCategory,

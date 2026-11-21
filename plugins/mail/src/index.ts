@@ -12,6 +12,7 @@ import { Type, type Static } from 'typebox'
 import * as v from 'valibot'
 import {
 	maskEmail,
+	escapeHtml,
 	normalizeEmail,
 	notificationMail,
 	testMail,
@@ -201,6 +202,24 @@ export class ForumMailPlugin extends BasePlugin {
 		const send = this.sender()
 		if (send === null) throw new Error('Mail is not configured')
 		await send(message)
+	}
+
+	/** Whether mail can go out right now (for other plugins, e.g. password reset mail). */
+	canSend(): boolean {
+		return this.available()
+	}
+
+	/**
+	 * Queues one plain-text mail that is not a notification (password reset and the like). It
+	 * goes out whatever the recipient's notification preference says. False when mail is off,
+	 * the address is invalid or the queue is full.
+	 */
+	sendTransactional(input: Readonly<{ to: string; subject: string; text: string }>): boolean {
+		if (!this.available()) return false
+		const to = normalizeEmail(input.to)
+		if (to === null) return false
+		const html = `<pre style="font-family:inherit;white-space:pre-wrap">${escapeHtml(input.text)}</pre>`
+		return this.queue.push({ to, subject: input.subject, text: input.text, html })
 	}
 
 	/** Resolves once queued notification mail has been attempted (for tests). */

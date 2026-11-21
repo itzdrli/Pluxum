@@ -9,8 +9,9 @@ A plugin-first forum on [Pluxel](https://github.com/PluxelJS/pluxel). The host s
 
 - **Threads and notes**: categories with topic threads, a short-note stream, replies inside a floor, pinning, locking and moving.
 - **Reading**: Markdown or a rich-text editor, full-text search (Chinese word segmentation), a command palette, themes, and a layout that works on phones.
-- **Accounts**: sign-in through any OpenID Connect provider, roles (member, moderator, admin), avatars and attachments.
+- **Accounts**: email and password sign-up out of the box, or any OpenID Connect provider; roles (member, moderator, admin), avatars and attachments.
 - **Community**: reactions, follows, mentions, accepted answers, in-app and email notifications, reports and bans.
+- **Your brand**: logo, icon, link preview image and default theme, set in Workbench.
 - **Two languages**: Chinese and English. Times follow the visitor's own time zone.
 
 ## Layout
@@ -32,6 +33,7 @@ A plugin-first forum on [Pluxel](https://github.com/PluxelJS/pluxel). The host s
 | `core`          | Categories, threads, posts, users and permissions; the other plugins hang off it. |
 | `api`           | The `/api/forum` HTTP ingress.                                                    |
 | `auth`          | OpenID Connect sign-in and sessions.                                              |
+| `accounts`      | Email and password accounts, so no identity provider is needed.                   |
 | `markdown`      | Renders and sanitises post bodies.                                                |
 | `search`        | Full-text search over threads and replies.                                        |
 | `notifications` | The in-app inbox.                                                                 |

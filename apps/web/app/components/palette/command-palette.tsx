@@ -27,6 +27,7 @@ import { THEMES } from '../../lib/theme'
 import { useDock } from '../dock/composer-dock'
 import { useStageNavigate } from '../stage/stage'
 import { chooseTheme } from '../shell/theme-picker'
+import { loginHref } from '../../lib/login'
 
 /** What opens the palette from elsewhere in the page (the top bar's search field, shortcuts). */
 type PaletteControl = Readonly<{ open: (initial?: string) => void }>
@@ -236,7 +237,7 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 								icon: LogIn,
 								run: () => {
 									window.location.assign(
-										`/api/forum/auth/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+										loginHref(meta?.auth, window.location.pathname + window.location.search),
 									)
 								},
 							} satisfies Item,

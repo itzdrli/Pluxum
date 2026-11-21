@@ -13,6 +13,7 @@ import { VaultAdminPlugin } from '@pluxel/services/plugins'
 import { FontsConfig, FontsPlugin } from '@pluxel/plugin-fonts'
 import { TakumiPlugin } from '@pluxel/plugin-takumi'
 import * as v from 'valibot'
+import { ForumAccountsPlugin } from '@pluxum/accounts'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAttachmentsPlugin, ForumStorageConfig, ForumStoragePlugin } from '@pluxum/attachments'
 import { ForumAuth, ForumAuthConfig, ForumAuthPlugin } from '@pluxum/auth'
@@ -44,6 +45,8 @@ export const appPlugins = [
 	ForumStoragePlugin,
 	ForumCorePlugin,
 	ForumAuthPlugin,
+	// Email and password sign-in, so a fresh forum works without an identity provider.
+	ForumAccountsPlugin,
 	ForumApiPlugin,
 	ForumMarkdownPlugin,
 	ForumReactionsPlugin,

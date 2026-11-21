@@ -31,7 +31,7 @@ export const FIELD_NAMES = [
 ] as const
 export type FieldName = (typeof FIELD_NAMES)[number]
 
-export const RATE_BUCKETS = ['threads', 'replies', 'edits'] as const
+export const RATE_BUCKETS = ['threads', 'replies', 'edits', 'logins', 'signups', 'resets'] as const
 export type RateBucket = (typeof RATE_BUCKETS)[number]
 
 /** Every error key and the parameters it takes (`undefined`: none). */
@@ -62,6 +62,15 @@ export type ErrorSpecs = {
 	'position.not_integer': undefined
 	'role.unknown': undefined
 	'account.invalid_subject': undefined
+	// Local accounts (email and password)
+	'account.email_invalid': undefined
+	'account.email_taken': undefined
+	'account.password_short': { min: number }
+	'account.password_long': { max: number }
+	'account.credentials': undefined
+	'account.registration_closed': undefined
+	'account.reset_invalid': undefined
+	'account.reset_unavailable': undefined
 	// Search
 	'search.disabled': undefined
 	'search.unavailable': undefined
@@ -145,6 +154,9 @@ const BUCKET_TEXT: Readonly<Record<RateBucket, string>> = {
 	threads: '发主题',
 	replies: '回帖',
 	edits: '编辑',
+	logins: '登录',
+	signups: '注册',
+	resets: '重设密码',
 }
 
 /** "30 秒" / "5 分钟" / "2 小时", rounded up. */
@@ -184,6 +196,14 @@ export const ERROR_TEXT: Texts = {
 	'position.not_integer': () => '排序必须是整数',
 	'role.unknown': () => '未知的角色',
 	'account.invalid_subject': () => '无效的账号标识',
+	'account.email_invalid': () => '邮箱地址无效',
+	'account.email_taken': () => '这个邮箱已经注册过了',
+	'account.password_short': ({ min }) => `密码至少需要 ${min} 个字符`,
+	'account.password_long': ({ max }) => `密码不能超过 ${max} 个字符`,
+	'account.credentials': () => '邮箱或密码不对',
+	'account.registration_closed': () => '本站暂不开放注册',
+	'account.reset_invalid': () => '重设链接无效或已过期，请重新申请',
+	'account.reset_unavailable': () => '本站没有配置邮件，不能通过邮箱重设密码，请联系管理员',
 	'search.disabled': () => '搜索服务未启用',
 	'search.unavailable': () => '搜索服务暂时不可用',
 	'category.slug_taken': () => '版块标识已被使用',

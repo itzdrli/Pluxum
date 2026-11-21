@@ -449,6 +449,9 @@ importers:
       '@pluxel/workbench':
         specifier: link:../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
         version: link:../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
+      '@pluxum/accounts':
+        specifier: workspace:*
+        version: link:../plugins/accounts
       '@pluxum/api':
         specifier: workspace:*
         version: link:../plugins/api
@@ -643,6 +646,67 @@ importers:
 
   packages/domain:
     devDependencies:
+      typescript:
+        specifier: catalog:tooling
+        version: 7.0.2
+      vite-plus:
+        specifier: catalog:tooling
+        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+      vitest:
+        specifier: catalog:test
+        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+
+  plugins/accounts:
+    dependencies:
+      '@pluxel/core':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/plugin-rates':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
+      '@pluxel/services':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+      '@pluxel/workbench':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+workbench-feb1640570e2
+      '@pluxum/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      drizzle-orm:
+        specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
+        version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
+      valibot:
+        specifier: catalog:validation
+        version: 1.5.0(typescript@7.0.2)
+      valibot-form:
+        specifier: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
+        version: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
+    devDependencies:
+      '@electric-sql/pglite':
+        specifier: catalog:prod
+        version: 0.5.16
+      '@pluxel/cli':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+      '@pluxel/test':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@pluxum/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@pluxum/core':
+        specifier: workspace:*
+        version: link:../core
+      '@pluxum/mail':
+        specifier: workspace:*
+        version: link:../mail
+      '@types/node':
+        specifier: catalog:tooling
+        version: 26.6.6
       typescript:
         specifier: catalog:tooling
         version: 7.0.2

@@ -278,6 +278,25 @@ describe.skipIf(!liveUrl)('ForumAuthPlugin with Redis sessions', () => {
 		expect(again.userId).toBe(login.userId)
 	})
 
+	it('opens sessions for other login methods and tracks password login', async () => {
+		await using host = await createHost()
+		const { auth, core } = await start(host)
+		expect(auth.publicOrigin()).toBe(ORIGIN)
+		const user = (
+			await core.ensureUser({ subject: `local:${subject()}`, displayName: 'Ada' })
+		).unwrap()
+		const setCookie = await auth.openSession(user.id, 'vitest')
+		expect(await auth.authenticate(withSession(sessionIdOf(setCookie)))).toEqual({
+			status: 'authenticated',
+			userId: user.id,
+		})
+		expect(auth.passwordLoginAvailable()).toBe(false)
+		const withdraw = auth.registerPasswordLogin()
+		expect(auth.passwordLoginAvailable()).toBe(true)
+		withdraw()
+		expect(auth.passwordLoginAvailable()).toBe(false)
+	})
+
 	it('takes the name from UserInfo when the ID token has none, also for an existing account', async () => {
 		await using host = await createHost()
 		const { auth, core, issuer, login } = await start(host)

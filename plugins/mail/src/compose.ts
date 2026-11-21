@@ -52,7 +52,7 @@ const ESCAPES: Readonly<Record<string, string>> = {
 	"'": '&#39;',
 }
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
 	return value.replaceAll(/[&<>"']/g, (char) => ESCAPES[char] ?? char)
 }
 
