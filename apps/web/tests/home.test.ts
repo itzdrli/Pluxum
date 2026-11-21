@@ -15,16 +15,15 @@ describe('homeFeedOf', () => {
 		expect(homeFeedOf(url('?tab=following'), EMPTY)).toEqual({ tab: 'following', order: 'active' })
 	})
 
-	it('defaults to 「关注」 only for readers who follow something', () => {
-		expect(homeFeedOf(url(''), READY).tab).toBe('following')
-		expect(homeFeedOf(url(''), EMPTY).tab).toBe('hot')
-		expect(homeFeedOf(url(''), NONE).tab).toBe('hot')
-		expect(homeFeedOf(url(''), undefined).tab).toBe('hot')
-		expect(homeFeedOf(url('?tab=bogus'), NONE).tab).toBe('hot')
+	it('defaults to 「最新」, also for readers who follow something', () => {
+		expect(homeFeedOf(url(''), READY)).toEqual({ tab: 'latest', order: 'active' })
+		expect(homeFeedOf(url(''), EMPTY).tab).toBe('latest')
+		expect(homeFeedOf(url(''), undefined).tab).toBe('latest')
+		expect(homeFeedOf(url('?tab=bogus'), NONE).tab).toBe('latest')
 	})
 
-	it('falls back to 「热门」 when there is no 「关注」 feed', () => {
-		expect(homeFeedOf(url('?tab=following'), NONE).tab).toBe('hot')
+	it('falls back to 「最新」 when there is no 「关注」 feed', () => {
+		expect(homeFeedOf(url('?tab=following'), NONE).tab).toBe('latest')
 	})
 
 	it('keeps links from before the tabs working', () => {
@@ -43,6 +42,7 @@ describe('feedQuery and homeFeedHref', () => {
 		expect(feedQuery({ tab: 'hot', order: 'active' })).toEqual({ sort: 'hot', scope: 'all' })
 		expect(feedQuery({ tab: 'latest', order: 'new' })).toEqual({ sort: 'new', scope: 'all' })
 		expect(homeFeedHref({ tab: 'latest', order: 'new' })).toBe('/?tab=latest&order=new')
+		expect(homeFeedHref({ tab: 'latest', order: 'active' })).toBe('/')
 		expect(homeFeedHref({ tab: 'following', order: 'new' })).toBe('/?tab=following')
 	})
 })

@@ -3,6 +3,7 @@ import {
 	Bell,
 	Hash,
 	LayoutGrid,
+	NotebookPen,
 	PanelLeftClose,
 	PanelLeftOpen,
 	Plus,
@@ -245,6 +246,7 @@ function CategoryNavPanel({
 		meta != null &&
 		(meta.viewer.roles.includes('moderator') || meta.viewer.roles.includes('admin')) &&
 		meta.uiSlots.some((slot) => slot.extId === 'forum-moderation')
+	const stream = meta?.stream ?? null
 	const notificationsOn =
 		meta?.viewer.user != null &&
 		meta.uiSlots.some(
@@ -260,6 +262,16 @@ function CategoryNavPanel({
 					active={pathname === '/'}
 					collapsed={collapsed}
 				/>
+				{/* The stream is no category among the others: its notes are a destination of their own. */}
+				{stream !== null && (
+					<RailLink
+						to={`/c/${stream.slug}`}
+						icon={NotebookPen}
+						label={stream.name}
+						active={activeSlug === stream.slug}
+						collapsed={collapsed}
+					/>
+				)}
 				{notificationsOn && (
 					<RailLink
 						to="/notifications"

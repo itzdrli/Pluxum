@@ -1,7 +1,7 @@
 import type { CategoryDto, CommunityDto, UserDto } from '@pluxum/domain'
 import { Dropdown } from '@heroui/react'
-import { LayoutList, MessagesSquare, Plus, UserRoundPlus } from 'lucide-react'
-import { useState } from 'react'
+import { LayoutList, MessagesSquare, NotebookPen, Plus, UserRoundPlus } from 'lucide-react'
+import { useCallback, useState } from 'react'
 import {
 	data,
 	Form,
@@ -18,7 +18,7 @@ import { NoteCard, NoteComposer } from '../components/forum/note-card'
 import { ThreadRow } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
 import { useDock } from '../components/dock/composer-dock'
-import { StageLink } from '../components/stage/stage'
+import { StageLink, useStageNavigate } from '../components/stage/stage'
 import { Button, IconButton } from '../components/ui/button'
 import { EmptyState, FormError, Panel, TabIndicator } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
@@ -67,7 +67,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 }
 
-// Posts a note (`intent=note`) or creates a category; the API decides whether the visitor may.
+// Posts a note (`intent=note`, from the note box on any page, by a fetcher) or creates a category;
+// the API decides whether the visitor may.
 export async function action({ request }: Route.ActionArgs) {
 	const i18n = await i18nFromRequest(request)
 	const form = await request.formData()
@@ -108,7 +109,21 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 		actionData !== undefined && 'error' in actionData ? actionData.error : undefined
 	const showForm = canManage && (creating || requestedNew || categoryError !== undefined)
 	const canPostNote = root?.meta?.viewer.can.postNote === true
+	const stream = root?.meta?.stream ?? null
 	const followingAvailable = root?.meta?.viewer.following.available === true
+	const navigate = useStageNavigate()
+	// The note just posted from the box, lit up in the list. A feed that would not show it at the
+	// top (「热门」, 「关注」, a later page) gives way to 「最新」, where it does.
+	const [fresh, setFresh] = useState<string | null>(null)
+	const onPosted = useCallback(
+		(id: string) => {
+			setFresh(id)
+			if (feed.tab !== 'latest' || searchParams.has('page')) {
+				void navigate(homeFeedHref({ tab: 'latest', order: 'active' }))
+			}
+		},
+		[feed.tab, navigate, searchParams],
+	)
 
 	const categoryCount = categories.length
 	const totalThreads = categories.reduce((sum, cat) => sum + cat.threadCount, 0)
@@ -176,7 +191,8 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 							<span className="text-ink-weak text-meta tabular-nums max-lg:hidden xl:hidden">
 								{t`${categoryCount} 版块`} · {t`${totalThreads} 主题`} · {t`${totalPosts} 帖子`}
 							</span>
-							{signedIn && <NewThreadMenu categories={categories} />}
+							{/* With the note box, the way to a topic sits beside it: one place to write from. */}
+							{signedIn && !canPostNote && <NewThreadMenu categories={categories} />}
 						</div>
 					</div>
 					{showForm && (
@@ -194,14 +210,8 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 						{canPostNote && (
 							<NoteComposer
 								max={root?.meta?.limits.noteBodyMax}
-								error={
-									actionData !== undefined && 'noteError' in actionData
-										? actionData.noteError
-										: undefined
-								}
-								resetKey={
-									actionData !== undefined && 'posted' in actionData ? actionData.posted : ''
-								}
+								onPosted={onPosted}
+								aside={<NewThreadMenu categories={categories} tone="secondary" />}
 							/>
 						)}
 						{feed.tab === 'latest' && <LatestOrderToggle feed={feed} />}
@@ -228,6 +238,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 												key={item.id}
 												thread={item}
 												href={`/c/${item.category.slug}/t/${item.ref}`}
+												fresh={item.id === fresh}
 											/>
 										) : (
 											<ThreadRow
@@ -253,13 +264,14 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 						aria-label={t`版块`}
 						className={mobileTab === 'categories' ? 'lg:hidden' : 'hidden'}
 					>
-						{categories.length === 0 ? (
+						{categories.length === 0 && stream === null ? (
 							<EmptyState icon={LayoutList} title={t`还没有版块`} />
 						) : (
 							<Panel
 								as="ul"
 								className="divide-line divide-y max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0"
 							>
+								{stream !== null && <StreamItem stream={stream} />}
 								{categories.map((category) => (
 									<CategoryItem key={category.id} category={category} />
 								))}
@@ -408,13 +420,21 @@ function LatestOrderToggle({ feed }: { feed: HomeFeed }) {
 }
 
 /** "发布主题" from the overview: pick the category, then write in its new-thread pane. */
-function NewThreadMenu({ categories }: { categories: readonly CategoryDto[] }) {
+function NewThreadMenu({
+	categories,
+	tone = 'primary',
+}: {
+	categories: readonly CategoryDto[]
+	tone?: 'primary' | 'secondary'
+}) {
 	const { t } = useLingui()
 	const dock = useDock()
 	if (categories.length === 0) return null
 	return (
 		<Dropdown>
-			<Dropdown.Trigger className="button button--primary button--sm">
+			<Dropdown.Trigger
+				className={`button button--${tone} ${tone === 'primary' ? 'button--sm' : ''} shrink-0`}
+			>
 				<Plus aria-hidden />
 				<Trans>发布主题</Trans>
 			</Dropdown.Trigger>
@@ -480,6 +500,27 @@ function HomeTab({
 			{children}
 			{selected && <TabIndicator name="home-tab" />}
 		</button>
+	)
+}
+
+/** The stream in the phone tab, above the categories: where every note is, on a page of its own. */
+function StreamItem({ stream }: { stream: { slug: string; name: string } }) {
+	return (
+		<li>
+			<StageLink
+				to={`/c/${stream.slug}`}
+				prefetch="intent"
+				className="hover:bg-hover active:bg-pressed flex items-center gap-3 px-3 py-2.5 transition-colors"
+			>
+				<span
+					aria-hidden
+					className="bg-control text-ink-strong flex size-8 shrink-0 items-center justify-center rounded-[2px]"
+				>
+					<NotebookPen size={16} />
+				</span>
+				<span className="text-ink-strong min-w-0 flex-1 truncate font-bold">{stream.name}</span>
+			</StageLink>
+		</li>
 	)
 }
 

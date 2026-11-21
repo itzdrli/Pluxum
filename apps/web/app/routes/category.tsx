@@ -1,10 +1,11 @@
 import { msg } from '@lingui/core/macro'
 import { MessagesSquare, Plus } from 'lucide-react'
+import { useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 import { useLingui } from '@lingui/react/macro'
 
 import type { Route } from './+types/category'
-import { NoteCard } from '../components/forum/note-card'
+import { NoteCard, NoteComposer } from '../components/forum/note-card'
 import { ThreadRow } from '../components/forum/rows'
 import { MobileCategoryBar } from '../components/shell/mobile-stage-bar'
 import {
@@ -67,9 +68,11 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const dock = useDock()
 	const newThread = `/c/${category.slug}/new`
-	// The stream holds notes, which are posted from the home page's box, not the topic composer.
+	// The stream holds notes, written in the note box (here and on the home page), not the topic composer.
 	const isStream = category.kind === 'stream'
 	const canCreate = can.createThread && !isStream
+	const canPostNote = isStream && forum?.viewer.can.postNote === true
+	const [fresh, setFresh] = useState<string | null>(null)
 
 	// Guests who could log in are offered that instead of a missing button.
 	const loginToPost =
@@ -124,6 +127,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 						/>
 					)}
 					<CategoryHeaderSlots category={category} />
+					{canPostNote && <NoteComposer max={forum?.limits.noteBodyMax} onPosted={setFresh} />}
 					{threads.items.length === 0 ? (
 						<EmptyState
 							icon={MessagesSquare}
@@ -149,6 +153,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 										thread={thread}
 										href={detail(thread.ref)}
 										isActive={thread.ref === openRef || thread.id === openRef}
+										fresh={thread.id === fresh}
 									/>
 								) : (
 									<ThreadRow

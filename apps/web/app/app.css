@@ -1191,6 +1191,22 @@
 		transform: scale(0.92);
 	}
 }
+/* A note just posted from the box: lit up where it lands in the list, then back to normal. */
+@keyframes fresh-in {
+	from {
+		opacity: 0;
+		transform: translate3d(0, -6px, 0);
+		background-color: var(--c-selected);
+	}
+	30% {
+		opacity: 1;
+		transform: none;
+		background-color: var(--c-selected);
+	}
+}
+@utility animate-fresh-in {
+	animation: fresh-in 2.4s var(--stage-ease) both;
+}
 @utility animate-pop-in {
 	animation: pop-in 260ms var(--stage-ease) both;
 }

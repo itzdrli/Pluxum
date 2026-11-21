@@ -1,13 +1,13 @@
-// The overview page's feed: three tabs, 「关注」 / 「热门」 / 「最新」, and for 「最新」 a second
+// The overview page's feed: three tabs, 「最新」 / 「热门」 / 「关注」, and for 「最新」 a second
 // choice of order (latest activity, or newly started).
 
 import type { ViewerDto } from '@pluxum/domain'
 import { msg } from '@lingui/core/macro'
 
 export const HOME_TABS = [
-	{ id: 'following', label: msg({ message: '关注', context: 'home feed tab' }) },
-	{ id: 'hot', label: msg`热门` },
 	{ id: 'latest', label: msg`最新` },
+	{ id: 'hot', label: msg`热门` },
+	{ id: 'following', label: msg({ message: '关注', context: 'home feed tab' }) },
 ] as const
 
 export type HomeTab = (typeof HOME_TABS)[number]['id']
@@ -33,31 +33,22 @@ export function feedQuery(feed: HomeFeed): Readonly<{
 
 /**
  * The feed a URL asks for. `?tab=` names it (`order=new` for 「最新」 by start); links from before
- * the tabs used `?sort=active|new|hot` and still work. Without either, signed-in readers who
- * follow something see 「关注」 and everyone else 「热门」. 「关注」 without a follow plugin, or for a
- * guest, falls back to 「热门」.
+ * the tabs used `?sort=active|new|hot` and still work. Without either it is 「最新」, so what was
+ * just posted is in view. 「关注」 without a follow plugin, or for a guest, falls back to 「最新」.
  */
 export function homeFeedOf(url: URL, following: ViewerDto['following'] | undefined): HomeFeed {
 	const params = url.searchParams
 	const order: LatestOrder = params.get('order') === 'new' ? 'new' : 'active'
 	const asked = HOME_TABS.find((tab) => tab.id === params.get('tab'))?.id
 	const legacy = params.get('sort')
-	const tab: HomeTab =
-		asked ??
-		(legacy === 'hot'
-			? 'hot'
-			: legacy === 'active' || legacy === 'new'
-				? 'latest'
-				: following?.available === true && following.any
-					? 'following'
-					: 'hot')
-	if (tab === 'following' && following?.available !== true) return { tab: 'hot', order }
+	const tab: HomeTab = asked ?? (legacy === 'hot' ? 'hot' : 'latest')
+	if (tab === 'following' && following?.available !== true) return { tab: 'latest', order }
 	return { tab, order: asked === undefined && legacy === 'new' ? 'new' : order }
 }
 
-/** The URL of a feed. */
+/** The URL of a feed; the default one, 「最新」 by latest reply, is the bare `/`. */
 export function homeFeedHref(feed: HomeFeed): string {
-	if (feed.tab === 'latest' && feed.order === 'new') return '/?tab=latest&order=new'
+	if (feed.tab === 'latest') return feed.order === 'new' ? '/?tab=latest&order=new' : '/'
 	return `/?tab=${feed.tab}`
 }
 

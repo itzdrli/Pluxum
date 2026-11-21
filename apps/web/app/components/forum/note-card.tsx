@@ -1,7 +1,7 @@
 import type { CategoryDto, ThreadDto } from '@pluxum/domain'
 import { MessageSquare, Send } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Form, useNavigation } from 'react-router'
+import { useFetcher } from 'react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 
 import { PostFooterSlots } from '../../slots/slots'
@@ -31,10 +31,13 @@ export function NoteCard({
 	isActive = false,
 	category,
 	showAuthor = true,
+	fresh = false,
 }: {
 	thread: ThreadDto
 	href: string
 	isActive?: boolean
+	/** Just posted from the box on this page: lit up for a moment where it landed. */
+	fresh?: boolean
 	/** Lists that mix categories name the stream, like a row names its category. */
 	category?: Pick<CategoryDto, 'slug' | 'name'>
 	showAuthor?: boolean
@@ -61,7 +64,7 @@ export function NoteCard({
 		<li
 			className={`hover:bg-hover relative cursor-pointer border-l-2 px-5 py-4 transition-colors ${
 				isActive ? 'border-l-accent bg-selected' : 'border-l-transparent'
-			}`}
+			}${fresh ? ' animate-fresh-in' : ''}`}
 			onClick={(event) => {
 				const card = event.currentTarget
 				const found = lightbox ? imagesForClick(event, card) : null
@@ -163,30 +166,47 @@ export function NoteCard({
 	)
 }
 
+/** What the home route's action answers a note with. */
+type NoteResult = { posted: string } | { noteError: string }
+
 /**
- * "发动态": a light box at the top of the feed, like a microblog's. It posts a note (no title,
- * a short body) to the stream through the page's action with `intent=note`; topics are written
- * in the full composer.
+ * "发动态": a light box at the top of a feed, like a microblog's. It posts a note (no title, a
+ * short body) to the stream through the home route's action (`intent=note`), from any page, by a
+ * fetcher: the page stays where it is and learns the new note's id, so it can show it. `aside`
+ * sits beside the closed box, for the way to the full topic composer: one place to write from.
  */
 export function NoteComposer({
 	max,
-	error,
-	resetKey,
+	aside,
+	onPosted,
 }: {
 	max: number | undefined
-	error: string | undefined
-	/** Changes after a note was posted, which empties the box. */
-	resetKey: string
+	aside?: React.ReactNode
+	/** Called once per note posted, with its id, after the lists have reloaded. */
+	onPosted?: (id: string) => void
 }) {
 	const { t } = useLingui()
-	const navigation = useNavigation()
-	const submitting =
-		navigation.state === 'submitting' && navigation.formData?.get('intent') === 'note'
+	const fetcher = useFetcher<NoteResult>({ key: 'note' })
+	const submitting = fetcher.state !== 'idle'
 	const [open, setOpen] = useState(false)
+	// Bumped after each note, which remounts the form and so empties the box.
+	const [round, setRound] = useState(0)
+	const handled = useRef<string | null>(null)
+	const result = fetcher.state === 'idle' ? fetcher.data : undefined
+	const posted = result !== undefined && 'posted' in result ? result.posted : null
+	const error = result !== undefined && 'noteError' in result ? result.noteError : undefined
+	useEffect(() => {
+		if (posted === null || handled.current === posted) return
+		handled.current = posted
+		setOpen(false)
+		setRound((n) => n + 1)
+		onPosted?.(posted)
+	}, [posted, onPosted])
+
 	return (
 		<Panel as="section" aria-label={t`发动态`} className="mb-4 p-3">
 			{open ? (
-				<Form method="post" className="flex flex-col gap-2" key={resetKey}>
+				<fetcher.Form method="post" action="/?index" className="flex flex-col gap-2" key={round}>
 					<input type="hidden" name="intent" value="note" />
 					<FormError message={error} />
 					<Composer
@@ -207,15 +227,18 @@ export function NoteComposer({
 							<Trans context="verb">发布</Trans>
 						</Button>
 					</div>
-				</Form>
+				</fetcher.Form>
 			) : (
-				<button
-					type="button"
-					onClick={() => setOpen(true)}
-					className="bg-control text-ink-weak hover:text-ink h-control w-full cursor-text rounded-[2px] px-3 text-left"
-				>
-					<Trans>分享点什么…</Trans>
-				</button>
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={() => setOpen(true)}
+						className="bg-control text-ink-weak hover:text-ink h-control min-w-0 flex-1 cursor-text truncate rounded-[2px] px-3 text-left"
+					>
+						<Trans>分享点什么…</Trans>
+					</button>
+					{aside}
+				</div>
 			)}
 			{!open && error !== undefined && <FormError message={error} />}
 		</Panel>
