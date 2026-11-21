@@ -13,6 +13,8 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
+		"@dicebear/core": "catalog:frontend",
+		"@dicebear/thumbs": "catalog:frontend",
 		"react": "catalog:frontend",
 		"react-dom": "catalog:frontend",
 		"react-router": "catalog:frontend",

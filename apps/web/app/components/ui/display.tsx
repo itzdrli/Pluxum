@@ -63,8 +63,8 @@ const AVATAR_SIZES = {
 }
 
 /**
- * A user's picture when there is one (`src`), otherwise a monogram: the first character of the
- * name on the control colour, no extra hue. A picture that fails to load falls back to the monogram.
+ * A user's picture when there is one (`src`), otherwise `art`, otherwise a monogram: the first
+ * character of the name on the control colour. A picture that fails to load falls back the same way.
  */
 export function Avatar({
 	name,
@@ -74,41 +74,40 @@ export function Avatar({
 }: {
 	name: string
 	src?: string
-	/** A drawing in place of the monogram (Ghost's), filling the box. */
+	/** A drawing in place of the monogram, filling the box. */
 	art?: React.ReactNode
 	size?: keyof typeof AVATAR_SIZES
 }) {
 	const [failed, setFailed] = useState<string | null>(null)
 	const box = `border-line inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[2px] border select-none ${AVATAR_SIZES[size]}`
-	if (art !== undefined) {
+	if (src === undefined || failed === src) {
+		if (art === undefined) {
+			return (
+				<span aria-hidden className={`bg-control text-ink-strong font-bold ${box}`}>
+					{monogramOf(name)}
+				</span>
+			)
+		}
 		return (
 			<span aria-hidden className={`bg-control ${box}`}>
 				{art}
 			</span>
 		)
 	}
-	if (src !== undefined && failed !== src) {
-		return (
-			<span aria-hidden className={`bg-control ${box}`}>
-				<img
-					src={src}
-					alt=""
-					loading="lazy"
-					decoding="async"
-					className="size-full object-cover"
-					// An error before hydration is missed by onError; check once mounted.
-					ref={(image) => {
-						if (image?.complete === true && image.naturalWidth === 0) setFailed(src)
-					}}
-					onError={() => setFailed(src)}
-				/>
-			</span>
-		)
-	}
-	const initial = monogramOf(name)
 	return (
-		<span aria-hidden className={`bg-control text-ink-strong font-bold ${box}`}>
-			{initial}
+		<span aria-hidden className={`bg-control ${box}`}>
+			<img
+				src={src}
+				alt=""
+				loading="lazy"
+				decoding="async"
+				className="size-full object-cover"
+				// An error before hydration is missed by onError; check once mounted.
+				ref={(image) => {
+					if (image?.complete === true && image.naturalWidth === 0) setFailed(src)
+				}}
+				onError={() => setFailed(src)}
+			/>
 		</span>
 	)
 }

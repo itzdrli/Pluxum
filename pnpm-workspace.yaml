@@ -24,6 +24,8 @@ catalogs:
     typebox: ^1.4.3
     tinybase: 10.0.1
   frontend:
+    '@dicebear/core': 9.4.3
+    '@dicebear/thumbs': 9.4.2
     '@fontsource/ibm-plex-sans': 5.3.0
     '@fontsource/jetbrains-mono': 5.3.0
     '@fontsource/noto-sans-sc': 5.3.1
