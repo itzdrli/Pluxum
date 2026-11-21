@@ -912,6 +912,24 @@ export class ForumCorePlugin extends BasePlugin {
 		})
 	}
 
+	/**
+	 * For extension plugins whose data depends on where a thread sits: the slug of each given
+	 * thread's category, in one query. Deleted or unknown threads are left out. It answers for
+	 * threads the caller already holds DTOs of, so it checks no visibility of its own.
+	 */
+	async threadCategorySlugs(threadIds: readonly string[]): Promise<Map<string, string>> {
+		const ids = threadIds.filter((id) => isEntityId(id))
+		if (ids.length === 0) return new Map()
+		const rows = await this.database.read((db) =>
+			db
+				.select({ threadId: threads.id, slug: categories.slug })
+				.from(threads)
+				.innerJoin(categories, eq(categories.id, threads.categoryId))
+				.where(and(inArray(threads.id, ids), isNull(threads.deletedAt))),
+		)
+		return new Map(rows.map((row) => [row.threadId, row.slug]))
+	}
+
 	// ── Users ───────────────────────────────────────────────────────────────────────────────
 
 	/** Returns the account for an identity-provider subject, creating it on first sight. */

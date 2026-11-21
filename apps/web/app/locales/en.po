@@ -1850,6 +1850,10 @@ msgstr "No discussions yet"
 msgid "这一页没有内容"
 msgstr "Nothing on this page"
 
+#: app/lib/api-errors.ts
+msgid "这个版块没有开启「有用」"
+msgstr "“Helpful” is not on in this category"
+
 #: app/routes/category.tsx
 msgid "这个版块还没有主题"
 msgstr "This category has no threads yet"

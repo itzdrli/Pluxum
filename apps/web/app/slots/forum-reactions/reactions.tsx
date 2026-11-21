@@ -108,20 +108,27 @@ function ReactionButton({ post, kind, saved }: { post: PostDto; kind: Kind; save
 	)
 }
 
+/** Whether a thread's posts offer 「有用」: the plugin says so per thread, by its category. */
+function usefulOn(ext: unknown): boolean {
+	return typeof ext === 'object' && ext !== null && 'useful' in ext && ext.useful === true
+}
+
 /**
- * `post.footer`: the like button of a post with its count, and in topics 「有用」 (which weighs
- * more in 「热门」). Notes, here or as cards in a feed, have the like alone.
+ * `post.footer`: the like button of a post with its count, and 「有用」 (which weighs more in
+ * 「热门」) in topics of the categories that have it on. Notes, here or as feed cards, have the
+ * like alone.
  */
 export function ReactionsFooter({ post }: { post: PostDto }) {
 	const { i18n } = useLingui()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
-	const inTopic = useThreadContext()?.thread.kind === 'topic'
+	const thread = useThreadContext()?.thread
+	const showUseful = thread?.kind === 'topic' && usefulOn(thread.ext[EXT_ID])
 	const saved = summaryOf(post.ext[EXT_ID])
 	const loggedIn = viewer?.user != null
 	if (post.deleted) return null
 	// Guests cannot react: show how many did, as text, and nothing at all for none.
 	if (!loggedIn) {
-		const useful = inTopic ? saved.useful.count : 0
+		const useful = showUseful ? saved.useful.count : 0
 		if (saved.like.count === 0 && useful === 0) return null
 		return (
 			<p className="text-ink-weak flex items-center gap-3 px-4 pb-3 text-meta tabular-nums">
@@ -145,7 +152,7 @@ export function ReactionsFooter({ post }: { post: PostDto }) {
 	return (
 		<div className="flex items-center gap-1 px-2.5 pb-2">
 			<ReactionButton post={post} kind="like" saved={saved.like} />
-			{inTopic && <ReactionButton post={post} kind="useful" saved={saved.useful} />}
+			{showUseful && <ReactionButton post={post} kind="useful" saved={saved.useful} />}
 		</div>
 	)
 }

@@ -81,6 +81,7 @@ export type ErrorSpecs = {
 	'solved.not_allowed': undefined
 	'solved.note': undefined
 	'solved.opening': undefined
+	'reactions.useful_off': undefined
 	// Moderation
 	'ban.cannot_post': undefined
 	'ban.cannot_act': undefined
@@ -199,6 +200,7 @@ export const ERROR_TEXT: Texts = {
 	'solved.not_allowed': () => '只有楼主或版主可以采纳答案',
 	'solved.note': () => '动态不能采纳答案',
 	'solved.opening': () => '主楼不能被采纳为答案',
+	'reactions.useful_off': () => '这个版块没有开启「有用」',
 	'ban.cannot_post': () => '账号已被封禁，无法发帖或编辑内容',
 	'ban.cannot_act': () => '账号已被封禁，无法执行此操作',
 	'ban.self': () => '不能封禁自己',

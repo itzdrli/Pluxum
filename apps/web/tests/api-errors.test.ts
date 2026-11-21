@@ -88,6 +88,7 @@ describe('API error texts', () => {
 		sameChinese('solved.not_allowed')
 		sameChinese('solved.note')
 		sameChinese('solved.opening')
+		sameChinese('reactions.useful_off')
 		sameChinese('ban.cannot_post')
 		sameChinese('ban.cannot_act')
 		sameChinese('ban.self')

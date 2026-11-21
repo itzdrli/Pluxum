@@ -1850,6 +1850,10 @@ msgstr "还没有讨论"
 msgid "这一页没有内容"
 msgstr "这一页没有内容"
 
+#: app/lib/api-errors.ts
+msgid "这个版块没有开启「有用」"
+msgstr "这个版块没有开启「有用」"
+
 #: app/routes/category.tsx
 msgid "这个版块还没有主题"
 msgstr "这个版块还没有主题"

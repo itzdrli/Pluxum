@@ -42,6 +42,18 @@ export const ForumReactionsConfig = v.object({
 		'每个「有用」给主题加的热度分，通常比点赞高。改动只影响之后的回应和取消。',
 		3,
 	),
+	/** Slugs of the categories whose topics offer 「有用」; everywhere else there is the like alone. */
+	usefulCategories: v.optional(
+		v.pipe(
+			v.array(v.pipe(v.string(), v.trim(), v.toLowerCase(), v.minLength(1), v.maxLength(64))),
+			f.formMeta({
+				title: '开启「有用」的版块',
+				description: '填版块标识（slug）。不在列表里的版块只有点赞。',
+			}),
+			f.arrayMeta({ itemLabel: '版块标识', addLabel: '添加版块', emptyHint: '所有版块都只有点赞' }),
+		),
+		[],
+	),
 })
 export type ForumReactionsConfig = v.InferOutput<typeof ForumReactionsConfig>
 
@@ -71,6 +83,10 @@ const ReactInput = Type.Object({
 	/** The state to end in, not a toggle: repeating the call changes nothing. */
 	on: Type.Boolean(),
 })
+
+/** What a thread's `ext['forum-reactions']` holds: whether its posts offer 「有用」. */
+export const ThreadReactions = Type.Object({ useful: Type.Boolean() })
+export type ThreadReactions = Static<typeof ThreadReactions>
 
 const none = (): ReactionSummary => ({
 	count: 0,
@@ -109,6 +125,13 @@ export class ForumReactionsPlugin extends BasePlugin {
 			}),
 		)
 		this.ctx.effects.defer(
+			this.core.registerEntityExtension({
+				id: REACTIONS_EXT_ID,
+				entity: 'thread',
+				load: (threadIds) => this.threadSettings(threadIds),
+			}),
+		)
+		this.ctx.effects.defer(
 			this.core.registerUiSlots({ id: REACTIONS_EXT_ID, slots: ['post.footer'] }),
 		)
 		this.ctx.effects.defer(
@@ -122,6 +145,19 @@ export class ForumReactionsPlugin extends BasePlugin {
 				handle: ({ principal, input }) =>
 					this.react(principal, input.postId, input.on, input.kind ?? 'like'),
 			}),
+		)
+	}
+
+	/** Whether 「有用」 is on in a category, by its slug. */
+	usefulIn(categorySlug: string): boolean {
+		return this.config.usefulCategories.includes(categorySlug.toLowerCase())
+	}
+
+	/** For every given thread, whether its posts offer 「有用」 (its category is listed), in one query. */
+	async threadSettings(threadIds: readonly string[]): Promise<Map<string, ThreadReactions>> {
+		const slugs = await this.core.threadCategorySlugs(threadIds)
+		return new Map(
+			[...slugs].map(([threadId, slug]) => [threadId, { useful: this.usefulIn(slug) }]),
 		)
 	}
 
@@ -173,6 +209,15 @@ export class ForumReactionsPlugin extends BasePlugin {
 		if (located.isErr()) return Result.err(located.error)
 		if (!this.core.can(principal, 'post.react', located.value.resource)) {
 			return Result.err(failure('forbidden', 'permission.denied'))
+		}
+		// 「有用」 only where it is on; withdrawing one given before it was turned off still works.
+		if (kind === 'useful' && on) {
+			const slug = (await this.core.threadCategorySlugs([located.value.threadId])).get(
+				located.value.threadId,
+			)
+			if (slug === undefined || !this.usefulIn(slug)) {
+				return Result.err(failure('forbidden', 'reactions.useful_off'))
+			}
 		}
 		const key = and(
 			eq(reactions.postId, located.value.postId),

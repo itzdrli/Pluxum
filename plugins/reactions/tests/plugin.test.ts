@@ -96,13 +96,16 @@ function client(host: Host, userId?: string) {
 	}
 }
 
-/** The forum with reactions running, two members, and a thread with one reply by Bob. */
-async function setUp(host: Host) {
+/**
+ * The forum with reactions running (「有用」 on in `general`), two members, and a thread in
+ * 「General」 with one reply by Bob.
+ */
+async function setUp(host: Host, usefulCategories: readonly string[] = ['general']) {
 	await host.commit((change) => {
 		change.start(ForumCorePlugin)
 		change.start(FakeAuth)
 		change.start(ForumApiPlugin)
-		change.start(ForumReactionsPlugin)
+		change.start(ForumReactionsPlugin, { initialConfig: { usefulCategories } })
 	})
 	const core = host.require(ForumCorePlugin)
 	const adminUser = (
@@ -215,6 +218,41 @@ describe('ForumReactionsPlugin', () => {
 		expect(heat()).toBe(4)
 		expect((await asAlice.post(REACT, { postId: reply.id, kind: 'love', on: true })).status).toBe(
 			422,
+		)
+	})
+
+	it('offers 「有用」 only in the categories it is on in', async () => {
+		await using host = await createHost()
+		const { core, admin, alice, bob, thread, reply } = await setUp(host)
+		const asAlice = client(host, alice.id)
+		const threadExt = async (id: string) => {
+			const detail: ThreadDetailDto = (await client(host).get(`/threads/${id}`)).body
+			return detail.thread.ext[REACTIONS_EXT_ID]
+		}
+		expect(await threadExt(thread.id)).toEqual({ useful: true })
+
+		const other = (await core.createCategory(admin, { name: 'Chat' })).unwrap()
+		const elsewhere = (
+			await core.createThread(await core.principalOf(alice.id), {
+				categoryId: other.id,
+				title: 'Elsewhere',
+				body: 'opening',
+			})
+		).unwrap()
+		const answer = (
+			await core.createPost(await core.principalOf(bob.id), {
+				threadId: elsewhere.id,
+				body: 'reply',
+			})
+		).unwrap()
+		expect(await threadExt(elsewhere.id)).toEqual({ useful: false })
+		expect(
+			await asAlice.post(REACT, { postId: answer.id, kind: 'useful', on: true }),
+		).toMatchObject({ status: 403 })
+		// Likes are everywhere.
+		expect((await asAlice.post(REACT, { postId: answer.id, on: true })).status).toBe(200)
+		expect((await asAlice.post(REACT, { postId: reply.id, kind: 'useful', on: true })).status).toBe(
+			200,
 		)
 	})
 

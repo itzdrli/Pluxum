@@ -101,6 +101,7 @@ const TEXT: Readonly<Record<ErrorKey, (i18n: I18n, params: Params) => string>> =
 	'solved.not_allowed': (i18n) => t(i18n)`只有楼主或版主可以采纳答案`,
 	'solved.note': (i18n) => t(i18n)`动态不能采纳答案`,
 	'solved.opening': (i18n) => t(i18n)`主楼不能被采纳为答案`,
+	'reactions.useful_off': (i18n) => t(i18n)`这个版块没有开启「有用」`,
 	'ban.cannot_post': (i18n) => t(i18n)`账号已被封禁，无法发帖或编辑内容`,
 	'ban.cannot_act': (i18n) => t(i18n)`账号已被封禁，无法执行此操作`,
 	'ban.self': (i18n) => t(i18n)`不能封禁自己`,
