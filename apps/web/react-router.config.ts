@@ -21,6 +21,10 @@ const allowedActionOrigins = [
 export default {
 	// Server-side render every route; the forum needs SEO and first-paint content.
 	ssr: true,
+	// Ship the whole route manifest (~3 KB compressed) with the document. Lazy discovery fetches
+	// `/__manifest?paths=…` per page; Cloudflare never caches it, so far-away visitors pay a round
+	// trip to the origin on every page load and before navigating to an undiscovered route.
+	routeDiscovery: { mode: 'initial' },
 	// `web-public` serves ./build from memory, so a check build must go elsewhere (FORUM_WEB_BUILD_DIR).
 	buildDirectory: process.env.FORUM_WEB_BUILD_DIR || 'build',
 	allowedActionOrigins: allowedActionOrigins.length > 0 ? allowedActionOrigins : undefined,
