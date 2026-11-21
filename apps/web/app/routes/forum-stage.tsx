@@ -16,7 +16,7 @@ import { useLingui } from '@lingui/react/macro'
 
 import type { Route } from './+types/forum-stage'
 import { PaletteTrigger } from '../components/palette/palette-trigger'
-import { LogoMark } from '../components/shell/logo-mark'
+import { BrandMark } from '../components/shell/logo-mark'
 import { SiteFooterCompact } from '../components/shell/site-footer'
 import { UserMenu } from '../components/shell/user-menu'
 import { useRailPreference, toggleRail } from '../components/shell/rail-state'
@@ -116,7 +116,7 @@ export default function ForumStage({ loaderData }: Route.ComponentProps) {
 								: ''
 						}`}
 					>
-						<LogoMark className="size-7 shrink-0" />
+						<BrandMark className="size-7 shrink-0" />
 						<span className={`text-heading truncate ${RAIL_LABEL}`}>{siteName}</span>
 					</Link>
 					{preference === 'mini' ? (

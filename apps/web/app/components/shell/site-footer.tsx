@@ -6,7 +6,7 @@ import { Link, useRouteLoaderData } from 'react-router'
 import { isInternalHref, type FooterIcon, type FooterLink } from '../../lib/footer'
 import { footerOf, siteOf } from '../../lib/site'
 import type { loader as rootLoader } from '../../root'
-import { LogoMark } from './logo-mark'
+import { BrandMark } from './logo-mark'
 import { LocaleSwitcher } from './locale-switcher'
 import { ThemeSwatches } from './theme-picker'
 
@@ -138,7 +138,7 @@ export function SiteFooter() {
 				<div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between md:gap-12">
 					<div className="flex max-w-sm min-w-0 flex-col gap-3">
 						<div className="flex items-center gap-2.5">
-							<LogoMark className="size-6 shrink-0" />
+							<BrandMark className="size-6 shrink-0" />
 							<span className="text-ink-strong text-title font-bold">{name}</span>
 						</div>
 						{tagline !== '' && <p className="text-ink-weak text-ui leading-relaxed">{tagline}</p>}

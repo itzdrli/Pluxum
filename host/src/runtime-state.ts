@@ -9,6 +9,7 @@ import {
 	RedisRatesBackendPlugin,
 } from '@pluxel/plugin-redis'
 import { S3 } from '@pluxel/plugin-storage'
+import { VaultAdminPlugin } from '@pluxel/services/plugins'
 import { FontsConfig, FontsPlugin } from '@pluxel/plugin-fonts'
 import { TakumiPlugin } from '@pluxel/plugin-takumi'
 import * as v from 'valibot'
@@ -63,9 +64,9 @@ export const appPlugins = [
 	FontsPlugin,
 	TakumiPlugin,
 	ForumOgPlugin,
-	// No VaultAdminPlugin: in the standalone bundle it lowers @pluxel/services from source while
-	// the host uses its dist, so its Vault token never matches. Each forum plugin manages its own
-	// secrets on its Workbench page.
+	// Workbench's Vault page (status, unlock, recovery). Standalone images need Pluxel with the
+	// published-Services bundling fix, or this Plugin's Vault token does not match the host's.
+	VaultAdminPlugin,
 ] as const
 
 /**

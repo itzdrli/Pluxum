@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_FOOTER, DEFAULT_SITE, pageTitle, siteOf } from '../app/lib/site'
 
 const root = (name: string) => ({
-	meta: { site: { name, tagline: '', description: '' }, footer: DEFAULT_FOOTER },
+	meta: { site: { ...DEFAULT_SITE, name }, footer: DEFAULT_FOOTER },
 })
 
 describe('site', () => {

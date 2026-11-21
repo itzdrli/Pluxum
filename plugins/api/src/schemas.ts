@@ -1,6 +1,6 @@
 // HTTP contract of the forum API. The static types of these schemas must stay assignable from the
 // DTOs in @pluxum/domain; handlers return domain DTOs, so a drift fails type-checking.
-import { LIMITS } from '@pluxum/domain'
+import { LIMITS, THEME_IDS } from '@pluxum/domain'
 import { t } from 'elysia'
 
 const paged = { page: t.Number(), pageSize: t.Number(), total: t.Number() }
@@ -198,7 +198,17 @@ export const meta = t.Object({
 			extId: t.String(),
 		}),
 	),
-	site: t.Object({ name: t.String(), tagline: t.String(), description: t.String() }),
+	site: t.Object({
+		name: t.String(),
+		tagline: t.String(),
+		description: t.String(),
+		defaultTheme: t.UnionEnum(THEME_IDS),
+		brand: t.Object({
+			logo: t.Union([t.String(), t.Null()]),
+			icon: t.Union([t.String(), t.Null()]),
+			social: t.Union([t.String(), t.Null()]),
+		}),
+	}),
 	footer: t.Object({
 		groups: t.Array(
 			t.Object({

@@ -51,6 +51,7 @@ type LoadedFonts = Readonly<{ revision: number; fonts: Font[]; family: string }>
 export class ForumOgPlugin extends BasePlugin {
 	private readonly cards = new Map<string, CachedCard>()
 	private readonly pending = new Map<string, Promise<CachedCard>>()
+	private mark?: Readonly<{ url: string; version: string; src: string }>
 	private fonts: Promise<LoadedFonts> | undefined
 	private warnedNoFonts = false
 
@@ -71,6 +72,25 @@ export class ForumOgPlugin extends BasePlugin {
 			}),
 		)
 		this.ctx.effects.defer(this.core.registerUiSlots({ id: OG_EXT_ID, slots: ['thread.social'] }))
+	}
+
+	/**
+	 * The logo uploaded in Workbench (Forum Core › 品牌) as a data URL, kept until the upload
+	 * changes; undefined draws the Pluxum mark.
+	 */
+	private async loadMark(): Promise<Readonly<{ version: string; src: string }> | undefined> {
+		const url = this.core.site().brand.logo
+		if (url === null) return undefined
+		if (this.mark?.url === url) return this.mark
+		const asset = await this.core.brandAsset('logo')
+		if (!asset) return undefined
+		const mark = {
+			url,
+			version: asset.version,
+			src: `data:${asset.type};base64,${Buffer.from(asset.bytes).toString('base64')}`,
+		}
+		this.mark = mark
+		return mark
 	}
 
 	/** The card of the thread `<ref>.png`, as a guest sees it. */
@@ -98,8 +118,9 @@ export class ForumOgPlugin extends BasePlugin {
 			replyCount: thread.replyCount,
 		}
 		const fonts = await this.loadFonts()
+		const mark = await this.loadMark()
 		const etag = `"${createHash('sha256')
-			.update(JSON.stringify([card, fonts.revision]))
+			.update(JSON.stringify([card, fonts.revision, mark?.version ?? null]))
 			.digest('base64url')
 			.slice(0, 27)}"`
 		if (
@@ -110,7 +131,7 @@ export class ForumOgPlugin extends BasePlugin {
 		) {
 			return Result.ok('not_modified')
 		}
-		const rendered = await this.render(thread.id, etag, card, fonts)
+		const rendered = await this.render(thread.id, etag, card, fonts, mark?.src)
 		return Result.ok({
 			body: rendered.png,
 			contentType: 'image/png',
@@ -124,6 +145,7 @@ export class ForumOgPlugin extends BasePlugin {
 		etag: string,
 		card: ThreadCard,
 		fonts: LoadedFonts,
+		markSrc?: string,
 	): Promise<CachedCard> {
 		const cached = this.cards.get(key)
 		if (cached?.etag === etag) {
@@ -136,7 +158,7 @@ export class ForumOgPlugin extends BasePlugin {
 		const inFlight = this.pending.get(pendingKey)
 		if (inFlight) return inFlight
 		const job = (async () => {
-			const bytes = await this.takumi.renderInWorker(threadCardNode(card, fonts.family), {
+			const bytes = await this.takumi.renderInWorker(threadCardNode(card, fonts.family, markSrc), {
 				width: CARD_WIDTH,
 				height: CARD_HEIGHT,
 				format: 'png',

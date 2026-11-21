@@ -8,11 +8,13 @@ export const DEFAULT_SITE: SiteDto = {
 	name: 'Pluxum',
 	tagline: '万物皆插件 · 基于 Pluxel',
 	description: '万物皆插件的论坛',
+	defaultTheme: 'nord',
+	brand: { logo: null, icon: null, social: null },
 }
 
 export const DEFAULT_FOOTER: FooterDto = {
 	groups: [],
-	icons: [{ label: 'GitHub', href: 'https://github.com/itzdrli/Pluxum', icon: 'github' }],
+	icons: [],
 	notes: [],
 	siteLinks: false,
 }

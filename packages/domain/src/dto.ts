@@ -375,7 +375,23 @@ export type FooterDto = FooterLinksDto &
 		siteLinks: boolean
 	}>
 
-/** The forum's name and blurbs, set in Forum Core's config. */
+/** The forum's colour themes; colours live in the web app's CSS under `[data-theme]`. */
+export const THEME_IDS = ['nord', 'dusk', 'frost', 'sand'] as const
+export type ThemeId = (typeof THEME_IDS)[number]
+
+/**
+ * Images an operator can upload in Workbench to replace the built-in Pluxum brand:
+ * `logo` (the square mark in the header, footer and social cards), `icon` (the browser tab and
+ * home-screen icon) and `social` (the site-wide link preview image, 1200 × 630).
+ */
+export const BRAND_ASSET_KINDS = ['logo', 'icon', 'social'] as const
+export type BrandAssetKind = (typeof BRAND_ASSET_KINDS)[number]
+
+export function isBrandAssetKind(value: unknown): value is BrandAssetKind {
+	return typeof value === 'string' && (BRAND_ASSET_KINDS as readonly string[]).includes(value)
+}
+
+/** The forum's name, blurbs and brand, set in Forum Core's config and Workbench. */
 export type SiteDto = Readonly<{
 	/** Shown in the header, page titles and social cards. */
 	name: string
@@ -383,6 +399,10 @@ export type SiteDto = Readonly<{
 	tagline: string
 	/** The home page's meta description. */
 	description: string
+	/** The theme a visitor sees until they pick one. */
+	defaultTheme: ThemeId
+	/** Forum-relative URLs of uploaded brand images; null keeps the built-in one. */
+	brand: Readonly<Record<BrandAssetKind, string | null>>
 }>
 
 export type MetaDto = Readonly<{

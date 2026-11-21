@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import * as f from 'valibot-form'
-import { LIMITS } from '@pluxum/domain'
+import { LIMITS, THEME_IDS } from '@pluxum/domain'
 
 const SITE = { id: 'site', title: '站点', order: 0 }
 const SOCIAL = { id: 'social', title: '动态与热度', order: 1 }
@@ -44,6 +44,24 @@ export const ForumCoreConfig = v.object({
 						f.stringMeta({ control: 'textarea', rows: 2 }),
 					),
 					'万物皆插件的论坛',
+				),
+				defaultTheme: v.optional(
+					v.pipe(
+						v.picklist(THEME_IDS),
+						f.picklistMeta({
+							labels: {
+								nord: 'Nord（暗）',
+								dusk: 'Dusk（暗）',
+								frost: 'Frost（亮）',
+								sand: 'Sand（亮）',
+							},
+						}),
+						f.formMeta({
+							title: '默认主题',
+							description: '访客自己选主题之前看到的主题。Logo 和图标在「论坛管理 › 品牌」上传。',
+						}),
+					),
+					'nord',
 				),
 			}),
 			f.formMeta({ title: '站点信息', section: SITE }),

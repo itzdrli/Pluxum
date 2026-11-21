@@ -74,20 +74,13 @@ export async function loader({ request }: Route.LoaderArgs) {
 		// The whole catalog rides along with the document, so the browser hydrates in the same
 		// language the server rendered. Switching language revalidates this loader.
 		messages: await loadMessages(locale),
-		theme: themeFromRequest(request),
+		theme: themeFromRequest(request, forumMeta?.site.defaultTheme),
 		rail: railFromRequest(request),
 		focusReading: focusFromRequest(request),
 		// Social cards need an absolute image URL; behind the TLS proxy request.url says http://.
 		origin: process.env.FORUM_WEB_PUBLIC_ORIGIN || new URL(request.url).origin,
 	}
 }
-
-// Brand icons from the Figma brand file, served from public/. The SVG favicon switches between the
-// dark and light mark with the browser's colour scheme.
-export const links: Route.LinksFunction = () => [
-	{ rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
-	{ rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
-]
 
 function hasSocialImage(handle: unknown): boolean {
 	return typeof handle === 'object' && handle !== null && 'socialImage' in handle
@@ -98,6 +91,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	// Routes' own meta() replaces the root's, so the site-wide social card is written here.
 	const root = useRouteLoaderData<typeof loader>('root')
 	const origin = root?.origin
+	const site = siteOf(root)
 	// A route whose handle says `socialImage` writes its own og:image while cards are served.
 	const matches = useMatches()
 	const ownImage =
@@ -112,12 +106,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
-				<meta property="og:site_name" content={siteOf(root).name} />
+				<meta property="og:site_name" content={site.name} />
 				{origin !== undefined && !ownImage && (
 					<>
-						<meta property="og:image" content={`${origin}/og.png`} />
+						<meta property="og:image" content={`${origin}${site.brand.social ?? '/og.png'}`} />
 						<meta property="og:image:width" content="1200" />
 						<meta property="og:image:height" content="630" />
+					</>
+				)}
+				{/* An uploaded icon replaces the built-in mark (served from public/; the SVG one
+				    switches between the dark and light mark with the browser's colour scheme). */}
+				{site.brand.icon !== null ? (
+					<>
+						<link rel="icon" href={site.brand.icon} />
+						<link rel="apple-touch-icon" href={site.brand.icon} />
+					</>
+				) : (
+					<>
+						<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+						<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 					</>
 				)}
 				<meta name="twitter:card" content="summary_large_image" />

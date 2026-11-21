@@ -63,7 +63,8 @@ function textNode(value: string, style: Style): Node {
 }
 
 /** The card as a Takumi node tree: text is taken literally, nothing is parsed as markup. */
-export function threadCardNode(card: ThreadCard, fontFamily: string): Node {
+/** `markSrc` is the forum's uploaded logo as a data URL; without one the Pluxum mark is drawn. */
+export function threadCardNode(card: ThreadCard, fontFamily: string, markSrc = MARK_SRC): Node {
 	const meta = [card.date, ...(card.replyCount > 0 ? [`${card.replyCount} 回复`] : [])]
 	return {
 		type: 'container',
@@ -83,7 +84,7 @@ export function threadCardNode(card: ThreadCard, fontFamily: string): Node {
 				type: 'container',
 				style: { display: 'flex', alignItems: 'center', gap: 20 },
 				children: [
-					{ type: 'image', src: MARK_SRC, width: 56, height: 56, style: { width: 56, height: 56 } },
+					{ type: 'image', src: markSrc, width: 56, height: 56, style: { width: 56, height: 56 } },
 					textNode(card.site, { fontSize: 32, fontWeight: 700 }),
 					{
 						type: 'container',

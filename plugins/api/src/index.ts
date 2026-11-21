@@ -1,6 +1,7 @@
 import {
 	failure as keyed,
 	GUEST,
+	isBrandAssetKind,
 	LIMITS,
 	type ApiError,
 	type ForumError,
@@ -215,6 +216,7 @@ export class ForumApiPlugin extends BasePlugin {
 						time: new Date().toISOString(),
 					}))
 					.get('/meta', { response: schema.meta }, ({ request }) => this.meta(request))
+					.get('/brand/:kind', ({ request, params }) => this.serveBrandAsset(request, params.kind))
 					.get('/palette', { response: schema.paletteCommands }, async ({ request }) =>
 						this.core.paletteCommandsFor(await this.viewer(request)),
 					)
@@ -294,6 +296,32 @@ export class ForumApiPlugin extends BasePlugin {
 		if (payload.etag) headers.set('etag', payload.etag)
 		if (payload.size !== undefined) headers.set('content-length', String(payload.size))
 		return new Response(payload.body, { status: 200, headers })
+	}
+
+	/**
+	 * A brand image uploaded in Workbench (see Forum Core). URLs carry `?v=<content version>`,
+	 * so a versioned request is cached for good; SVG runs under a sandboxing CSP like ext files.
+	 */
+	private async serveBrandAsset(request: Request, kind: string): Promise<Response> {
+		if (!isBrandAssetKind(kind)) throw new ApiFailure(404, keyed('not_found', 'route.not_found'))
+		const asset = await this.core.brandAsset(kind)
+		if (!asset) throw new ApiFailure(404, keyed('not_found', 'route.not_found'))
+		const etag = `"${asset.version}"`
+		const versioned = new URL(request.url).searchParams.get('v') === asset.version
+		const headers = new Headers({
+			etag,
+			'x-content-type-options': 'nosniff',
+			'content-security-policy':
+				"default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
+			'cache-control': versioned
+				? 'public, max-age=31536000, immutable'
+				: 'public, max-age=300, must-revalidate',
+		})
+		if (request.headers.get('if-none-match') === etag)
+			return new Response(null, { status: 304, headers })
+		headers.set('content-type', asset.type)
+		headers.set('content-length', String(asset.bytes.byteLength))
+		return new Response(asset.bytes, { status: 200, headers })
 	}
 
 	private async runExtAction(

@@ -3,8 +3,11 @@ import {
 	Alert,
 	Badge,
 	Button,
+	Card,
 	Checkbox,
+	FileButton,
 	Group,
+	Image,
 	Loader,
 	Modal,
 	Pagination,
@@ -17,17 +20,28 @@ import {
 	Title,
 } from '@mantine/core'
 import { WorkbenchMantineProvider } from '@pluxel/workbench/mantine'
-import { IconArrowDown, IconArrowUp, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react'
+import {
+	IconArrowDown,
+	IconArrowUp,
+	IconPencil,
+	IconPlus,
+	IconTrash,
+	IconUpload,
+} from '@tabler/icons-react'
 import { useState, type FormEvent } from 'react'
-import type { AdminCategory, AdminResult, AdminRole } from '../workbench.ts'
+import type { BrandAssetKind } from '@pluxum/domain'
+import type { AdminBrandAsset, AdminCategory, AdminResult, AdminRole } from '../workbench.ts'
 import {
 	adminScope,
+	brandQuery,
 	categoriesQuery,
 	createCategory,
 	deleteCategory,
 	moveCategory,
+	removeBrand,
 	setRole,
 	updateCategory,
+	uploadBrand,
 	usersQuery,
 } from './admin.scope.ts'
 
@@ -379,6 +393,133 @@ function UsersPanel({ host }: { host: Host }) {
 	)
 }
 
+const BRAND_SLOTS: Readonly<
+	Record<BrandAssetKind, Readonly<{ title: string; hint: string; width: number; height: number }>>
+> = {
+	logo: { title: 'Logo', hint: '顶栏、页脚和分享卡片上的方形标志。', width: 72, height: 72 },
+	icon: {
+		title: '站点图标',
+		hint: '浏览器标签页和手机桌面的图标，正方形。',
+		width: 48,
+		height: 48,
+	},
+	social: {
+		title: '分享图',
+		hint: '链接被分享时的预览图，1200 × 630。帖子有自己的卡片时不用它。',
+		width: 240,
+		height: 126,
+	},
+}
+
+const TYPE_LABELS: Readonly<Record<string, string>> = {
+	'image/png': 'PNG',
+	'image/jpeg': 'JPEG',
+	'image/webp': 'WebP',
+	'image/gif': 'GIF',
+	'image/svg+xml': 'SVG',
+	'image/x-icon': 'ICO',
+}
+
+function BrandSlot({ host, asset }: { host: Host; asset: AdminBrandAsset }) {
+	const upload = uploadBrand.useMutation()
+	const remove = removeBrand.useMutation()
+	const slot = BRAND_SLOTS[asset.kind]
+	const busy = upload.isPending || remove.isPending
+	const accepts = asset.accept.map((type) => TYPE_LABELS[type] ?? type).join('、')
+
+	async function choose(file: File | null) {
+		if (!file) return
+		try {
+			report(host, await upload.mutateAsync({ kind: asset.kind, file }), `${slot.title}已更新`)
+		} catch (error) {
+			failure(host, error)
+		}
+	}
+
+	async function reset() {
+		try {
+			report(host, await remove.mutateAsync(asset.kind), `${slot.title}已恢复默认`)
+		} catch (error) {
+			failure(host, error)
+		}
+	}
+
+	return (
+		<Card withBorder padding="md">
+			<Group justify="space-between" align="flex-start" wrap="nowrap">
+				<Stack gap={4}>
+					<Text fw={600}>{slot.title}</Text>
+					<Text size="sm" c="dimmed">
+						{slot.hint}
+					</Text>
+					<Text size="xs" c="dimmed">
+						{accepts}，最多 {Math.round(asset.maxBytes / 1024)} KB
+						{asset.size !== null &&
+							` · 当前 ${TYPE_LABELS[asset.type ?? ''] ?? ''} ${Math.ceil(asset.size / 1024)} KB`}
+					</Text>
+				</Stack>
+				{asset.url !== null ? (
+					<Image
+						src={asset.url}
+						alt={slot.title}
+						w={slot.width}
+						h={slot.height}
+						fit="contain"
+						radius="sm"
+					/>
+				) : (
+					<Text size="sm" c="dimmed" w={slot.width} ta="right">
+						默认
+					</Text>
+				)}
+			</Group>
+			<Group gap="xs" mt="sm">
+				<FileButton onChange={(file) => void choose(file)} accept={asset.accept.join(',')}>
+					{(props) => (
+						<Button
+							{...props}
+							size="xs"
+							variant="light"
+							leftSection={<IconUpload size={14} />}
+							loading={upload.isPending}
+							disabled={busy}
+						>
+							上传
+						</Button>
+					)}
+				</FileButton>
+				{asset.url !== null && (
+					<Button
+						size="xs"
+						variant="subtle"
+						color="gray"
+						onClick={() => void reset()}
+						disabled={busy}
+					>
+						恢复默认
+					</Button>
+				)}
+			</Group>
+		</Card>
+	)
+}
+
+function BrandPanel({ host }: { host: Host }) {
+	const brand = brandQuery.useQuery()
+	if (brand.status === 'pending') return <Loader size="sm" />
+	if (brand.data === undefined) return <Alert color="red" title="读取失败" />
+	return (
+		<Stack gap="sm">
+			{brand.data.map((asset) => (
+				<BrandSlot key={asset.kind} host={host} asset={asset} />
+			))}
+			<Text size="sm" c="dimmed">
+				站点名称、标语和默认主题在 Forum Core 的设置里。
+			</Text>
+		</Stack>
+	)
+}
+
 function ForumAdmin() {
 	const { host } = adminScope.useWorkbench()
 	return (
@@ -392,12 +533,16 @@ function ForumAdmin() {
 					<Tabs.List>
 						<Tabs.Tab value="categories">版块</Tabs.Tab>
 						<Tabs.Tab value="users">用户</Tabs.Tab>
+						<Tabs.Tab value="brand">品牌</Tabs.Tab>
 					</Tabs.List>
 					<Tabs.Panel value="categories" pt="md">
 						<CategoriesPanel host={host} />
 					</Tabs.Panel>
 					<Tabs.Panel value="users" pt="md">
 						<UsersPanel host={host} />
+					</Tabs.Panel>
+					<Tabs.Panel value="brand" pt="md">
+						<BrandPanel host={host} />
 					</Tabs.Panel>
 				</Tabs>
 			</Stack>

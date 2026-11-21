@@ -1,4 +1,7 @@
 import { useId } from 'react'
+import { useRouteLoaderData } from 'react-router'
+import { siteOf } from '../../lib/site'
+import type { loader as rootLoader } from '../../root'
 
 // The Pluxum mark from the brand file (Figma "Pluxum" › Brand Assets › Logo Mark): three bars, a
 // thread and its replies, on a circle. The bars keep the brand gradients; the circle is the
@@ -46,4 +49,14 @@ export function LogoMark({ className }: { className?: string }) {
 			</defs>
 		</svg>
 	)
+}
+
+/**
+ * The forum's mark: the logo uploaded in Workbench (Forum Core › 品牌), or the Pluxum mark when
+ * none is. Used wherever the brand appears in the shell.
+ */
+export function BrandMark({ className }: { className?: string }) {
+	const logo = siteOf(useRouteLoaderData<typeof rootLoader>('root')).brand.logo
+	if (logo === null) return <LogoMark className={className} />
+	return <img src={logo} alt="" aria-hidden className={`object-contain ${className ?? ''}`} />
 }

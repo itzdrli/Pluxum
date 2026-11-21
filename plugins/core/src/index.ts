@@ -60,6 +60,7 @@ import {
 	type UiSlotDto,
 	type FooterDto,
 	type SiteDto,
+	type BrandAssetKind,
 	type UserDto,
 	type UserProfileDto,
 } from '@pluxum/domain'
@@ -127,6 +128,7 @@ import {
 	type ThreadListing,
 } from './listings'
 import { ForumAdminTarget } from './admin-target'
+import { BrandAssetStore, type BrandAsset, type BrandAssetMeta } from './brand'
 import { ForumCoreConfig } from './config'
 import { FooterLinkRegistry, type FooterLinkContribution } from './footer'
 import { PaletteCommandRegistry, type PaletteCommandContribution } from './palette'
@@ -392,6 +394,7 @@ function toThreadDto(row: ThreadRow, by: UserDto, category: CategoryKind): Threa
 export class ForumCorePlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumCoreConfig)
 	private database!: PluginDatabaseHandle<typeof ForumDatabase>
+	private brand?: BrandAssetStore
 	private readonly permissionPolicies = new PolicyRegistry()
 	private readonly contentRenderers = new ContentRendererRegistry()
 	private readonly entityExtensions = new EntityExtensionRegistry()
@@ -408,6 +411,13 @@ export class ForumCorePlugin extends BasePlugin {
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(ForumDatabase)
+		// Uploaded brand images need durable files; a host without them keeps the built-in brand.
+		try {
+			this.brand = await BrandAssetStore.open(await this.ctx.fs({ durable: true, writable: true }))
+		} catch (error) {
+			this.brand = undefined
+			this.ctx.logger.warn('brand uploads are unavailable: no durable file storage', { error })
+		}
 		this.permissionPolicies.register({ id: BUILT_IN_POLICY_ID, evaluate: defaultRolePolicy })
 		// Site and footer settings are read per request; a saved change applies as is.
 		this.configs.onUpdate(this.config, () => {})
@@ -617,9 +627,38 @@ export class ForumCorePlugin extends BasePlugin {
 		return this.paletteCommands.list(principal)
 	}
 
-	/** The site's name and blurbs from config. */
+	/** The site's name, blurbs and default theme from config, and the uploaded brand images. */
 	site(): SiteDto {
-		return { ...this.config.site }
+		const brand = this.brand
+		return {
+			...this.config.site,
+			brand: {
+				logo: brand?.url('logo') ?? null,
+				icon: brand?.url('icon') ?? null,
+				social: brand?.url('social') ?? null,
+			},
+		}
+	}
+
+	/** An uploaded brand image with its sniffed type, or null when none was uploaded. */
+	async brandAsset(kind: BrandAssetKind): Promise<BrandAsset | null> {
+		return (await this.brand?.read(kind)) ?? null
+	}
+
+	/** What is uploaded for a kind (type, size, version), without reading the file. */
+	brandAssetMeta(kind: BrandAssetKind): BrandAssetMeta | null {
+		return this.brand?.describe(kind) ?? null
+	}
+
+	/** Replaces a brand image; returns why it was refused, or null once it is stored. */
+	async setBrandAsset(kind: BrandAssetKind, bytes: Uint8Array): Promise<string | null> {
+		if (!this.brand) return '这台服务器没有可写的持久存储，不能上传图片。'
+		return this.brand.write(kind, bytes)
+	}
+
+	/** Goes back to the built-in image for a kind. */
+	async removeBrandAsset(kind: BrandAssetKind): Promise<void> {
+		await this.brand?.remove(kind)
 	}
 
 	/** The footer: what running plugins registered (see `registerFooterLinks`). */

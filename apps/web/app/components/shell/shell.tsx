@@ -9,7 +9,7 @@ import { StageMotionSync, useStage } from '../stage/stage'
 import { Notice } from '../ui/display'
 import { ShellSlots } from '../../slots/slots'
 import { siteOf } from '../../lib/site'
-import { LogoMark } from './logo-mark'
+import { BrandMark } from './logo-mark'
 import { SiteFooter } from './site-footer'
 import { UserMenu } from './user-menu'
 
@@ -62,7 +62,7 @@ export function Shell({ meta, children }: { meta: MetaDto | null; children: Reac
 						aria-label={t`${siteName} 首页`}
 						className="text-ink-strong flex shrink-0 items-center gap-2 font-bold"
 					>
-						<LogoMark className="size-8 shrink-0" />
+						<BrandMark className="size-8 shrink-0" />
 						<span className="text-heading max-md:hidden">{siteName}</span>
 					</Link>
 					<div className="ml-auto flex items-center gap-1">

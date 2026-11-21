@@ -99,7 +99,7 @@ export const ForumFooterConfig = v.object({
 			}),
 			v.maxLength(FOOTER_LINKS_MAX),
 		),
-		[{ icon: 'github', label: 'GitHub', href: 'https://github.com/itzdrli/Pluxum' }],
+		[],
 	),
 	notes: v.optional(
 		v.pipe(

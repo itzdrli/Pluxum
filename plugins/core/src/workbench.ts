@@ -1,3 +1,4 @@
+import type { BrandAssetKind } from '@pluxum/domain'
 import type { RpcTarget } from 'capnweb'
 import { workbench } from '@pluxel/workbench'
 
@@ -44,6 +45,21 @@ export type AdminRoleChange = Readonly<{ userId: string; role: AdminRole; grante
 /** What a change answers: done, or why not (shown to the operator as is). */
 export type AdminResult = Readonly<{ ok: true }> | Readonly<{ ok: false; message: string }>
 
+/** One brand image slot on the admin page: what is uploaded there, if anything. */
+export type AdminBrandAsset = Readonly<{
+	kind: BrandAssetKind
+	/** Forum-relative URL of the uploaded image; null shows the built-in one. */
+	url: string | null
+	type: string | null
+	size: number | null
+	/** Accepted types and size, for the file picker and its hint. */
+	accept: readonly string[]
+	maxBytes: number
+}>
+
+/** Workbench messages are small, so an image goes up in chunks of at most this many bytes. */
+export const BRAND_UPLOAD_CHUNK_BYTES = 48 * 1024
+
 /** The forum admin page's API; every method acts as a forum admin. */
 export interface ForumAdminApi extends RpcTarget {
 	categoriesDto(): Promise<readonly AdminCategory[]>
@@ -53,6 +69,18 @@ export interface ForumAdminApi extends RpcTarget {
 	moveCategoryDto(categoryId: string, direction: 'up' | 'down'): Promise<AdminResult>
 	usersDto(input: AdminUserQuery): Promise<AdminUserPage>
 	setRoleDto(input: AdminRoleChange): Promise<AdminResult>
+	brandDto(): Promise<readonly AdminBrandAsset[]>
+	/**
+	 * Sends one chunk of an image of `total` bytes, in order from offset 0. The last chunk
+	 * stores the image; an earlier one answers ok once it is held.
+	 */
+	uploadBrandDto(
+		kind: BrandAssetKind,
+		total: number,
+		offset: number,
+		chunk: Uint8Array,
+	): Promise<AdminResult>
+	removeBrandDto(kind: BrandAssetKind): Promise<AdminResult>
 }
 
 export const ForumCoreWorkbench = workbench.define({

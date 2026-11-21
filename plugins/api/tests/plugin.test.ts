@@ -650,6 +650,11 @@ describe('ForumApiPlugin', () => {
 		expect(meta.search).toEqual({ available: false })
 		expect(meta.uiSlots).toEqual([])
 		expect(meta.site.name).toBe('Pluxum')
+		expect(meta.site.defaultTheme).toBe('nord')
+		// Nothing uploaded (and no durable files in the test host): the built-in brand.
+		expect(meta.site.brand).toEqual({ logo: null, icon: null, social: null })
+		expect((await api.call('GET', '/brand/logo')).status).toBe(404)
+		expect((await api.call('GET', '/brand/favicon')).status).toBe(404)
 		// The footer is empty until a plugin (Forum Footer) fills it.
 		expect(meta.footer).toEqual({ groups: [], icons: [], notes: [], siteLinks: false })
 

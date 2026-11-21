@@ -1,8 +1,17 @@
-import { isAssignableRole, type Principal } from '@pluxum/domain'
+import {
+	BRAND_ASSET_KINDS,
+	isAssignableRole,
+	isBrandAssetKind,
+	type BrandAssetKind,
+	type Principal,
+} from '@pluxum/domain'
 import { assertWorkbenchDto } from '@pluxel/workbench/server'
 import { RpcTarget } from 'capnweb'
+import { BRAND_ASSET_RULES } from './brand'
 import type { ForumCorePlugin } from './index'
+import { BRAND_UPLOAD_CHUNK_BYTES } from './workbench'
 import type {
+	AdminBrandAsset,
 	AdminCategory,
 	AdminCategoryInput,
 	AdminResult,
@@ -38,8 +47,66 @@ function failed(message: string): AdminResult {
 
 /** One open of the admin page. Inputs come from the browser, so every method checks them. */
 export class ForumAdminTarget extends RpcTarget implements ForumAdminApi {
+	/** The image being uploaded on this page, chunk by chunk. */
+	private upload: { kind: BrandAssetKind; bytes: Uint8Array; received: number } | null = null
+
 	constructor(private readonly core: ForumCorePlugin) {
 		super()
+	}
+
+	async brandDto(): Promise<readonly AdminBrandAsset[]> {
+		const site = this.core.site()
+		const list = BRAND_ASSET_KINDS.map((kind) => {
+			const meta = this.core.brandAssetMeta(kind)
+			return {
+				kind,
+				url: site.brand[kind],
+				type: meta?.type ?? null,
+				size: meta?.size ?? null,
+				accept: [...BRAND_ASSET_RULES[kind].types],
+				maxBytes: BRAND_ASSET_RULES[kind].maxBytes,
+			}
+		})
+		assertWorkbenchDto(list, 'Forum brand images')
+		return list
+	}
+
+	async uploadBrandDto(
+		kind: BrandAssetKind,
+		total: number,
+		offset: number,
+		chunk: Uint8Array,
+	): Promise<AdminResult> {
+		if (!isBrandAssetKind(kind)) return failed('未知的图片位置。')
+		if (!(chunk instanceof Uint8Array) || chunk.byteLength > BRAND_UPLOAD_CHUNK_BYTES)
+			return failed('上传的数据不对，请重试。')
+		const maxBytes = BRAND_ASSET_RULES[kind].maxBytes
+		if (!Number.isSafeInteger(total) || total <= 0) return failed('文件是空的。')
+		if (total > maxBytes) return failed(`文件太大，最多 ${Math.round(maxBytes / 1024)} KB。`)
+		if (offset === 0) this.upload = { kind, bytes: new Uint8Array(total), received: 0 }
+		const upload = this.upload
+		if (
+			!upload ||
+			upload.kind !== kind ||
+			upload.bytes.byteLength !== total ||
+			offset !== upload.received ||
+			offset + chunk.byteLength > total
+		) {
+			this.upload = null
+			return failed('上传中断了，请重新选择文件。')
+		}
+		upload.bytes.set(chunk, offset)
+		upload.received += chunk.byteLength
+		if (upload.received < total) return { ok: true }
+		this.upload = null
+		const refused = await this.core.setBrandAsset(kind, upload.bytes)
+		return refused ? failed(refused) : { ok: true }
+	}
+
+	async removeBrandDto(kind: BrandAssetKind): Promise<AdminResult> {
+		if (!isBrandAssetKind(kind)) return failed('未知的图片位置。')
+		await this.core.removeBrandAsset(kind)
+		return { ok: true }
 	}
 
 	async categoriesDto(): Promise<readonly AdminCategory[]> {
