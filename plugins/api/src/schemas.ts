@@ -24,6 +24,13 @@ const role = t.Union([
 
 const bodyFormat = t.Union([t.Literal('markdown'), t.Literal('plain')])
 const categoryKind = t.Union([t.Literal('board'), t.Literal('stream')])
+const postingRole = t.Union([t.Literal('member'), t.Literal('moderator'), t.Literal('admin')])
+const categoryAccess = t.Object({ view: role, post: postingRole, reply: postingRole })
+const categoryAccessInput = t.Object({
+	view: t.Optional(role),
+	post: t.Optional(postingRole),
+	reply: t.Optional(postingRole),
+})
 const threadKind = t.Union([t.Literal('topic'), t.Literal('note')])
 
 export const category = t.Object({
@@ -33,6 +40,7 @@ export const category = t.Object({
 	description: t.String(),
 	position: t.Number(),
 	kind: categoryKind,
+	access: categoryAccess,
 	threadCount: t.Number(),
 	postCount: t.Number(),
 })
@@ -309,6 +317,7 @@ export const createCategoryBody = t.Object({
 	slug: t.Optional(text(LIMITS.slugMax)),
 	description: t.Optional(text(LIMITS.categoryDescriptionMax)),
 	position: t.Optional(t.Integer()),
+	access: t.Optional(categoryAccessInput),
 })
 
 export const updateCategoryBody = t.Object({
@@ -316,6 +325,7 @@ export const updateCategoryBody = t.Object({
 	slug: t.Optional(text(LIMITS.slugMax)),
 	description: t.Optional(text(LIMITS.categoryDescriptionMax)),
 	position: t.Optional(t.Integer()),
+	access: t.Optional(categoryAccessInput),
 })
 
 export const createThreadBody = t.Object({

@@ -1580,6 +1580,10 @@ msgid "版块快捷栏"
 msgstr "Category bar"
 
 #: app/lib/api-errors.ts
+msgid "版块权限设置无效"
+msgstr "Invalid category permissions"
+
+#: app/lib/api-errors.ts
 msgid "版块标识已被使用"
 msgstr "That category slug is already in use"
 

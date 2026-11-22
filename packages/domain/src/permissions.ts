@@ -10,6 +10,59 @@ export function isAssignableRole(value: unknown): value is AssignableRole {
 	return ASSIGNABLE_ROLES.some((role) => role === value)
 }
 
+/** A role's place in `ROLES`: the higher, the more it may do. */
+export function roleRank(role: Role): number {
+	return ROLES.indexOf(role)
+}
+
+/** The strongest role a principal holds (`guest` for none). */
+export function rankOf(roles: readonly Role[]): number {
+	return Math.max(0, ...roles.map(roleRank))
+}
+
+/** Roles a category may ask for to post or reply: an account is always needed. */
+export const POSTING_ROLES = ['member', 'moderator', 'admin'] as const
+export type PostingRole = (typeof POSTING_ROLES)[number]
+
+/**
+ * Who may do what in a category: see it (and its threads), start threads in it, reply in it.
+ * Each is the weakest role that may; a stronger one may too. Posting never asks for less than
+ * seeing.
+ */
+export type CategoryAccess = Readonly<{ view: Role; post: PostingRole; reply: PostingRole }>
+
+/** Every category starts open: anyone sees it, every member writes in it. */
+export const OPEN_ACCESS: CategoryAccess = Object.freeze({
+	view: 'guest',
+	post: 'member',
+	reply: 'member',
+})
+
+export function isRole(value: unknown): value is Role {
+	return ROLES.some((role) => role === value)
+}
+
+export function isPostingRole(value: unknown): value is PostingRole {
+	return POSTING_ROLES.some((role) => role === value)
+}
+
+/** Raises posting to the role needed to see the category, so the three never contradict. */
+export function normalizeAccess(access: CategoryAccess): CategoryAccess {
+	const view = access.view
+	const floor = (role: PostingRole): PostingRole =>
+		roleRank(role) >= roleRank(view) || !isPostingRole(view) ? role : view
+	return { view: access.view, post: floor(access.post), reply: floor(access.reply) }
+}
+
+/** Whether these roles meet one of a category's thresholds. */
+export function meetsAccess(
+	roles: readonly Role[],
+	access: CategoryAccess,
+	what: keyof CategoryAccess,
+): boolean {
+	return rankOf(roles) >= roleRank(access[what])
+}
+
 /** Who is acting. `userId` is null for guests. */
 export type Principal = Readonly<{
 	userId: string | null
@@ -42,6 +95,11 @@ export type ForumAction = (typeof FORUM_ACTIONS)[number]
 /** Facts about the target that policies may need; every field is optional by action. */
 export type ForumResource = Readonly<{
 	categoryId?: string
+	/**
+	 * Who may see and write in the category. The core fills it in from `categoryId`; without
+	 * either the category is taken as open.
+	 */
+	access?: CategoryAccess
 	threadId?: string
 	postId?: string
 	/** Target user for profile operations. */
@@ -92,22 +150,28 @@ export const defaultRolePolicy: PermissionPolicy = ({ principal, action, resourc
 	const staff = hasRole(principal, 'moderator', 'admin')
 	const member = staff || hasRole(principal, 'member')
 	const isAuthor = principal.userId !== null && resource.authorId === principal.userId
+	const access = resource.access ?? OPEN_ACCESS
+	const meets = (what: keyof CategoryAccess) => meetsAccess(principal.roles, access, what)
+
+	// Managing categories is about all of them; everything else happens inside one, and nothing
+	// happens in a category its threshold hides from the principal.
+	if (action === 'category.manage') return hasRole(principal, 'admin') ? 'allow' : 'abstain'
+	if (action !== 'user.edit' && !meets('view')) return 'abstain'
 
 	switch (action) {
 		case 'category.view':
 		case 'thread.view':
 			return 'allow'
-		case 'category.manage':
-			return hasRole(principal, 'admin') ? 'allow' : 'abstain'
 		case 'thread.moderate':
 			return staff ? 'allow' : 'abstain'
 		case 'thread.create':
+			return member && meets('post') ? 'allow' : 'abstain'
 		case 'post.react':
 			return member ? 'allow' : 'abstain'
 		case 'post.create':
+			if (!member || !meets('reply')) return 'abstain'
 			if (staff) return 'allow'
-			if (resource.locked) return 'deny'
-			return member ? 'allow' : 'abstain'
+			return resource.locked ? 'deny' : 'allow'
 		case 'thread.edit':
 		case 'post.edit':
 		case 'thread.delete':

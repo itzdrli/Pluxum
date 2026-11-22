@@ -22,6 +22,11 @@
 			"id": "0003_social",
 			"file": "0003_social.sql",
 			"checksum": "f4321667e5cc3453442027cd4ca9b72b630c835919363ed2550ff131114586a0"
+		},
+		{
+			"id": "0004_category_access",
+			"file": "0004_category_access.sql",
+			"checksum": "e5ac460cf3f6101e1e56ec49441b7b7cc22d0c7f202561dc5e6ff4c3de47b150"
 		}
 	]
 }

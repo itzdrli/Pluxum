@@ -121,7 +121,7 @@ export function PostCard({
 						>
 							{post.author.displayName}
 						</Link>
-						{byThreadAuthor && number > 1 && (
+						{byThreadAuthor && (
 							<Tag>
 								<Trans>楼主</Trans>
 							</Tag>

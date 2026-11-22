@@ -54,6 +54,18 @@ export const categories = pgTable('categories', {
 	kind: text('kind', { enum: ['board', 'stream'] })
 		.notNull()
 		.default('board'),
+	/** The weakest role that may see the category and its threads (`guest`: everyone). */
+	viewRole: text('view_role', { enum: ['guest', 'member', 'moderator', 'admin'] })
+		.notNull()
+		.default('guest'),
+	/** The weakest role that may start threads in it. */
+	postRole: text('post_role', { enum: ['member', 'moderator', 'admin'] })
+		.notNull()
+		.default('member'),
+	/** The weakest role that may reply in it. */
+	replyRole: text('reply_role', { enum: ['member', 'moderator', 'admin'] })
+		.notNull()
+		.default('member'),
 	// Counters cover visible (not deleted) threads and posts and change with them in one transaction.
 	threadCount: integer('thread_count').notNull().default(0),
 	postCount: integer('post_count').notNull().default(0),

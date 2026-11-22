@@ -1,9 +1,10 @@
-import type {
-	CategoryDto,
-	MetaDto,
-	PaletteCommandDto,
-	SearchHitDto,
-	SearchPageDto,
+import {
+	meetsAccess,
+	type CategoryDto,
+	type MetaDto,
+	type PaletteCommandDto,
+	type SearchHitDto,
+	type SearchPageDto,
 } from '@pluxum/domain'
 import {
 	CornerDownLeft,
@@ -213,7 +214,11 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 			...(signedIn
 				? // The stream takes notes, written in the note box, not topics.
 					categories
-						.filter((category) => category.kind === 'board')
+						.filter(
+							(category) =>
+								category.kind === 'board' &&
+								meetsAccess(meta?.viewer.roles ?? [], category.access, 'post'),
+						)
 						.map((category): Item => {
 							const name = category.name
 							return {

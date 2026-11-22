@@ -165,8 +165,9 @@ export function ThreadRow({
 				</div>
 			)}
 			<div className="min-w-0 flex-1">
-				{/* Dot, flags and title share one line of text, so markers never sit on a line of their own. */}
-				<p className="line-clamp-2 [overflow-wrap:anywhere] @lg/threads:line-clamp-none">
+				{/* Dot, flags and title share one line of text, so markers never sit on a line of their own.
+				    Two lines at most at every width: a title without spaces would otherwise fill the row. */}
+				<p className="line-clamp-2 [overflow-wrap:anywhere]">
 					<UnreadDot thread={thread} hidden={isActive} />
 					<ThreadFlags thread={thread} tagClassName="mr-2 align-[1px]" />
 					{/* The link's box covers the row, so the whole row is clickable. */}
@@ -175,6 +176,7 @@ export function ThreadRow({
 						prefetch="intent"
 						data-thread-link
 						aria-current={isActive ? 'page' : undefined}
+						title={thread.kind === 'note' ? undefined : thread.title}
 						className="text-ink-strong text-ui font-bold after:absolute after:inset-0 @lg/threads:text-title"
 					>
 						{thread.kind === 'note' ? t`${noteAuthor} 的动态` : thread.title}

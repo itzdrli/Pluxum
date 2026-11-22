@@ -116,6 +116,7 @@ export class ForumAdminTarget extends RpcTarget implements ForumAdminApi {
 			name: category.name,
 			description: category.description,
 			position: category.position,
+			access: { ...category.access },
 			threadCount: category.threadCount,
 			postCount: category.postCount,
 		}))
@@ -133,6 +134,7 @@ export class ForumAdminTarget extends RpcTarget implements ForumAdminApi {
 			...(fields.slug === '' ? {} : { slug: fields.slug }),
 			description: fields.description,
 			position,
+			access: fields.access,
 		})
 		return created.isOk() ? { ok: true } : failed(created.error.message)
 	}
@@ -144,6 +146,7 @@ export class ForumAdminTarget extends RpcTarget implements ForumAdminApi {
 			name: fields.name,
 			...(fields.slug === '' ? {} : { slug: fields.slug }),
 			description: fields.description,
+			access: fields.access,
 		})
 		return updated.isOk() ? { ok: true } : failed(updated.error.message)
 	}
@@ -208,7 +211,19 @@ export class ForumAdminTarget extends RpcTarget implements ForumAdminApi {
 		const name = text(input?.name, 200)
 		const slug = text(input?.slug, 200)
 		const description = text(input?.description, 2000)
+		const access = input?.access
 		if (name === null || slug === null || description === null) return null
-		return { name, slug: slug.trim(), description }
+		// The core checks the roles themselves; here only that the three are there.
+		if (
+			typeof access !== 'object' ||
+			access === null ||
+			typeof access.view !== 'string' ||
+			typeof access.post !== 'string' ||
+			typeof access.reply !== 'string'
+		) {
+			return null
+		}
+		const { view, post, reply } = access
+		return { name, slug: slug.trim(), description, access: { view, post, reply } }
 	}
 }

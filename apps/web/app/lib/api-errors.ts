@@ -107,6 +107,7 @@ const TEXT: Readonly<Record<ErrorKey, (i18n: I18n, params: Params) => string>> =
 	'category.stream_undeletable': (i18n) => t(i18n)`动态版块不能删除`,
 	'category.not_empty': (i18n) => t(i18n)`版块内已有主题，不能删除`,
 	'category.kind_changed': (i18n) => t(i18n)`版块类型已变化，请重试`,
+	'category.access_invalid': (i18n) => t(i18n)`版块权限设置无效`,
 	'thread.note_no_title': (i18n) => t(i18n)`动态不需要标题`,
 	'thread.note_untitled': (i18n) => t(i18n)`动态没有标题`,
 	'thread.convert_needs_title': (i18n) => t(i18n)`转为主题帖需要一个标题`,

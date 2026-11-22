@@ -10,6 +10,7 @@ import {
 	Image,
 	Loader,
 	Modal,
+	NativeSelect,
 	Pagination,
 	Stack,
 	Table,
@@ -29,7 +30,18 @@ import {
 	IconUpload,
 } from '@tabler/icons-react'
 import { useState, type FormEvent } from 'react'
-import type { BrandAssetKind } from '@pluxum/domain'
+import {
+	isPostingRole,
+	isRole,
+	normalizeAccess,
+	OPEN_ACCESS,
+	POSTING_ROLES,
+	ROLES,
+	roleRank,
+	type BrandAssetKind,
+	type CategoryAccess,
+	type Role,
+} from '@pluxum/domain'
 import type { AdminBrandAsset, AdminCategory, AdminResult, AdminRole } from '../workbench.ts'
 import {
 	adminScope,
@@ -61,7 +73,45 @@ function failure(host: Host, error: unknown) {
 	host.notify({ message: error instanceof Error ? error.message : String(error), tone: 'error' })
 }
 
-type Draft = { name: string; slug: string; description: string }
+type Draft = { name: string; slug: string; description: string; access: CategoryAccess }
+
+const ACCESS_LABELS: Readonly<Record<Role, string>> = {
+	guest: '所有人',
+	member: '成员',
+	moderator: '版主及以上',
+	admin: '仅管理员',
+}
+
+/** One threshold: its roles, with those weaker than seeing the category greyed out. */
+function AccessSelect({
+	label,
+	roles,
+	value,
+	floor,
+	onChange,
+}: {
+	label: string
+	roles: readonly Role[]
+	value: Role
+	floor?: Role
+	onChange: (role: Role) => void
+}) {
+	return (
+		<NativeSelect
+			label={label}
+			value={value}
+			onChange={(event) => {
+				const role = event.currentTarget.value
+				if (isRole(role)) onChange(role)
+			}}
+			data={roles.map((role) => ({
+				value: role,
+				label: ACCESS_LABELS[role],
+				disabled: floor !== undefined && roleRank(role) < roleRank(floor),
+			}))}
+		/>
+	)
+}
 
 function CategoryForm({
 	initial,
@@ -101,6 +151,35 @@ function CategoryForm({
 					value={draft.description}
 					onChange={(event) => setDraft({ ...draft, description: event.currentTarget.value })}
 				/>
+				<Group grow align="flex-start">
+					<AccessSelect
+						label="谁能看"
+						roles={ROLES}
+						value={draft.access.view}
+						// Posting is raised to the role that may see the category, as the core does on save.
+						onChange={(view) =>
+							setDraft({ ...draft, access: normalizeAccess({ ...draft.access, view }) })
+						}
+					/>
+					<AccessSelect
+						label="谁能发主题"
+						roles={POSTING_ROLES}
+						value={draft.access.post}
+						floor={draft.access.view}
+						onChange={(post) => {
+							if (isPostingRole(post)) setDraft({ ...draft, access: { ...draft.access, post } })
+						}}
+					/>
+					<AccessSelect
+						label="谁能回复"
+						roles={POSTING_ROLES}
+						value={draft.access.reply}
+						floor={draft.access.view}
+						onChange={(reply) => {
+							if (isPostingRole(reply)) setDraft({ ...draft, access: { ...draft.access, reply } })
+						}}
+					/>
+				</Group>
 				<Group justify="flex-end">
 					<Button variant="default" onClick={onCancel} disabled={busy}>
 						取消
@@ -111,6 +190,25 @@ function CategoryForm({
 				</Group>
 			</Stack>
 		</form>
+	)
+}
+
+/** A category's thresholds in the table: nothing for an open one, else what differs. */
+function AccessSummary({ access }: { access: CategoryAccess }) {
+	const parts = [
+		access.view !== OPEN_ACCESS.view && `看：${ACCESS_LABELS[access.view]}`,
+		access.post !== OPEN_ACCESS.post && `发：${ACCESS_LABELS[access.post]}`,
+		access.reply !== OPEN_ACCESS.reply && `回：${ACCESS_LABELS[access.reply]}`,
+	].filter((part) => part !== false)
+	if (parts.length === 0) return null
+	return (
+		<Group gap={4} wrap="nowrap">
+			{parts.map((part) => (
+				<Badge key={part} variant="light" size="sm">
+					{part}
+				</Badge>
+			))}
+		</Group>
 	)
 }
 
@@ -190,6 +288,7 @@ function CategoriesPanel({ host }: { host: Host }) {
 						<Table.Th>名称</Table.Th>
 						<Table.Th>标识</Table.Th>
 						<Table.Th>简介</Table.Th>
+						<Table.Th>权限</Table.Th>
 						<Table.Th ta="right">主题</Table.Th>
 						<Table.Th ta="right">帖子</Table.Th>
 						<Table.Th />
@@ -208,6 +307,9 @@ function CategoriesPanel({ host }: { host: Host }) {
 								<Text size="sm" lineClamp={2}>
 									{category.description}
 								</Text>
+							</Table.Td>
+							<Table.Td>
+								<AccessSummary access={category.access} />
 							</Table.Td>
 							<Table.Td ta="right">{category.threadCount}</Table.Td>
 							<Table.Td ta="right">{category.postCount}</Table.Td>
@@ -266,8 +368,13 @@ function CategoriesPanel({ host }: { host: Host }) {
 					<CategoryForm
 						initial={
 							editing === 'new'
-								? { name: '', slug: '', description: '' }
-								: { name: editing.name, slug: editing.slug, description: editing.description }
+								? { name: '', slug: '', description: '', access: OPEN_ACCESS }
+								: {
+										name: editing.name,
+										slug: editing.slug,
+										description: editing.description,
+										access: editing.access,
+									}
 						}
 						busy={create.isPending || update.isPending}
 						onSubmit={(draft) => void save(draft)}

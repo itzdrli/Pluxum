@@ -80,6 +80,7 @@ export type ErrorSpecs = {
 	'category.stream_undeletable': undefined
 	'category.not_empty': undefined
 	'category.kind_changed': undefined
+	'category.access_invalid': undefined
 	'thread.note_no_title': undefined
 	'thread.note_untitled': undefined
 	'thread.convert_needs_title': undefined
@@ -212,6 +213,7 @@ export const ERROR_TEXT: Texts = {
 	'category.stream_undeletable': () => '动态版块不能删除',
 	'category.not_empty': () => '版块内已有主题，不能删除',
 	'category.kind_changed': () => '版块类型已变化，请重试',
+	'category.access_invalid': () => '版块权限设置无效',
 	'thread.note_no_title': () => '动态不需要标题',
 	'thread.note_untitled': () => '动态没有标题',
 	'thread.convert_needs_title': () => '转为主题帖需要一个标题',

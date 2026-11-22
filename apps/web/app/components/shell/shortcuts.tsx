@@ -1,3 +1,4 @@
+import { meetsAccess } from '@pluxum/domain'
 import { useEffect } from 'react'
 import { useParams, useRouteLoaderData } from 'react-router'
 
@@ -38,11 +39,12 @@ function listedThreads(): HTMLAnchorElement[] {
 export function GlobalShortcuts() {
 	const navigate = useStageNavigate()
 	// The boards a new thread can go to; the stream takes notes, written in the note box.
-	const boards = useRouteLoaderData<typeof forumStageLoader>('routes/forum-stage')?.categories
+	const categories = useRouteLoaderData<typeof forumStageLoader>('routes/forum-stage')?.categories
 	const stage = useStage()
 	const params = useParams()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
 	const signedIn = viewer?.user != null
+	const roles = viewer?.roles
 	const slug = params.slug
 	const depth = stage.depth
 	const rail = useRailPreference()
@@ -80,7 +82,10 @@ export function GlobalShortcuts() {
 					return
 				}
 				case 'c': {
-					const board = boards?.find((category) => category.slug === slug) ?? boards?.[0]
+					const boards = (categories ?? []).filter((category) =>
+						meetsAccess(roles ?? [], category.access, 'post'),
+					)
+					const board = boards.find((category) => category.slug === slug) ?? boards[0]
 					if (!signedIn || board === undefined) return
 					event.preventDefault()
 					void navigate(`/c/${board.slug}/new`)
@@ -98,6 +103,6 @@ export function GlobalShortcuts() {
 		}
 		window.addEventListener('keydown', onKeyDown)
 		return () => window.removeEventListener('keydown', onKeyDown)
-	}, [navigate, boards, depth, signedIn, slug, rail, stage.nav])
+	}, [navigate, categories, roles, depth, signedIn, slug, rail, stage.nav])
 	return null
 }

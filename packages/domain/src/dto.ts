@@ -1,4 +1,4 @@
-import type { Role } from './permissions'
+import type { CategoryAccess, Role } from './permissions'
 import type { ErrorKey, ErrorParams } from './errors'
 import type { NoticeKey, NoticeParams } from './notices'
 
@@ -47,6 +47,8 @@ export type CategoryDto = Readonly<{
 	description: string
 	position: number
 	kind: CategoryKind
+	/** Who may see it, start threads and reply in it. */
+	access: CategoryAccess
 	threadCount: number
 	postCount: number
 }>

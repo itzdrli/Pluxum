@@ -93,6 +93,7 @@ describe('API error texts', () => {
 		sameChinese('category.stream_undeletable')
 		sameChinese('category.not_empty')
 		sameChinese('category.kind_changed')
+		sameChinese('category.access_invalid')
 		sameChinese('thread.note_no_title')
 		sameChinese('thread.note_untitled')
 		sameChinese('thread.convert_needs_title')

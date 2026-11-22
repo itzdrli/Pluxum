@@ -76,6 +76,8 @@ function isCategory(value: unknown): value is CategoryDto {
 		isFields(value) &&
 		hasStrings(value, ['id', 'slug', 'name', 'description']) &&
 		(value.kind === 'board' || value.kind === 'stream') &&
+		isFields(value.access) &&
+		hasStrings(value.access, ['view', 'post', 'reply']) &&
 		Number.isSafeInteger(value.position) &&
 		isCount(value.threadCount) &&
 		isCount(value.postCount)

@@ -1897,3 +1897,79 @@ describe('search providers registry and indexable post scan', () => {
 		expect(await codeOf(core.search(GUEST, { query: '乒乓' }))).toBe('unavailable')
 	})
 })
+
+describe('category access', () => {
+	it('lets a category say who sees it, starts threads and replies in it', async () => {
+		await using host = await createHost()
+		let core = await host.start(ForumCorePlugin)
+		await host.start(InboxChannelPlugin)
+		const { admin, alice, bob, category } = await seed(core)
+		expect(category.access).toEqual({ view: 'guest', post: 'member', reply: 'member' })
+
+		// Posting never asks for less than seeing.
+		const staff = (
+			await core.createCategory(admin, {
+				name: 'Staff',
+				access: { view: 'moderator', post: 'member' },
+			})
+		).unwrap()
+		expect(staff.access).toEqual({ view: 'moderator', post: 'moderator', reply: 'moderator' })
+		expect(
+			// Browser input, untyped at runtime.
+			await codeOf(core.createCategory(admin, { name: 'Bad', access: JSON.parse('{"view":"x"}') })),
+		).toBe('invalid')
+
+		// Announcements: only admins start threads, members still reply.
+		const news = (
+			await core.updateCategory(admin, category.id, { access: { post: 'admin' } })
+		).unwrap()
+		expect(news.access).toEqual({ view: 'guest', post: 'admin', reply: 'member' })
+		expect(
+			await codeOf(core.createThread(alice, { categoryId: news.id, title: 'Mine', body: 'x' })),
+		).toBe('forbidden')
+		const notice = (
+			await core.createThread(admin, { categoryId: news.id, title: 'Notice', body: 'read me' })
+		).unwrap()
+		expect((await core.listThreads(alice, news.slug)).unwrap().can.createThread).toBe(false)
+		expect((await core.listThreads(admin, news.slug)).unwrap().can.createThread).toBe(true)
+		;(await core.createPost(alice, { threadId: notice.id, body: 'noted' })).unwrap()
+
+		// Replies closed to members.
+		;(await core.updateCategory(admin, news.id, { access: { reply: 'moderator' } })).unwrap()
+		expect(await codeOf(core.createPost(bob, { threadId: notice.id, body: 'me too' }))).toBe(
+			'forbidden',
+		)
+		expect((await core.getThread(bob, notice.id)).unwrap().can.reply).toBe(false)
+
+		// Members only: guests lose the category, its threads and their place in every list.
+		;(await core.updateCategory(admin, news.id, { access: { view: 'member' } })).unwrap()
+		expect((await core.listCategories(GUEST)).map((item) => item.id)).not.toContain(news.id)
+		expect((await core.listRecentThreads(GUEST)).items.map((item) => item.id)).not.toContain(
+			notice.id,
+		)
+		expect(await codeOf(core.getThread(GUEST, notice.id))).toBe('not_found')
+		expect((await core.getThread(alice, notice.id)).unwrap().thread.title).toBe('Notice')
+
+		// Admins only: a member who wrote there no longer sees it, nor hears about it.
+		;(await core.updateCategory(admin, news.id, { access: { view: 'admin' } })).unwrap()
+		expect(await codeOf(core.getThread(alice, notice.id))).toBe('not_found')
+		inboxDeliveries.length = 0
+		const reply = {
+			id: '00000000-0000-4000-8000-000000000123',
+			recipientId: alice.userId!,
+			kind: 'thread.reply',
+			title: 'Admin 回复了你',
+			threadId: notice.id,
+			createdAt: new Date().toISOString(),
+		}
+		expect(await core.deliverNotification(reply)).toEqual([])
+		expect(await core.deliverNotification({ ...reply, recipientId: admin.userId! })).toEqual([
+			'test.inbox',
+		])
+
+		// The thresholds are read again on a cold start.
+		core = await host.restart(ForumCorePlugin)
+		expect(await codeOf(core.getThread(alice, notice.id))).toBe('not_found')
+		expect((await core.getThread(admin, notice.id)).unwrap().thread.title).toBe('Notice')
+	})
+})

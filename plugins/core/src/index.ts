@@ -15,6 +15,10 @@ import {
 	GUEST,
 	isAssignableRole,
 	isEntityId,
+	isPostingRole,
+	isRole,
+	normalizeAccess,
+	OPEN_ACCESS,
 	normalizePage,
 	parseThreadRef,
 	parseUserRef,
@@ -31,6 +35,7 @@ import {
 	validateThreadTitle,
 	type AssignableRole,
 	type BodyFormat,
+	type CategoryAccess,
 	type CategoryDto,
 	type CategoryKind,
 	type CategorySummaryDto,
@@ -235,12 +240,16 @@ export type CreateCategoryInput = Readonly<{
 	slug?: string
 	description?: string
 	position?: number
+	/** Open (`OPEN_ACCESS`) where left out. */
+	access?: Partial<CategoryAccess>
 }>
 export type UpdateCategoryInput = Readonly<{
 	name?: string
 	slug?: string
 	description?: string
 	position?: number
+	/** Only the thresholds given change. */
+	access?: Partial<CategoryAccess>
 }>
 /** A note goes to a `stream` category with an empty `title`. */
 export type CreateThreadInput = Readonly<{ categoryId: string; title: string; body: string }>
@@ -363,6 +372,27 @@ type CategoryRow = typeof categories.$inferSelect
 type ThreadRow = typeof threads.$inferSelect
 type PostRow = typeof posts.$inferSelect
 
+type AccessRow = Pick<CategoryRow, 'id' | 'viewRole' | 'postRole' | 'replyRole'>
+
+function accessOf(row: AccessRow): CategoryAccess {
+	return { view: row.viewRole, post: row.postRole, reply: row.replyRole }
+}
+
+/**
+ * The thresholds of `base` with `input`'s applied, checked and made consistent; null when a
+ * given value is no role a category may ask for.
+ */
+function accessWith(base: CategoryAccess, input: Partial<CategoryAccess> | undefined) {
+	if (input === undefined) return base
+	const { view = base.view, post = base.post, reply = base.reply } = input
+	if (!isRole(view) || !isPostingRole(post) || !isPostingRole(reply)) return null
+	return normalizeAccess({ view, post, reply })
+}
+
+function accessColumns(access: CategoryAccess): Omit<AccessRow, 'id'> {
+	return { viewRole: access.view, postRole: access.post, replyRole: access.reply }
+}
+
 function toCategoryDto(row: CategoryRow): CategoryDto {
 	return {
 		id: row.id,
@@ -371,6 +401,7 @@ function toCategoryDto(row: CategoryRow): CategoryDto {
 		description: row.description,
 		position: row.position,
 		kind: row.kind,
+		access: accessOf(row),
 		threadCount: row.threadCount,
 		postCount: row.postCount,
 	}
@@ -422,6 +453,11 @@ export class ForumCorePlugin extends BasePlugin {
 	private readonly followGraph = new FollowGraphRegistry()
 	/** Bumped whenever the content renderer changes, so cached HTML of the old one is not served. */
 	private renderGeneration = 0
+	/**
+	 * Each category's thresholds as last read; `can` hands them to the policies. Refreshed by
+	 * every full read of the categories (most listings make one) and by each category write.
+	 */
+	private readonly accessByCategory = new Map<string, CategoryAccess>()
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(ForumDatabase)
@@ -433,6 +469,20 @@ export class ForumCorePlugin extends BasePlugin {
 			this.ctx.logger.warn('brand uploads are unavailable: no durable file storage', { error })
 		}
 		this.permissionPolicies.register({ id: BUILT_IN_POLICY_ID, evaluate: defaultRolePolicy })
+		// Before the first request: a check on a category not yet read would take it as open.
+		this.rememberAccess(
+			await this.database.read((db) =>
+				db
+					.select({
+						id: categories.id,
+						viewRole: categories.viewRole,
+						postRole: categories.postRole,
+						replyRole: categories.replyRole,
+					})
+					.from(categories),
+			),
+			true,
+		)
 		// Site and footer settings are read per request; a saved change applies as is.
 		this.configs.onUpdate(this.config, () => {})
 		// Workbench "论坛管理": categories and account roles, acting as a forum admin.
@@ -455,8 +505,24 @@ export class ForumCorePlugin extends BasePlugin {
 		return this.permissionPolicies.ids()
 	}
 
+	/** Asks the policies; a resource in a category carries that category's thresholds to them. */
 	can(principal: Principal, action: ForumAction, resource: ForumResource = {}): boolean {
-		return evaluatePolicies(this.permissionPolicies.policies(), { principal, action, resource })
+		const access =
+			resource.access ??
+			(resource.categoryId === undefined
+				? undefined
+				: this.accessByCategory.get(resource.categoryId))
+		return evaluatePolicies(this.permissionPolicies.policies(), {
+			principal,
+			action,
+			resource: access === undefined ? resource : { ...resource, access },
+		})
+	}
+
+	/** Takes in categories' thresholds; `complete` when these are all of them. */
+	private rememberAccess(rows: readonly AccessRow[], complete = false): void {
+		if (complete) this.accessByCategory.clear()
+		for (const row of rows) this.accessByCategory.set(row.id, accessOf(row))
 	}
 
 	// ── Content ─────────────────────────────────────────────────────────────────────────────
@@ -770,6 +836,15 @@ export class ForumCorePlugin extends BasePlugin {
 	async deliverNotification(notification: ForumNotification): Promise<string[]> {
 		// Nobody reads Ghost's notifications.
 		if (notification.recipientId === (await this.findGhostId())) return []
+		// Nor one about a thread its reader may not see (a hidden category, or one closed later).
+		const threadId = notification.threadId
+		if (typeof threadId === 'string' && isEntityId(threadId)) {
+			const [reader, found] = await Promise.all([
+				this.principalOf(notification.recipientId),
+				this.database.read((db) => this.findThread(db, threadId)),
+			])
+			if (!found || !this.can(reader, 'thread.view', this.threadResource(found.thread))) return []
+		}
 		return this.notificationChannels.deliver(notification, (error, channelId) =>
 			this.ctx.logger.error('notification channel failed', {
 				error,
@@ -1513,6 +1588,7 @@ export class ForumCorePlugin extends BasePlugin {
 		const rows = await this.database.read((db) =>
 			db.select().from(categories).orderBy(asc(categories.position), asc(categories.name)),
 		)
+		this.rememberAccess(rows, true)
 		return rows
 			.filter((row) => this.can(principal, 'category.view', { categoryId: row.id }))
 			.map(toCategoryDto)
@@ -1533,6 +1609,8 @@ export class ForumCorePlugin extends BasePlugin {
 		if (!description.ok) return invalid(description.error)
 		const position = input.position ?? 0
 		if (!Number.isSafeInteger(position)) return invalid(errorDetail('position.not_integer'))
+		const access = accessWith(OPEN_ACCESS, input.access)
+		if (access === null) return invalid(errorDetail('category.access_invalid'))
 
 		const [row] = await this.database.transaction((tx) =>
 			tx
@@ -1542,11 +1620,17 @@ export class ForumCorePlugin extends BasePlugin {
 					slug: slug.value,
 					description: description.value,
 					position,
+					viewRole: access.view,
+					postRole: access.post,
+					replyRole: access.reply,
 				})
 				.onConflictDoNothing({ target: categories.slug })
 				.returning(),
 		)
-		if (row) await this.listingsChanged()
+		if (row) {
+			this.rememberAccess([row])
+			await this.listingsChanged()
+		}
 		return row ? Result.ok(toCategoryDto(row)) : fail('conflict', 'category.slug_taken')
 	}
 
@@ -1557,7 +1641,12 @@ export class ForumCorePlugin extends BasePlugin {
 	): Promise<ForumResult<CategoryDto>> {
 		if (!this.can(principal, 'category.manage', { categoryId })) return denied(principal)
 		if (!isEntityId(categoryId)) return notFound('category')
-		const patch: Partial<Pick<CategoryRow, 'name' | 'slug' | 'description' | 'position'>> = {}
+		const patch: Partial<
+			Pick<
+				CategoryRow,
+				'name' | 'slug' | 'description' | 'position' | 'viewRole' | 'postRole' | 'replyRole'
+			>
+		> = {}
 		if (input.name !== undefined) {
 			const name = validateCategoryName(input.name)
 			if (!name.ok) return invalid(name.error)
@@ -1581,6 +1670,13 @@ export class ForumCorePlugin extends BasePlugin {
 		const updated = await this.database.transaction(async (tx) => {
 			const [current] = await tx.select().from(categories).where(eq(categories.id, categoryId))
 			if (!current) return notFound('category')
+			if (input.access !== undefined) {
+				const access = accessWith(accessOf(current), input.access)
+				if (access === null) return invalid(errorDetail('category.access_invalid'))
+				patch.viewRole = access.view
+				patch.postRole = access.post
+				patch.replyRole = access.reply
+			}
 			if (Object.keys(patch).length === 0) return Result.ok(toCategoryDto(current))
 			if (patch.slug !== undefined && patch.slug !== current.slug) {
 				const [taken] = await tx
@@ -1596,7 +1692,10 @@ export class ForumCorePlugin extends BasePlugin {
 				.returning()
 			return row ? Result.ok(toCategoryDto(row)) : notFound('category')
 		})
-		if (updated.isOk()) await this.listingsChanged()
+		if (updated.isOk()) {
+			this.rememberAccess([{ id: updated.value.id, ...accessColumns(updated.value.access) }])
+			await this.listingsChanged()
+		}
 		return updated
 	}
 
@@ -1738,10 +1837,18 @@ export class ForumCorePlugin extends BasePlugin {
 	private async visibleCategories(principal: Principal) {
 		const all = await this.database.read((db) =>
 			db
-				.select({ id: categories.id, slug: categories.slug, name: categories.name })
+				.select({
+					id: categories.id,
+					slug: categories.slug,
+					name: categories.name,
+					viewRole: categories.viewRole,
+					postRole: categories.postRole,
+					replyRole: categories.replyRole,
+				})
 				.from(categories)
 				.orderBy(asc(categories.position), asc(categories.id)),
 		)
+		this.rememberAccess(all, true)
 		return all.filter((category) =>
 			this.can(principal, 'category.view', { categoryId: category.id }),
 		)

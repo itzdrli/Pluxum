@@ -3,6 +3,8 @@ import { data, Form, redirect, useNavigation, useRouteLoaderData } from 'react-r
 import { t as tm } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 
+import { meetsAccess } from '@pluxum/domain'
+
 import type { Route } from './+types/thread-new'
 import { Composer } from '../components/composer/composer'
 import { Button, ButtonLink } from '../components/ui/button'
@@ -51,9 +53,11 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 	const { t } = useLingui()
 	const { category } = loaderData
 	const limits = useRouteLoaderData<typeof rootLoader>('root')?.meta?.limits
-	const boards = useRouteLoaderData<typeof forumStageLoader>('routes/forum-stage')?.categories ?? [
-		category,
-	]
+	const roles = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer.roles ?? []
+	// This one (the loader checked it), and every other board the viewer may start a thread in.
+	const boards = (
+		useRouteLoaderData<typeof forumStageLoader>('routes/forum-stage')?.categories ?? [category]
+	).filter((board) => board.id === category.id || meetsAccess(roles, board.access, 'post'))
 	const submitting = useNavigation().state === 'submitting'
 	return (
 		<div className="mx-auto max-w-[860px]">

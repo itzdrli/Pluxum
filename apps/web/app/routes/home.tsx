@@ -1,4 +1,4 @@
-import type { CategoryDto, CommunityDto, UserDto } from '@pluxum/domain'
+import { meetsAccess, type CategoryDto, type CommunityDto, type UserDto } from '@pluxum/domain'
 import { Dropdown } from '@heroui/react'
 import { LayoutList, MessagesSquare, NotebookPen, Plus, UserRoundPlus } from 'lucide-react'
 import { useCallback, useState } from 'react'
@@ -109,6 +109,9 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 		actionData !== undefined && 'error' in actionData ? actionData.error : undefined
 	const showForm = canManage && (creating || requestedNew || categoryError !== undefined)
 	const canPostNote = root?.meta?.viewer.can.postNote === true
+	// Where 「发布主题」 may go: the boards whose threshold the viewer's roles meet.
+	const roles = root?.meta?.viewer.roles ?? []
+	const postable = categories.filter((category) => meetsAccess(roles, category.access, 'post'))
 	const stream = root?.meta?.stream ?? null
 	const followingAvailable = root?.meta?.viewer.following.available === true
 	const navigate = useStageNavigate()
@@ -192,7 +195,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 								{t`${categoryCount} 版块`} · {t`${totalThreads} 主题`} · {t`${totalPosts} 帖子`}
 							</span>
 							{/* With the note box, the way to a topic sits beside it: one place to write from. */}
-							{signedIn && !canPostNote && <NewThreadMenu categories={categories} />}
+							{signedIn && !canPostNote && <NewThreadMenu categories={postable} />}
 						</div>
 					</div>
 					{showForm && (
@@ -211,7 +214,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 							<NoteComposer
 								max={root?.meta?.limits.noteBodyMax}
 								onPosted={onPosted}
-								aside={<NewThreadMenu categories={categories} tone="secondary" />}
+								aside={<NewThreadMenu categories={postable} tone="secondary" />}
 							/>
 						)}
 						{feed.tab === 'latest' && <LatestOrderToggle feed={feed} />}

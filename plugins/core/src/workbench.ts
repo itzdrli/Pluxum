@@ -1,4 +1,4 @@
-import type { BrandAssetKind } from '@pluxum/domain'
+import type { BrandAssetKind, CategoryAccess } from '@pluxum/domain'
 import type { RpcTarget } from 'capnweb'
 import { workbench } from '@pluxel/workbench'
 
@@ -9,6 +9,7 @@ export type AdminCategory = Readonly<{
 	name: string
 	description: string
 	position: number
+	access: CategoryAccess
 	threadCount: number
 	postCount: number
 }>
@@ -18,6 +19,7 @@ export type AdminCategoryInput = Readonly<{
 	/** Empty: derived from the name. */
 	slug: string
 	description: string
+	access: CategoryAccess
 }>
 
 export type AdminRole = 'moderator' | 'admin'
