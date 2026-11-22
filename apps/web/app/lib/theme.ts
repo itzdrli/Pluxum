@@ -4,10 +4,11 @@
 import type { ThemeId as DomainThemeId } from '@pluxum/domain'
 
 export const THEMES = [
-	{ id: 'nord', label: 'Nord', dark: true },
-	{ id: 'dusk', label: 'Dusk', dark: true },
-	{ id: 'frost', label: 'Frost', dark: false },
-	{ id: 'sand', label: 'Sand', dark: false },
+	// `page`: the page colour (app.css `--c-page`), which browsers paint their own bars in.
+	{ id: 'nord', label: 'Nord', dark: true, page: '#2e3440' },
+	{ id: 'dusk', label: 'Dusk', dark: true, page: '#0d0f13' },
+	{ id: 'frost', label: 'Frost', dark: false, page: '#e7ecf2' },
+	{ id: 'sand', label: 'Sand', dark: false, page: '#efe7d9' },
 ] as const
 
 export type ThemeId = (typeof THEMES)[number]['id']
@@ -23,6 +24,11 @@ export const THEME_COOKIE = 'forum_theme'
 
 function isThemeId(value: unknown): value is ThemeId {
 	return THEMES.some((theme) => theme.id === value)
+}
+
+/** The page colour of a theme, for the browser's `theme-color`. */
+export function themePageColor(id: ThemeId): string {
+	return THEMES.find((theme) => theme.id === id)?.page ?? THEMES[0].page
 }
 
 export function isDarkTheme(id: ThemeId): boolean {

@@ -803,6 +803,10 @@ msgstr "发生了意外错误。"
 msgid "发表回复"
 msgstr "发表回复"
 
+#: app/slots/forum-push/push-settings.tsx
+msgid "发送测试"
+msgstr "发送测试"
+
 #: app/routes/reset-password.tsx
 msgid "发送重设链接"
 msgstr "发送重设链接"
@@ -939,6 +943,10 @@ msgstr "在右侧插入列"
 #: app/routes/home.tsx
 msgid "在用户主页或版块页点「关注」，就能在这里看到那里的新帖。"
 msgstr "在用户主页或版块页点「关注」，就能在这里看到那里的新帖。"
+
+#: app/slots/forum-push/push-settings.tsx
+msgid "在这台设备上推送通知"
+msgstr "在这台设备上推送通知"
 
 #: app/slots/forum-moderation/report-button.tsx
 msgid "垃圾广告或恶意推广"
@@ -1092,6 +1100,10 @@ msgstr "已举报"
 msgid "已关注"
 msgstr "已关注"
 
+#: app/slots/forum-push/push-settings.tsx
+msgid "已发送"
+msgstr "已发送"
+
 #: app/routes/moderation.tsx
 msgid "已处理"
 msgstr "已处理"
@@ -1210,6 +1222,14 @@ msgstr "排序必须是整数"
 msgid "接口不存在"
 msgstr "接口不存在"
 
+#: app/slots/forum-push/push-settings.tsx
+msgid "推送服务未接收，请稍后再试。"
+msgstr "推送服务未接收，请稍后再试。"
+
+#: app/slots/forum-push/push-settings.tsx
+msgid "推送通知"
+msgstr "推送通知"
+
 #: app/routes/moderation.tsx
 #: app/slots/forum-moderation/report-button.tsx
 msgid "提交举报"
@@ -1277,6 +1297,7 @@ msgstr "撤销"
 #: app/slots/forum-attachments/shared.ts
 #: app/slots/forum-follows/follow.tsx
 #: app/slots/forum-mail/mail-settings.tsx
+#: app/slots/forum-push/push-settings.tsx
 msgid "操作失败，请稍后再试。"
 msgstr "操作失败，请稍后再试。"
 
@@ -1518,6 +1539,10 @@ msgstr "欢迎来到 {siteName}"
 msgid "正常"
 msgstr "正常"
 
+#: app/slots/forum-push/push-settings.tsx
+msgid "此浏览器不支持推送"
+msgstr "此浏览器不支持推送"
+
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "永久封禁"
 msgstr "永久封禁"
@@ -1565,6 +1590,14 @@ msgstr "注销后无法恢复，发过的内容会转到 Ghost 名下。"
 #: app/slots/forum-accounts/account-settings.tsx
 msgid "注销账号"
 msgstr "注销账号"
+
+#: app/slots/forum-push/push-settings.tsx
+msgid "浏览器已拒绝通知权限"
+msgstr "浏览器已拒绝通知权限"
+
+#: app/slots/forum-push/push-settings.tsx
+msgid "添加到主屏幕后可开启"
+msgstr "添加到主屏幕后可开启"
 
 #: app/lib/roles.ts
 msgid "游客"

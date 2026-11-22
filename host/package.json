@@ -38,6 +38,7 @@
 		"@pluxum/moderation": "workspace:*",
 		"@pluxum/notifications": "workspace:*",
 		"@pluxum/og": "workspace:*",
+		"@pluxum/push": "workspace:*",
 		"@pluxum/outline": "workspace:*",
 		"@pluxum/rates": "workspace:*",
 		"@pluxum/reactions": "workspace:*",

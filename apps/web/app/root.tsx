@@ -47,7 +47,7 @@ import { loadMessages } from './lib/i18n.server'
 import { DEFAULT_LOCALE, localeFromRequest } from './lib/locale'
 import { rememberTimeZone, timeZoneFromRequest } from './lib/timezone'
 import { railFromRequest } from './lib/rail'
-import { isDarkTheme, themeFromRequest } from './lib/theme'
+import { isDarkTheme, themeFromRequest, themePageColor } from './lib/theme'
 
 // Who is browsing, what the forum allows, and the visitor's theme. Child routes read it through
 // useRouteLoaderData('root').
@@ -128,6 +128,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 					</>
 				)}
 				<link rel="alternate" type="application/atom+xml" href="/feed.xml" title={site.name} />
+				<link rel="manifest" href="/manifest.webmanifest" />
+				<meta name="theme-color" content={themePageColor(theme)} />
 				<meta name="twitter:card" content="summary_large_image" />
 				<Meta />
 				<Links />
@@ -144,6 +146,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App({ loaderData }: Route.ComponentProps) {
 	// Tells the server the visitor's time zone for its next render.
 	useEffect(() => rememberTimeZone(loaderData.timeZone), [loaderData.timeZone])
+	// Shows push notices and makes the forum installable; pages never depend on it.
+	useEffect(() => {
+		void navigator.serviceWorker?.register('/sw.js').catch(() => undefined)
+	}, [])
 	return (
 		<LightboxProvider>
 			<DockProvider>

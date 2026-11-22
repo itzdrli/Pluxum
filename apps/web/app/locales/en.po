@@ -803,6 +803,10 @@ msgstr "An unexpected error occurred."
 msgid "发表回复"
 msgstr "Post reply"
 
+#: app/slots/forum-push/push-settings.tsx
+msgid "发送测试"
+msgstr "Send a test"
+
 #: app/routes/reset-password.tsx
 msgid "发送重设链接"
 msgstr "Send reset link"
@@ -939,6 +943,10 @@ msgstr "Insert column to the right"
 #: app/routes/home.tsx
 msgid "在用户主页或版块页点「关注」，就能在这里看到那里的新帖。"
 msgstr "Follow people or categories from their pages to see their new posts here."
+
+#: app/slots/forum-push/push-settings.tsx
+msgid "在这台设备上推送通知"
+msgstr "Push notifications to this device"
 
 #: app/slots/forum-moderation/report-button.tsx
 msgid "垃圾广告或恶意推广"
@@ -1092,6 +1100,10 @@ msgstr "Reported"
 msgid "已关注"
 msgstr "Following"
 
+#: app/slots/forum-push/push-settings.tsx
+msgid "已发送"
+msgstr "Sent"
+
 #: app/routes/moderation.tsx
 msgid "已处理"
 msgstr "Resolved"
@@ -1210,6 +1222,14 @@ msgstr "The order must be an integer"
 msgid "接口不存在"
 msgstr "Endpoint not found"
 
+#: app/slots/forum-push/push-settings.tsx
+msgid "推送服务未接收，请稍后再试。"
+msgstr "The push service did not accept it. Try again later."
+
+#: app/slots/forum-push/push-settings.tsx
+msgid "推送通知"
+msgstr "Push notifications"
+
 #: app/routes/moderation.tsx
 #: app/slots/forum-moderation/report-button.tsx
 msgid "提交举报"
@@ -1277,6 +1297,7 @@ msgstr "Undo"
 #: app/slots/forum-attachments/shared.ts
 #: app/slots/forum-follows/follow.tsx
 #: app/slots/forum-mail/mail-settings.tsx
+#: app/slots/forum-push/push-settings.tsx
 msgid "操作失败，请稍后再试。"
 msgstr "The action failed. Please try again later."
 
@@ -1518,6 +1539,10 @@ msgstr "Welcome to {siteName}"
 msgid "正常"
 msgstr "Active"
 
+#: app/slots/forum-push/push-settings.tsx
+msgid "此浏览器不支持推送"
+msgstr "This browser does not support push"
+
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "永久封禁"
 msgstr "Permanent ban"
@@ -1565,6 +1590,14 @@ msgstr "This cannot be undone. Everything you posted moves to Ghost."
 #: app/slots/forum-accounts/account-settings.tsx
 msgid "注销账号"
 msgstr "Delete account"
+
+#: app/slots/forum-push/push-settings.tsx
+msgid "浏览器已拒绝通知权限"
+msgstr "The browser blocked notifications"
+
+#: app/slots/forum-push/push-settings.tsx
+msgid "添加到主屏幕后可开启"
+msgstr "Add the forum to your Home Screen to turn this on"
 
 #: app/lib/roles.ts
 msgid "游客"

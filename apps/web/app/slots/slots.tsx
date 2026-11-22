@@ -19,6 +19,7 @@ import { AccountSettings } from './forum-accounts/account-settings'
 import { AttachmentsFooter } from './forum-attachments/attachments'
 import { AvatarEditor } from './forum-attachments/avatar'
 import { MailSettings } from './forum-mail/mail-settings'
+import { PushSettings } from './forum-push/push-settings'
 import { UploadButton } from './forum-attachments/upload'
 import { CategoryFollow, FollowSettings, UserFollow } from './forum-follows/follow'
 import { ReportAction } from './forum-moderation/report-button'
@@ -107,6 +108,7 @@ const EXTENSIONS: Readonly<Record<string, SlotComponents>> = {
 		'user.profile.tabs': UserBanTab,
 	},
 	'forum-mail': { 'user.profile.tabs': MailSettings },
+	'forum-push': { 'user.profile.tabs': PushSettings },
 	'forum-accounts': { 'user.profile.tabs': AccountSettings },
 }
 

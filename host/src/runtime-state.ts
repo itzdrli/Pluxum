@@ -29,6 +29,7 @@ import { ForumModerationPlugin } from '@pluxum/moderation'
 import { ForumNotificationsPlugin } from '@pluxum/notifications'
 import { ForumOgPlugin } from '@pluxum/og'
 import { ForumOutlinePlugin } from '@pluxum/outline'
+import { ForumPushPlugin } from '@pluxum/push'
 import { ForumRatesPlugin } from '@pluxum/rates'
 import { ForumReactionsPlugin } from '@pluxum/reactions'
 import { ForumReadsPlugin } from '@pluxum/reads'
@@ -66,6 +67,8 @@ export const appPlugins = [
 	ForumSolvedPlugin,
 	// Drafts kept on the server, so writing continues on another device.
 	ForumDraftsPlugin,
+	// Browser push notifications; its key pair lives in its Vault.
+	ForumPushPlugin,
 	// Social card images: Takumi draws them with the fonts FontsPlugin holds.
 	FontsPlugin,
 	TakumiPlugin,

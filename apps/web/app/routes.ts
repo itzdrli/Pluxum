@@ -23,6 +23,7 @@ export default [
 		route('reset-password', 'routes/reset-password.tsx'),
 	]),
 	route('t/:id/:floor?', 'routes/thread-shortlink.ts'),
+	route('manifest.webmanifest', 'routes/manifest.ts'),
 	// Atom feeds of the site, a category and a person.
 	route('feed.xml', 'routes/feed.ts', { id: 'routes/feed-site' }),
 	route('c/:slug/feed.xml', 'routes/feed.ts', { id: 'routes/feed-category' }),

@@ -27,6 +27,7 @@ export default defineConfig({
 					'@pluxum/reactions#check-tests',
 					'@pluxum/drafts#check-tests',
 					'@pluxum/follows#check-tests',
+					'@pluxum/push#check-tests',
 					'@pluxum/solved#check-tests',
 					'@pluxum/notifications#check-tests',
 					'@pluxum/search#check-tests',
