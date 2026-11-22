@@ -303,6 +303,24 @@ export const recentThreadsQuery = t.Object({
 	scope: t.Optional(t.Union([t.Literal('all'), t.Literal('following')])),
 })
 
+// `since`: the ISO instant the reader's page is current to; the core checks its format.
+export const activityQuery = t.Object({
+	since: t.String({ maxLength: 40 }),
+	/** A category's slug, for its list; omitted for the overview feed. */
+	category: t.Optional(t.String({ maxLength: 200 })),
+	sort: t.Optional(t.Union([t.Literal('active'), t.Literal('new')])),
+	scope: t.Optional(t.Union([t.Literal('all'), t.Literal('following')])),
+})
+
+export const threadActivityQuery = t.Object({ since: t.String({ maxLength: 40 }) })
+
+export const activity = t.Object({ count: t.Number() })
+
+export const threadActivity = t.Object({
+	count: t.Number(),
+	floor: t.Union([t.Number(), t.Null()]),
+})
+
 export const searchQuery = t.Object({
 	q: t.Optional(text(LIMITS.searchQueryMax)),
 	categoryId: t.Optional(t.String({ maxLength: 64 })),

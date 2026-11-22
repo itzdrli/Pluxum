@@ -7,6 +7,7 @@ import {
 	Form,
 	redirect,
 	useNavigation,
+	useRevalidator,
 	useRouteLoaderData,
 	useSearchParams,
 } from 'react-router'
@@ -14,6 +15,7 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { t as tm } from '@lingui/core/macro'
 
 import type { Route } from './+types/home'
+import { NewActivityPrompt } from '../components/forum/new-activity'
 import { NoteCard, NoteComposer } from '../components/forum/note-card'
 import { ThreadRow } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
@@ -22,6 +24,13 @@ import { Button, IconButton } from '../components/ui/button'
 import { EmptyState, FormError, Panel, TabIndicator } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
 import { TextInputField } from '../components/ui/field'
+import {
+	activityLabelCount,
+	listActivityPath,
+	newestInstant,
+	parseListActivity,
+	useActivity,
+} from '../lib/activity'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { i18nFromRequest } from '../lib/i18n.server'
 import {
@@ -128,6 +137,28 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 		[feed.tab, navigate, searchParams],
 	)
 
+	// 「N 条新内容」: what others wrote since the newest entry shown. Only on the first page, where it
+	// would appear, and not under 「热门」, whose order is not by time.
+	const revalidator = useRevalidator()
+	const activitySort = feed.tab === 'latest' ? feed.order : 'active'
+	const since = newestInstant(
+		recentThreads.items.map((item) => (activitySort === 'new' ? item.createdAt : item.lastPostAt)),
+	)
+	const { activity, dismiss: dismissActivity } = useActivity(
+		feed.tab !== 'hot' && recentThreads.page === 1
+			? listActivityPath(since, {
+					sort: activitySort,
+					scope: feed.tab === 'following' ? 'following' : 'all',
+				})
+			: null,
+		parseListActivity,
+	)
+	const newCount = activity === null ? '' : activityLabelCount(activity.count)
+	const loadActivity = async () => {
+		await revalidator.revalidate()
+		dismissActivity()
+	}
+
 	const categoryCount = categories.length
 	const totalThreads = categories.reduce((sum, cat) => sum + cat.threadCount, 0)
 	const totalPosts = categories.reduce((sum, cat) => sum + cat.postCount, 0)
@@ -218,6 +249,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 							/>
 						)}
 						{feed.tab === 'latest' && <LatestOrderToggle feed={feed} />}
+						<NewActivityPrompt
+							label={activity === null ? null : t`${newCount} 条新内容`}
+							onLoad={loadActivity}
+							reveal="top"
+						/>
 						{recentThreads.items.length === 0 ? (
 							feed.tab === 'following' ? (
 								<EmptyState

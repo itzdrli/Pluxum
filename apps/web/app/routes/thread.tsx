@@ -8,6 +8,7 @@ import {
 	useLocation,
 	useNavigate,
 	useNavigation,
+	useRevalidator,
 	useRouteLoaderData,
 	useSubmit,
 } from 'react-router'
@@ -18,6 +19,7 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import type { Route } from './+types/thread'
 import { Composer } from '../components/composer/composer'
 import { useDock } from '../components/dock/composer-dock'
+import { NewActivityPrompt } from '../components/forum/new-activity'
 import { PostCard } from '../components/forum/post'
 import { ThreadFlags } from '../components/forum/rows'
 import { MobileThreadBar } from '../components/shell/mobile-stage-bar'
@@ -36,6 +38,13 @@ import {
 import { NativeSelect, TextInputField } from '../components/ui/field'
 import { ActionMenu, ConfirmDialog, type MenuItem } from '../components/ui/overlay'
 import { Pager } from '../components/ui/pager'
+import {
+	activityLabelCount,
+	parseFloorLocation,
+	parseThreadActivity,
+	threadActivityPath,
+	useActivity,
+} from '../lib/activity'
 import { pageCount } from '../lib/format'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { useFocusReading } from '../lib/focus'
@@ -139,6 +148,23 @@ function floorSearch(
 	if (located.parentFloor !== null) params.set('expand', String(located.parentFloor))
 	else params.delete('expand')
 	return params.size > 0 ? `?${params}` : ''
+}
+
+/**
+ * The path and search of the page that shows a floor, in the list `here` belongs to, or null when
+ * the API cannot say.
+ */
+async function floorTarget(here: URL, threadRef: string, floor: number): Promise<string | null> {
+	try {
+		const response = await fetch(
+			`/api/forum/threads/${encodeURIComponent(threadRef)}/floors/${floor}`,
+			{ headers: { accept: 'application/json' }, cache: 'no-store', credentials: 'same-origin' },
+		)
+		const located = response.ok ? parseFloorLocation(await response.json()) : null
+		return located === null ? null : `${here.pathname}${floorSearch(here, located)}`
+	} catch {
+		return null
+	}
 }
 
 type ActionFailure = Readonly<{
@@ -314,6 +340,34 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 		return () => window.removeEventListener('keydown', onKeyDown)
 	}, [closeHref, confirmingDelete, moving, navigate, renaming])
 
+	// 「N 条新回复」: what others posted since the newest post this page knows of. Pressing it goes
+	// to the first of them: on this page it reloads in place, else it opens the page that shows it.
+	const revalidator = useRevalidator()
+	const { activity, dismiss: dismissActivity } = useActivity(
+		threadActivityPath(thread.ref, thread.lastPostAt),
+		parseThreadActivity,
+	)
+	const newReplies = activity === null ? '' : activityLabelCount(activity.count)
+	const loadNewReplies = async () => {
+		const floor = activity?.floor ?? null
+		const here = new URL(window.location.href)
+		const target = floor === null ? null : await floorTarget(here, thread.ref, floor)
+		if (target !== null && target !== `${here.pathname}${here.search}`) {
+			await replaceUrl(`${target}#post-${floor}`, { replace: true })
+			dismissActivity()
+			return
+		}
+		await revalidator.revalidate()
+		dismissActivity()
+		if (floor !== null) {
+			requestAnimationFrame(() =>
+				document
+					.getElementById(`post-${floor}`)
+					?.scrollIntoView({ block: 'start', behavior: 'smooth' }),
+			)
+		}
+	}
+
 	const menu: MenuItem[] = [
 		{
 			id: 'copy-link',
@@ -485,6 +539,10 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 				/>
 			)}
 			{threadError !== undefined && !renaming && !moving && <FormError message={threadError} />}
+			<NewActivityPrompt
+				label={activity === null ? null : t`${newReplies} 条新回复`}
+				onLoad={loadNewReplies}
+			/>
 			{posts.items.length === 0 ? (
 				<EmptyState icon={MessageSquare} title={t`这一页没有内容`} />
 			) : (

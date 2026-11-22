@@ -1,6 +1,7 @@
 import { GUEST, type ForumNotification, type Principal } from '@pluxum/domain'
 import {
 	ForumCorePlugin,
+	type ActivityQuery,
 	type ForumResult,
 	type PostAfterWriteEvent,
 	type SearchProviderQuery,
@@ -12,6 +13,9 @@ import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
 
 const MISSING_ID = '00000000-0000-4000-8000-000000000000'
+
+/** Lets the clock move on, so what follows is strictly later than what came before. */
+const tick = () => new Promise((resolve) => setTimeout(resolve, 5))
 
 const createHost = () =>
 	createTestHost({ services: [database({ backend: pglite({ dataDir: 'memory://' }) })] })
@@ -579,6 +583,90 @@ describe('ForumCorePlugin', () => {
 			total: 0,
 		})
 		disposeHideAll()
+	})
+
+	it("counts what is new in a list since an instant, leaving out the viewer's own posts", async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { admin, alice, bob, category: general } = await seed(core)
+		const staff = (
+			await core.createCategory(admin, { name: 'Staff', access: { view: 'moderator' } })
+		).unwrap()
+		const old = (
+			await core.createThread(alice, { categoryId: general.id, title: 'Old', body: 'a' })
+		).unwrap()
+		const since = old.lastPostAt
+		await tick()
+		const counted = async (principal: Principal, query: Omit<ActivityQuery, 'since'> = {}) =>
+			(await core.activitySince(principal, { since, ...query })).unwrap().count
+
+		expect(await counted(GUEST)).toBe(0)
+
+		// Bob replies to the old thread and starts a new one; the hidden category gets one too.
+		;(await core.createPost(bob, { threadId: old.id, body: 'reply' })).unwrap()
+		;(await core.createThread(bob, { categoryId: general.id, title: 'New', body: 'b' })).unwrap()
+		;(await core.createThread(admin, { categoryId: staff.id, title: 'Hush', body: 'c' })).unwrap()
+
+		expect(await counted(GUEST)).toBe(2)
+		expect(await counted(alice)).toBe(2)
+		// Only what others wrote counts, and only where the viewer may look.
+		expect(await counted(bob)).toBe(0)
+		expect(await counted(admin)).toBe(2)
+		expect(await counted(GUEST, { sort: 'new' })).toBe(1)
+		expect(await counted(bob, { sort: 'new' })).toBe(0)
+		expect(await counted(GUEST, { categorySlug: 'general' })).toBe(2)
+		expect(await counted(admin, { categorySlug: staff.slug })).toBe(0)
+		expect(await codeOf(core.activitySince(bob, { since, categorySlug: staff.slug }))).toBe(
+			'not_found',
+		)
+		expect(await codeOf(core.activitySince(GUEST, { since, categorySlug: 'nowhere' }))).toBe(
+			'not_found',
+		)
+		// Without a follow graph the 「关注」 feed is empty, so nothing is new in it either.
+		expect(await counted(alice, { scope: 'following' })).toBe(0)
+
+		// A post that was deleted again is not news.
+		await tick()
+		const oops = (await core.createPost(bob, { threadId: old.id, body: 'oops' })).unwrap()
+		const justBefore = new Date(Date.parse(oops.createdAt) - 1).toISOString()
+		expect((await core.activitySince(alice, { since: justBefore })).unwrap().count).toBe(1)
+		;(await core.deletePost(bob, oops.id)).unwrap()
+		expect((await core.activitySince(alice, { since: justBefore })).unwrap().count).toBe(0)
+
+		const malformed = ['', 'yesterday', '2026-13-45T00:00:00Z', '2026-01-01']
+		expect(
+			await Promise.all(malformed.map((bad) => codeOf(core.activitySince(GUEST, { since: bad })))),
+		).toEqual(malformed.map(() => 'invalid'))
+	})
+
+	it('counts new replies in a thread since an instant and names the first new floor', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { admin, alice, bob, category } = await seed(core)
+		const thread = (
+			await core.createThread(alice, { categoryId: category.id, title: 'Talk', body: 'a' })
+		).unwrap()
+		const since = thread.lastPostAt
+		await tick()
+		const activity = async (principal: Principal) =>
+			(await core.threadActivitySince(principal, thread.ref, since)).unwrap()
+
+		expect(await activity(GUEST)).toEqual({ count: 0, floor: null })
+		;(await core.createPost(alice, { threadId: thread.id, body: 'mine' })).unwrap()
+		const floor = (await core.createPost(bob, { threadId: thread.id, body: 'two' })).unwrap()
+		;(
+			await core.createPost(bob, { threadId: thread.id, body: 'inside', parentId: floor.id })
+		).unwrap()
+
+		expect(await activity(GUEST)).toEqual({ count: 3, floor: 2 })
+		expect(await activity(alice)).toEqual({ count: 2, floor: 3 })
+		expect(await activity(bob)).toEqual({ count: 1, floor: 2 })
+
+		expect(await codeOf(core.threadActivitySince(GUEST, thread.ref, 'soon'))).toBe('invalid')
+		expect(await codeOf(core.threadActivitySince(GUEST, '999999', since))).toBe('not_found')
+		;(await core.updateCategory(admin, category.id, { access: { view: 'moderator' } })).unwrap()
+		expect(await codeOf(core.threadActivitySince(alice, thread.ref, since))).toBe('not_found')
+		expect((await core.threadActivitySince(admin, thread.ref, since)).unwrap().count).toBe(3)
 	})
 
 	it('summarises members and recent posting for the community panel', async () => {

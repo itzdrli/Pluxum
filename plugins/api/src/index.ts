@@ -225,6 +225,23 @@ export class ForumApiPlugin extends BasePlugin {
 						{ response: schema.community },
 						async ({ request }) => await this.core.communityPulse(await this.viewer(request)),
 					)
+					// Polled by open pages for their 「N 条新内容」 prompt: per viewer and per instant, so
+					// neither the CDN nor the browser may keep it.
+					.get(
+						'/activity',
+						{ query: schema.activityQuery, response: schema.activity },
+						async ({ request, query, set }) => {
+							set.headers['cache-control'] = 'private, no-store'
+							return valueOf(
+								await this.core.activitySince(await this.viewer(request), {
+									since: query.since,
+									categorySlug: query.category,
+									sort: query.sort,
+									scope: query.scope,
+								}),
+							)
+						},
+					)
 					.get(
 						'/search',
 						{ query: schema.searchQuery, response: schema.searchPage },
@@ -443,6 +460,21 @@ export class ForumApiPlugin extends BasePlugin {
 								expandFloor: queryInt(query.expand),
 							}),
 						),
+				)
+				// Polled by an open thread for its 「新回复」 prompt; never cached, like `/activity`.
+				.get(
+					'/threads/:id/activity',
+					{ query: schema.threadActivityQuery, response: schema.threadActivity },
+					async ({ request, params, query, set }) => {
+						set.headers['cache-control'] = 'private, no-store'
+						return valueOf(
+							await this.core.threadActivitySince(
+								await this.viewer(request),
+								params.id,
+								query.since,
+							),
+						)
+					},
 				)
 				// Which page shows a floor (and which floor it replies inside), for `/t/<ref>/<floor>`.
 				.get(

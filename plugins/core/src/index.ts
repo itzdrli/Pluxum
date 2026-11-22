@@ -82,6 +82,7 @@ import {
 	count,
 	desc,
 	eq,
+	exists as hasRows,
 	gt,
 	gte,
 	ilike,
@@ -220,6 +221,32 @@ export type RecentSort = 'active' | 'new' | 'hot'
 /** Which threads it lists: everything the viewer may see, or only what they follow. */
 export type RecentScope = 'all' | 'following'
 export type RecentThreadsFilter = Readonly<{ sort?: RecentSort; scope?: RecentScope }>
+
+/** Which list `activitySince` checks, and the instant the reader's copy of it is current to. */
+export type ActivityQuery = Readonly<{
+	/** ISO 8601 instant; clients send the newest activity their page shows. */
+	since: string
+	/** A category's slug for its list; omitted for the overview feed. */
+	categorySlug?: string
+	sort?: Exclude<RecentSort, 'hot'>
+	scope?: RecentScope
+}>
+export type ActivityCount = Readonly<{ count: number }>
+export type ThreadActivity = Readonly<{ count: number; floor: number | null }>
+
+/** `activitySince` stops counting here; a client shows more as 「99+」. */
+const ACTIVITY_COUNT_MAX = 100
+
+/** An ISO 8601 instant with a date, time and zone, or null for anything else. */
+function parseInstant(value: string): Date | null {
+	if (
+		!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,6})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+	) {
+		return null
+	}
+	const instant = new Date(value)
+	return Number.isNaN(instant.getTime()) ? null : instant
+}
 
 /** `hot` only ranks threads with activity this recently, so old long threads do not stay on top. */
 const HOT_WINDOW_DAYS = 30
@@ -1748,19 +1775,9 @@ export class ForumCorePlugin extends BasePlugin {
 		const visibleCategories = await this.visibleCategories(principal)
 		if (visibleCategories.length === 0) return empty
 		const visibleIds = visibleCategories.map((category) => category.id)
-		let following: SQL | undefined
-		if (filter.scope === 'following') {
-			if (principal.userId === null) return empty
-			const followed = await this.followedBy(principal.userId)
-			if (followed === null) return empty
-			const visibleSet = new Set(visibleIds)
-			const userIds = [...new Set([principal.userId, ...followed.userIds])].filter(isEntityId)
-			const categoryIds = followed.categoryIds.filter((id) => visibleSet.has(id))
-			following = or(
-				inArray(threads.authorId, userIds),
-				categoryIds.length > 0 ? inArray(threads.categoryId, categoryIds) : undefined,
-			)
-		}
+		const scoped = await this.scopeFilter(principal, visibleIds, filter.scope)
+		if (scoped === null) return empty
+		const following = scoped.where
 		const categoriesById = new Map<string, CategorySummaryDto>(
 			visibleCategories.map(({ id, slug, name }) => [id, { id, slug, name }]),
 		)
@@ -1831,6 +1848,138 @@ export class ForumCorePlugin extends BasePlugin {
 			pageSize,
 			total: read.total,
 		}
+	}
+
+	/**
+	 * The `following` scope as a condition on threads (`where` is undefined for `all`), or null
+	 * when it matches nothing: a guest, no follow graph, or one that failed.
+	 */
+	private async scopeFilter(
+		principal: Principal,
+		visibleIds: readonly string[],
+		scope: RecentScope | undefined,
+	): Promise<Readonly<{ where: SQL | undefined }> | null> {
+		if (scope !== 'following') return { where: undefined }
+		if (principal.userId === null) return null
+		const followed = await this.followedBy(principal.userId)
+		if (followed === null) return null
+		const visibleSet = new Set(visibleIds)
+		const userIds = [...new Set([principal.userId, ...followed.userIds])].filter(isEntityId)
+		const categoryIds = followed.categoryIds.filter((id) => visibleSet.has(id))
+		return {
+			where: or(
+				inArray(threads.authorId, userIds),
+				categoryIds.length > 0 ? inArray(threads.categoryId, categoryIds) : undefined,
+			),
+		}
+	}
+
+	/**
+	 * How many threads of a list have something new since `since` that the viewer did not write
+	 * themselves: the overview feed (`sort` and `scope` as in `listRecentThreads`), or one category
+	 * when `categorySlug` is given. `active` counts threads with a new visible post by someone
+	 * else, `new` only threads someone else started. Only categories the viewer may see count, and
+	 * the count stops at `ACTIVITY_COUNT_MAX`. Clients poll it, so it is one indexed count query
+	 * after the category list, never cached: the answer depends on the viewer and the instant.
+	 */
+	async activitySince(
+		principal: Principal,
+		query: ActivityQuery,
+	): Promise<ForumResult<ActivityCount>> {
+		const since = parseInstant(query.since)
+		if (since === null) return fail('invalid', 'request.invalid')
+		const visible = await this.visibleCategories(principal)
+		let categoryIds = visible.map((category) => category.id)
+		if (query.categorySlug !== undefined) {
+			const category = visible.find((entry) => entry.slug === query.categorySlug)
+			if (!category) return notFound('category')
+			categoryIds = [category.id]
+		}
+		if (categoryIds.length === 0) return Result.ok({ count: 0 })
+		const scoped = await this.scopeFilter(principal, categoryIds, query.scope)
+		if (scoped === null) return Result.ok({ count: 0 })
+		const viewerId = principal.userId
+		const value = await this.database.read(async (db) => {
+			const listed = and(
+				inArray(threads.categoryId, categoryIds),
+				isNull(threads.deletedAt),
+				scoped.where,
+			)
+			const where =
+				query.sort === 'new'
+					? and(
+							listed,
+							gt(threads.createdAt, since),
+							viewerId === null ? undefined : ne(threads.authorId, viewerId),
+						)
+					: and(
+							listed,
+							// Every post bumps `last_post_at`, so this narrows to the threads worth checking.
+							gt(threads.lastPostAt, since),
+							hasRows(
+								db
+									.select({ id: posts.id })
+									.from(posts)
+									.where(
+										and(
+											eq(posts.threadId, threads.id),
+											gt(posts.createdAt, since),
+											isNull(posts.deletedAt),
+											viewerId === null ? undefined : ne(posts.authorId, viewerId),
+										),
+									),
+							),
+						)
+			const matching = db
+				.select({ id: threads.id })
+				.from(threads)
+				.where(where)
+				.limit(ACTIVITY_COUNT_MAX)
+				.as('matching')
+			const [row] = await db.select({ value: count() }).from(matching)
+			return row?.value ?? 0
+		})
+		return Result.ok({ count: value })
+	}
+
+	/**
+	 * How many visible posts (floors and replies inside them) others added to a thread since
+	 * `since`, and the lowest floor number among them, for a 「新回复」 prompt to jump to.
+	 */
+	async threadActivitySince(
+		principal: Principal,
+		threadRef: string,
+		sinceValue: string,
+	): Promise<ForumResult<ThreadActivity>> {
+		if (!parseThreadRef(threadRef)) return notFound('thread')
+		const since = parseInstant(sinceValue)
+		if (since === null) return fail('invalid', 'request.invalid')
+		const viewerId = principal.userId
+		return this.database.read(async (db): Promise<ForumResult<ThreadActivity>> => {
+			const found = await this.findThread(db, threadRef)
+			if (!found || !this.can(principal, 'thread.view', this.threadResource(found.thread))) {
+				return notFound('thread')
+			}
+			const [row] = await db
+				.select({
+					value: count(),
+					floor: sql<number | null>`min(${posts.number})`.mapWith((raw) =>
+						raw === null ? null : Number(raw),
+					),
+				})
+				.from(posts)
+				.where(
+					and(
+						eq(posts.threadId, found.thread.id),
+						gt(posts.createdAt, since),
+						isNull(posts.deletedAt),
+						viewerId === null ? undefined : ne(posts.authorId, viewerId),
+					),
+				)
+			const value = row?.value ?? 0
+			const floor = row?.floor ?? null
+			return Result.ok({ count: value, floor: value === 0 ? null : floor })
+		})
 	}
 
 	/** Every category the viewer may see, in display order. */

@@ -518,6 +518,53 @@ describe('ForumApiPlugin', () => {
 		})
 	})
 
+	it('serves uncached activity counts for list and thread prompts', async () => {
+		await using host = await createHost()
+		const api = await startAs(host, ['admin'])
+		const guest = client(host)
+		const core = host.require(ForumCorePlugin)
+		const other = (await core.ensureUser({ subject: 'test:other', displayName: 'Other' })).unwrap()
+		const otherApi = client(host, { 'x-test-user': other.id })
+
+		const general = await api.ok<CategoryDto>('POST', '/categories', { name: 'General' })
+		const thread = await api.ok<ThreadDto>('POST', '/threads', {
+			categoryId: general.id,
+			title: 'Hello',
+			body: 'One',
+		})
+		const since = encodeURIComponent(thread.lastPostAt)
+		await new Promise((resolve) => setTimeout(resolve, 5))
+		await otherApi.ok<PostDto>('POST', `/threads/${thread.id}/posts`, { body: 'Two' })
+
+		const response = await guest.send('GET', `/activity?since=${since}`)
+		expect(response.status).toBe(200)
+		expect(response.headers.get('cache-control')).toBe('private, no-store')
+		expect(await response.json()).toEqual({ count: 1 })
+		expect(await api.ok('GET', `/activity?since=${since}&category=${general.slug}`)).toEqual({
+			count: 1,
+		})
+		// The writer is not told about their own reply.
+		expect(await otherApi.ok('GET', `/activity?since=${since}&sort=active`)).toEqual({ count: 0 })
+		expect(await guest.ok('GET', `/activity?since=${since}&sort=new`)).toEqual({ count: 0 })
+
+		const inThread = await guest.send('GET', `/threads/${thread.ref}/activity?since=${since}`)
+		expect(inThread.headers.get('cache-control')).toBe('private, no-store')
+		expect(await inThread.json()).toEqual({ count: 1, floor: 2 })
+		expect(await otherApi.ok('GET', `/threads/${thread.ref}/activity?since=${since}`)).toEqual({
+			count: 0,
+			floor: null,
+		})
+
+		expect(await guest.call('GET', '/activity?since=later')).toMatchObject({ status: 422 })
+		expect(await guest.call('GET', '/activity')).toMatchObject({ status: 422 })
+		expect(await guest.call('GET', `/activity?since=${since}&category=missing`)).toMatchObject({
+			status: 404,
+		})
+		expect(await guest.call('GET', `/threads/999999/activity?since=${since}`)).toMatchObject({
+			status: 404,
+		})
+	})
+
 	it('reports every failure in one error shape', async () => {
 		await using host = await createHost()
 		const api = await startAs(host, [])

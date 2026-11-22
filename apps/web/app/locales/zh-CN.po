@@ -143,6 +143,15 @@ msgstr "{name}包含不允许的字符"
 msgid "{name}必须是文本"
 msgstr "{name}必须是文本"
 
+#: app/routes/category.tsx
+#: app/routes/home.tsx
+msgid "{newCount} 条新内容"
+msgstr "{newCount} 条新内容"
+
+#: app/routes/thread.tsx
+msgid "{newReplies} 条新回复"
+msgstr "{newReplies} 条新回复"
+
 #: app/components/forum/rows.tsx
 #: app/components/hover/hover-cards.tsx
 #: app/routes/thread.tsx

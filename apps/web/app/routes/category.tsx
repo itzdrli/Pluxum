@@ -1,10 +1,11 @@
 import { msg } from '@lingui/core/macro'
 import { MessagesSquare, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { useRouteLoaderData } from 'react-router'
+import { useRevalidator, useRouteLoaderData } from 'react-router'
 import { useLingui } from '@lingui/react/macro'
 
 import type { Route } from './+types/category'
+import { NewActivityPrompt } from '../components/forum/new-activity'
 import { NoteCard, NoteComposer } from '../components/forum/note-card'
 import { ThreadRow } from '../components/forum/rows'
 import { MobileCategoryBar } from '../components/shell/mobile-stage-bar'
@@ -19,6 +20,13 @@ import {
 import { Button, ButtonAnchor, IconButton } from '../components/ui/button'
 import { EmptyState, PageHeader, PaneBar, Panel } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
+import {
+	activityLabelCount,
+	listActivityPath,
+	newestInstant,
+	parseListActivity,
+	useActivity,
+} from '../lib/activity'
 import { forumApi, orThrow } from '../lib/forum-api.server'
 import {
 	defineStage,
@@ -79,6 +87,21 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 	const canCreate = can.createThread && !isStream
 	const canPostNote = isStream && forum?.viewer.can.postNote === true
 	const [fresh, setFresh] = useState<string | null>(null)
+	// 「N 条新内容」 on the first page: what others wrote since the newest thread shown.
+	const revalidator = useRevalidator()
+	const { activity, dismiss: dismissActivity } = useActivity(
+		threads.page === 1
+			? listActivityPath(newestInstant(threads.items.map((item) => item.lastPostAt)), {
+					category: category.slug,
+				})
+			: null,
+		parseListActivity,
+	)
+	const newCount = activity === null ? '' : activityLabelCount(activity.count)
+	const loadActivity = async () => {
+		await revalidator.revalidate()
+		dismissActivity()
+	}
 
 	// Guests who could log in are offered that instead of a missing button.
 	const loginToPost =
@@ -130,6 +153,11 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 					)}
 					<CategoryHeaderSlots category={category} />
 					{canPostNote && <NoteComposer max={forum?.limits.noteBodyMax} onPosted={setFresh} />}
+					<NewActivityPrompt
+						label={activity === null ? null : t`${newCount} 条新内容`}
+						onLoad={loadActivity}
+						reveal="top"
+					/>
 					{threads.items.length === 0 ? (
 						<EmptyState
 							icon={MessagesSquare}
