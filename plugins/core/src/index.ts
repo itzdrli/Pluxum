@@ -123,13 +123,11 @@ import {
 	isCategoryListing,
 	isCommunityListing,
 	isRecentListing,
-	isThreadListing,
 	type CategoryListing,
 	type CommunityListing,
 	type OpeningSource,
 	type RecentListing,
 	type ReplySource,
-	type ThreadListing,
 } from './listings'
 import { ForumAdminTarget } from './admin-target'
 import { BrandAssetStore, type BrandAsset, type BrandAssetMeta } from './brand'
