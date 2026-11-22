@@ -247,8 +247,8 @@ msgid "7 天"
 msgstr "7 天"
 
 #: app/components/dock/composer-dock.tsx
-msgid "Ctrl+Enter 发布"
-msgstr "Ctrl+Enter 发布"
+msgid "Ctrl+Enter 回复"
+msgstr "Ctrl+Enter 回复"
 
 #: app/components/composer/composer.tsx
 msgid "Markdown 源码"
@@ -564,7 +564,6 @@ msgstr "关闭主题"
 msgid "关闭发布主题"
 msgstr "关闭发布主题"
 
-#: app/components/dock/composer-dock.tsx
 #: app/routes/thread-new.tsx
 msgid "内容"
 msgstr "内容"
@@ -751,23 +750,17 @@ msgstr "发动态"
 msgid "发布"
 msgstr "发布"
 
-#: app/components/dock/composer-dock.tsx
 #: app/components/forum/note-card.tsx
 #: app/routes/thread-new.tsx
 msgctxt "verb"
 msgid "发布"
 msgstr "发布"
 
-#: app/components/dock/composer-dock.tsx
 #: app/routes/category.tsx
 #: app/routes/home.tsx
 #: app/routes/thread-new.tsx
 msgid "发布主题"
 msgstr "发布主题"
-
-#: app/routes/thread-new.tsx
-msgid "发布到「{categoryName}」"
-msgstr "发布到「{categoryName}」"
 
 #: app/components/palette/command-palette.tsx
 msgid "发布新主题 · {name}"
@@ -1462,7 +1455,6 @@ msgid "标识只能包含小写字母、数字和连字符"
 msgstr "标识只能包含小写字母、数字和连字符"
 
 #: app/components/composer/rich-editor.tsx
-#: app/components/dock/composer-dock.tsx
 #: app/routes/thread-new.tsx
 #: app/routes/thread.tsx
 msgid "标题"
@@ -1566,11 +1558,11 @@ msgstr "热门"
 msgid "版主"
 msgstr "版主"
 
-#: app/components/dock/composer-dock.tsx
 #: app/components/palette/command-palette.tsx
 #: app/components/shell/site-footer.tsx
 #: app/routes/forum-stage.tsx
 #: app/routes/home.tsx
+#: app/routes/thread-new.tsx
 #: app/routes/thread.tsx
 msgid "版块"
 msgstr "版块"

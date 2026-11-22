@@ -14,8 +14,8 @@ import {
 	StageSplit,
 	useOpenThreadRef,
 	useStageLinks,
+	useStageNavigate,
 } from '../components/stage/stage'
-import { useDock } from '../components/dock/composer-dock'
 import { Button, ButtonAnchor, IconButton } from '../components/ui/button'
 import { EmptyState, PageHeader, PaneBar, Panel } from '../components/ui/display'
 import { Pager } from '../components/ui/pager'
@@ -73,7 +73,7 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 	const openRef = useOpenThreadRef()
 	const { detail } = useStageLinks()
 	const forum = useRouteLoaderData<typeof rootLoader>('root')?.meta
-	const dock = useDock()
+	const navigate = useStageNavigate()
 	const newThread = `/c/${category.slug}/new`
 	// The stream holds notes, written in the note box (here and on the home page), not the topic composer.
 	const canCreate = can.createThread && !isStream
@@ -88,15 +88,11 @@ export default function Category({ loaderData }: Route.ComponentProps) {
 	const action = (compact: boolean) =>
 		canCreate && compact ? (
 			// The narrow list's head has room for the icon only.
-			<IconButton label={t`发布主题`} onPress={() => dock.openThread(category.slug)}>
+			<IconButton label={t`发布主题`} onPress={() => void navigate(newThread)}>
 				<Plus aria-hidden />
 			</IconButton>
 		) : canCreate ? (
-			<Button
-				tone="primary"
-				size={compact ? 'sm' : 'md'}
-				onPress={() => dock.openThread(category.slug)}
-			>
+			<Button tone="primary" size={compact ? 'sm' : 'md'} onPress={() => void navigate(newThread)}>
 				<Plus aria-hidden />
 				{t`发布主题`}
 			</Button>

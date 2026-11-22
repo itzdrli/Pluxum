@@ -3,7 +3,7 @@ import { useParams, useRouteLoaderData } from 'react-router'
 
 import { toggleFocusReading } from '../../lib/focus'
 import type { loader as rootLoader } from '../../root'
-import { useDock } from '../dock/composer-dock'
+import type { loader as forumStageLoader } from '../../routes/forum-stage'
 import { toggleRail, useRailPreference } from './rail-state'
 import { useStage, useStageNavigate } from '../stage/stage'
 
@@ -31,12 +31,14 @@ function listedThreads(): HTMLAnchorElement[] {
 
 /**
  * Single-key shortcuts for reading: J / K open the next / previous thread of the list, `[` folds the
- * list away for focus reading, `\` folds the category column to its icons, C starts a thread and R a reply, in the dock. (Ctrl/Cmd+K and `/`
+ * list away for focus reading, `\` folds the category column to its icons, C opens the new-thread page (of the
+ * category in view, else the first) and R starts a reply in the dock. (Ctrl/Cmd+K and `/`
  * belong to the command palette.) Draws nothing.
  */
 export function GlobalShortcuts() {
 	const navigate = useStageNavigate()
-	const dock = useDock()
+	// The boards a new thread can go to; the stream takes notes, written in the note box.
+	const boards = useRouteLoaderData<typeof forumStageLoader>('routes/forum-stage')?.categories
 	const stage = useStage()
 	const params = useParams()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
@@ -78,9 +80,10 @@ export function GlobalShortcuts() {
 					return
 				}
 				case 'c': {
-					if (!signedIn) return
+					const board = boards?.find((category) => category.slug === slug) ?? boards?.[0]
+					if (!signedIn || board === undefined) return
 					event.preventDefault()
-					dock.openThread(slug ?? null)
+					void navigate(`/c/${board.slug}/new`)
 					return
 				}
 				case 'r': {
@@ -95,6 +98,6 @@ export function GlobalShortcuts() {
 		}
 		window.addEventListener('keydown', onKeyDown)
 		return () => window.removeEventListener('keydown', onKeyDown)
-	}, [navigate, dock, depth, signedIn, slug, rail, stage.nav])
+	}, [navigate, boards, depth, signedIn, slug, rail, stage.nav])
 	return null
 }

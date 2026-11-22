@@ -830,10 +830,13 @@
 		}
 	}
 
-	/* A composer told to fill (the dock) grows its writing area into the height it is given. */
+	/*
+	 * A composer told to fill (the dock) grows its writing area into the height it is given. It
+	 * never shrinks below what it holds: the dock scrolls instead, so the row under it (the send
+	 * button) cannot end up drawn over the editor in a short window or at a high zoom.
+	 */
 	.composer-fill {
 		flex: 1 1 auto;
-		min-height: 0;
 	}
 	.composer-fill > :has(.composer-editor, textarea),
 	.composer-fill .composer > .relative,
@@ -842,8 +845,10 @@
 		flex: 1 1 auto;
 		flex-direction: column;
 	}
+	/* Its rows are no minimum here: the space left decides, down to a few lines. */
 	.composer-fill :is(.composer-editor, textarea) {
-		flex: 1 1 auto;
+		flex: 1 1 0;
+		min-height: calc(4 * 1.75em + 24px);
 	}
 	.composer-tool--active {
 		background: var(--c-selected);

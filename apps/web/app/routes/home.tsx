@@ -17,7 +17,6 @@ import type { Route } from './+types/home'
 import { NoteCard, NoteComposer } from '../components/forum/note-card'
 import { ThreadRow } from '../components/forum/rows'
 import { UserAvatar } from '../components/forum/user-avatar'
-import { useDock } from '../components/dock/composer-dock'
 import { StageLink, useStageNavigate } from '../components/stage/stage'
 import { Button, IconButton } from '../components/ui/button'
 import { EmptyState, FormError, Panel, TabIndicator } from '../components/ui/display'
@@ -420,7 +419,7 @@ function LatestOrderToggle({ feed }: { feed: HomeFeed }) {
 	)
 }
 
-/** "发布主题" from the overview: pick the category, then write in its new-thread pane. */
+/** "发布主题" from the overview: pick the category, then write on its new-thread page. */
 function NewThreadMenu({
 	categories,
 	tone = 'primary',
@@ -429,7 +428,7 @@ function NewThreadMenu({
 	tone?: 'primary' | 'secondary'
 }) {
 	const { t } = useLingui()
-	const dock = useDock()
+	const navigate = useStageNavigate()
 	if (categories.length === 0) return null
 	return (
 		<Dropdown>
@@ -444,7 +443,7 @@ function NewThreadMenu({
 					aria-label={t`选择版块`}
 					onAction={(key) => {
 						const slug = categories.find((category) => category.id === key)?.slug
-						if (slug !== undefined) dock.openThread(slug)
+						if (slug !== undefined) void navigate(`/c/${slug}/new`)
 					}}
 				>
 					{categories.map((category) => (

@@ -247,8 +247,8 @@ msgid "7 天"
 msgstr "7 days"
 
 #: app/components/dock/composer-dock.tsx
-msgid "Ctrl+Enter 发布"
-msgstr "Ctrl+Enter to post"
+msgid "Ctrl+Enter 回复"
+msgstr "Ctrl+Enter to reply"
 
 #: app/components/composer/composer.tsx
 msgid "Markdown 源码"
@@ -564,7 +564,6 @@ msgstr "Close thread"
 msgid "关闭发布主题"
 msgstr "Close new thread"
 
-#: app/components/dock/composer-dock.tsx
 #: app/routes/thread-new.tsx
 msgid "内容"
 msgstr "Content"
@@ -751,23 +750,17 @@ msgstr "Post a note"
 msgid "发布"
 msgstr "Publish"
 
-#: app/components/dock/composer-dock.tsx
 #: app/components/forum/note-card.tsx
 #: app/routes/thread-new.tsx
 msgctxt "verb"
 msgid "发布"
 msgstr "Post"
 
-#: app/components/dock/composer-dock.tsx
 #: app/routes/category.tsx
 #: app/routes/home.tsx
 #: app/routes/thread-new.tsx
 msgid "发布主题"
 msgstr "New thread"
-
-#: app/routes/thread-new.tsx
-msgid "发布到「{categoryName}」"
-msgstr "Posting to “{categoryName}”"
 
 #: app/components/palette/command-palette.tsx
 msgid "发布新主题 · {name}"
@@ -1462,7 +1455,6 @@ msgid "标识只能包含小写字母、数字和连字符"
 msgstr "A slug may only contain lowercase letters, digits and hyphens"
 
 #: app/components/composer/rich-editor.tsx
-#: app/components/dock/composer-dock.tsx
 #: app/routes/thread-new.tsx
 #: app/routes/thread.tsx
 msgid "标题"
@@ -1566,11 +1558,11 @@ msgstr "Hot"
 msgid "版主"
 msgstr "Moderator"
 
-#: app/components/dock/composer-dock.tsx
 #: app/components/palette/command-palette.tsx
 #: app/components/shell/site-footer.tsx
 #: app/routes/forum-stage.tsx
 #: app/routes/home.tsx
+#: app/routes/thread-new.tsx
 #: app/routes/thread.tsx
 msgid "版块"
 msgstr "Categories"

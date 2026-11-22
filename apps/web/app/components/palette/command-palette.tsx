@@ -24,7 +24,6 @@ import { useLingui } from '@lingui/react/macro'
 import type { loader as rootLoader } from '../../root'
 import { parsePaletteQuery, rank } from '../../lib/palette'
 import { THEMES } from '../../lib/theme'
-import { useDock } from '../dock/composer-dock'
 import { useStageNavigate } from '../stage/stage'
 import { chooseTheme } from '../shell/theme-picker'
 import { loginHref } from '../../lib/login'
@@ -128,7 +127,6 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 	const { t } = useLingui()
 	const meta: MetaDto | null | undefined = useRouteLoaderData<typeof rootLoader>('root')?.meta
 	const navigate = useStageNavigate()
-	const dock = useDock()
 	const [query, setQuery] = useState(initial)
 	const [active, setActive] = useState(0)
 	const [loaded, setLoaded] = useState<Loaded | null>(null)
@@ -213,20 +211,23 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 				run: () => go(command.href, command.external),
 			})),
 			...(signedIn
-				? categories.map((category): Item => {
-						const name = category.name
-						return {
-							id: `new.${category.id}`,
-							section: t`发布`,
-							label: t`发布新主题 · ${name}`,
-							keywords: ['新主题', '发帖', 'new thread', category.name],
-							icon: FilePlus2,
-							run: () => {
-								onClose()
-								dock.openThread(category.slug)
-							},
-						}
-					})
+				? // The stream takes notes, written in the note box, not topics.
+					categories
+						.filter((category) => category.kind === 'board')
+						.map((category): Item => {
+							const name = category.name
+							return {
+								id: `new.${category.id}`,
+								section: t`发布`,
+								label: t`发布新主题 · ${name}`,
+								keywords: ['新主题', '发帖', 'new thread', category.name],
+								icon: FilePlus2,
+								run: () => {
+									onClose()
+									void navigate(`/c/${category.slug}/new`)
+								},
+							}
+						})
 				: meta?.auth.loginAvailable === true
 					? [
 							{

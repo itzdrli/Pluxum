@@ -1,4 +1,3 @@
-import type { CategoryDto } from '@pluxum/domain'
 import { Maximize2, Minimize2, Minus, PenSquare, X } from 'lucide-react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useFetcher, useRouteLoaderData } from 'react-router'
@@ -8,21 +7,16 @@ import { droppedLink, toggledSize, type DockSize } from '../../lib/dock'
 import type { loader as rootLoader } from '../../root'
 import type { InsertAttachment } from '../../slots/slots'
 import { Composer } from '../composer/composer'
-import { NativeSelect } from '../ui/field'
 import { Button, IconButton } from '../ui/button'
 import { FormError } from '../ui/display'
 
-/** What the dock is writing: a new thread (in a category) or a reply (to a thread). */
-type DockTarget =
-	| Readonly<{ kind: 'thread'; categorySlug: string | null }>
-	| Readonly<{ kind: 'reply'; threadId: string; title: string; action: string }>
+/** The reply the dock is writing: to which thread, and the route that takes the post. */
+type DockTarget = Readonly<{ threadId: string; title: string; action: string }>
 
 type DockState = Readonly<{ target: DockTarget; size: DockSize; serial: number }>
 
 /** How other parts of the page open the dock. */
 type DockControl = Readonly<{
-	/** Starts a new thread; `categorySlug` preselects its category. */
-	openThread: (categorySlug?: string | null) => void
 	/** Starts a reply. `action` is the thread route's own path (with its query) that takes the post. */
 	openReply: (target: { threadId: string; title: string; action: string }) => void
 	/** Whether a draft is on screen. */
@@ -30,7 +24,6 @@ type DockControl = Readonly<{
 }>
 
 const DockContext = createContext<DockControl>({
-	openThread: () => {},
 	openReply: () => {},
 	isOpen: false,
 })
@@ -40,37 +33,23 @@ export function useDock(): DockControl {
 }
 
 /**
- * The non-modal composer drawer: it floats at the bottom right, never covers the page with a
+ * The non-modal reply drawer: it floats at the bottom right, never covers the page with a
  * backdrop and never changes the route, so the visitor reads other threads (or drags one in to
- * quote it) while writing. It keeps its draft when minimised or when the page underneath moves.
+ * quote it) while replying. It keeps its draft when minimised or when the page underneath moves.
+ * A new thread is written on its own page (`/c/:slug/new`), not here.
  */
 export function DockProvider({ children }: { children: React.ReactNode }) {
 	const [state, setState] = useState<DockState | null>(null)
-	const openThread = useCallback((categorySlug: string | null = null) => {
+	const openReply = useCallback((target: DockTarget) => {
 		setState((current) =>
-			current?.target.kind === 'thread'
+			current?.target.threadId === target.threadId
 				? { ...current, size: current.size === 'min' ? 'half' : current.size }
-				: {
-						target: { kind: 'thread', categorySlug },
-						size: 'half',
-						serial: (current?.serial ?? 0) + 1,
-					},
-		)
-	}, [])
-	const openReply = useCallback((target: { threadId: string; title: string; action: string }) => {
-		setState((current) =>
-			current?.target.kind === 'reply' && current.target.threadId === target.threadId
-				? { ...current, size: current.size === 'min' ? 'half' : current.size }
-				: {
-						target: { kind: 'reply', ...target },
-						size: 'half',
-						serial: (current?.serial ?? 0) + 1,
-					},
+				: { target, size: 'half', serial: (current?.serial ?? 0) + 1 },
 		)
 	}, [])
 	const control = useMemo<DockControl>(
-		() => ({ openThread, openReply, isOpen: state !== null }),
-		[openThread, openReply, state],
+		() => ({ openReply, isOpen: state !== null }),
+		[openReply, state],
 	)
 	return (
 		<DockContext.Provider value={control}>
@@ -110,30 +89,10 @@ function Dock({
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const limits = root?.meta?.limits
 	const fetcher = useFetcher<{ error?: string }>()
-	const [categories, setCategories] = useState<readonly CategoryDto[]>([])
-	const [slug, setSlug] = useState(target.kind === 'thread' ? (target.categorySlug ?? '') : '')
 	const [dragging, setDragging] = useState(false)
 	const insertRef = useRef<InsertAttachment | null>(null)
 	const busy = fetcher.state !== 'idle'
 	const error = fetcher.state === 'idle' ? fetcher.data?.error : undefined
-
-	useEffect(() => {
-		if (target.kind !== 'thread') return undefined
-		const controller = new AbortController()
-		const load = async () => {
-			try {
-				const response = await fetch('/api/forum/categories', { signal: controller.signal })
-				if (!response.ok) return
-				const body: { items: CategoryDto[] } = await response.json()
-				setCategories(body.items)
-				setSlug((current) => (current === '' ? (body.items[0]?.slug ?? '') : current))
-			} catch {
-				// Without the list the visitor simply cannot pick a category.
-			}
-		}
-		void load()
-		return () => controller.abort()
-	}, [target.kind])
 
 	// A post that went through leaves the dock: the redirect has moved the page to it.
 	const submitted = useRef(false)
@@ -146,9 +105,8 @@ function Dock({
 		}
 	}, [fetcher.state, fetcher.data, onClose])
 
-	const action = target.kind === 'reply' ? target.action : slug === '' ? '/' : `/c/${slug}/new`
-	const replyTo = target.kind === 'reply' ? target.title : ''
-	const title = target.kind === 'reply' ? t`回复 · ${replyTo}` : t`发布主题`
+	const replyTo = target.title
+	const title = t`回复 · ${replyTo}`
 
 	return (
 		<aside
@@ -217,57 +175,27 @@ function Dock({
 			{/* Hidden, not unmounted, while minimised, so the draft stays in the editor. */}
 			<fetcher.Form
 				method="post"
-				action={action}
+				action={target.action}
 				className={`min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 ${size === 'min' ? 'hidden' : 'flex'}`}
 			>
-				{target.kind === 'reply' && <input type="hidden" name="intent" value="reply" />}
+				<input type="hidden" name="intent" value="reply" />
 				<FormError message={error} />
-				{target.kind === 'thread' && (
-					<>
-						<label className="flex flex-col gap-1">
-							<span className="label">
-								<Trans>版块</Trans>
-							</span>
-							<NativeSelect value={slug} onChange={(event) => setSlug(event.target.value)}>
-								{categories.map((category) => (
-									<option key={category.id} value={category.slug}>
-										{category.name}
-									</option>
-								))}
-							</NativeSelect>
-						</label>
-						<label className="flex flex-col gap-1">
-							<span className="label">
-								<Trans>标题</Trans>
-							</span>
-							<input
-								name="title"
-								required
-								autoFocus
-								maxLength={limits?.threadTitleMax}
-								className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-control rounded-[2px] border px-2.5 text-ui outline-none"
-							/>
-						</label>
-					</>
-				)}
 				<Composer
-					label={target.kind === 'reply' ? t`回复内容` : t`内容`}
-					hideLabel={target.kind === 'reply'}
+					label={t`回复内容`}
+					hideLabel
 					required
 					maxLength={limits?.postBodyMax}
 					rows={size === 'full' ? 18 : 8}
-					autoFocus={target.kind === 'reply'}
+					autoFocus
 					insertRef={insertRef}
 					fill
 				/>
 				<div className="flex shrink-0 items-center justify-between gap-2">
 					<span className="text-ink-weak text-meta max-sm:hidden">
-						<Trans>Ctrl+Enter 发布</Trans>
+						<Trans>Ctrl+Enter 回复</Trans>
 					</span>
 					<Button tone="primary" type="submit" isPending={busy} className="ml-auto">
-						{target.kind === 'reply'
-							? t({ message: '回复', context: 'verb' })
-							: t({ message: '发布', context: 'verb' })}
+						{t({ message: '回复', context: 'verb' })}
 					</Button>
 				</div>
 			</fetcher.Form>

@@ -7,12 +7,13 @@ import type { Route } from './+types/thread-new'
 import { Composer } from '../components/composer/composer'
 import { Button, ButtonLink } from '../components/ui/button'
 import { FormError, PageHeader, Panel } from '../components/ui/display'
-import { TextInputField } from '../components/ui/field'
+import { NativeSelect, TextInputField } from '../components/ui/field'
 import { forumApi, orThrow, textField } from '../lib/forum-api.server'
 import { i18nOfRoot } from '../lib/i18n'
 import { i18nFromRequest } from '../lib/i18n.server'
 import { defineStage } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
+import type { loader as forumStageLoader } from './forum-stage'
 import { pageTitle } from '../lib/site'
 
 export const handle = defineStage({ layer: 'detail' })
@@ -38,8 +39,9 @@ export async function action({ request, params }: Route.ActionArgs) {
 	const form = await request.formData()
 	const title = textField(form, 'title')
 	const body = textField(form, 'body')
-	// The category comes from the URL, not from the form.
-	const { category } = orThrow(await forumApi.categoryThreads(request, params.slug))
+	// The form's pick, else the URL's; the API checks the visitor may post there.
+	const slug = textField(form, 'category').trim() || params.slug
+	const { category } = orThrow(await forumApi.categoryThreads(request, slug))
 	const result = await forumApi.createThread(request, { categoryId: category.id, title, body })
 	if (!result.ok) return data({ error: result.error.message }, { status: result.status })
 	return redirect(`/c/${category.slug}/t/${result.value.ref}`)
@@ -48,14 +50,15 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function ThreadNew({ loaderData, actionData }: Route.ComponentProps) {
 	const { t } = useLingui()
 	const { category } = loaderData
-	const categoryName = category.name
 	const limits = useRouteLoaderData<typeof rootLoader>('root')?.meta?.limits
+	const boards = useRouteLoaderData<typeof forumStageLoader>('routes/forum-stage')?.categories ?? [
+		category,
+	]
 	const submitting = useNavigation().state === 'submitting'
 	return (
 		<div className="mx-auto max-w-[860px]">
 			<PageHeader
 				title={t`发布主题`}
-				description={t`发布到「${categoryName}」`}
 				actions={
 					<ButtonLink
 						to={`/c/${category.slug}`}
@@ -71,6 +74,19 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 			<Panel as="section" className="p-4">
 				<Form method="post" className="flex flex-col gap-4">
 					<FormError message={actionData?.error} />
+					{/* Picked here, not by changing the URL, so a change keeps what is written. */}
+					<label className="flex flex-col gap-1">
+						<span className="label">
+							<Trans>版块</Trans>
+						</span>
+						<NativeSelect key={category.slug} name="category" defaultValue={category.slug}>
+							{boards.map((board) => (
+								<option key={board.id} value={board.slug}>
+									{board.name}
+								</option>
+							))}
+						</NativeSelect>
+					</label>
 					<TextInputField
 						name="title"
 						label={t`标题`}
