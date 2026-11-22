@@ -578,6 +578,7 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 				canReply={can.reply}
 				locked={thread.locked}
 				loginHref={loginHref}
+				threadId={thread.id}
 				// Keyed by thread + post count so rapid switches never leak drafts and replies reset cleanly.
 				key={`${thread.id}-${posts.total}`}
 				error={replyError}
@@ -729,12 +730,14 @@ function ReplyArea({
 	canReply,
 	locked,
 	loginHref,
+	threadId,
 	error,
 	bodyMax,
 }: {
 	canReply: boolean
 	locked: boolean
 	loginHref: string | undefined
+	threadId: string
 	error: string | undefined
 	bodyMax: number | undefined
 }) {
@@ -783,6 +786,7 @@ function ReplyArea({
 					rows={5}
 					placeholder={t`写下你的回复`}
 					deferRich
+					draftKey={`reply:${threadId}`}
 				/>
 				<div className="flex justify-end">
 					<Button type="submit" tone="primary" isPending={submitting}>

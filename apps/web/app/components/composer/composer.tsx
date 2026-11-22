@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 import { useLingui } from '@lingui/react/macro'
 
+import { useDraft } from '../../lib/drafts'
 import type { loader as rootLoader } from '../../root'
 import {
 	ComposerToolbarSlots,
@@ -80,6 +81,15 @@ function initialMode(format: string, source: string, deferRich: boolean): Mode {
 	}
 }
 
+/** Whether the rich editor writes `source` back unchanged. */
+function keepsSource(rich: RichModule, extra: Extensions, source: string): boolean {
+	try {
+		return rich.roundTrip(source, extra) === source
+	} catch {
+		return false
+	}
+}
+
 /** The forum's rendering of a body that is not saved yet, or null when it cannot be had. */
 async function renderedHtmlOf(body: string, signal: AbortSignal): Promise<string | null> {
 	try {
@@ -143,6 +153,7 @@ export function Composer({
 	deferRich = false,
 	insertRef,
 	fill = false,
+	draftKey,
 }: {
 	name?: string
 	label: string
@@ -162,6 +173,8 @@ export function Composer({
 	insertRef?: React.RefObject<InsertAttachment | null>
 	/** Grow the writing area into the height of a flex column around it (the dock). */
 	fill?: boolean
+	/** Keeps the text as a draft under this key (Pluxum Drafts), restored when the box opens again. */
+	draftKey?: string
 }) {
 	const { t } = useLingui()
 	const format = useRouteLoaderData<typeof rootLoader>('root')?.meta?.content.format ?? 'plain'
@@ -181,6 +194,33 @@ export function Composer({
 	useEffect(() => {
 		latest.current = value
 	}, [value])
+	// A restored draft replaces the text; the rich editor takes text only when it mounts.
+	const [restoreCount, setRestoreCount] = useState(0)
+	const restored = useRef<string | null>(null)
+	const editorState = useRef({ rich, extra })
+	useEffect(() => {
+		editorState.current = { rich, extra }
+	}, [rich, extra])
+	useDraft({
+		key: draftKey,
+		value,
+		pristine: () => latest.current === defaultValue,
+		restore: (body) => {
+			latest.current = body
+			restored.current = body
+			setValue(body)
+			setRestoreCount((count) => count + 1)
+			const shown = editorState.current
+			if (
+				shown.rich !== null &&
+				shown.extra !== null &&
+				!keepsSource(shown.rich, shown.extra.extensions, body)
+			) {
+				setMode('source')
+			}
+		},
+		formOf: () => root.current,
+	})
 
 	useEffect(() => {
 		// Formatting exists only while posts are rendered as Markdown.
@@ -219,10 +259,14 @@ export function Composer({
 				)
 				if (abort.signal.aborted) return
 				setFits(suits)
-				// Take over only a box the visitor has not started typing in.
-				if (suits && preferredMode() !== 'source' && latest.current === defaultValue) {
-					setMode('rich')
-				}
+				// Take over only a box the visitor has not started typing in (a restored draft counts as
+				// untouched when the editor keeps it as it is).
+				const current = latest.current
+				const untouched =
+					current === defaultValue
+						? suits
+						: current === restored.current && keepsSource(loaded, extensions, current)
+				if (untouched && preferredMode() !== 'source') setMode('rich')
 			})()
 		}
 
@@ -323,7 +367,7 @@ export function Composer({
 					<input type="hidden" name={name} value={value} />
 					<rich.RichEditor
 						// A different set of extensions needs a new editor; it starts from the text so far.
-						key={extra.key}
+						key={`${extra.key}:${restoreCount}`}
 						extensions={extra.extensions}
 						initial={value}
 						label={label}

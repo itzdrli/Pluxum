@@ -8,7 +8,7 @@
 A plugin-first forum on [Pluxel](https://github.com/PluxelJS/pluxel). The host stays small; each feature is a plugin that can be started, stopped and configured from Workbench.
 
 - **Threads and notes**: categories with topic threads, a short-note stream, replies inside a floor, pinning, locking and moving.
-- **Reading**: Markdown or a rich-text editor, full-text search (Chinese word segmentation), a command palette, themes, and a layout that works on phones.
+- **Reading and writing**: Markdown or a rich-text editor, drafts that follow you across devices, edit history, full-text search (Chinese word segmentation), Atom feeds, a command palette, themes, and a layout that works on phones.
 - **Accounts**: email and password sign-up out of the box, or any OpenID Connect provider; roles (member, moderator, admin), avatars and attachments.
 - **Community**: reactions, follows, mentions, accepted answers, in-app and email notifications, reports and bans.
 - **Your brand**: logo, icon, link preview image and default theme, set in Workbench.
@@ -42,6 +42,7 @@ A plugin-first forum on [Pluxel](https://github.com/PluxelJS/pluxel). The host s
 | `reactions`     | Likes and 「有用」.                                                               |
 | `follows`       | Following people and categories, and the 「关注」 feed.                           |
 | `solved`        | Accepted answers.                                                                 |
+| `drafts`        | Drafts kept on the server, so writing continues on another device.                |
 | `reads`         | Unread markers.                                                                   |
 | `moderation`    | Reports, bans, blocked words and the audit log.                                   |
 | `rates`         | Rate limits on posting and editing.                                               |

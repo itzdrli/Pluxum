@@ -36,8 +36,12 @@ export function loader({ request }: Route.LoaderArgs) {
 	return forward(request)
 }
 
+// Writes that change nothing the cached `/meta`, categories or unread counts show.
+const PRIVATE_WRITES = ['/api/forum/ext/forum-drafts/']
+
 export async function action({ request }: Route.ActionArgs) {
 	const response = await forward(request)
-	invalidateForumCaches()
+	const { pathname } = new URL(request.url)
+	if (!PRIVATE_WRITES.some((prefix) => pathname.startsWith(prefix))) invalidateForumCaches()
 	return response
 }

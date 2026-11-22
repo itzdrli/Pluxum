@@ -318,6 +318,7 @@ export function MobileThreadBar({
 								placeholder={t`写下你的回复`}
 								autoFocus
 								deferRich
+								draftKey={`reply:${threadId}`}
 							/>
 							{/* Pinned to the sheet's bottom edge, so a short screen (a phone held sideways) never
 							    scrolls the send button out of reach. */}

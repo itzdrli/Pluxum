@@ -1,6 +1,8 @@
 import { Description, Input, Label, TextField } from '@heroui/react'
 import { ChevronDown } from 'lucide-react'
-import type { ComponentProps } from 'react'
+import { useEffect, useRef, useState, type ComponentProps } from 'react'
+
+import { useDraft } from '../../lib/drafts'
 
 type FieldBase = {
 	name: string
@@ -29,21 +31,39 @@ export function TextInputField({
 	type,
 	autoComplete,
 	minLength,
+	draftKey,
 }: FieldBase & {
 	pattern?: string
 	type?: 'text' | 'email' | 'password'
 	autoComplete?: string
 	minLength?: number
+	/** Keeps the text as a draft under this key (Pluxum Drafts), restored when the field opens again. */
+	draftKey?: string
 }) {
+	const [value, setValue] = useState(defaultValue ?? '')
+	const latest = useRef(value)
+	useEffect(() => {
+		latest.current = value
+	}, [value])
+	const box = useRef<HTMLDivElement>(null)
+	useDraft({
+		key: draftKey,
+		value,
+		pristine: () => latest.current === (defaultValue ?? ''),
+		restore: setValue,
+		formOf: () => box.current,
+	})
 	return (
 		<TextField
+			ref={box}
 			name={name}
 			isRequired={required}
 			maxLength={maxLength}
 			minLength={minLength}
 			type={type}
 			autoComplete={autoComplete}
-			defaultValue={defaultValue}
+			// Controlled only for a draft; otherwise the field keeps the browser's own state.
+			{...(draftKey === undefined ? { defaultValue } : { value, onChange: setValue })}
 			className={className}
 			fullWidth
 		>

@@ -264,6 +264,7 @@ export function NoteComposer({
 						rows={3}
 						placeholder={t`分享点什么…`}
 						autoFocus
+						draftKey="note"
 					/>
 					<div className="flex items-center justify-end gap-2">
 						<Button tone="ghost" size="sm" onPress={() => setOpen(false)}>

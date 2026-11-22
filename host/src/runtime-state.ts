@@ -19,6 +19,7 @@ import { ForumAttachmentsPlugin, ForumStorageConfig, ForumStoragePlugin } from '
 import { ForumAuth, ForumAuthConfig, ForumAuthPlugin } from '@pluxum/auth'
 import { ForumCachePlugin } from '@pluxum/cache'
 import { ForumCorePlugin } from '@pluxum/core'
+import { ForumDraftsPlugin } from '@pluxum/drafts'
 import { ForumFollowsPlugin } from '@pluxum/follows'
 import { ForumFooterPlugin } from '@pluxum/footer'
 import { ForumMailConfig, ForumMailPlugin } from '@pluxum/mail'
@@ -63,6 +64,8 @@ export const appPlugins = [
 	ForumMentionsPlugin,
 	ForumFollowsPlugin,
 	ForumSolvedPlugin,
+	// Drafts kept on the server, so writing continues on another device.
+	ForumDraftsPlugin,
 	// Social card images: Takumi draws them with the fonts FontsPlugin holds.
 	FontsPlugin,
 	TakumiPlugin,

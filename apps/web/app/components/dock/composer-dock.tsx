@@ -189,6 +189,7 @@ function Dock({
 					autoFocus
 					insertRef={insertRef}
 					fill
+					draftKey={`reply:${target.threadId}`}
 				/>
 				<div className="flex shrink-0 items-center justify-between gap-2">
 					<span className="text-ink-weak text-meta max-sm:hidden">

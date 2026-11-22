@@ -98,8 +98,15 @@ export default function ThreadNew({ loaderData, actionData }: Route.ComponentPro
 						maxLength={limits?.threadTitleMax}
 						placeholder={t`一句话说清楚要讨论什么`}
 						autoFocus
+						draftKey="topic:title"
 					/>
-					<Composer label={t`内容`} required maxLength={limits?.postBodyMax} rows={12} />
+					<Composer
+						label={t`内容`}
+						required
+						maxLength={limits?.postBodyMax}
+						rows={12}
+						draftKey="topic"
+					/>
 					<div className="flex justify-end gap-2">
 						<ButtonLink to={`/c/${category.slug}`} tone="ghost">
 							<Trans>取消</Trans>

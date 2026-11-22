@@ -331,6 +331,7 @@ function FloorReplies({
 			{answer !== null && (
 				<AnswerInFloor
 					target={answer}
+					draftKey={`reply:${floor.threadId}:${floor.id}`}
 					bodyMax={bodyMax}
 					// Keyed by the target and count: a posted reply or another target starts afresh.
 					key={`${answer.id}-${replies.total}`}
@@ -474,10 +475,13 @@ function FloorReply({
 /** The box at the end of a floor's replies that answers the floor or one reply in it. */
 function AnswerInFloor({
 	target,
+	draftKey,
 	bodyMax,
 	onCancel,
 }: {
 	target: PostDto
+	/** The floor's draft: answers to the floor and to replies in it share it. */
+	draftKey: string
 	bodyMax: number | undefined
 	onCancel: () => void
 }) {
@@ -503,6 +507,7 @@ function AnswerInFloor({
 				placeholder={t`回复 ${targetName}`}
 				autoFocus
 				deferRich
+				draftKey={draftKey}
 			/>
 			<div className="flex justify-end gap-2">
 				<Button tone="ghost" size="sm" onPress={onCancel}>

@@ -29,6 +29,7 @@
 		"@pluxum/auth": "workspace:*",
 		"@pluxum/cache": "workspace:*",
 		"@pluxum/core": "workspace:*",
+		"@pluxum/drafts": "workspace:*",
 		"@pluxum/follows": "workspace:*",
 		"@pluxum/footer": "workspace:*",
 		"@pluxum/mail": "workspace:*",
