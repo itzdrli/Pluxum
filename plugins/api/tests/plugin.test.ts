@@ -563,6 +563,19 @@ describe('ForumApiPlugin', () => {
 		expect(await guest.call('GET', `/threads/999999/activity?since=${since}`)).toMatchObject({
 			status: 404,
 		})
+
+		// Long polls: more than `known` already answers at once; else the next reply wakes it.
+		expect(await guest.ok('GET', `/activity?since=${since}&wait=20&known=0`)).toEqual({ count: 1 })
+		const waiting = guest.ok(
+			'GET',
+			`/threads/${thread.ref}/activity?since=${since}&wait=20&known=1`,
+		)
+		await new Promise((resolve) => setTimeout(resolve, 20))
+		await otherApi.ok<PostDto>('POST', `/threads/${thread.id}/posts`, { body: 'Three' })
+		expect(await waiting).toEqual({ count: 2, floor: 2 })
+		expect(await guest.call('GET', `/activity?since=${since}&wait=soon`)).toMatchObject({
+			status: 422,
+		})
 	})
 
 	it('reports every failure in one error shape', async () => {

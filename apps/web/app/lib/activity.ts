@@ -1,14 +1,28 @@
-// Live updates without moving the page: open lists and threads ask the forum API every so often
-// whether others wrote something since the newest activity they show, and offer a prompt that
-// loads it. Polling a tiny, uncached endpoint (`private, no-store`) is all Cloudflare passes
-// through reliably; a long-lived stream would be buffered or cut there.
+// Live updates without moving the page: open lists and threads long-poll the forum API (its
+// message bus, after Discourse's) for what others wrote since the newest activity they show, and
+// offer a prompt that loads it. Each request waits up to `ACTIVITY_WAIT_S` for a write and is
+// answered as soon as there is more than the page already knows of; plain short requests are what
+// Cloudflare passes through reliably, where a long-lived stream would be buffered or cut.
 
 import { useCallback, useEffect, useState } from 'react'
 
-/** How often a visible page asks. Hidden tabs do not ask at all. */
+/** How long one request may wait on the server for news. */
+export const ACTIVITY_WAIT_S = 25
+/**
+ * The interval when the server does not hold requests (an older backend, or too many waiting):
+ * an answer that comes back at once with nothing new falls back to asking on this timer.
+ */
 export const ACTIVITY_POLL_MS = 30_000
-/** Failures back off, doubling up to this. */
+/** Failures back off from this, doubling up to `ACTIVITY_MAX_DELAY_MS`. */
+const ACTIVITY_RETRY_MS = 5_000
 const ACTIVITY_MAX_DELAY_MS = 5 * 60_000
+/** An answer quicker than this, with nothing new, was not held. */
+const ACTIVITY_HELD_MS = 1_000
+
+/** `path` as a long poll that waits for more than `known`. */
+export function longPollPath(path: string, known: number): string {
+	return `${path}${path.includes('?') ? '&' : '?'}wait=${ACTIVITY_WAIT_S}&known=${known}`
+}
 
 export type ListActivity = Readonly<{ count: number }>
 export type ThreadActivity = Readonly<{ count: number; floor: number | null }>
@@ -66,9 +80,9 @@ export function activityLabelCount(count: number): string {
 }
 
 /**
- * Polls `path` while the tab is visible and returns its latest answer with something new in it
- * (`count > 0`), or null. A new `path` (the page reloaded its data) starts over at null; `dismiss`
- * hides the answer until the next poll. `null` as the path stops polling. `parse` must be stable.
+ * Long-polls `path` while the tab is visible and returns its latest answer with something new in
+ * it (`count > 0`), or null. A new `path` (the page reloaded its data) starts over at null;
+ * `dismiss` hides the answer until more arrives. `null` as the path stops. `parse` must be stable.
  */
 export function useActivity<T extends Readonly<{ count: number }>>(
 	path: string | null,
@@ -79,22 +93,23 @@ export function useActivity<T extends Readonly<{ count: number }>>(
 	useEffect(() => {
 		if (path === null) return undefined
 		let stopped = false
-		let inFlight = false
+		let request: AbortController | null = null
 		let timer: ReturnType<typeof setTimeout> | undefined
-		let delay = ACTIVITY_POLL_MS
-		// The page's data was just loaded, which counts as the first look.
-		let lastLook = Date.now()
-		const controller = new AbortController()
+		let known = 0
+		let failures = 0
 
 		const schedule = (ms: number) => {
 			clearTimeout(timer)
-			timer = setTimeout(() => void poll(), ms)
+			timer = setTimeout(() => void ask(), ms)
 		}
-		const poll = async () => {
-			if (stopped || inFlight || document.visibilityState !== 'visible') return
-			inFlight = true
+		const ask = async () => {
+			if (stopped || request !== null || document.visibilityState !== 'visible') return
+			const controller = new AbortController()
+			request = controller
+			const started = Date.now()
+			let next: number
 			try {
-				const response = await fetch(path, {
+				const response = await fetch(longPollPath(path, known), {
 					headers: { accept: 'application/json' },
 					cache: 'no-store',
 					credentials: 'same-origin',
@@ -103,32 +118,38 @@ export function useActivity<T extends Readonly<{ count: number }>>(
 				if (!response.ok) throw new Error(`activity ${response.status}`)
 				const value = parse(await response.json())
 				if (value === null) throw new Error('activity: unexpected answer')
-				if (!stopped) setState(value.count > 0 ? { path, value } : null)
-				delay = ACTIVITY_POLL_MS
+				const changed = value.count !== known
+				known = value.count
+				failures = 0
+				if (!stopped && changed) setState(value.count > 0 ? { path, value } : null)
+				next = !changed && Date.now() - started < ACTIVITY_HELD_MS ? ACTIVITY_POLL_MS : 0
 			} catch {
-				if (stopped) return
-				delay = Math.min(delay * 2, ACTIVITY_MAX_DELAY_MS)
+				// Hidden or gone: the request was cancelled on purpose; visibility starts it again.
+				if (stopped || controller.signal.aborted) return
+				failures += 1
+				next = Math.min(ACTIVITY_RETRY_MS * 2 ** (failures - 1), ACTIVITY_MAX_DELAY_MS)
 			} finally {
-				inFlight = false
-				lastLook = Date.now()
+				if (request === controller) request = null
 			}
-			if (!stopped) schedule(delay)
+			if (!stopped) schedule(next)
 		}
-		// Back on a hidden tab: ask right away when a look is due, else when it will be.
+		// A hidden tab holds no request; back on it, ask again at once.
 		const onVisibility = () => {
 			if (document.visibilityState !== 'visible') {
 				clearTimeout(timer)
+				request?.abort()
+				request = null
 				return
 			}
-			if (!inFlight) schedule(Math.max(0, lastLook + delay - Date.now()))
+			if (request === null) schedule(0)
 		}
 
-		schedule(delay)
+		schedule(0)
 		document.addEventListener('visibilitychange', onVisibility)
 		return () => {
 			stopped = true
 			clearTimeout(timer)
-			controller.abort()
+			request?.abort()
 			document.removeEventListener('visibilitychange', onVisibility)
 		}
 	}, [path, parse])

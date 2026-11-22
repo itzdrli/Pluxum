@@ -669,6 +669,69 @@ describe('ForumCorePlugin', () => {
 		expect((await core.threadActivitySince(admin, thread.ref, since)).unwrap().count).toBe(3)
 	})
 
+	it('long-polls: answers when someone else writes, waits out own posts, and times out', async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { alice, bob, category } = await seed(core)
+		const old = (
+			await core.createThread(alice, { categoryId: category.id, title: 'Old', body: 'a' })
+		).unwrap()
+		const since = old.lastPostAt
+		await tick()
+
+		// Nothing new: the wait runs out and answers what it counted.
+		const started = Date.now()
+		expect(
+			(await core.awaitActivity(alice, { since }, { known: 0, waitMs: 80 })).unwrap().count,
+		).toBe(0)
+		expect(Date.now() - started).toBeGreaterThanOrEqual(70)
+		expect(core.activityWaiters()).toBe(0)
+
+		// Someone else's reply wakes the list and the thread long before the wait would end.
+		const list = core.awaitActivity(alice, { since }, { known: 0, waitMs: 5_000 })
+		const inCategory = core.awaitActivity(
+			alice,
+			{ since, categorySlug: category.slug },
+			{ known: 0, waitMs: 5_000 },
+		)
+		const inThread = core.awaitThreadActivity(alice, old.ref, since, { known: 0, waitMs: 5_000 })
+		await tick()
+		expect(core.activityWaiters()).toBe(3)
+		const woke = Date.now()
+		;(await core.createPost(bob, { threadId: old.id, body: 'news' })).unwrap()
+		expect((await list).unwrap().count).toBe(1)
+		expect((await inCategory).unwrap().count).toBe(1)
+		expect((await inThread).unwrap()).toMatchObject({ count: 1, floor: 2 })
+		expect(Date.now() - woke).toBeLessThan(2_000)
+
+		// Already more than known: at once. Own posts wake the wait but do not end it.
+		const done = Date.now()
+		expect(
+			(await core.awaitActivity(alice, { since }, { known: 0, waitMs: 5_000 })).unwrap().count,
+		).toBe(1)
+		expect(Date.now() - done).toBeLessThan(1_000)
+		const own = core.awaitActivity(alice, { since }, { known: 1, waitMs: 600 })
+		await tick()
+		;(await core.createPost(alice, { threadId: old.id, body: 'mine' })).unwrap()
+		expect((await own).unwrap().count).toBe(1)
+
+		// A request that goes away stops waiting.
+		const gone = new AbortController()
+		const aborted = core.awaitActivity(
+			alice,
+			{ since },
+			{
+				known: 1,
+				waitMs: 5_000,
+				signal: gone.signal,
+			},
+		)
+		await tick()
+		gone.abort()
+		expect((await aborted).unwrap().count).toBe(1)
+		expect(core.activityWaiters()).toBe(0)
+	})
+
 	it('summarises members and recent posting for the community panel', async () => {
 		await using host = await createHost()
 		const core = await host.start(ForumCorePlugin)

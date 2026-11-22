@@ -304,15 +304,25 @@ export const recentThreadsQuery = t.Object({
 })
 
 // `since`: the ISO instant the reader's page is current to; the core checks its format.
+/**
+ * A long poll (`wait`, seconds, at most 25): answer once more than `known` items are new, or
+ * when the wait runs out. Without `wait` the count answers at once.
+ */
+const longPoll = {
+	wait: t.Optional(t.String({ maxLength: 4, pattern: '^[0-9]+$' })),
+	known: t.Optional(t.String({ maxLength: 4, pattern: '^[0-9]+$' })),
+}
+
 export const activityQuery = t.Object({
 	since: t.String({ maxLength: 40 }),
+	...longPoll,
 	/** A category's slug, for its list; omitted for the overview feed. */
 	category: t.Optional(t.String({ maxLength: 200 })),
 	sort: t.Optional(t.Union([t.Literal('active'), t.Literal('new')])),
 	scope: t.Optional(t.Union([t.Literal('all'), t.Literal('following')])),
 })
 
-export const threadActivityQuery = t.Object({ since: t.String({ maxLength: 40 }) })
+export const threadActivityQuery = t.Object({ since: t.String({ maxLength: 40 }), ...longPoll })
 
 export const activity = t.Object({ count: t.Number() })
 

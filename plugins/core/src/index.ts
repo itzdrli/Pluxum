@@ -123,6 +123,7 @@ import {
 	type PostBeforeWriteEvent,
 	type PostHookContribution,
 } from './hooks'
+import { ActivityBus, channelsOf, type BusChannel } from './bus'
 import { digest, ForumCacheRegistry, type ForumCacheContribution } from './cache'
 import { FollowGraphRegistry, type FollowGraphContribution } from './follow-graph'
 import {
@@ -236,6 +237,13 @@ export type ThreadActivity = Readonly<{ count: number; floor: number | null }>
 
 /** `activitySince` stops counting here; a client shows more as 「99+」. */
 const ACTIVITY_COUNT_MAX = 100
+/** The longest a long poll waits: under Cloudflare's and the proxies' idle timeouts. */
+export const ACTIVITY_WAIT_MAX_MS = 25_000
+/** Long polls held at once; past it they answer at once and the client polls on a timer. */
+const ACTIVITY_WAITERS_MAX = 5_000
+
+/** How a long poll waits: for more than `known`, at most `waitMs`, until `signal` aborts. */
+export type ActivityWait = Readonly<{ known: number; waitMs: number; signal?: AbortSignal }>
 
 /** An ISO 8601 instant with a date, time and zone, or null for anything else. */
 function parseInstant(value: string): Date | null {
@@ -485,6 +493,8 @@ export class ForumCorePlugin extends BasePlugin {
 	 * every full read of the categories (most listings make one) and by each category write.
 	 */
 	private readonly accessByCategory = new Map<string, CategoryAccess>()
+	/** Writes wake the long polls of the pages that show them; see `bus.ts`. */
+	private readonly bus = new ActivityBus(ACTIVITY_WAITERS_MAX)
 
 	protected override async init(): Promise<void> {
 		this.database = await this.ctx.require(Database).use(ForumDatabase)
@@ -496,6 +506,8 @@ export class ForumCorePlugin extends BasePlugin {
 			this.ctx.logger.warn('brand uploads are unavailable: no durable file storage', { error })
 		}
 		this.permissionPolicies.register({ id: BUILT_IN_POLICY_ID, evaluate: defaultRolePolicy })
+		// A stopping core answers its long polls rather than leaving them to time out.
+		this.ctx.effects.defer(() => this.bus.close())
 		// Before the first request: a check on a category not yet read would take it as open.
 		this.rememberAccess(
 			await this.database.read((db) =>
@@ -1982,6 +1994,84 @@ export class ForumCorePlugin extends BasePlugin {
 		})
 	}
 
+	/**
+	 * `activitySince` as a long poll: answers at once when more than `wait.known` threads have
+	 * news, else waits for a write on the list's channel (one category's, or every list's) and
+	 * counts again, until `wait.waitMs` (at most `ACTIVITY_WAIT_MAX_MS`) have passed.
+	 */
+	async awaitActivity(
+		principal: Principal,
+		query: ActivityQuery,
+		wait: ActivityWait,
+	): Promise<ForumResult<ActivityCount>> {
+		let channels: BusChannel[] = ['list']
+		if (query.categorySlug !== undefined) {
+			const category = (await this.visibleCategories(principal)).find(
+				(entry) => entry.slug === query.categorySlug,
+			)
+			if (category) channels = [`category:${category.id}`]
+		}
+		return this.longPoll(channels, wait, () => this.activitySince(principal, query))
+	}
+
+	/** `threadActivitySince` as a long poll on the thread's channel; see `awaitActivity`. */
+	async awaitThreadActivity(
+		principal: Principal,
+		threadRef: string,
+		since: string,
+		wait: ActivityWait,
+	): Promise<ForumResult<ThreadActivity>> {
+		const found = parseThreadRef(threadRef)
+			? await this.database.read((db) => this.findThread(db, threadRef))
+			: undefined
+		const countNow = () => this.threadActivitySince(principal, threadRef, since)
+		// An unknown or hidden thread answers its 404 at once.
+		if (!found) return countNow()
+		return this.longPoll([`thread:${found.thread.id}`], wait, countNow)
+	}
+
+	/**
+	 * Counts, and while the count is not above `known` waits for a message on `channels` and counts
+	 * again. The wait starts before each count, so a write landing in between still wakes it.
+	 */
+	private async longPoll<T extends Readonly<{ count: number }>>(
+		channels: readonly BusChannel[],
+		wait: ActivityWait,
+		countNow: () => Promise<ForumResult<T>>,
+		deadline = Date.now() + Math.min(Math.max(wait.waitMs, 0), ACTIVITY_WAIT_MAX_MS),
+	): Promise<ForumResult<T>> {
+		const stop = new AbortController()
+		const onAbort = () => stop.abort()
+		wait.signal?.addEventListener('abort', onAbort, { once: true })
+		const pending = this.bus.wait(channels, Math.max(0, deadline - Date.now()), stop.signal)
+		let result: ForumResult<T>
+		let outcome: Awaited<typeof pending>
+		try {
+			result = await countNow()
+			const settled =
+				result.isErr() ||
+				result.value.count > wait.known ||
+				Date.now() >= deadline ||
+				wait.signal?.aborted === true
+			if (settled) return result
+			outcome = await pending
+		} finally {
+			stop.abort()
+			wait.signal?.removeEventListener('abort', onAbort)
+		}
+		if (outcome !== 'message') return result
+		// Many pages wake on one write: spread their counts over a moment.
+		await new Promise((resolve) =>
+			setTimeout(resolve, Math.min(50 + Math.random() * 400, deadline - Date.now())),
+		)
+		return this.longPoll(channels, wait, countNow, deadline)
+	}
+
+	/** How many long polls are waiting now (for tests and status). */
+	activityWaiters(): number {
+		return this.bus.size()
+	}
+
 	/** Every category the viewer may see, in display order. */
 	private async visibleCategories(principal: Principal) {
 		const all = await this.database.read((db) =>
@@ -3108,6 +3198,10 @@ export class ForumCorePlugin extends BasePlugin {
 
 	private async afterWrite(event: PostAfterWriteEvent): Promise<void> {
 		await this.listingsChanged()
+		// New threads and replies are what the 「N 条新内容」 prompts count.
+		if (event.kind === 'thread.created' || event.kind === 'post.created') {
+			this.bus.publish(channelsOf(event.categoryId, event.threadId))
+		}
 		await this.postHooks.afterWrite(event, (error, hookId) =>
 			this.ctx.logger.error('post afterWrite hook failed', {
 				error,

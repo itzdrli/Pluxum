@@ -11,7 +11,12 @@ import {
 	type Principal,
 } from '@pluxum/domain'
 import { ForumAuth, type AuthFailure, type Logout } from '@pluxum/auth'
-import { ForumCorePlugin, type ForumResult } from '@pluxum/core'
+import {
+	ACTIVITY_WAIT_MAX_MS,
+	ForumCorePlugin,
+	type ActivityWait,
+	type ForumResult,
+} from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { ElysiaApp } from '@pluxel/services/elysia'
 import type { Elysia } from 'elysia'
@@ -130,6 +135,22 @@ function pageOf(query: { page?: string; pageSize?: string }): PageRequest {
 	return { page: queryInt(query.page), pageSize: queryInt(query.pageSize) }
 }
 
+/** A long poll's `wait` (seconds) and `known` from the query, or null for a plain count. */
+function longPollOf(
+	query: Readonly<{ wait?: string; known?: string }>,
+	signal: AbortSignal,
+): ActivityWait | null {
+	if (query.wait === undefined) return null
+	const seconds = Number(query.wait)
+	if (!Number.isSafeInteger(seconds) || seconds <= 0) return null
+	const known = query.known === undefined ? 0 : Number(query.known)
+	return {
+		known: Number.isSafeInteger(known) && known >= 0 ? known : 0,
+		waitMs: Math.min(seconds * 1000, ACTIVITY_WAIT_MAX_MS),
+		signal,
+	}
+}
+
 /**
  * Fixed HTTP ingress for the forum. The core owns the domain and its rules; this plugin owns the
  * URLs, resolves who is calling and projects results onto the wire contract. Dynamic extensions
@@ -225,20 +246,25 @@ export class ForumApiPlugin extends BasePlugin {
 						{ response: schema.community },
 						async ({ request }) => await this.core.communityPulse(await this.viewer(request)),
 					)
-					// Polled by open pages for their 「N 条新内容」 prompt: per viewer and per instant, so
+					// Long-polled (`wait`) by open pages for their 「N 条新内容」 prompt: per viewer and instant, so
 					// neither the CDN nor the browser may keep it.
 					.get(
 						'/activity',
 						{ query: schema.activityQuery, response: schema.activity },
 						async ({ request, query, set }) => {
 							set.headers['cache-control'] = 'private, no-store'
+							const viewer = await this.viewer(request)
+							const list = {
+								since: query.since,
+								categorySlug: query.category,
+								sort: query.sort,
+								scope: query.scope,
+							}
+							const wait = longPollOf(query, request.signal)
 							return valueOf(
-								await this.core.activitySince(await this.viewer(request), {
-									since: query.since,
-									categorySlug: query.category,
-									sort: query.sort,
-									scope: query.scope,
-								}),
+								wait === null
+									? await this.core.activitySince(viewer, list)
+									: await this.core.awaitActivity(viewer, list, wait),
 							)
 						},
 					)
@@ -461,18 +487,18 @@ export class ForumApiPlugin extends BasePlugin {
 							}),
 						),
 				)
-				// Polled by an open thread for its 「新回复」 prompt; never cached, like `/activity`.
+				// Long-polled by an open thread for its 「新回复」 prompt; never cached, like `/activity`.
 				.get(
 					'/threads/:id/activity',
 					{ query: schema.threadActivityQuery, response: schema.threadActivity },
 					async ({ request, params, query, set }) => {
 						set.headers['cache-control'] = 'private, no-store'
+						const viewer = await this.viewer(request)
+						const wait = longPollOf(query, request.signal)
 						return valueOf(
-							await this.core.threadActivitySince(
-								await this.viewer(request),
-								params.id,
-								query.since,
-							),
+							wait === null
+								? await this.core.threadActivitySince(viewer, params.id, query.since)
+								: await this.core.awaitThreadActivity(viewer, params.id, query.since, wait),
 						)
 					},
 				)
