@@ -432,7 +432,7 @@ function toThreadDto(row: ThreadRow, by: UserDto, category: CategoryKind): Threa
  * ingress. Every operation takes the acting principal and enforces permissions itself.
  */
 // PGlite compiles its WASM module on first use, which can exceed the default start timeout.
-@Plugin({ displayName: 'Forum Core', startTimeoutMs: 30_000 })
+@Plugin({ displayName: 'Pluxum Core', startTimeoutMs: 30_000 })
 export class ForumCorePlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumCoreConfig)
 	private database!: PluginDatabaseHandle<typeof ForumDatabase>

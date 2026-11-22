@@ -15,7 +15,7 @@ export const ForumCacheConfig = v.object({
 			v.maxValue(3600),
 			f.formMeta({
 				title: '列表缓存时间（秒）',
-				description: '首页、版块列表和社区面板的缓存时间。内容变动时会立即失效。',
+				description: '首页、版块列表和社区面板的缓存时间。内容变动时会立即失效',
 			}),
 		),
 		60,
@@ -28,7 +28,7 @@ export const ForumCacheConfig = v.object({
 			v.maxValue(100_000),
 			f.formMeta({
 				title: '渲染结果条数',
-				description: '在本进程内存里保留多少条已渲染的帖子正文。',
+				description: '在本进程内存里保留多少条已渲染的帖子正文',
 			}),
 			f.numberMeta({ step: 100 }),
 		),
@@ -38,12 +38,12 @@ export const ForumCacheConfig = v.object({
 export type ForumCacheConfig = v.InferOutput<typeof ForumCacheConfig>
 
 /**
- * Lends Forum Core a cache: rendered post bodies in this process's memory, and the overview
+ * Lends Pluxum Core a cache: rendered post bodies in this process's memory, and the overview
  * feed, category pages and community panel in the `Cache` capability (Redis-backed in this host,
- * so they survive restarts and could be shared). Forum Core drops the listings after every write;
+ * so they survive restarts and could be shared). Pluxum Core drops the listings after every write;
  * stopping this plugin makes the core read everything fresh again.
  */
-@Plugin({ displayName: 'Forum Cache' })
+@Plugin({ displayName: 'Pluxum Cache' })
 export class ForumCachePlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumCacheConfig)
 	private rendered: LocalCache | undefined

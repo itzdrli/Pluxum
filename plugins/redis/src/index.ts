@@ -20,7 +20,7 @@ const ConnectionId = v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]{0,63}$/))
 const RedisConnectionConfig = v.object({
 	id: v.pipe(
 		ConnectionId,
-		f.formMeta({ title: '连接 ID', description: '其他插件按这个名字取连接，例如 session。' }),
+		f.formMeta({ title: '连接 ID', description: '其他插件按这个名字取连接，例如 session' }),
 	),
 	url: v.optional(
 		v.pipe(
@@ -30,7 +30,7 @@ const RedisConnectionConfig = v.object({
 				isCredentialFreeRedisUrl,
 				'Redis URL must be redis:// or rediss:// without credentials',
 			),
-			f.formMeta({ title: '地址', description: 'redis:// 或 rediss://，不能包含用户名和密码。' }),
+			f.formMeta({ title: '地址', description: 'redis:// 或 rediss://，不能包含用户名和密码' }),
 			f.stringMeta({ placeholder: 'redis://127.0.0.1:6379' }),
 		),
 		'redis://127.0.0.1:6379',
@@ -58,7 +58,7 @@ const RedisConnectionConfig = v.object({
 			v.boolean(),
 			f.formMeta({
 				title: '断线时直接报错',
-				description: '开启后，断线期间的命令立即失败而不是排队等待。',
+				description: '开启后，断线期间的命令立即失败而不是排队等待',
 			}),
 		),
 		true,
@@ -68,7 +68,7 @@ const RedisConnectionConfig = v.object({
 			v.number(),
 			v.integer(),
 			v.minValue(0),
-			f.formMeta({ title: '心跳间隔（毫秒）', description: '0 表示不发送心跳。' }),
+			f.formMeta({ title: '心跳间隔（毫秒）', description: '0 表示不发送心跳' }),
 			f.numberMeta({ step: 1000 }),
 		),
 		0,
@@ -81,8 +81,7 @@ export const ForumRedisConfig = v.object({
 			v.array(RedisConnectionConfig),
 			f.formMeta({
 				title: '连接',
-				description:
-					'论坛使用的 Redis 连接。修改后需重启本插件；部署时由 REDIS_CONNECTIONS 提供初始值，这里保存的值会覆盖它。',
+				description: '论坛使用的 Redis 连接。修改后需重启本插件',
 			}),
 			f.arrayMeta({ itemLabel: '连接', addLabel: '添加连接', defaultItem: { id: 'default' } }),
 			v.minLength(1),
@@ -118,7 +117,7 @@ type OwnerState = {
  * connection catalog, owner-bound handles, typed Lua scripts) without the Workbench page, and is
  * also where Vault-backed credentials will land for deployment.
  */
-@Plugin(Redis, { displayName: 'Forum Redis' })
+@Plugin(Redis, { displayName: 'Pluxum Redis' })
 export class ForumRedisPlugin extends Redis {
 	private readonly config = this.configs.use(ForumRedisConfig)
 	private ids: readonly string[] = Object.freeze([])

@@ -48,7 +48,7 @@ export const ForumReactionsConfig = v.object({
 			v.array(v.pipe(v.string(), v.trim(), v.toLowerCase(), v.minLength(1), v.maxLength(64))),
 			f.formMeta({
 				title: '开启「有用」的版块',
-				description: '填版块标识（slug）。不在列表里的版块只有点赞。',
+				description: '填版块标识（slug）。不在列表里的版块只有点赞',
 			}),
 			f.arrayMeta({ itemLabel: '版块标识', addLabel: '添加版块', emptyHint: '所有版块都只有点赞' }),
 		),
@@ -101,7 +101,7 @@ const none = (): ReactionSummary => ({
  * weight (config). Stopping it removes all of that; the reactions stay stored and return with it.
  */
 // PGlite compiles its WASM module on first use, which can exceed the default start timeout.
-@Plugin({ displayName: 'Forum Reactions', startTimeoutMs: 30_000 })
+@Plugin({ displayName: 'Pluxum Reactions', startTimeoutMs: 30_000 })
 export class ForumReactionsPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumReactionsConfig)
 	private database!: PluginDatabaseHandle<typeof ReactionsDatabase>

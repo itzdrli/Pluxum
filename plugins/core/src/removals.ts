@@ -8,7 +8,7 @@ export const GHOST_DISPLAY_NAME = 'Ghost'
 
 /** What a plugin is told when an account is removed. */
 export type UserRemoval = Readonly<{
-	/** The account going away; its Forum Core row is deleted right after every handler ran. */
+	/** The account going away; its Pluxum Core row is deleted right after every handler ran. */
 	userId: string
 	/** The Ghost account, which takes over what the removed account authored. */
 	ghostId: string
@@ -17,7 +17,7 @@ export type UserRemoval = Readonly<{
 /**
  * A plugin's part in removing an account, contributed by a plugin that keeps rows about users:
  * hand what the account authored to Ghost (`ghostId`) and delete what was only theirs (follows,
- * read marks, preferences). Forum Core does the same for its own tables afterwards.
+ * read marks, preferences). Pluxum Core does the same for its own tables afterwards.
  */
 export type UserRemovalContribution = Readonly<{
 	/** Stable contribution ID, e.g. `forum-reactions.removal`. */

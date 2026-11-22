@@ -83,7 +83,7 @@ export abstract class ForumAuth extends BasePlugin {
 	private readonly passwordLogins = new Set<symbol>()
 
 	/**
-	 * Says that a plugin (Forum Accounts) signs people in with email and password, so the web app
+	 * Says that a plugin (Pluxum Accounts) signs people in with email and password, so the web app
 	 * offers that form. The returned disposer must be handed to the contributor's `ctx.effects`.
 	 */
 	registerPasswordLogin(): () => void {
@@ -186,7 +186,7 @@ function displayNameOf(name: string): string {
  * Zitadel-compatible OpenID Connect login (authorization code + PKCE) with server-side sessions in
  * Redis. The browser only ever holds an opaque session ID in an HttpOnly cookie.
  */
-@Plugin(ForumAuth, { displayName: 'Forum Auth' })
+@Plugin(ForumAuth, { displayName: 'Pluxum Auth' })
 export class ForumAuthPlugin extends ForumAuth {
 	private readonly config = this.configs.use(ForumAuthConfig)
 	private readonly sessions = new SessionStore(
@@ -293,7 +293,7 @@ export class ForumAuthPlugin extends ForumAuth {
 	): OidcClient | undefined {
 		const { oidc, publicOrigin, session } = config
 		if (publicOrigin?.startsWith('http://') && process.env.NODE_ENV === 'production') {
-			throw new Error('Forum Auth publicOrigin must be https:// when NODE_ENV is "production"')
+			throw new Error('Pluxum Auth publicOrigin must be https:// when NODE_ENV is "production"')
 		}
 		// Fails the start, and with it every consumer, when the session connection is not declared.
 		this.redis.connection(session.connectionId)

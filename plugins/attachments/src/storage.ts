@@ -48,7 +48,7 @@ const LocalBackendConfig = v.object({
 		v.pipe(
 			v.string(),
 			v.minLength(1),
-			f.formMeta({ title: '目录', description: '相对宿主工作目录，保存文件的位置。' }),
+			f.formMeta({ title: '目录', description: '相对宿主工作目录，保存文件的位置' }),
 		),
 		'.pluxel/s3',
 	),
@@ -56,7 +56,7 @@ const LocalBackendConfig = v.object({
 		v.pipe(v.string(), v.minLength(1), v.maxLength(255), f.formMeta({ title: '子目录名' })),
 	),
 	syncWrites: v.optional(
-		v.pipe(v.boolean(), f.formMeta({ title: '同步写入', description: '写入后立即落盘。' })),
+		v.pipe(v.boolean(), f.formMeta({ title: '同步写入', description: '写入后立即落盘' })),
 		true,
 	),
 })
@@ -73,7 +73,7 @@ const RemoteCredentialsConfig = v.pipe(
 					v.maxLength(256),
 					f.formMeta({
 						title: 'Vault 记录名',
-						description: '留空时，default 桶用 s3.credentials，其他桶用 s3.<桶 ID>.credentials。',
+						description: '留空时，default 桶用 s3.credentials，其他桶用 s3.<桶 ID>.credentials',
 					}),
 				),
 			),
@@ -82,7 +82,7 @@ const RemoteCredentialsConfig = v.pipe(
 					v.string(),
 					v.minLength(1),
 					v.maxLength(256),
-					f.formMeta({ title: 'Vault 命名空间', description: '留空时使用本插件自己的命名空间。' }),
+					f.formMeta({ title: 'Vault 命名空间', description: '留空时使用本插件自己的命名空间' }),
 				),
 			),
 		}),
@@ -103,7 +103,7 @@ const RemoteBackendConfig = v.object({
 			isCredentialFreeEndpoint,
 			'S3 endpoint must use http:// or https:// without credentials, query, or hash',
 		),
-		f.formMeta({ title: 'Endpoint', description: 'S3 兼容服务地址，不能包含凭据。' }),
+		f.formMeta({ title: 'Endpoint', description: 'S3 兼容服务地址，不能包含凭据' }),
 		f.stringMeta({ placeholder: 'https://s3.example.com' }),
 	),
 	region: v.optional(
@@ -133,7 +133,7 @@ const RemoteBackendConfig = v.object({
 			v.maxValue(5 * 1024 * MEBIBYTE),
 			f.formMeta({
 				title: '分片大小（字节）',
-				description: '分片上传时每片的最小大小，至少 5 MiB。',
+				description: '分片上传时每片的最小大小，至少 5 MiB',
 			}),
 		),
 		8 * MEBIBYTE,
@@ -143,7 +143,7 @@ const RemoteBackendConfig = v.object({
 const BucketConfig = v.object({
 	id: v.pipe(
 		BucketId,
-		f.formMeta({ title: '桶 ID', description: '其他插件按这个名字取桶，例如 default。' }),
+		f.formMeta({ title: '桶 ID', description: '其他插件按这个名字取桶，例如 default' }),
 	),
 	backend: v.pipe(
 		v.variant('type', [LocalBackendConfig, RemoteBackendConfig]),
@@ -167,8 +167,7 @@ export const ForumStorageConfig = v.object({
 			),
 			f.formMeta({
 				title: '存储桶',
-				description:
-					'附件和头像所在的存储。修改后需重启本插件；部署时由 S3_BUCKETS 提供初始值，这里保存的值会覆盖它。',
+				description: '附件和头像所在的存储。修改后需重启本插件',
 			}),
 			f.arrayMeta({ itemLabel: '存储桶', addLabel: '添加存储桶' }),
 		),
@@ -209,7 +208,7 @@ type OwnerState = {
  * storage.
  */
 // Start checks the remote bucket (and may create it) over the network, which can exceed the default timeout.
-@Plugin(S3, { displayName: 'Forum Storage', startTimeoutMs: 30_000 })
+@Plugin(S3, { displayName: 'Pluxum Storage', startTimeoutMs: 30_000 })
 export class ForumStoragePlugin extends S3 {
 	private readonly config = this.configs.use(ForumStorageConfig)
 	private ids: readonly string[] = Object.freeze([])

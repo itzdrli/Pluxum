@@ -18,7 +18,7 @@ export type MailMessage = Readonly<{
 
 /** Who the mail is from and where links point; taken from the plugin and site settings. */
 export type MailSite = Readonly<{
-	/** The site's name, from Forum Core's settings. */
+	/** The site's name, from Pluxum Core's settings. */
 	name: string
 	/** Absolute origin of the public forum, or undefined when not configured (no links then). */
 	url: string | undefined

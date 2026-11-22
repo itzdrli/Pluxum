@@ -41,7 +41,7 @@ export const ForumSearchConfig = v.object({
 			v.array(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(64))),
 			f.formMeta({
 				title: '自定义词',
-				description: '分词时当作一个整体的词，例如产品名。保存后会重建索引。',
+				description: '分词时当作一个整体的词，例如产品名。保存后会重建索引',
 			}),
 			f.arrayMeta({ itemLabel: '词', addLabel: '添加词', emptyHint: '未添加自定义词' }),
 		),
@@ -54,7 +54,7 @@ export const ForumSearchConfig = v.object({
 			v.integer(),
 			v.minValue(40),
 			v.maxValue(600),
-			f.formMeta({ title: '摘要长度', description: '搜索结果中每条摘要最多显示的字数。' }),
+			f.formMeta({ title: '摘要长度', description: '搜索结果中每条摘要最多显示的字数' }),
 			f.numberMeta({ step: 20 }),
 		),
 		160,
@@ -96,7 +96,7 @@ function vectorExpression(titleTokens: string, bodyTokens: string): SQL {
  * Stopping this plugin withdraws both the `postHooks` listener and the `searchProviders` backend:
  * `/api/forum/meta` reports `search.available: false` and `/api/forum/search` answers 503.
  */
-@Plugin({ displayName: 'Forum Search', startTimeoutMs: 60_000 })
+@Plugin({ displayName: 'Pluxum Search', startTimeoutMs: 60_000 })
 export class ForumSearchPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumSearchConfig)
 	private database!: PluginDatabaseHandle<typeof SearchDatabase>

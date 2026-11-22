@@ -58,7 +58,7 @@ export function sniffBrandImage(bytes: Uint8Array): BrandImageType | null {
 }
 
 /**
- * Brand images uploaded in Workbench, kept in Forum Core's own durable files: `brand/<kind>`
+ * Brand images uploaded in Workbench, kept in Pluxum Core's own durable files: `brand/<kind>`
  * holds the bytes and `brand/<kind>.json` the sniffed type and a content version for cache
  * busting. Metadata is held in memory so building `SiteDto` never touches the disk.
  */

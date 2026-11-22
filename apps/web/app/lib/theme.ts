@@ -11,7 +11,7 @@ export const THEMES = [
 ] as const
 
 export type ThemeId = (typeof THEMES)[number]['id']
-// The themes here and the ones Forum Core's "default theme" setting offers must be the same.
+// The themes here and the ones Pluxum Core's "default theme" setting offers must be the same.
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never
 const themesMatchDomain: Same<ThemeId, DomainThemeId> = true
 void themesMatchDomain

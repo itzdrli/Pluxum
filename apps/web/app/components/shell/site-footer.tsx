@@ -115,7 +115,7 @@ export function SiteFooterCompact() {
 }
 
 /**
- * Under every page that scrolls. Its content is Forum Core's site and footer config plus the links
+ * Under every page that scrolls. Its content is Pluxum Core's site and footer config plus the links
  * running plugins add (both in `/meta`). Top: the brand with its tagline on the left, link columns
  * on the right (the optional built-in "站内" column first, then the configured ones). Bottom bar: copyright
  * and notes, then theme swatches and icon links.

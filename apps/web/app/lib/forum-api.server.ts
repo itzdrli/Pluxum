@@ -150,7 +150,7 @@ export type AccountOptions = Readonly<{
 }>
 
 /**
- * One call to Forum Accounts (`/api/forum/accounts/*`) for a sign-in form. Like `call`, plus the
+ * One call to Pluxum Accounts (`/api/forum/accounts/*`) for a sign-in form. Like `call`, plus the
  * session cookie it hands out, and the visitor's address and browser for its rate limits and
  * session list.
  */

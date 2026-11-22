@@ -1,4 +1,4 @@
-// Server-only: the accounts plugin's own managed database. Rows refer to Forum Core's users by
+// Server-only: the accounts plugin's own managed database. Rows refer to Pluxum Core's users by
 // their stable IDs only; there are no foreign keys across plugins.
 import { index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 import { defineDatabase } from '@pluxel/services/database'

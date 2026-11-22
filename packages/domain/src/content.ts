@@ -9,7 +9,7 @@ export const LIMITS = Object.freeze({
 	threadNumberStart: 1001,
 	threadTitleMax: 120,
 	postBodyMax: 20_000,
-	/** Default length limit of a note's body; Forum Core's config may change it. */
+	/** Default length limit of a note's body; Pluxum Core's config may change it. */
 	noteBodyMax: 500,
 	displayNameMax: 40,
 	handleMin: 2,

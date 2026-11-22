@@ -406,7 +406,7 @@ export function isBrandAssetKind(value: unknown): value is BrandAssetKind {
 	return typeof value === 'string' && (BRAND_ASSET_KINDS as readonly string[]).includes(value)
 }
 
-/** The forum's name, blurbs and brand, set in Forum Core's config and Workbench. */
+/** The forum's name, blurbs and brand, set in Pluxum Core's config and Workbench. */
 export type SiteDto = Readonly<{
 	/** Shown in the header, page titles and social cards. */
 	name: string
@@ -429,7 +429,7 @@ export type MetaDto = Readonly<{
 		provider: boolean
 		/** The provider button's text set by the operator; null keeps the web app's wording. */
 		providerLabel: string | null
-		/** Sign-in with email and password (the Forum Accounts plugin is running). */
+		/** Sign-in with email and password (the Pluxum Accounts plugin is running). */
 		password: boolean
 	}>
 	search: Readonly<{

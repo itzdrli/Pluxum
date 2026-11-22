@@ -71,7 +71,7 @@ export const ForumMailConfig = v.object({
 			v.boolean(),
 			f.formMeta({
 				title: '发送邮件',
-				description: '关闭时不发任何邮件。',
+				description: '关闭时不发任何邮件',
 				section: SMTP,
 			}),
 		),
@@ -95,7 +95,7 @@ export const ForumMailConfig = v.object({
 			v.maxValue(65_535),
 			f.formMeta({
 				title: '端口',
-				description: '常见：465（TLS）、587（STARTTLS）。',
+				description: '常见：465（TLS）、587（STARTTLS）',
 				section: SMTP,
 			}),
 		),
@@ -122,7 +122,7 @@ export const ForumMailConfig = v.object({
 			v.maxLength(254),
 			f.formMeta({
 				title: '用户名',
-				description: '留空表示不登录。密码在插件的“邮件”页设置，存进 Vault。',
+				description: '留空表示不登录。密码在插件的“邮件”页设置，存进 Vault',
 				section: SMTP,
 			}),
 		),
@@ -143,24 +143,7 @@ export const ForumMailConfig = v.object({
 			v.string(),
 			v.trim(),
 			v.maxLength(80),
-			f.formMeta({ title: '发件人名称', description: '留空时用站点名称。', section: SENDER }),
-		),
-		'',
-	),
-	siteUrl: v.optional(
-		v.pipe(
-			v.string(),
-			v.trim(),
-			v.check(
-				(value) => value === '' || /^https?:\/\/[^/]+\/?$/i.test(value),
-				'论坛地址须是 http(s):// 开头的站点根地址',
-			),
-			f.formMeta({
-				title: '论坛地址',
-				description: '邮件里的链接以它开头。留空时邮件不带链接。',
-				section: SENDER,
-			}),
-			f.stringMeta({ placeholder: 'https://forum.example.com' }),
+			f.formMeta({ title: '发件人名称', description: '留空时用站点名称', section: SENDER }),
 		),
 		'',
 	),
@@ -169,7 +152,7 @@ export const ForumMailConfig = v.object({
 			v.picklist(MAIL_LOCALES),
 			f.formMeta({
 				title: '默认邮件语言',
-				description: '用户没选邮件语言时使用。',
+				description: '用户没选邮件语言时使用',
 				section: TEMPLATES,
 			}),
 			f.picklistMeta({ labels: MAIL_LOCALE_LABELS }),

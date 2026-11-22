@@ -666,7 +666,7 @@ describe('ForumApiPlugin', () => {
 		expect(meta.site.brand).toEqual({ logo: null, icon: null, social: null })
 		expect((await api.call('GET', '/brand/logo')).status).toBe(404)
 		expect((await api.call('GET', '/brand/favicon')).status).toBe(404)
-		// The footer is empty until a plugin (Forum Footer) fills it.
+		// The footer is empty until a plugin (Pluxum Footer) fills it.
 		expect(meta.footer).toEqual({ groups: [], icons: [], notes: [], siteLinks: false })
 
 		expect(await api.ok<PreviewDto>('POST', '/preview', { body: 'a < b' })).toEqual({

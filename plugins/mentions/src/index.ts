@@ -58,7 +58,7 @@ function excerptOf(body: string): string | undefined {
  * - `postHooks` (`forum-mentions.notify`) that notifies everyone a new thread or reply mentions
  *   and who may see it (not the author, and not a thread's author, whom the reply notice covers).
  */
-@Plugin({ displayName: 'Forum Mentions' })
+@Plugin({ displayName: 'Pluxum Mentions' })
 export class ForumMentionsPlugin extends BasePlugin {
 	constructor(
 		private readonly core: ForumCorePlugin,

@@ -1,4 +1,4 @@
-// The forum's name, blurbs and footer come from Forum Core's config (Workbench › Forum Core) through
+// The forum's name, blurbs and footer come from Pluxum Core's config (Workbench › Pluxum Core) through
 // `/meta`. These defaults only show while the API cannot be reached.
 
 import type { FooterDto, MetaDto, SiteDto } from '@pluxum/domain'

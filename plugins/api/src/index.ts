@@ -145,7 +145,7 @@ function contentDisposition(inline: boolean, filename?: string): string {
 	return `${kind}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(clean)}`
 }
 
-@Plugin({ displayName: 'Forum API' })
+@Plugin({ displayName: 'Pluxum API' })
 export class ForumApiPlugin extends BasePlugin {
 	private readonly extActions = new ExtActionRegistry()
 	private readonly extFiles = new ExtFileRegistry()
@@ -299,7 +299,7 @@ export class ForumApiPlugin extends BasePlugin {
 	}
 
 	/**
-	 * A brand image uploaded in Workbench (see Forum Core). URLs carry `?v=<content version>`,
+	 * A brand image uploaded in Workbench (see Pluxum Core). URLs carry `?v=<content version>`,
 	 * so a versioned request is cached for good; SVG runs under a sandboxing CSP like ext files.
 	 */
 	private async serveBrandAsset(request: Request, kind: string): Promise<Response> {

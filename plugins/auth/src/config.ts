@@ -48,7 +48,7 @@ export const ForumAuthConfig = v.object({
 			v.check(isOrigin, 'publicOrigin must be an origin like https://forum.test'),
 			f.formMeta({
 				title: '论坛公开地址',
-				description: '论坛前台的 origin，例如 https://forum.example.com。',
+				description: '论坛前台的 origin，例如 https://forum.example.com',
 				section: LOGIN,
 			}),
 			f.stringMeta({ placeholder: 'https://forum.example.com' }),
@@ -65,20 +65,20 @@ export const ForumAuthConfig = v.object({
 				issuer: v.pipe(
 					v.string(),
 					v.check(isIssuer, 'issuer must be an https:// URL (http:// only on loopback)'),
-					f.formMeta({ title: 'Issuer', description: 'Zitadel 实例地址。' }),
+					f.formMeta({ title: 'Issuer', description: 'Zitadel 实例地址' }),
 					f.stringMeta({ placeholder: 'https://auth.example.com' }),
 				),
 				clientId: v.pipe(
 					v.string(),
 					v.minLength(1),
 					v.maxLength(255),
-					f.formMeta({ title: 'Client ID', description: '论坛在 Zitadel 中的 OIDC 应用 ID。' }),
+					f.formMeta({ title: 'Client ID', description: '论坛在 Zitadel 中的 OIDC 应用 ID' }),
 				),
 				scopes: v.optional(
 					v.pipe(
 						v.array(v.pipe(v.string(), v.regex(/^[\x21\x23-\x5B\x5D-\x7E]+$/))),
 						v.check((scopes) => scopes.includes('openid'), 'scopes must include "openid"'),
-						f.formMeta({ title: 'Scopes', description: '必须包含 openid。' }),
+						f.formMeta({ title: 'Scopes', description: '必须包含 openid' }),
 						f.arrayMeta({ itemLabel: 'Scope', addLabel: '添加 scope' }),
 					),
 					['openid', 'profile', 'email'],
@@ -91,7 +91,7 @@ export const ForumAuthConfig = v.object({
 						v.maxLength(40),
 						f.formMeta({
 							title: '登录按钮文字',
-							description: '登录页上外部账号按钮的文字，例如 Sign in with OIDC。留空用默认文字。',
+							description: '登录页上外部账号按钮的文字，例如 Sign in with OIDC。留空用默认文字',
 						}),
 					),
 					'',
@@ -102,7 +102,7 @@ export const ForumAuthConfig = v.object({
 						v.boolean(),
 						f.formMeta({
 							title: '同时退出 Zitadel',
-							description: '用户退出论坛时，也结束其在 Zitadel 的登录状态。',
+							description: '用户退出论坛时，也结束其在 Zitadel 的登录状态',
 						}),
 					),
 					false,
@@ -111,7 +111,7 @@ export const ForumAuthConfig = v.object({
 			f.formMeta({
 				title: 'OpenID Connect',
 				description:
-					'登录服务（Zitadel）。客户端密钥存在 Vault 记录 oidc-client-secret 中，没有时只用 PKCE。',
+					'登录服务（Zitadel）。客户端密钥存在 Vault 记录 oidc-client-secret 中，没有时只用 PKCE',
 				section: LOGIN,
 			}),
 			f.objectMeta({ variant: 'card' }),
@@ -127,7 +127,7 @@ export const ForumAuthConfig = v.object({
 						v.minLength(1),
 						f.formMeta({
 							title: 'Redis 连接',
-							description: '保存会话的 Redis 连接 ID，须在 Forum Redis 插件中已声明。',
+							description: '保存会话的 Redis 连接 ID，须在 Pluxum Redis 插件中已声明',
 						}),
 					),
 					'session',
@@ -135,12 +135,12 @@ export const ForumAuthConfig = v.object({
 				/** A session ends after this long without a request. */
 				idleTtlSeconds: seconds(7 * 24 * 3600, {
 					title: '空闲过期（秒）',
-					description: '这么久没有任何请求，会话即失效。默认 7 天。',
+					description: '这么久没有任何请求，会话即失效。默认 7 天',
 				}),
 				/** A session ends this long after login no matter how active it is. */
 				absoluteTtlSeconds: seconds(30 * 24 * 3600, {
 					title: '最长有效期（秒）',
-					description: '从登录起算，无论是否活跃，到期都要重新登录。默认 30 天，不能短于空闲过期。',
+					description: '从登录起算，无论是否活跃，到期都要重新登录。默认 30 天，不能短于空闲过期',
 				}),
 			}),
 			v.check(
@@ -164,7 +164,7 @@ export const ForumAuthConfig = v.object({
 			f.formMeta({
 				title: '测试登录令牌（SHA-256）',
 				description:
-					'测试登录令牌的十六进制 SHA-256，只存哈希。留空则关闭测试登录（/auth/test-login）。',
+					'测试登录令牌的十六进制 SHA-256，只存哈希。留空则关闭测试登录（/auth/test-login）',
 				section: ACCESS,
 			}),
 		),
@@ -175,7 +175,7 @@ export const ForumAuthConfig = v.object({
 			v.array(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(255))),
 			f.formMeta({
 				title: '管理员',
-				description: '这些 Zitadel 用户 ID（sub）登录时会被授予管理员角色。',
+				description: '这些 Zitadel 用户 ID（sub）登录时会被授予管理员角色',
 				section: ACCESS,
 			}),
 			f.arrayMeta({ itemLabel: '用户 ID', addLabel: '添加管理员', emptyHint: '没有指定管理员' }),

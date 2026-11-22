@@ -76,7 +76,7 @@ export function acceptNoticeId(postId: string): string {
  * Stopping it removes all of that; the answers stay stored and return with it.
  */
 // PGlite compiles its WASM module on first use, which can exceed the default start timeout.
-@Plugin({ displayName: 'Forum Solved', startTimeoutMs: 30_000 })
+@Plugin({ displayName: 'Pluxum Solved', startTimeoutMs: 30_000 })
 export class ForumSolvedPlugin extends BasePlugin {
 	private database!: PluginDatabaseHandle<typeof SolvedDatabase>
 

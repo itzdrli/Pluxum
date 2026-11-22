@@ -1,4 +1,4 @@
-// The footer's content is set in Workbench (Forum Core › 页脚) and arrives in `/meta`, merged with
+// The footer's content is set in Workbench (Pluxum Core › 页脚) and arrives in `/meta`, merged with
 // the links running plugins add through `core.registerFooterLinks(...)`.
 //
 //   groups  columns of text links with a heading ("社区", "文档", ...), shown on the left.

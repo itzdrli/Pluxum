@@ -2,7 +2,7 @@ import * as v from 'valibot'
 import * as f from 'valibot-form'
 
 const ACCOUNTS = { id: 'accounts', title: '注册与登录', order: 0 }
-const LIMITS = { id: 'limits', title: '频率限制', order: 1 }
+const LIMITS = { id: 'limits', title: '登录与注册限频', order: 1 }
 
 const count = (title: string, description: string, fallback: number) =>
 	v.optional(
@@ -16,7 +16,7 @@ const count = (title: string, description: string, fallback: number) =>
 		fallback,
 	)
 
-/** Forum Accounts' settings. A saved change applies to the next request. */
+/** Pluxum Accounts' settings. A saved change applies to the next request. */
 export const ForumAccountsConfig = v.object({
 	registration: v.optional(
 		v.pipe(
@@ -24,7 +24,7 @@ export const ForumAccountsConfig = v.object({
 			f.picklistMeta({ labels: { open: '开放', closed: '关闭' } }),
 			f.formMeta({
 				title: '注册',
-				description: '关闭后只有已有账号能登录。',
+				description: '关闭后只有已有账号能登录',
 				section: ACCOUNTS,
 			}),
 		),
@@ -64,7 +64,7 @@ export const ForumAccountsConfig = v.object({
 				signupsPerAddress: count('注册 / IP / 小时', '按请求来源地址计。', 5),
 				resetsPerEmail: count('重设邮件 / 邮箱 / 小时', '', 3),
 			}),
-			f.formMeta({ title: '频率限制', section: LIMITS }),
+			f.formMeta({ title: '登录与注册限频', section: LIMITS }),
 			f.objectMeta({ variant: 'stack' }),
 		),
 		{},

@@ -169,7 +169,7 @@ export default function LoginRoute({ loaderData, actionData }: Route.ComponentPr
 				{providerHref !== null && (
 					// A document navigation: the API redirects to the identity provider.
 					<ButtonAnchor href={providerHref}>
-						{/* The operator's text (Forum Auth › 登录按钮文字) is shown as written. */}
+						{/* The operator's text (Pluxum Auth › 登录按钮文字) is shown as written. */}
 						{providerLabel ?? <Trans>用外部账号登录</Trans>}
 					</ButtonAnchor>
 				)}

@@ -1,6 +1,7 @@
 import { failure, noticeDetail } from '@pluxum/domain'
 import type { ForumNotification, Principal } from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
+import { ForumAuth } from '@pluxum/auth'
 import { ForumCorePlugin, type ForumResult } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
@@ -69,7 +70,7 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
  * - `uiSlots` (`user.profile.tabs`): the on/off switch on one's own profile page;
  * - a Workbench "邮件" tab: status, a test mail and the SMTP password (kept in Vault).
  */
-@Plugin({ displayName: 'Forum Mail', startTimeoutMs: 30_000 })
+@Plugin({ displayName: 'Pluxum Mail', startTimeoutMs: 30_000 })
 export class ForumMailPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumMailConfig)
 	private database!: PluginDatabaseHandle<typeof MailDatabase>
@@ -86,6 +87,7 @@ export class ForumMailPlugin extends BasePlugin {
 	constructor(
 		private readonly core: ForumCorePlugin,
 		private readonly api: ForumApiPlugin,
+		private readonly auth: ForumAuth,
 	) {
 		super()
 	}
@@ -154,9 +156,9 @@ export class ForumMailPlugin extends BasePlugin {
 		return this.transport !== undefined
 	}
 
+	/** Links in mail start at the forum's public address, set once in Pluxum Auth. */
 	private site(): MailSite {
-		const url = this.config.siteUrl
-		return { name: this.core.site().name, url: url === '' ? undefined : url }
+		return { name: this.core.site().name, url: this.auth.publicOrigin() ?? undefined }
 	}
 
 	private templatesFor(locale: MailLocale) {

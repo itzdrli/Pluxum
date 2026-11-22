@@ -10,7 +10,7 @@ export const MARKDOWN_RENDERER_ID = 'forum-markdown.marked'
  * Renders posts as Markdown by contributing the forum's content renderer. Stopping this plugin
  * turns every post back into plain text; nothing is stored, so starting it again restores them.
  */
-@Plugin({ displayName: 'Forum Markdown' })
+@Plugin({ displayName: 'Pluxum Markdown' })
 export class ForumMarkdownPlugin extends BasePlugin {
 	constructor(private readonly core: ForumCorePlugin) {
 		super()

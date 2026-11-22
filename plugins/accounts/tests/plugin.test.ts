@@ -13,7 +13,7 @@ import { hashPassword, needsRehash, verifyPassword } from '../src/password'
 const ORIGIN = 'https://forum.test'
 
 /**
- * Stand-in for Forum Auth: a session is the cookie `s=<userId>`, and revoking an account's
+ * Stand-in for Pluxum Auth: a session is the cookie `s=<userId>`, and revoking an account's
  * sessions is counted. The real session store is tested in forum-auth.
  */
 @Plugin(ForumAuth)
@@ -256,7 +256,7 @@ describe('forum accounts plugin', () => {
 		expect((await env.post('/login', { email: 'a@b.co', password: 'new password' })).status).toBe(
 			200,
 		)
-		// Without Forum Mail running, nobody can ask for a link by mail.
+		// Without Pluxum Mail running, nobody can ask for a link by mail.
 		expect((await env.post('/reset-request', { email: 'a@b.co' })).body.error.key).toBe(
 			'account.reset_unavailable',
 		)

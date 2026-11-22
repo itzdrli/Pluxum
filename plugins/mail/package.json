@@ -51,6 +51,7 @@
 	},
 	"peerDependencies": {
 		"@pluxum/api": "workspace:^",
+		"@pluxum/auth": "workspace:^",
 		"@pluxum/core": "workspace:^",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
@@ -62,6 +63,7 @@
 		"workbenchArtifacts": true,
 		"pluginPackages": {
 			"@pluxum/api": "required",
+			"@pluxum/auth": "required",
 			"@pluxum/core": "required"
 		}
 	},

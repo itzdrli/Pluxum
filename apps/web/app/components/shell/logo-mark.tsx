@@ -52,7 +52,7 @@ export function LogoMark({ className }: { className?: string }) {
 }
 
 /**
- * The forum's mark: the logo uploaded in Workbench (Forum Core › 品牌), or the Pluxum mark when
+ * The forum's mark: the logo uploaded in Workbench (Pluxum Core › 品牌), or the Pluxum mark when
  * none is. Used wherever the brand appears in the shell.
  */
 export function BrandMark({ className }: { className?: string }) {

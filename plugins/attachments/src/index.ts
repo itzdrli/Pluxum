@@ -62,25 +62,25 @@ export const ForumAttachmentsConfig = v.object({
 			v.regex(/^[a-z][a-z0-9._-]{0,63}$/),
 			f.formMeta({
 				title: '存储桶',
-				description: '附件和头像存放的桶 ID，须在 Forum Storage 中已声明。修改后需重启本插件。',
+				description: '附件和头像存放的桶 ID，须在 Pluxum Storage 中声明。修改后需重启本插件',
 			}),
 		),
 		'default',
 	),
 	attachmentMaxMiB: mebibytes(5, ATTACHMENT_CEILING_MIB, {
 		title: '附件大小上限（MiB）',
-		description: `帖子中单个附件的最大体积，最多 ${ATTACHMENT_CEILING_MIB} MiB。`,
+		description: `帖子中单个附件的最大体积，最多 ${ATTACHMENT_CEILING_MIB} MiB`,
 	}),
 	avatarMaxMiB: mebibytes(2, AVATAR_CEILING_MIB, {
 		title: '头像大小上限（MiB）',
-		description: `头像图片的最大体积，最多 ${AVATAR_CEILING_MIB} MiB。`,
+		description: `头像图片的最大体积，最多 ${AVATAR_CEILING_MIB} MiB`,
 	}),
 	documentTypes: v.optional(
 		v.pipe(
 			v.array(v.pipe(v.picklist(DOCUMENT_TYPES), f.picklistMeta({ labels: DOCUMENT_LABELS }))),
 			f.formMeta({
 				title: '允许的文档类型',
-				description: '图片始终允许，这里选择额外允许的文档类型。',
+				description: '图片始终允许，这里选择额外允许的文档类型',
 			}),
 			f.arrayMeta({ layout: 'picker', itemLabel: '类型', addLabel: '添加类型' }),
 		),
@@ -260,7 +260,7 @@ export function extractAttachmentIds(body: string): string[] {
  * - the `user.profile.tabs`, `composer.toolbar` and `post.footer` UI slots;
  * - the `/api/forum/ext/forum-attachments/*` upload actions and file serving endpoint.
  */
-@Plugin({ displayName: 'Forum Attachments', startTimeoutMs: 30_000 })
+@Plugin({ displayName: 'Pluxum Attachments', startTimeoutMs: 30_000 })
 export class ForumAttachmentsPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumAttachmentsConfig)
 	private database!: PluginDatabaseHandle<typeof AttachmentsDatabase>

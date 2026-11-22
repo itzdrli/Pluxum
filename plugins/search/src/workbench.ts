@@ -39,7 +39,7 @@ const SegmentInput = v.object({
 		v.maxLength(200),
 		f.formMeta({
 			title: '文本',
-			description: '用当前的词典切分这段文字，检查自定义词是否被当作一个整体。',
+			description: '用当前的词典切分这段文字，检查自定义词是否被当作一个整体',
 		}),
 	),
 })

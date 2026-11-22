@@ -46,7 +46,7 @@ export const ForumModerationConfig = v.object({
 			v.array(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(120))),
 			f.formMeta({
 				title: '屏蔽词',
-				description: '标题或正文含有这些词时拒绝发布，不区分大小写和全半角。',
+				description: '标题或正文含有这些词时拒绝发布，不区分大小写和全半角',
 			}),
 			f.arrayMeta({ itemLabel: '屏蔽词', addLabel: '添加屏蔽词', emptyHint: '未设置屏蔽词' }),
 		),
@@ -224,7 +224,7 @@ function cleanText(raw: string | undefined, maxLength: number): string | null {
  * - `uiSlots` (`post.actions`, `user.profile.tabs`);
  * - `extActions` under `/api/forum/ext/forum-moderation/{report,queue,resolve,ban,unban,logs}`.
  */
-@Plugin({ displayName: 'Forum Moderation', startTimeoutMs: 30_000 })
+@Plugin({ displayName: 'Pluxum Moderation', startTimeoutMs: 30_000 })
 export class ForumModerationPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumModerationConfig)
 	private database!: PluginDatabaseHandle<typeof ModerationDatabase>

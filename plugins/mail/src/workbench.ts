@@ -33,7 +33,7 @@ const PasswordInput = v.object({
 		v.string(),
 		v.minLength(1),
 		v.maxLength(512),
-		f.formMeta({ title: 'SMTP 密码', description: '只写入 Vault，不会显示出来。' }),
+		f.formMeta({ title: 'SMTP 密码', description: '只写入 Vault，不会显示出来' }),
 		f.stringMeta({ control: 'password' }),
 	),
 })

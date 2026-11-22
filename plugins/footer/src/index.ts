@@ -12,7 +12,7 @@ import { BasePlugin, Plugin } from '@pluxel/core'
 import * as v from 'valibot'
 import * as f from 'valibot-form'
 
-/** The contributor's ID in Forum Core's footer registry. */
+/** The contributor's ID in Pluxum Core's footer registry. */
 export const FOOTER_CONTRIBUTOR_ID = 'forum-footer'
 
 const text = (max: number) => v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(max))
@@ -22,7 +22,7 @@ const href = v.pipe(
 	v.trim(),
 	f.formMeta({
 		title: '链接',
-		description: '站内路径以 / 开头，外链在新标签页打开。',
+		description: '站内路径以 / 开头，外链在新标签页打开',
 	}),
 	f.stringMeta({ placeholder: '/c/general 或 https://…' }),
 	v.check((value: string) => isFooterHref(value), '链接须是论坛内路径（/ 开头）或 http(s) 地址'),
@@ -42,7 +42,7 @@ const FooterIconLink = v.object({
 	),
 	label: v.pipe(
 		text(FOOTER_LABEL_MAX),
-		f.formMeta({ title: '名称', description: '悬停提示和读屏文字。' }),
+		f.formMeta({ title: '名称', description: '悬停提示和读屏文字' }),
 	),
 	href,
 })
@@ -65,7 +65,7 @@ export const ForumFooterConfig = v.object({
 			v.boolean(),
 			f.formMeta({
 				title: '显示「站内」栏',
-				description: '在页脚最前面加一栏站内入口。',
+				description: '在页脚最前面加一栏站内入口',
 			}),
 		),
 		false,
@@ -75,7 +75,7 @@ export const ForumFooterConfig = v.object({
 			v.array(FooterGroup),
 			f.formMeta({
 				title: '链接栏目',
-				description: '页脚的文字链接栏，每栏一个标题。',
+				description: '页脚的文字链接栏，每栏一个标题',
 			}),
 			f.arrayMeta({
 				itemLabel: '栏目',
@@ -90,7 +90,7 @@ export const ForumFooterConfig = v.object({
 	icons: v.optional(
 		v.pipe(
 			v.array(FooterIconLink),
-			f.formMeta({ title: '图标链接', description: '页脚右下角只显示图标的链接。' }),
+			f.formMeta({ title: '图标链接', description: '页脚右下角只显示图标的链接' }),
 			f.arrayMeta({
 				itemLabel: '图标链接',
 				addLabel: '添加图标链接',
@@ -106,7 +106,7 @@ export const ForumFooterConfig = v.object({
 			v.array(text(FOOTER_NOTE_MAX)),
 			f.formMeta({
 				title: '附注文字',
-				description: '页脚底部的短句，例如版权声明、备案号、联系方式。',
+				description: '页脚底部的短句，例如版权声明、备案号、联系方式',
 			}),
 			f.arrayMeta({ itemLabel: '附注', addLabel: '添加附注', emptyHint: '没有附注' }),
 			v.maxLength(FOOTER_NOTES_MAX),
@@ -124,10 +124,10 @@ type DeepReadonly<T> = T extends readonly (infer U)[]
 
 /**
  * Customises the site footer from its own settings: columns of text links, icon links and plain
- * notes. It hands them to Forum Core's footer registry as plain data, so no frontend code is
+ * notes. It hands them to Pluxum Core's footer registry as plain data, so no frontend code is
  * involved. A saved change replaces them at once; stopping the plugin withdraws all of them.
  */
-@Plugin({ displayName: 'Forum Footer' })
+@Plugin({ displayName: 'Pluxum Footer' })
 export class ForumFooterPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumFooterConfig)
 	private withdraw: (() => void) | undefined

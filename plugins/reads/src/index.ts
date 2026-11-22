@@ -30,7 +30,7 @@ const MarkInput = Type.Object({ threadId: Type.String({ maxLength: 64 }) })
  * ingress. Stopping it removes all three; the positions stay stored and return with it.
  */
 // PGlite compiles its WASM module on first use, which can exceed the default start timeout.
-@Plugin({ displayName: 'Forum Reads', startTimeoutMs: 30_000 })
+@Plugin({ displayName: 'Pluxum Reads', startTimeoutMs: 30_000 })
 export class ForumReadsPlugin extends BasePlugin {
 	private database!: PluginDatabaseHandle<typeof ReadsDatabase>
 

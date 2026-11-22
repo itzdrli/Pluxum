@@ -43,7 +43,7 @@ export const ForumNotificationsConfig = v.object({
 			v.maxValue(500),
 			f.formMeta({
 				title: '回复摘要长度',
-				description: '回帖通知里保留的回复正文字数。只影响之后产生的通知。',
+				description: '回帖通知里保留的回复正文字数。只影响之后产生的通知',
 			}),
 			f.numberMeta({ step: 20 }),
 		),
@@ -148,7 +148,7 @@ function optionalEntityId(value: string | undefined): string | null {
  * - `uiSlots` (`shell.actions`) so the top-bar notification bell hides when this plugin stops;
  * - `extActions` under `/api/forum/ext/forum-notifications/{list,unread-count,mark-read,mark-all-read}`.
  */
-@Plugin({ displayName: 'Forum Notifications', startTimeoutMs: 30_000 })
+@Plugin({ displayName: 'Pluxum Notifications', startTimeoutMs: 30_000 })
 export class ForumNotificationsPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumNotificationsConfig)
 	private database!: PluginDatabaseHandle<typeof NotificationsDatabase>

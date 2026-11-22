@@ -42,7 +42,7 @@ const SecretInput = v.object({
 		v.maxLength(512),
 		f.formMeta({
 			title: '客户端密钥',
-			description: 'Zitadel 应用的 Client Secret，只写入 Vault。',
+			description: 'Zitadel 应用的 Client Secret，只写入 Vault',
 		}),
 		f.stringMeta({ control: 'password' }),
 	),

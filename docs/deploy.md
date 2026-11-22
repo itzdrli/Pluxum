@@ -29,7 +29,7 @@ Fill in `.env`:
   confidential client's secret is entered in Workbench after the first start (step 3).
   `FORUM_ADMIN_SUBJECTS` lists provider user IDs (the `sub` claim) that become admins when they sign in.
   `FORUM_OIDC_BUTTON_LABEL` sets the provider button's text on the sign-in page (e.g. `Sign in with OIDC`);
-  it can also be changed later in Forum Auth's settings.
+  it can also be changed later in Pluxum Auth's settings.
 
 ## 2. Start
 
@@ -64,13 +64,13 @@ Things to set there after the first start:
 
 - **Become admin**: sign up on the forum, then tick 管理员 next to your account in **论坛管理 › 用户**.
 - **Brand**: **论坛管理 › 品牌** takes your logo, site icon and link preview image; the site name,
-  tagline and default theme are in **Forum Core**'s settings, the footer in **Forum Footer**'s.
-- **Forum Accounts**: open or close sign-ups. Without mail, its **账号** page makes one-time password
+  tagline and default theme are in **Pluxum Core**'s settings, the footer in **Pluxum Footer**'s.
+- **Pluxum Accounts**: open or close sign-ups. Without mail, its **账号** page makes one-time password
   reset links for you to hand out.
-- **Forum Auth**: the client secret if your OIDC client is confidential, then _check the login service_.
-- **Forum Mail**: SMTP server and password, to send reply and mention notifications and let people
+- **Pluxum Auth**: the client secret if your OIDC client is confidential, then _check the login service_.
+- **Pluxum Mail**: SMTP server and password, to send reply and mention notifications and let people
   reset their own passwords.
-- **Forum Storage**: attachments are stored in the server volume by default; switch to an S3-compatible
+- **Pluxum Storage**: attachments are stored in the server volume by default; switch to an S3-compatible
   bucket here if you prefer.
 
 ## Data and backups

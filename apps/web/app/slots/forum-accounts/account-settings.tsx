@@ -41,7 +41,7 @@ function isMe(value: unknown): value is Me {
 
 type Outcome = Readonly<{ ok: true; body: unknown }> | Readonly<{ ok: false; error: string }>
 
-/** One call to Forum Accounts through the web app's API proxy, which passes the cookie both ways. */
+/** One call to Pluxum Accounts through the web app's API proxy, which passes the cookie both ways. */
 async function call(i18n: I18n, path: string, input?: unknown): Promise<Outcome> {
 	try {
 		const response = await fetch(

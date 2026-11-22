@@ -50,7 +50,7 @@ class FakeAuth extends ForumAuth {
 		throw new Error('not used')
 	}
 	override publicOrigin(): string | null {
-		return null
+		return 'https://forum.test'
 	}
 	override openSession(): never {
 		throw new Error('not used')
@@ -126,7 +126,6 @@ async function boot(options: { password?: string } = {}) {
 				port: smtp.port,
 				security: 'none',
 				fromAddress: 'noreply@forum.test',
-				siteUrl: 'https://forum.test',
 				...set,
 			},
 		})

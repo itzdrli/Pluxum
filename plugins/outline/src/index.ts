@@ -10,7 +10,7 @@ export const OUTLINE_EXT_ID = 'forum-outline'
  * one being read and jumps to the one clicked. A thread with a single floor shows nothing and the
  * column folds away. Stopping the plugin removes the timeline; nothing is stored.
  */
-@Plugin({ displayName: 'Forum Outline' })
+@Plugin({ displayName: 'Pluxum Outline' })
 export class ForumOutlinePlugin extends BasePlugin {
 	constructor(private readonly core: ForumCorePlugin) {
 		super()

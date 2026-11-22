@@ -19,7 +19,7 @@ const Window = (title: string, description: string, limit: number, minutes: numb
 					v.integer(),
 					v.minValue(0),
 					v.maxValue(MAX_LIMIT),
-					f.formMeta({ title: '次数', description: '0 表示不限制。' }),
+					f.formMeta({ title: '次数', description: '0 表示不限制' }),
 				),
 				minutes: v.pipe(
 					v.number(),
@@ -42,7 +42,7 @@ export const ForumRatesConfig = v.object({
 	exemptStaff: v.optional(
 		v.pipe(
 			v.boolean(),
-			f.formMeta({ title: '版主和管理员不受限', description: '关闭后，所有账号使用同样的限制。' }),
+			f.formMeta({ title: '版主和管理员不受限', description: '关闭后，所有账号使用同样的限制' }),
 		),
 		true,
 	),
@@ -73,11 +73,11 @@ function isStaff(principal: Principal): boolean {
 
 /**
  * Limits how often an account writes: threads, replies and edits each have their own sliding
- * window, set in Workbench. It plugs into Forum Core's `postHooks` admission stage, so a refused
+ * window, set in Workbench. It plugs into Pluxum Core's `postHooks` admission stage, so a refused
  * write answers 429 with how long to wait. Counts live in the `Rates` capability's backend (Redis
  * in this host), so they hold across restarts of this plugin. Stopping it lifts every limit.
  */
-@Plugin({ displayName: 'Forum Rates' })
+@Plugin({ displayName: 'Pluxum Rates' })
 export class ForumRatesPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumRatesConfig)
 	private limiters = new Map<Bucket, RateLimiter>()

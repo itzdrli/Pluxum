@@ -47,7 +47,7 @@ type LoadedFonts = Readonly<{ revision: number; fonts: Font[]; family: string }>
  * It fills the `thread.social` slot, which tells the frontend to point `og:image` here; stopped,
  * thread pages fall back to the site-wide image.
  */
-@Plugin({ displayName: 'Forum OG Images' })
+@Plugin({ displayName: 'Pluxum OG Images' })
 export class ForumOgPlugin extends BasePlugin {
 	private readonly cards = new Map<string, CachedCard>()
 	private readonly pending = new Map<string, Promise<CachedCard>>()
@@ -75,7 +75,7 @@ export class ForumOgPlugin extends BasePlugin {
 	}
 
 	/**
-	 * The logo uploaded in Workbench (Forum Core › 品牌) as a data URL, kept until the upload
+	 * The logo uploaded in Workbench (Pluxum Core › 品牌) as a data URL, kept until the upload
 	 * changes; undefined draws the Pluxum mark.
 	 */
 	private async loadMark(): Promise<Readonly<{ version: string; src: string }> | undefined> {

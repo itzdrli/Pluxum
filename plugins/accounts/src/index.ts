@@ -33,7 +33,7 @@ export { ForumAccountsConfig } from './config'
 
 /** Where the routes live; the web app proxies everything under `/api/forum`. */
 export const ACCOUNTS_PREFIX = '/api/forum/accounts'
-/** Subject prefix of these accounts in Forum Core; no identity provider issues subjects like it. */
+/** Subject prefix of these accounts in Pluxum Core; no identity provider issues subjects like it. */
 export const LOCAL_SUBJECT_PREFIX = 'local:'
 /** Web page that sets a new password from `?token=`. */
 export const RESET_PAGE_PATH = '/reset-password'
@@ -95,12 +95,12 @@ export function normalizeEmail(input: string): string | null {
 /**
  * Email and password accounts, so a forum can open without an identity provider.
  *
- * Each account is a Forum Core user with the subject `local:<account id>`; this plugin keeps
- * only the address and an scrypt hash. Sessions are Forum Auth's, the same as a provider login,
+ * Each account is a Pluxum Core user with the subject `local:<account id>`; this plugin keeps
+ * only the address and an scrypt hash. Sessions are Pluxum Auth's, the same as a provider login,
  * so logout, "log out everywhere" and bans work unchanged. Mounts:
  *
  * - `POST /api/forum/accounts/register` and `/login`: answer `{ userId }` and set the session;
- * - `POST /api/forum/accounts/reset-request`: mails a reset link through Forum Mail, when it runs;
+ * - `POST /api/forum/accounts/reset-request`: mails a reset link through Pluxum Mail, when it runs;
  * - `POST /api/forum/accounts/reset`: sets a new password from a link and ends every old session;
  * - `GET /api/forum/accounts/options`: what the sign-in page may offer;
  * - `GET /api/forum/accounts/me`: the signed-in member's account (`{ account: null }` when they
@@ -110,7 +110,7 @@ export function normalizeEmail(input: string): string | null {
  *
  * Attempts are rate limited per address (logins, resets) and per client (sign-ups).
  */
-@Plugin({ displayName: 'Forum Accounts', startTimeoutMs: 30_000 })
+@Plugin({ displayName: 'Pluxum Accounts', startTimeoutMs: 30_000 })
 export class ForumAccountsPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumAccountsConfig)
 	private database!: PluginDatabaseHandle<typeof AccountsDatabase>
@@ -410,7 +410,7 @@ export class ForumAccountsPlugin extends BasePlugin {
 	}
 
 	/**
-	 * Deletes the account: the login goes, and Forum Core hands everything it wrote to Ghost
+	 * Deletes the account: the login goes, and Pluxum Core hands everything it wrote to Ghost
 	 * before removing the forum user. Ends every session and removes the cookie.
 	 */
 	async deleteAccount(request: Request, raw: unknown): Promise<Response> {
@@ -489,7 +489,7 @@ export class ForumAccountsPlugin extends BasePlugin {
 		return account
 	}
 
-	/** Tells the owner about a change to their account, when Forum Mail can send. */
+	/** Tells the owner about a change to their account, when Pluxum Mail can send. */
 	private notice(to: string, subject: string, lines: readonly string[]): void {
 		const mail = this.mail
 		if (!mail?.canSend()) return
@@ -601,7 +601,7 @@ export class ForumAccountsPlugin extends BasePlugin {
 			actions: {
 				resetLink: async ({ email }: ResetLinkInput) => {
 					if (this.auth.publicOrigin() === null)
-						return { ok: false, message: '先在 Forum Auth 的配置里填写论坛公开地址' }
+						return { ok: false, message: '先在 Pluxum Auth 的配置里填写论坛公开地址' }
 					const normalized = normalizeEmail(email)
 					const link = normalized === null ? null : await this.resetLinkFor(normalized)
 					if (link === null) return { ok: false, message: '没有用这个邮箱注册的账号' }

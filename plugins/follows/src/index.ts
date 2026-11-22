@@ -83,7 +83,7 @@ export function followNoticeId(followerId: string, targetId: string): string {
  * stay stored and return with it.
  */
 // PGlite compiles its WASM module on first use, which can exceed the default start timeout.
-@Plugin({ displayName: 'Forum Follows', startTimeoutMs: 30_000 })
+@Plugin({ displayName: 'Pluxum Follows', startTimeoutMs: 30_000 })
 export class ForumFollowsPlugin extends BasePlugin {
 	private database!: PluginDatabaseHandle<typeof FollowsDatabase>
 
