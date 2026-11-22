@@ -851,6 +851,23 @@ describe('ForumCorePlugin', () => {
 			'Final',
 		)
 
+		// The history lists the original, each edit and who made it; a moderator's edit counts too.
+		const original = (await core.getPostHistory(GUEST, opening.id)).unwrap()
+		expect(original.versions).toMatchObject([
+			{ number: 1, body: 'v1', editor: { id: alice.userId } },
+		])
+		;(await core.updatePost(admin, reply.id, { body: 'fixed!' })).unwrap()
+		const history = (await core.getPostHistory(GUEST, reply.id)).unwrap()
+		expect(
+			history.versions.map((version) => [version.number, version.body, version.editor.id]),
+		).toEqual([
+			[1, 'typo', bob.userId],
+			[2, 'fixed', bob.userId],
+			[3, 'fixed!', admin.userId],
+		])
+		expect(history.versions[0]?.createdAt).toBe(reply.createdAt)
+		expect(await codeOf(core.getPostHistory(GUEST, MISSING_ID))).toBe('not_found')
+
 		expect(await codeOf(core.deletePost(alice, opening.id))).toBe('conflict')
 		expect(await codeOf(core.deletePost(alice, reply.id))).toBe('forbidden')
 		;(await core.deletePost(bob, reply.id)).unwrap()

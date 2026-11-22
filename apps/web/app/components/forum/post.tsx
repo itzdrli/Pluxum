@@ -5,14 +5,13 @@ import { Form, Link, useActionData, useNavigation } from 'react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 
 import { withoutLeadingTitle } from '../../lib/post-html'
-import { formatDateTime } from '../../lib/format'
-import { useTimeZone } from '../../lib/timezone'
 import { PostFooterSlots, usePostMenuSlots } from '../../slots/slots'
 import { Composer } from '../composer/composer'
 import { Button } from '../ui/button'
 import { FormError, Tag, Timestamp } from '../ui/display'
 import { imagesForClick, useLightbox } from '../ui/lightbox'
 import { ActionMenu, ConfirmDialog, type MenuItem } from '../ui/overlay'
+import { EditedMark } from './post-history'
 import { UserAvatar } from './user-avatar'
 
 /**
@@ -43,7 +42,7 @@ export function PostCard({
 	/** Whether the viewer may answer inside this floor. */
 	canReply?: boolean
 }) {
-	const { t, i18n } = useLingui()
+	const { t } = useLingui()
 	// Who the floor's reply box answers (the floor or one reply in it), opened at a reply count.
 	// Posting changes the count, which closes the box.
 	const [answering, setAnswering] = useState<Readonly<{ post: PostDto; total: number }> | null>(
@@ -61,8 +60,6 @@ export function PostCard({
 	const lightbox = useLightbox()
 	const [copied, setCopied] = useState(false)
 	const ext = usePostMenuSlots(post)
-	const timeZone = useTimeZone()
-	const editedAt = formatDateTime(post.editedAt ?? '', i18n.locale, timeZone)
 	// Order: share, then what extensions add (report), then the author's own edit and delete.
 	const items: MenuItem[] = [
 		{
@@ -130,7 +127,10 @@ export function PostCard({
 					<div className="text-ink-weak flex items-center gap-1.5 text-meta">
 						<Timestamp iso={post.createdAt} />
 						{post.editedAt !== null && !post.deleted && (
-							<span title={t`编辑于 ${editedAt}`}>· {t`已编辑`}</span>
+							<>
+								<span aria-hidden>·</span>
+								<EditedMark post={post} />
+							</>
 						)}
 						<span aria-hidden>·</span>
 						<a
@@ -355,13 +355,11 @@ function FloorReply({
 	bodyMax: number | undefined
 	onAnswer: () => void
 }) {
-	const { t, i18n } = useLingui()
+	const { t } = useLingui()
 	const [editingFrom, setEditingFrom] = useState<string | null | undefined>(undefined)
 	const editing = editingFrom !== undefined && editingFrom === reply.editedAt
 	const [confirming, setConfirming] = useState(false)
 	const ext = usePostMenuSlots(reply)
-	const timeZone = useTimeZone()
-	const replyEditedAt = formatDateTime(reply.editedAt ?? '', i18n.locale, timeZone)
 	const replyNumber = reply.number
 	const items: MenuItem[] = [
 		{
@@ -444,9 +442,7 @@ function FloorReply({
 					)}
 					<div className="text-ink-weak mt-0.5 flex items-center gap-2 text-meta">
 						<Timestamp iso={reply.createdAt} />
-						{reply.editedAt !== null && (
-							<span title={t`编辑于 ${replyEditedAt}`}>· {t`已编辑`}</span>
-						)}
+						<EditedMark post={reply} />
 						<a href={`#post-${reply.number}`} className="hover:text-ink-strong tabular-nums">
 							#{reply.number}
 						</a>

@@ -340,6 +340,10 @@ msgstr "Admins cannot be banned"
 msgid "不能封禁自己"
 msgstr "You cannot ban yourself"
 
+#: app/components/forum/post-history.tsx
+msgid "与上一版的差异"
+msgstr "Changes from the previous version"
+
 #: app/components/shell/user-menu.tsx
 msgid "个人资料"
 msgstr "Profile"
@@ -560,6 +564,7 @@ msgid "关注版块"
 msgstr "Follow category"
 
 #: app/components/dock/composer-dock.tsx
+#: app/components/forum/post-history.tsx
 #: app/components/ui/bottom-sheet.tsx
 #: app/components/ui/lightbox.tsx
 msgid "关闭"
@@ -694,12 +699,14 @@ msgstr "Go to"
 msgid "加入于"
 msgstr "Joined"
 
+#: app/components/forum/post-history.tsx
 #: app/components/forum/post.tsx
 #: app/components/palette/command-palette.tsx
 #: app/slots/forum-notifications/bell.tsx
 msgid "加载中…"
 msgstr "Loading…"
 
+#: app/components/forum/post-history.tsx
 #: app/components/forum/post.tsx
 msgid "加载失败，请重试。"
 msgstr "Failed to load. Please try again."
@@ -742,6 +749,10 @@ msgstr "Half screen"
 #: app/slots/forum-moderation/report-button.tsx
 msgid "原因"
 msgstr "Reason"
+
+#: app/components/forum/post-history.tsx
+msgid "原文"
+msgstr "Original"
 
 #: app/slots/forum-mail/mail-settings.tsx
 msgid "发到 <0>{email}</0>"
@@ -1101,7 +1112,7 @@ msgstr "Banned"
 msgid "已有账号？登录"
 msgstr "Have an account? Sign in"
 
-#: app/components/forum/post.tsx
+#: app/components/forum/post-history.tsx
 msgid "已编辑"
 msgstr "edited"
 
@@ -1133,6 +1144,10 @@ msgstr "Post report"
 #: app/components/composer/rich-editor.tsx
 msgid "引用"
 msgstr "Quote"
+
+#: app/components/forum/post-history.tsx
+msgid "当前"
+msgstr "Current"
 
 #: app/slots/forum-accounts/account-settings.tsx
 msgid "当前密码"
@@ -1745,6 +1760,10 @@ msgstr "Actions for floor {number}"
 msgid "第 {number} 楼的链接"
 msgstr "Link to floor {number}"
 
+#: app/components/forum/post-history.tsx
+msgid "第 {number} 版"
+msgstr "Version {number}"
+
 #: app/components/forum/post.tsx
 msgid "第 {replyNumber} 楼的操作"
 msgstr "Actions for floor {replyNumber}"
@@ -1777,17 +1796,21 @@ msgstr "General discussion"
 msgid "编辑"
 msgstr "Edit"
 
-#: app/components/forum/post.tsx
+#: app/components/forum/post-history.tsx
 msgid "编辑于 {editedAt}"
 msgstr "Edited {editedAt}"
 
 #: app/components/forum/post.tsx
-msgid "编辑于 {replyEditedAt}"
-msgstr "Edited {replyEditedAt}"
+#~ msgid "编辑于 {replyEditedAt}"
+#~ msgstr "Edited {replyEditedAt}"
 
 #: app/components/forum/post.tsx
 msgid "编辑内容"
 msgstr "Edit content"
+
+#: app/components/forum/post-history.tsx
+msgid "编辑记录"
+msgstr "Edit history"
 
 #: app/routes/user.tsx
 msgid "编辑资料"

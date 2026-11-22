@@ -290,6 +290,22 @@ export type ThreadDetailDto = Readonly<{
 	}>
 }>
 
+/** One version of a post's body: the original, an edit, or the current text. */
+export type PostVersionDto = Readonly<{
+	/** 1 for the original, counting up to the current body. */
+	number: number
+	body: string
+	/** Who wrote this version: the author for the original, then whoever made each edit. */
+	editor: UserDto
+	createdAt: string
+}>
+
+/** A post's edit history, oldest version first; one version when it was never edited. */
+export type PostHistoryDto = Readonly<{
+	postId: string
+	versions: PostVersionDto[]
+}>
+
 /** Where a floor sits on its thread's pages: what a link to `/t/<ref>/<floor>` resolves to. */
 export type FloorLocationDto = Readonly<{
 	threadRef: string

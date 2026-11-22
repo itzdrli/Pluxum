@@ -545,6 +545,24 @@
 		white-space: pre-wrap;
 	}
 
+	/* A version of a post's source in its edit history, with what changed from the one before. */
+	.post-diff {
+		font-size: var(--fs-ui);
+		line-height: 1.7;
+		color: var(--c-text);
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+	.post-diff ins {
+		text-decoration: none;
+		color: var(--c-text-strong);
+		background: color-mix(in srgb, var(--c-success) 26%, transparent);
+	}
+	.post-diff del {
+		color: var(--c-text-weak);
+		background: color-mix(in srgb, var(--c-danger) 20%, transparent);
+	}
+
 	/* A note as a card in a list: images stay thumbnails, and a long note folds to a few lines. */
 	.note-body {
 		font-size: var(--fs-ui);

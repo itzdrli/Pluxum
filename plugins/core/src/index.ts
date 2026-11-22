@@ -40,6 +40,7 @@ import {
 	type CategoryKind,
 	type CategorySummaryDto,
 	type FloorLocationDto,
+	type PostHistoryDto,
 	type CommunityDto,
 	type PaletteCommandDto,
 	type CategoryThreadsDto,
@@ -385,6 +386,8 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 const author = { id: users.id, handle: users.handle, displayName: users.displayName }
+/** A post's history keeps at most this many earlier versions (the oldest ones). */
+const POST_HISTORY_MAX = 200
 const replyToUsers = alias(users, 'reply_to_users')
 const replyTo = {
 	id: replyToUsers.id,
@@ -2422,6 +2425,49 @@ export class ForumCorePlugin extends BasePlugin {
 			pageSize,
 			total: read.total,
 		})
+	}
+
+	/**
+	 * Every version of a visible post, oldest first: the original body, the body after each edit
+	 * and the current one. Whoever may see the post may see its history.
+	 */
+	async getPostHistory(principal: Principal, postId: string): Promise<ForumResult<PostHistoryDto>> {
+		if (!isEntityId(postId)) return notFound('post')
+		const read = await this.database.read(async (db) => {
+			const found = await this.findPost(db, principal, postId)
+			if (!found) return null
+			// Each row holds the body as it was before an edit, made by `editor` at `createdAt`.
+			const edits = await db
+				.select({ body: postRevisions.body, createdAt: postRevisions.createdAt, editor: author })
+				.from(postRevisions)
+				.innerJoin(users, eq(users.id, postRevisions.editorId))
+				.where(eq(postRevisions.postId, found.post.id))
+				.orderBy(asc(postRevisions.createdAt), asc(postRevisions.id))
+				.limit(POST_HISTORY_MAX)
+			return { found, edits }
+		})
+		if (!read) return notFound('post')
+		const { found, edits } = read
+		const versions: PostHistoryDto['versions'] = []
+		let editor: UserDto = found.author
+		let at = found.post.createdAt
+		for (const edit of edits) {
+			versions.push({
+				number: versions.length + 1,
+				body: edit.body,
+				editor,
+				createdAt: at.toISOString(),
+			})
+			editor = edit.editor
+			at = edit.createdAt
+		}
+		versions.push({
+			number: versions.length + 1,
+			body: found.post.body,
+			editor,
+			createdAt: at.toISOString(),
+		})
+		return Result.ok({ postId: found.post.id, versions })
 	}
 
 	/**

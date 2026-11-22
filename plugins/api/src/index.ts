@@ -565,6 +565,10 @@ export class ForumApiPlugin extends BasePlugin {
 							await this.core.listReplies(await this.viewer(request), params.id, pageOf(query)),
 						),
 				)
+				// Every version of a post, for its 「已编辑」 history.
+				.get('/posts/:id/history', { response: schema.postHistory }, async ({ request, params }) =>
+					valueOf(await this.core.getPostHistory(await this.viewer(request), params.id)),
+				)
 				.patch(
 					'/posts/:id',
 					{ body: schema.postBody, response: schema.post },

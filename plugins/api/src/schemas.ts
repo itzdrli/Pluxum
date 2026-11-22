@@ -77,6 +77,13 @@ export const post = t.Object({
 
 export const replyPage = t.Object({ items: t.Array(innerPost), ...paged })
 
+export const postHistory = t.Object({
+	postId: t.String(),
+	versions: t.Array(
+		t.Object({ number: t.Number(), body: t.String(), editor: user, createdAt: t.String() }),
+	),
+})
+
 export const floorLocation = t.Object({
 	threadRef: t.String(),
 	floor: t.Number(),
