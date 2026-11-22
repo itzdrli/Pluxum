@@ -23,6 +23,10 @@ export default [
 		route('reset-password', 'routes/reset-password.tsx'),
 	]),
 	route('t/:id/:floor?', 'routes/thread-shortlink.ts'),
+	// Atom feeds of the site, a category and a person.
+	route('feed.xml', 'routes/feed.ts', { id: 'routes/feed-site' }),
+	route('c/:slug/feed.xml', 'routes/feed.ts', { id: 'routes/feed-category' }),
+	route('u/:userId/feed.xml', 'routes/feed.ts', { id: 'routes/feed-user' }),
 	// Write actions of extension plugins, called by their slot components.
 	route('ext/:extId/:action', 'routes/ext-action.ts'),
 	// Resource route: forwards the forum API to the Pluxel host on this same origin.

@@ -127,6 +127,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 						<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 					</>
 				)}
+				<link rel="alternate" type="application/atom+xml" href="/feed.xml" title={site.name} />
 				<meta name="twitter:card" content="summary_large_image" />
 				<Meta />
 				<Links />

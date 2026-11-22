@@ -61,7 +61,18 @@ export const handle = defineStage({
 })
 
 export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescriptors {
-	return [{ title: pageTitle(matches[0].loaderData, loaderData?.user.displayName) }]
+	const title = pageTitle(matches[0].loaderData, loaderData?.user.displayName)
+	if (!loaderData || loaderData.ghost) return [{ title }]
+	return [
+		{ title },
+		{
+			tagName: 'link',
+			rel: 'alternate',
+			type: 'application/atom+xml',
+			href: `/u/${loaderData.user.handle}/feed.xml`,
+			title: loaderData.user.displayName,
+		},
+	]
 }
 
 export async function loader({ request, params, url: location }: Route.LoaderArgs) {

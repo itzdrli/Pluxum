@@ -52,6 +52,13 @@ export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescrip
 	const isStream = category.kind === 'stream'
 	return [
 		{ title: pageTitle(root, isStream ? i18nOfRoot(root)._(STREAM_LABEL) : category.name) },
+		{
+			tagName: 'link',
+			rel: 'alternate',
+			type: 'application/atom+xml',
+			href: `/c/${category.slug}/feed.xml`,
+			title: category.name,
+		},
 		...(isStream || category.description === ''
 			? []
 			: [{ name: 'description', content: category.description }]),
