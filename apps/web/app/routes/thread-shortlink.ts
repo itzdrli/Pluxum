@@ -10,9 +10,10 @@ import { forumApi, orThrow } from '../lib/forum-api.server'
 // the nested stage URL. `/t/:id/:floor` also lands on the page that shows that floor, with the
 // floor it replies inside unfolded; the second segment may be a floor number or a post id (links
 // that only know the post id, e.g. moderation reports).
-export async function loader({ request, params }: Route.LoaderArgs) {
+export async function loader({ request, params, url: location }: Route.LoaderArgs) {
 	const detail = orThrow(await forumApi.thread(request, params.id, 1))
-	const url = new URL(request.url)
+	// Not `request.url`: on a client navigation that is the `.data` URL, no place to redirect to.
+	const url = new URL(location)
 	const base = `/c/${detail.category.slug}/t/${detail.thread.ref}`
 	if (params.floor === undefined) return redirect(`${base}${url.search}`)
 

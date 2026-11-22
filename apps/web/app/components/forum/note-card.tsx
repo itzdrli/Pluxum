@@ -1,4 +1,4 @@
-import type { CategoryDto, ThreadDto } from '@pluxum/domain'
+import type { CategoryDto, PostDto, ThreadDto } from '@pluxum/domain'
 import { MessageSquare, Send } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useFetcher } from 'react-router'
@@ -22,8 +22,9 @@ function onOwnControl(target: EventTarget | null, card: HTMLElement): boolean {
 
 /**
  * A note in a list, as a card: who wrote it and when, what it says (long ones fold), what
- * extensions put under it (likes, images) and how many replies it has. Clicking the card away
- * from its own links opens the note beside the list, like a row's title does.
+ * extensions put under it (likes, images), how many replies it has and, in the overview feed, the
+ * newest of them. Clicking the card away from its own links opens the note beside the list, like a
+ * row's title does; clicking the newest reply opens the note at that reply.
  */
 export function NoteCard({
 	thread,
@@ -76,7 +77,9 @@ export function NoteCard({
 				if (onOwnControl(event.target, card)) return
 				// Selecting text is not a click on the card.
 				if ((window.getSelection()?.toString() ?? '') !== '') return
-				void navigate(href)
+				const reply =
+					event.target instanceof Element ? event.target.closest('[data-reply-href]') : null
+				void navigate(reply?.getAttribute('data-reply-href') ?? href)
 			}}
 		>
 			<div className="flex items-start gap-3">
@@ -161,9 +164,52 @@ export function NoteCard({
 							)}
 						</StageLink>
 					</div>
+					{thread.latestReply !== undefined && (
+						<LatestReply
+							reply={thread.latestReply}
+							href={`${href}?floor=${thread.latestReply.number}`}
+						/>
+					)}
 				</div>
 			</div>
 		</li>
+	)
+}
+
+/**
+ * A note's newest reply under its card, quoted and cut to two lines. Its body may hold links, so
+ * it is no link itself: the card's click opens the note at this reply, and the time is the link
+ * keyboard and screen-reader users take.
+ */
+function LatestReply({ reply, href }: { reply: PostDto; href: string }) {
+	return (
+		<div data-reply-href={href} className="border-line mt-1 border-l-2 py-0.5 pl-3">
+			<p className="text-ink-weak flex min-w-0 items-center gap-x-2 text-meta">
+				<UserAvatar user={reply.author} size="sm" />
+				<StageLink
+					to={`/u/${reply.author.handle}`}
+					className="text-ink-strong min-w-0 truncate font-bold hover:underline"
+				>
+					{reply.author.displayName}
+				</StageLink>
+				<span aria-hidden>·</span>
+				<StageLink
+					to={href}
+					prefetch="intent"
+					className="hover:text-ink-strong shrink-0 whitespace-nowrap hover:underline"
+				>
+					<Timestamp iso={reply.createdAt} />
+					<span className="sr-only">
+						<Trans context="screen-reader suffix after the newest reply's time">的回复</Trans>
+					</span>
+				</StageLink>
+			</p>
+			<div
+				className={`post-body note-reply mt-0.5${reply.bodyFormat === 'plain' ? ' post-body--plain' : ''}`}
+				// The forum core has already filtered this HTML against its allowlist.
+				dangerouslySetInnerHTML={{ __html: reply.bodyHtml }}
+			/>
+		</div>
 	)
 }
 

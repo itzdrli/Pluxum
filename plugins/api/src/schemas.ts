@@ -91,6 +91,7 @@ export const thread = t.Object({
 	pinned: t.Boolean(),
 	locked: t.Boolean(),
 	opening: t.Optional(innerPost),
+	latestReply: t.Optional(innerPost),
 	ext,
 })
 

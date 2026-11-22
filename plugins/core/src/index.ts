@@ -122,10 +122,13 @@ import { FollowGraphRegistry, type FollowGraphContribution } from './follow-grap
 import {
 	isCategoryListing,
 	isCommunityListing,
+	isRecentListing,
 	isThreadListing,
 	type CategoryListing,
 	type CommunityListing,
 	type OpeningSource,
+	type RecentListing,
+	type ReplySource,
 	type ThreadListing,
 } from './listings'
 import { ForumAdminTarget } from './admin-target'
@@ -311,7 +314,7 @@ export type IndexablePost = Readonly<{
 }>
 
 // The query surface shared by read callbacks and transactions.
-type Db = Pick<PluginDatabaseClient<typeof ForumDatabase>, 'select'>
+type Db = Pick<PluginDatabaseClient<typeof ForumDatabase>, 'select' | 'selectDistinctOn'>
 
 const BUILT_IN_POLICY_ID = 'forum-core.roles'
 
@@ -1667,7 +1670,7 @@ export class ForumCorePlugin extends BasePlugin {
 		const gravity = this.config.social.hotGravity
 		const hotScore = sql`(${threads.replyCount} + ${threads.engagement})::float8 / power(extract(epoch from (now() - ${threads.createdAt})) / 3600 + 2, ${gravity}::float8)`
 		const load = () =>
-			this.database.read(async (db): Promise<ThreadListing> => {
+			this.database.read(async (db): Promise<RecentListing> => {
 				const visible = and(
 					inArray(threads.categoryId, visibleIds),
 					isNull(threads.deletedAt),
@@ -1696,6 +1699,10 @@ export class ForumCorePlugin extends BasePlugin {
 				return {
 					threads: list,
 					openings: await this.noteOpenings(db, list),
+					latestReplies: await this.latestRepliesOf(
+						db,
+						list.filter((thread) => thread.kind === 'note' && thread.replyCount > 0),
+					),
 					total: total?.value ?? 0,
 				}
 			})
@@ -1704,14 +1711,18 @@ export class ForumCorePlugin extends BasePlugin {
 				? await this.cachedListing(
 						`recent:${sort}${sort === 'hot' ? gravity : ''}:${page}:${pageSize}:${digest(visibleIds.join(','))}`,
 						load,
-						isThreadListing,
+						isRecentListing,
 					)
 				: await load()
 
-		const extendedThreads = await this.withOpenings(
+		const extendedThreads = await this.withLatestReplies(
 			principal,
-			await this.extended('thread', principal, read.threads),
-			read.openings,
+			await this.withOpenings(
+				principal,
+				await this.extended('thread', principal, read.threads),
+				read.openings,
+			),
+			read.latestReplies,
 		)
 		const items: RecentThreadDto[] = extendedThreads.flatMap((thread) => {
 			const category = categoriesById.get(thread.categoryId)
@@ -2673,6 +2684,88 @@ export class ForumCorePlugin extends BasePlugin {
 			createdAt: row.createdAt.toISOString(),
 			editedAt: row.editedAt?.toISOString() ?? null,
 		}))
+	}
+
+	/** The newest visible reply of each listed note, of any floor (楼中楼 included). */
+	private async latestRepliesOf(db: Db, notes: readonly ThreadDto[]): Promise<ReplySource[]> {
+		if (notes.length === 0) return []
+		const rows = await db
+			.selectDistinctOn([posts.threadId], {
+				threadId: posts.threadId,
+				postId: posts.id,
+				number: posts.number,
+				parentId: posts.parentId,
+				author,
+				body: posts.body,
+				createdAt: posts.createdAt,
+				editedAt: posts.editedAt,
+			})
+			.from(posts)
+			.innerJoin(users, eq(users.id, posts.authorId))
+			.where(
+				and(
+					inArray(
+						posts.threadId,
+						notes.map((note) => note.id),
+					),
+					eq(posts.opening, false),
+					isNull(posts.deletedAt),
+				),
+			)
+			.orderBy(posts.threadId, desc(posts.createdAt), desc(posts.number))
+		return rows.map((row) => ({
+			...row,
+			createdAt: row.createdAt.toISOString(),
+			editedAt: row.editedAt?.toISOString() ?? null,
+		}))
+	}
+
+	/** Listed notes with their newest reply rendered and extended under `latestReply`. */
+	private async withLatestReplies<T extends ThreadDto>(
+		principal: Principal,
+		list: readonly T[],
+		replies: readonly ReplySource[],
+	): Promise<T[]> {
+		if (replies.length === 0) return [...list]
+		const threadsById = new Map(list.map((thread) => [thread.id, thread]))
+		const drafts: PostDto[] = []
+		for (const reply of replies) {
+			const thread = threadsById.get(reply.threadId)
+			if (!thread) continue
+			const resource: ForumResource = {
+				categoryId: thread.categoryId,
+				threadId: thread.id,
+				postId: reply.postId,
+				authorId: reply.author.id,
+				locked: thread.locked,
+			}
+			const rendered = this.renderBody(reply.body, reply.postId)
+			drafts.push({
+				id: reply.postId,
+				threadId: thread.id,
+				number: reply.number,
+				parentId: reply.parentId,
+				replyTo: null,
+				author: reply.author,
+				body: reply.body,
+				bodyHtml: rendered.html,
+				bodyFormat: rendered.format,
+				createdAt: reply.createdAt,
+				editedAt: reply.editedAt,
+				deleted: false,
+				can: {
+					edit: this.can(principal, 'post.edit', resource),
+					delete: this.can(principal, 'post.delete', resource),
+				},
+				ext: {},
+			})
+		}
+		const extended = await this.extended('post', principal, drafts)
+		const byThread = new Map(extended.map((post) => [post.threadId, post]))
+		return list.map((thread) => {
+			const latestReply = byThread.get(thread.id)
+			return latestReply ? { ...thread, latestReply } : thread
+		})
 	}
 
 	/** Listed threads with each note's opening post rendered and extended under `opening`. */

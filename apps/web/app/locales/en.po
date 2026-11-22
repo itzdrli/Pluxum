@@ -1687,6 +1687,11 @@ msgctxt "screen-reader suffix after a note's time"
 msgid "的动态"
 msgstr "note"
 
+#: app/components/forum/note-card.tsx
+msgctxt "screen-reader suffix after the newest reply's time"
+msgid "的回复"
+msgstr "reply"
+
 #: app/routes/moderation.tsx
 msgid "目标用户："
 msgstr "Target user: "

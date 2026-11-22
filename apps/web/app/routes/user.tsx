@@ -64,8 +64,9 @@ export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescrip
 	return [{ title: pageTitle(matches[0].loaderData, loaderData?.user.displayName) }]
 }
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-	const url = new URL(request.url)
+export async function loader({ request, params, url: location }: Route.LoaderArgs) {
+	// Not `request.url`: on a client navigation that is the `.data` URL, no place to redirect to.
+	const url = new URL(location)
 	const detailOpen = isDetailPath(url.pathname)
 	const kind = url.searchParams.get('tab') === 'notes' ? 'note' : 'topic'
 	const profile = orThrow(

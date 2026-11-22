@@ -106,8 +106,9 @@ export function meta({ loaderData, matches }: Route.MetaArgs): Route.MetaDescrip
 	]
 }
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-	const url = new URL(request.url)
+export async function loader({ request, params, url: location }: Route.LoaderArgs) {
+	// Not `request.url`: on a client navigation that is the `.data` URL, no place to redirect to.
+	const url = new URL(location)
 	// `?floor=N` (from links that only know the floor) becomes the page that shows it, with the
 	// floor it replies inside unfolded.
 	const floor = parseFloorNumber(url.searchParams.get('floor') ?? '')
@@ -158,7 +159,7 @@ function failed(
 }
 
 // Every change to a thread posts here with an `intent`; the API decides what the visitor may do.
-export async function action({ request, params }: Route.ActionArgs) {
+export async function action({ request, params, url: location }: Route.ActionArgs) {
 	const i18n = await i18nFromRequest(request)
 	const form = await request.formData()
 	const intent = textField(form, 'intent') || 'reply'
@@ -175,7 +176,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 			if (!result.ok) return failed(intent, result, undefined, parentId)
 			// Land on the page that now holds the reply (its floor unfolded when it is inside one), in
 			// the same list (`?cpage=`, search filters).
-			const url = new URL(request.url)
+			const url = new URL(location)
 			const located = orThrow(await forumApi.floorLocation(request, params.id, result.value.number))
 			return redirect(`${pagePathOf(url)}${floorSearch(url, located)}#post-${result.value.number}`)
 		}
@@ -217,7 +218,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 			const result = await forumApi.deleteThread(request, params.id)
 			if (!result.ok) return failed(intent, result)
 			// Back to the list the thread was opened from, on the same list page and filters.
-			const url = new URL(request.url)
+			const url = new URL(location)
 			url.searchParams.delete('page')
 			return redirect(`${listPathOf(url.pathname)}${url.search}`)
 		}

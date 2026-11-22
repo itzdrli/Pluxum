@@ -82,6 +82,11 @@ export type ThreadDto = Readonly<{
 	 * for topics and on the thread page (whose posts include it).
 	 */
 	opening?: PostDto
+	/**
+	 * A note's newest visible reply, in the overview feed only, so the card can show it under the
+	 * note. Absent when the note has no replies, for topics and everywhere else.
+	 */
+	latestReply?: PostDto
 	ext: ExtensionData
 }>
 

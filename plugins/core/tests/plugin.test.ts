@@ -812,6 +812,41 @@ describe('notes, moves, replies inside floors and hot (M6.1)', () => {
 		expect(topics.threads.items.map((item) => item.title)).toEqual(['Topic'])
 	})
 
+	it("shows a note's newest visible reply in the overview feed", async () => {
+		await using host = await createHost()
+		const core = await host.start(ForumCorePlugin)
+		const { alice, bob, category } = await seed(core)
+		const stream = await streamOf(core)
+		const quiet = (
+			await core.createThread(alice, { categoryId: stream.id, title: '', body: 'quiet' })
+		).unwrap()
+		const note = (
+			await core.createThread(alice, { categoryId: stream.id, title: '', body: 'talk' })
+		).unwrap()
+		const topic = (
+			await core.createThread(alice, { categoryId: category.id, title: 'Topic', body: 'long' })
+		).unwrap()
+		;(await core.createPost(bob, { threadId: topic.id, body: 'topic reply' })).unwrap()
+		const floor = (await core.createPost(bob, { threadId: note.id, body: 'first' })).unwrap()
+		const inner = (
+			await core.createPost(alice, { threadId: note.id, parentId: floor.id, body: 'inside' })
+		).unwrap()
+
+		const latestOf = async (id: string) =>
+			(await core.listRecentThreads(GUEST)).items.find((item) => item.id === id)?.latestReply
+		expect(await latestOf(note.id)).toMatchObject({
+			id: inner.id,
+			parentId: floor.id,
+			body: 'inside',
+			author: { displayName: 'Alice' },
+		})
+		expect(await latestOf(quiet.id)).toBeUndefined()
+		expect(await latestOf(topic.id)).toBeUndefined()
+
+		;(await core.deletePost(alice, inner.id)).unwrap()
+		expect(await latestOf(note.id)).toMatchObject({ id: floor.id, body: 'first', parentId: null })
+	})
+
 	it('moves threads between boards and turns a note into a topic', async () => {
 		await using host = await createHost()
 		const core = await host.start(ForumCorePlugin)

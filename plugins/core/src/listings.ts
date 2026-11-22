@@ -15,11 +15,23 @@ export type OpeningSource = Readonly<{
 	createdAt: string
 	editedAt: string | null
 }>
+/** `ReplySource`: a note's newest visible reply in the overview feed, as stored. */
+export type ReplySource = Readonly<{
+	threadId: string
+	postId: string
+	number: number
+	parentId: string | null
+	author: UserDto
+	body: string
+	createdAt: string
+	editedAt: string | null
+}>
 export type ThreadListing = Readonly<{
 	threads: ThreadDto[]
 	openings: OpeningSource[]
 	total: number
 }>
+export type RecentListing = ThreadListing & Readonly<{ latestReplies: ReplySource[] }>
 export type CategoryListing = ThreadListing & Readonly<{ category: CategoryDto }>
 export type CommunityListing = Readonly<{
 	members: number
@@ -87,6 +99,23 @@ export function isThreadListing(value: unknown): value is ThreadListing {
 		Array.isArray(value.openings) &&
 		value.openings.every(isOpening)
 	)
+}
+
+function isReply(value: unknown): value is ReplySource {
+	return (
+		isFields(value) &&
+		hasStrings(value, ['threadId', 'postId', 'body', 'createdAt']) &&
+		isCount(value.number) &&
+		(value.parentId === null || typeof value.parentId === 'string') &&
+		(value.editedAt === null || typeof value.editedAt === 'string') &&
+		isUser(value.author)
+	)
+}
+
+export function isRecentListing(value: unknown): value is RecentListing {
+	if (!isThreadListing(value)) return false
+	const replies: unknown = (value as Fields).latestReplies
+	return Array.isArray(replies) && replies.every(isReply)
 }
 
 export function isCategoryListing(value: unknown): value is CategoryListing {

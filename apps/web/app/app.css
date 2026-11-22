@@ -561,6 +561,21 @@
 	.note-body--fade {
 		mask-image: linear-gradient(to bottom, #000 calc(100% - 2em), transparent);
 	}
+	/* A note's newest reply under its card: smaller, two lines at most, images as small thumbnails. */
+	.note-reply {
+		font-size: var(--fs-ui);
+		line-height: 1.6;
+		max-height: calc(1.6em * 2);
+		overflow: hidden;
+		overflow-wrap: anywhere;
+	}
+	.post-body.note-reply > * + * {
+		margin-top: 0;
+	}
+	.post-body.note-reply img {
+		max-height: 3em;
+		width: auto;
+	}
 
 	/* Replies inside a floor ("楼中楼"): a quieter, tighter block under the floor's body. */
 	.floor-replies .post-body {
