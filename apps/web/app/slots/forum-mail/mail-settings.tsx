@@ -1,6 +1,6 @@
 import type { UserProfileDto } from '@pluxum/domain'
 import { Mail, MailX } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouteLoaderData } from 'react-router'
 import type { I18n } from '@lingui/core'
 import { t as tm } from '@lingui/core/macro'
@@ -13,6 +13,7 @@ import { isLocaleId, LOCALES, type LocaleId } from '../../lib/locale'
 import type { loader as rootLoader } from '../../root'
 
 const EXT_ID = 'forum-mail'
+const MAIL_QUERY = [EXT_ID, 'address'] as const
 
 type MailState = Readonly<{
 	available: boolean
@@ -67,34 +68,33 @@ export function MailSettings({ profile }: { profile: UserProfileDto }) {
 	const { t, i18n } = useLingui()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
 	const isSelf = viewer?.user?.id === profile.user.id
-	const [state, setState] = useState<MailState | null>(null)
-	const [error, setError] = useState<string | undefined>()
-	const [busy, setBusy] = useState(false)
-
-	useEffect(() => {
-		if (!isSelf) return undefined
-		let live = true
-		void (async () => {
+	const queryClient = useQueryClient()
+	const loaded = useQuery({
+		queryKey: MAIL_QUERY,
+		queryFn: async () => {
 			const outcome = await call(i18n, 'address')
-			if (live && outcome.ok) setState(outcome.state)
-		})()
-		return () => {
-			live = false
-		}
-	}, [isSelf, i18n])
+			if (!outcome.ok) throw new Error(outcome.error)
+			return outcome.state
+		},
+		enabled: isSelf,
+	})
+	const preference = useMutation({
+		mutationFn: async (input: { enabled: boolean } | { locale: LocaleId | null }) => {
+			const outcome = await call(i18n, 'preference', input)
+			if (!outcome.ok) throw new Error(outcome.error)
+			return outcome.state
+		},
+		onSuccess: (next) => queryClient.setQueryData(MAIL_QUERY, next),
+	})
+	const state = loaded.data
+	const busy = preference.isPending
+	const error = preference.error?.message
 
 	// Mail is off forum-wide: nothing to choose.
-	if (!isSelf || state === null || !state.available) return null
+	if (!isSelf || state === undefined || !state.available) return null
 	const email = state.email
-
-	async function updatePreference(input: { enabled: boolean } | { locale: LocaleId | null }) {
-		setBusy(true)
-		setError(undefined)
-		const outcome = await call(i18n, 'preference', input)
-		setBusy(false)
-		if (outcome.ok) setState(outcome.state)
-		else setError(outcome.error)
-	}
+	const updatePreference = (input: { enabled: boolean } | { locale: LocaleId | null }) =>
+		preference.mutate(input)
 
 	return (
 		<section aria-labelledby="mail-settings-heading">
@@ -120,9 +120,7 @@ export function MailSettings({ profile }: { profile: UserProfileDto }) {
 								className="accent-accent size-4"
 								checked={state.enabled}
 								disabled={busy}
-								onChange={(event) =>
-									void updatePreference({ enabled: event.currentTarget.checked })
-								}
+								onChange={(event) => updatePreference({ enabled: event.currentTarget.checked })}
 							/>
 							<span>
 								<Trans>有人回复或提到我时发邮件给我</Trans>
@@ -136,7 +134,7 @@ export function MailSettings({ profile }: { profile: UserProfileDto }) {
 								onChange={(event) => {
 									const value = event.currentTarget.value
 									if (value === '' || isLocaleId(value)) {
-										void updatePreference({ locale: value === '' ? null : value })
+										updatePreference({ locale: value === '' ? null : value })
 									}
 								}}
 							>

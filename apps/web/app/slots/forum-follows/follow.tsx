@@ -1,6 +1,6 @@
 import type { CategoryDto, UserDto, UserProfileDto } from '@pluxum/domain'
 import { BellRing, UserCheck, UserPlus } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useFetcher, useRouteLoaderData } from 'react-router'
 import type { I18n } from '@lingui/core'
 import { t as tm } from '@lingui/core/macro'
@@ -8,10 +8,12 @@ import { Trans, useLingui } from '@lingui/react/macro'
 
 import { Button } from '../../components/ui/button'
 import { FormError, Panel, SectionLabel } from '../../components/ui/display'
+import { getForumJson } from '../../lib/query'
 import type { loader as rootLoader } from '../../root'
 import type { ExtActionResult } from '../../routes/ext-action'
 
 const EXT_ID = 'forum-follows'
+const SETTINGS_QUERY = [EXT_ID, 'settings'] as const
 
 type Summary = Readonly<{ followers: number; following: number; followed: boolean }>
 type FollowState = Readonly<{ id: string; followed: boolean; followers: number }>
@@ -142,26 +144,18 @@ export function UserFollow({ user, compact }: { user: UserDto; compact: boolean 
 export function CategoryFollow({ category }: { category: CategoryDto }) {
 	const { t } = useLingui()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
-	const [loaded, setLoaded] = useState<FollowState | null>(null)
-	useEffect(() => {
-		let live = true
-		void (async () => {
-			try {
-				const response = await fetch(
-					`/api/forum/ext/${EXT_ID}/state?kind=category&id=${encodeURIComponent(category.id)}`,
-					{ headers: { accept: 'application/json' } },
-				)
-				const state = response.ok ? stateOf(await response.json()) : null
-				if (live && state !== null) setLoaded(state)
-			} catch {
-				// Without its state the button is left out; the category page works as before.
-			}
-		})()
-		return () => {
-			live = false
-		}
-	}, [category.id])
-	const saved = loaded !== null && loaded.id === category.id ? loaded : null
+	// Without its state the button is left out; the category page works as before.
+	const loaded = useQuery({
+		queryKey: [EXT_ID, 'state', 'category', category.id],
+		queryFn: async ({ signal }) =>
+			stateOf(
+				await getForumJson(
+					`/ext/${EXT_ID}/state?kind=category&id=${encodeURIComponent(category.id)}`,
+					signal,
+				),
+			),
+	})
+	const saved = loaded.data?.id === category.id ? loaded.data : null
 	const { shown, error, toggle } = useFollow('category', category.id, saved)
 	if (shown === null) return null
 	const signedIn = viewer?.user != null
@@ -225,32 +219,30 @@ export function FollowSettings({ profile }: { profile: UserProfileDto }) {
 	const { i18n } = useLingui()
 	const viewer = useRouteLoaderData<typeof rootLoader>('root')?.meta?.viewer
 	const isSelf = viewer?.user?.id === profile.user.id
-	const [notify, setNotify] = useState<boolean | null>(null)
-	const [error, setError] = useState<string | undefined>()
-	const [busy, setBusy] = useState(false)
-
-	useEffect(() => {
-		if (!isSelf) return undefined
-		let live = true
-		void (async () => {
+	const queryClient = useQueryClient()
+	const loaded = useQuery({
+		queryKey: SETTINGS_QUERY,
+		queryFn: async () => {
 			const outcome = await callSettings(i18n)
-			if (live && outcome.ok) setNotify(outcome.notify)
-		})()
-		return () => {
-			live = false
-		}
-	}, [isSelf, i18n])
+			if (!outcome.ok) throw new Error(outcome.error)
+			return outcome.notify
+		},
+		enabled: isSelf,
+	})
+	const preference = useMutation({
+		mutationFn: async (next: boolean) => {
+			const outcome = await callSettings(i18n, { notify: next })
+			if (!outcome.ok) throw new Error(outcome.error)
+			return outcome.notify
+		},
+		onSuccess: (next) => queryClient.setQueryData(SETTINGS_QUERY, next),
+	})
+	const notify = loaded.data
+	const busy = preference.isPending
+	const error = preference.error?.message
 
-	if (!isSelf || notify === null) return null
-
-	async function toggle(next: boolean) {
-		setBusy(true)
-		setError(undefined)
-		const outcome = await callSettings(i18n, { notify: next })
-		setBusy(false)
-		if (outcome.ok) setNotify(outcome.notify)
-		else setError(outcome.error)
-	}
+	if (!isSelf || notify === undefined) return null
+	const toggle = (next: boolean) => preference.mutate(next)
 
 	return (
 		<section aria-labelledby="follow-settings-heading">
@@ -267,7 +259,7 @@ export function FollowSettings({ profile }: { profile: UserProfileDto }) {
 						className="accent-accent size-4"
 						checked={notify}
 						disabled={busy}
-						onChange={(event) => void toggle(event.currentTarget.checked)}
+						onChange={(event) => toggle(event.currentTarget.checked)}
 					/>
 					<BellRing aria-hidden className="text-ink-weak size-4" />
 					<span>

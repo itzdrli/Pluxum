@@ -14,9 +14,10 @@ import '@fontsource/jetbrains-mono/400.css'
 import '@fontsource/jetbrains-mono/700.css'
 import { I18nProvider } from '@lingui/react'
 import { HotkeysProvider } from '@tanstack/react-hotkeys'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Home, TriangleAlert } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
 	isRouteErrorResponse,
 	Links,
@@ -51,6 +52,7 @@ import { rememberTimeZone, timeZoneFromRequest } from './lib/timezone'
 import { railFromRequest } from './lib/rail'
 import { isDarkTheme, themeFromRequest, themePageColor } from './lib/theme'
 import { appHotkeys, platformFromRequest } from './lib/hotkeys'
+import { createQueryClient } from './lib/query'
 
 // Who is browsing, what the forum allows, and the visitor's theme. Child routes read it through
 // useRouteLoaderData('root').
@@ -149,33 +151,38 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
+	// One per page load (and per request on the server), never shared between visitors.
+	const [queryClient] = useState(createQueryClient)
 	// Tells the server the visitor's time zone for its next render.
 	useEffect(() => rememberTimeZone(loaderData.timeZone), [loaderData.timeZone])
 	// Shows push notices and makes the forum installable; pages never depend on it.
 	useEffect(() => {
 		void navigator.serviceWorker?.register('/sw.js').catch(() => undefined)
 	}, [])
+	// A key a widget already handled (React Aria's menus and fields, the rich editor's keymap) is
+	// not a shortcut as well.
+	const hotkeyDefaults = {
+		platform: loaderData.platform,
+		hotkey: { ignoreDefaultPrevented: true },
+	}
 	return (
-		// A key a widget already handled (React Aria's menus and fields, the rich editor's keymap)
-		// is not a shortcut as well.
-		<HotkeysProvider
-			appHotkeys={appHotkeys}
-			defaultOptions={{ platform: loaderData.platform, hotkey: { ignoreDefaultPrevented: true } }}
-		>
-			<LightboxProvider>
-				<DockProvider>
-					<PaletteProvider>
-						<GlobalShortcuts />
-						<ShortcutSheet />
-						<WindowSmoothScroll />
-						<HoverCards />
-						<Shell meta={loaderData.meta}>
-							<Outlet />
-						</Shell>
-					</PaletteProvider>
-				</DockProvider>
-			</LightboxProvider>
-		</HotkeysProvider>
+		<QueryClientProvider client={queryClient}>
+			<HotkeysProvider appHotkeys={appHotkeys} defaultOptions={hotkeyDefaults}>
+				<LightboxProvider>
+					<DockProvider>
+						<PaletteProvider>
+							<GlobalShortcuts />
+							<ShortcutSheet />
+							<WindowSmoothScroll />
+							<HoverCards />
+							<Shell meta={loaderData.meta}>
+								<Outlet />
+							</Shell>
+						</PaletteProvider>
+					</DockProvider>
+				</LightboxProvider>
+			</HotkeysProvider>
+		</QueryClientProvider>
 	)
 }
 

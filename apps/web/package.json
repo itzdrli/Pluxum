@@ -29,6 +29,7 @@
 		"@react-router/serve": "catalog:frontend",
 		"@tanstack/react-hotkeys": "catalog:frontend",
 		"@tanstack/react-pacer": "catalog:frontend",
+		"@tanstack/react-query": "catalog:frontend",
 		"@tiptap/core": "catalog:frontend",
 		"@tiptap/extension-heading": "catalog:frontend",
 		"@tiptap/extension-image": "catalog:frontend",
