@@ -275,7 +275,7 @@ function MessageComposer({
 							void send()
 						}
 					}}
-					className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent field-sizing-content max-h-40 min-h-control flex-1 resize-none rounded-[2px] border px-2.5 py-2 text-ui leading-relaxed outline-none"
+					className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent field-sizing-content max-h-40 min-h-control flex-1 resize-none rounded-[2px] border px-2.5 py-[calc((var(--h-control)_-_2px_-_1lh)/2)] text-ui leading-5 outline-none"
 				/>
 				<Button
 					tone="primary"
