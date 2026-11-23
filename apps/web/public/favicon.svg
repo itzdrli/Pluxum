@@ -1,15 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-<style>
-.bg{fill:#2E3440}.a0{stop-color:#ECEFF4}.a1,.b0{stop-color:#8FBCBB}.b1,.c0{stop-color:#81A1C1}.c1{stop-color:#5E81AC}
-@media (prefers-color-scheme:dark){.bg{fill:#ECEFF4}.a0{stop-color:#3B4252}.a1,.b0{stop-color:#5E81AC}.b1,.c0{stop-color:#81A1C1}.c1{stop-color:#88C0D0}}
-</style>
-<rect class="bg" width="512" height="512" rx="256"/>
-<rect x="123.5" y="151" width="265" height="45" rx="22.5" fill="url(#a)"/>
-<rect x="181" y="233.5" width="170" height="45" rx="22.5" fill="url(#b)" fill-opacity=".9"/>
-<rect x="181" y="316" width="110" height="45" rx="22.5" fill="url(#c)" fill-opacity=".85"/>
-<defs>
-<linearGradient id="a" x1="123.5" x2="388.5" y1="0" y2="0" gradientUnits="userSpaceOnUse"><stop class="a0"/><stop class="a1" offset="1"/></linearGradient>
-<linearGradient id="b" x1="181" x2="351" y1="0" y2="0" gradientUnits="userSpaceOnUse"><stop class="b0"/><stop class="b1" offset="1"/></linearGradient>
-<linearGradient id="c" x1="181" x2="291" y1="0" y2="0" gradientUnits="userSpaceOnUse"><stop class="c0"/><stop class="c1" offset="1"/></linearGradient>
-</defs>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 512 512"><style>.bg{fill:#2e3440}.a0{stop-color:#eceff4}.a1,.b0{stop-color:#8fbcbb}.b1,.c0{stop-color:#81a1c1}.c1{stop-color:#5e81ac}@media (prefers-color-scheme:dark){.bg{fill:#eceff4}.a0{stop-color:#3b4252}.a1,.b0{stop-color:#5e81ac}.b1,.c0{stop-color:#81a1c1}.c1{stop-color:#88c0d0}}</style><rect width="512" height="512" class="bg" rx="256"/><rect width="265" height="45" x="123.5" y="151" fill="url(#a)" rx="22.5"/><rect width="170" height="45" x="181" y="233.5" fill="url(#b)" fill-opacity=".9" rx="22.5"/><rect width="110" height="45" x="181" y="316" fill="url(#c)" fill-opacity=".85" rx="22.5"/><defs><linearGradient id="a" x1="123.5" x2="388.5" y1="0" y2="0" gradientUnits="userSpaceOnUse"><stop class="a0"/><stop class="a1" offset="1"/></linearGradient><linearGradient id="b" x1="181" x2="351" y1="0" y2="0" gradientUnits="userSpaceOnUse"><stop class="b0"/><stop class="b1" offset="1"/></linearGradient><linearGradient id="c" x1="181" x2="291" y1="0" y2="0" gradientUnits="userSpaceOnUse"><stop class="c0"/><stop class="c1" offset="1"/></linearGradient></defs></svg>
