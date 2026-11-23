@@ -52,6 +52,10 @@ msgid "{actor} 在动态中提到了你"
 msgstr "{actor} mentioned you in a note"
 
 #: app/lib/notices.ts
+msgid "{actor} 给你发了私信"
+msgstr "{actor} sent you a message"
+
+#: app/lib/notices.ts
 msgid "{actor} 采纳了你的回答"
 msgstr "{actor} accepted your answer"
 
@@ -60,8 +64,8 @@ msgid "{author} 的动态"
 msgstr "{author}'s note"
 
 #: app/lib/api-errors.ts
-msgid "{bucket, select, threads {发主题} replies {回帖} edits {编辑} logins {登录} signups {注册} resets {重设密码} other {操作}}"
-msgstr "{bucket, select, threads {You are posting threads} replies {You are replying} edits {You are editing} logins {You are signing in} signups {You are signing up} resets {You are asking for reset links} other {You are doing that}}"
+msgid "{bucket, select, threads {发主题} replies {回帖} edits {编辑} logins {登录} signups {注册} resets {重设密码} messages {发私信} other {操作}}"
+msgstr "{bucket, select, threads {You are posting threads} replies {You are replying} edits {You are editing} logins {You are signing in} signups {You are signing up} resets {You are asking for reset links} messages {You are sending messages} other {You are doing that}}"
 
 #: app/routes/home.tsx
 msgid "{categoryCount} 版块"
@@ -80,8 +84,8 @@ msgid "{days, plural, other {#天后}}"
 msgstr "{days, plural, one {in # day} other {in # days}}"
 
 #: app/lib/api-errors.ts
-msgid "{entity, select, category {版块} user {用户} post {帖子} thread {主题} floor {楼层} report {举报记录} notification {通知} file {文件} other {内容}}不存在"
-msgstr "{entity, select, category {Category} user {User} post {Post} thread {Thread} floor {Floor} report {Report} notification {Notification} file {File} other {Item}} not found"
+msgid "{entity, select, category {版块} user {用户} post {帖子} thread {主题} floor {楼层} report {举报记录} notification {通知} file {文件} conversation {会话} other {内容}}不存在"
+msgstr "{entity, select, category {Category} user {User} post {Post} thread {Thread} floor {Floor} report {Report} notification {Notification} file {File} conversation {Conversation} other {Item}} not found"
 
 #: app/lib/api-errors.ts
 msgid "{field, select, title {标题} category_name {版块名称} category_description {版块简介} display_name {昵称} search_query {搜索词} content {内容} slug {标识} handle {用户名} report_reason {举报原因} ban_reason {封禁原因} resolution_note {处理备注} unban_note {解封说明} other {内容}}"
@@ -311,6 +315,10 @@ msgstr "Download original"
 msgid "不允许跨站请求"
 msgstr "Cross-site requests are not allowed"
 
+#: app/slots/forum-messages/messages.tsx
+msgid "不接收"
+msgstr "Nobody"
+
 #: app/routes/moderation.tsx
 msgid "不支持的审核操作"
 msgstr "Unsupported moderation action"
@@ -339,6 +347,10 @@ msgstr "Admins cannot be banned"
 #: app/lib/api-errors.ts
 msgid "不能封禁自己"
 msgstr "You cannot ban yourself"
+
+#: app/lib/api-errors.ts
+msgid "不能给自己发私信"
+msgstr "You can’t message yourself"
 
 #: app/components/forum/post-history.tsx
 msgid "与上一版的差异"
@@ -466,6 +478,10 @@ msgstr "Threads only"
 msgid "代码块"
 msgstr "Code block"
 
+#: app/routes/conversation.tsx
+msgid "会话操作"
+msgstr "Conversation actions"
+
 #: app/components/ui/display.tsx
 msgid "位置"
 msgstr "Breadcrumb"
@@ -479,6 +495,7 @@ msgid "你没有在这个版块发布主题的权限。"
 msgstr "You do not have permission to post threads in this category."
 
 #: app/components/forum/post.tsx
+#: app/routes/conversation.tsx
 #: app/slots/forum-accounts/account-settings.tsx
 msgid "保存"
 msgstr "Save"
@@ -615,6 +632,10 @@ msgstr "Write your reply"
 msgid "写回复…"
 msgstr "Write a reply…"
 
+#: app/routes/conversation.tsx
+msgid "写消息…"
+msgstr "Write a message…"
+
 #: app/root.tsx
 msgid "出错了"
 msgstr "Something went wrong"
@@ -658,6 +679,10 @@ msgstr "Composer"
 #: app/routes/home.tsx
 msgid "创建版块"
 msgstr "Create category"
+
+#: app/routes/messages.tsx
+msgid "创建群聊"
+msgstr "Create group"
 
 #: app/components/forum/post.tsx
 msgid "删除"
@@ -803,6 +828,18 @@ msgstr "An unexpected error occurred."
 msgid "发表回复"
 msgstr "Post reply"
 
+#: app/routes/messages.tsx
+msgid "发起聊天"
+msgstr "New chat"
+
+#: app/routes/conversation.tsx
+msgid "发送"
+msgstr "Send"
+
+#: app/routes/conversation.tsx
+msgid "发送失败，请重试。"
+msgstr "Couldn’t send. Try again."
+
 #: app/slots/forum-push/push-settings.tsx
 msgid "发送测试"
 msgstr "Send a test"
@@ -815,7 +852,9 @@ msgstr "Send reset link"
 #: app/components/forum/post.tsx
 #: app/components/shell/mobile-stage-bar.tsx
 #: app/components/ui/overlay.tsx
+#: app/routes/conversation.tsx
 #: app/routes/home.tsx
+#: app/routes/messages.tsx
 #: app/routes/thread-new.tsx
 #: app/routes/thread.tsx
 #: app/routes/user.tsx
@@ -1043,6 +1082,10 @@ msgstr "Password must be at least {min} characters"
 msgid "富文本"
 msgstr "Rich text"
 
+#: app/lib/api-errors.ts
+msgid "对方不接收你的私信"
+msgstr "This person doesn’t accept messages from you"
+
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "封禁原因"
 msgstr "Reason for ban"
@@ -1153,6 +1196,10 @@ msgstr "Posts"
 msgid "帖子举报"
 msgstr "Post report"
 
+#: app/routes/messages.tsx
+msgid "开始"
+msgstr "Start"
+
 #: app/components/composer/rich-editor.tsx
 msgid "引用"
 msgstr "Quote"
@@ -1190,9 +1237,18 @@ msgstr "Flooding or off-topic"
 msgid "成员"
 msgstr "Member"
 
+#: app/routes/messages.tsx
 #: app/routes/user.tsx
 msgid "我"
 msgstr "You"
+
+#: app/slots/forum-messages/messages.tsx
+msgid "我关注的人"
+msgstr "People I follow"
+
+#: app/slots/forum-messages/messages.tsx
+msgid "所有人"
+msgstr "Everyone"
 
 #: app/routes/thread.tsx
 msgid "所有回复会一并删除。"
@@ -1292,11 +1348,14 @@ msgstr "Search results"
 msgid "撤销"
 msgstr "Undo"
 
+#: app/routes/conversation.tsx
+#: app/routes/messages.tsx
 #: app/slots/forum-accounts/account-settings.tsx
 #: app/slots/forum-attachments/avatar.tsx
 #: app/slots/forum-attachments/shared.ts
 #: app/slots/forum-follows/follow.tsx
 #: app/slots/forum-mail/mail-settings.tsx
+#: app/slots/forum-messages/messages.tsx
 #: app/slots/forum-push/push-settings.tsx
 msgid "操作失败，请稍后再试。"
 msgstr "The action failed. Please try again later."
@@ -1400,6 +1459,10 @@ msgstr "Change"
 #: app/slots/forum-attachments/avatar.tsx
 msgid "更换头像"
 msgstr "Change avatar"
+
+#: app/routes/conversation.tsx
+msgid "更早的消息"
+msgstr "Earlier messages"
 
 #: app/slots/forum-follows/follow.tsx
 msgid "有人关注我时通知我"
@@ -1595,9 +1658,22 @@ msgstr "Delete account"
 msgid "浏览器已拒绝通知权限"
 msgstr "The browser blocked notifications"
 
+#: app/routes/conversation.tsx
+msgid "消息内容"
+msgstr "Message"
+
+#: app/routes/conversation.tsx
+msgid "添加"
+msgstr "Add"
+
 #: app/slots/forum-push/push-settings.tsx
 msgid "添加到主屏幕后可开启"
 msgstr "Add the forum to your Home Screen to turn this on"
+
+#: app/components/messages/people-picker.tsx
+#: app/routes/conversation.tsx
+msgid "添加成员"
+msgstr "Add people"
 
 #: app/lib/roles.ts
 msgid "游客"
@@ -1692,6 +1768,7 @@ msgstr "Leave empty to generate it from the name"
 #: app/components/shell/mobile-stage-bar.tsx
 #: app/components/shell/user-menu.tsx
 #: app/routes/login.tsx
+#: app/routes/messages.tsx
 #: app/routes/moderation.tsx
 #: app/routes/notifications.tsx
 #: app/routes/thread.tsx
@@ -1757,6 +1834,25 @@ msgstr "OK"
 msgid "社区"
 msgstr "Community"
 
+#: app/routes/forum-stage.tsx
+#: app/routes/messages.tsx
+#: app/slots/forum-messages/messages.tsx
+msgid "私信"
+msgstr "Messages"
+
+#: app/slots/forum-messages/messages.tsx
+msgctxt "verb"
+msgid "私信"
+msgstr "Message"
+
+#: app/slots/forum-messages/messages.tsx
+msgid "私信（{unread} 条未读）"
+msgstr "Messages ({unread} unread)"
+
+#: app/routes/messages.tsx
+msgid "私信功能未启用"
+msgstr "Messages are not turned on"
+
 #: app/routes/thread.tsx
 msgid "移到版块"
 msgstr "Move to category"
@@ -1772,6 +1868,11 @@ msgstr "Move to another category"
 #: app/slots/forum-attachments/avatar.tsx
 msgid "移除"
 msgstr "Remove"
+
+#. placeholder {0}: user.displayName
+#: app/components/messages/people-picker.tsx
+msgid "移除 {0}"
+msgstr "Remove {0}"
 
 #: app/components/composer/rich-editor.tsx
 msgid "移除链接"
@@ -1834,10 +1935,6 @@ msgid "编辑于 {editedAt}"
 msgstr "Edited {editedAt}"
 
 #: app/components/forum/post.tsx
-#~ msgid "编辑于 {replyEditedAt}"
-#~ msgstr "Edited {replyEditedAt}"
-
-#: app/components/forum/post.tsx
 msgid "编辑内容"
 msgstr "Edit content"
 
@@ -1868,6 +1965,19 @@ msgstr "Pinned"
 msgctxt "menu action"
 msgid "置顶"
 msgstr "Pin"
+
+#: app/lib/api-errors.ts
+msgid "群聊最多 {max} 人"
+msgstr "A group can have at most {max} people"
+
+#: app/routes/conversation.tsx
+#: app/routes/messages.tsx
+msgid "群聊名称"
+msgstr "Group name"
+
+#: app/routes/messages.tsx
+msgid "群聊名称（可选）"
+msgstr "Group name (optional)"
 
 #: app/components/composer/rich-editor.tsx
 msgid "行内代码"
@@ -1904,6 +2014,7 @@ msgid "语言"
 msgstr "Language"
 
 #: app/lib/api-errors.ts
+#: app/routes/messages.tsx
 #: app/routes/moderation.tsx
 #: app/routes/notifications.tsx
 msgid "请先登录"
@@ -1936,6 +2047,10 @@ msgstr "Please choose an image file."
 #: app/slots/forum-attachments/upload.tsx
 msgid "读取文件失败。"
 msgstr "Failed to read the file."
+
+#: app/slots/forum-messages/messages.tsx
+msgid "谁可以给我发私信"
+msgstr "Who can message me"
 
 #: app/components/palette/command-palette.tsx
 #: app/components/shell/user-menu.tsx
@@ -1982,6 +2097,10 @@ msgstr "Converting to a thread needs a title"
 msgid "输入关键词开始搜索"
 msgstr "Type keywords to search"
 
+#: app/components/messages/people-picker.tsx
+msgid "输入昵称或用户名"
+msgstr "Type a name or username"
+
 #: app/routes/home.tsx
 msgid "近 {days} 天活跃"
 msgstr "Active in the last {days, plural, one {# day} other {# days}}"
@@ -2001,6 +2120,10 @@ msgstr "Back to list"
 #: app/routes/reset-password.tsx
 msgid "返回登录"
 msgstr "Back to sign in"
+
+#: app/routes/conversation.tsx
+msgid "返回私信列表"
+msgstr "Back to messages"
 
 #: app/routes/search.tsx
 msgid "返回结果"
@@ -2027,6 +2150,10 @@ msgstr "Nothing posted yet"
 #: app/routes/home.tsx
 msgid "还没有版块"
 msgstr "No categories yet"
+
+#: app/routes/messages.tsx
+msgid "还没有私信"
+msgstr "No messages yet"
 
 #: app/routes/home.tsx
 msgid "还没有讨论"
@@ -2066,13 +2193,30 @@ msgstr "Illegal or inappropriate content"
 msgid "退出"
 msgstr "Log out"
 
+#: app/routes/conversation.tsx
+msgctxt "leave a group"
+msgid "退出"
+msgstr "Leave"
+
 #: app/components/shell/user-menu.tsx
 msgid "退出所有设备"
 msgstr "Log out everywhere"
 
+#: app/routes/conversation.tsx
+msgid "退出群聊"
+msgstr "Leave group"
+
+#: app/routes/conversation.tsx
+msgid "退出这个群聊？"
+msgstr "Leave this group?"
+
 #: app/components/palette/command-palette.tsx
 msgid "选择"
 msgstr "select"
+
+#: app/routes/messages.tsx
+msgid "选择一个会话"
+msgstr "Pick a conversation"
 
 #: app/routes/home.tsx
 msgid "选择版块"
@@ -2133,6 +2277,14 @@ msgstr "Accept as answer"
 #: app/components/composer/rich-editor.tsx
 msgid "重做"
 msgstr "Redo"
+
+#: app/routes/conversation.tsx
+msgid "重命名"
+msgstr "Rename"
+
+#: app/routes/conversation.tsx
+msgid "重命名群聊"
+msgstr "Rename group"
 
 #: app/routes/reset-password.tsx
 msgid "重设密码"

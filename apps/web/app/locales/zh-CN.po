@@ -52,6 +52,10 @@ msgid "{actor} 在动态中提到了你"
 msgstr "{actor} 在动态中提到了你"
 
 #: app/lib/notices.ts
+msgid "{actor} 给你发了私信"
+msgstr "{actor} 给你发了私信"
+
+#: app/lib/notices.ts
 msgid "{actor} 采纳了你的回答"
 msgstr "{actor} 采纳了你的回答"
 
@@ -60,8 +64,8 @@ msgid "{author} 的动态"
 msgstr "{author} 的动态"
 
 #: app/lib/api-errors.ts
-msgid "{bucket, select, threads {发主题} replies {回帖} edits {编辑} logins {登录} signups {注册} resets {重设密码} other {操作}}"
-msgstr "{bucket, select, threads {发主题} replies {回帖} edits {编辑} logins {登录} signups {注册} resets {重设密码} other {操作}}"
+msgid "{bucket, select, threads {发主题} replies {回帖} edits {编辑} logins {登录} signups {注册} resets {重设密码} messages {发私信} other {操作}}"
+msgstr "{bucket, select, threads {发主题} replies {回帖} edits {编辑} logins {登录} signups {注册} resets {重设密码} messages {发私信} other {操作}}"
 
 #: app/routes/home.tsx
 msgid "{categoryCount} 版块"
@@ -80,8 +84,8 @@ msgid "{days, plural, other {#天后}}"
 msgstr "{days, plural, other {#天后}}"
 
 #: app/lib/api-errors.ts
-msgid "{entity, select, category {版块} user {用户} post {帖子} thread {主题} floor {楼层} report {举报记录} notification {通知} file {文件} other {内容}}不存在"
-msgstr "{entity, select, category {版块} user {用户} post {帖子} thread {主题} floor {楼层} report {举报记录} notification {通知} file {文件} other {内容}}不存在"
+msgid "{entity, select, category {版块} user {用户} post {帖子} thread {主题} floor {楼层} report {举报记录} notification {通知} file {文件} conversation {会话} other {内容}}不存在"
+msgstr "{entity, select, category {版块} user {用户} post {帖子} thread {主题} floor {楼层} report {举报记录} notification {通知} file {文件} conversation {会话} other {内容}}不存在"
 
 #: app/lib/api-errors.ts
 msgid "{field, select, title {标题} category_name {版块名称} category_description {版块简介} display_name {昵称} search_query {搜索词} content {内容} slug {标识} handle {用户名} report_reason {举报原因} ban_reason {封禁原因} resolution_note {处理备注} unban_note {解封说明} other {内容}}"
@@ -311,6 +315,10 @@ msgstr "下载原图"
 msgid "不允许跨站请求"
 msgstr "不允许跨站请求"
 
+#: app/slots/forum-messages/messages.tsx
+msgid "不接收"
+msgstr "不接收"
+
 #: app/routes/moderation.tsx
 msgid "不支持的审核操作"
 msgstr "不支持的审核操作"
@@ -339,6 +347,10 @@ msgstr "不能封禁管理员"
 #: app/lib/api-errors.ts
 msgid "不能封禁自己"
 msgstr "不能封禁自己"
+
+#: app/lib/api-errors.ts
+msgid "不能给自己发私信"
+msgstr "不能给自己发私信"
 
 #: app/components/forum/post-history.tsx
 msgid "与上一版的差异"
@@ -466,6 +478,10 @@ msgstr "仅看主题"
 msgid "代码块"
 msgstr "代码块"
 
+#: app/routes/conversation.tsx
+msgid "会话操作"
+msgstr "会话操作"
+
 #: app/components/ui/display.tsx
 msgid "位置"
 msgstr "位置"
@@ -479,6 +495,7 @@ msgid "你没有在这个版块发布主题的权限。"
 msgstr "你没有在这个版块发布主题的权限。"
 
 #: app/components/forum/post.tsx
+#: app/routes/conversation.tsx
 #: app/slots/forum-accounts/account-settings.tsx
 msgid "保存"
 msgstr "保存"
@@ -615,6 +632,10 @@ msgstr "写下你的回复"
 msgid "写回复…"
 msgstr "写回复…"
 
+#: app/routes/conversation.tsx
+msgid "写消息…"
+msgstr "写消息…"
+
 #: app/root.tsx
 msgid "出错了"
 msgstr "出错了"
@@ -658,6 +679,10 @@ msgstr "创作抽屉"
 #: app/routes/home.tsx
 msgid "创建版块"
 msgstr "创建版块"
+
+#: app/routes/messages.tsx
+msgid "创建群聊"
+msgstr "创建群聊"
 
 #: app/components/forum/post.tsx
 msgid "删除"
@@ -803,6 +828,18 @@ msgstr "发生了意外错误。"
 msgid "发表回复"
 msgstr "发表回复"
 
+#: app/routes/messages.tsx
+msgid "发起聊天"
+msgstr "发起聊天"
+
+#: app/routes/conversation.tsx
+msgid "发送"
+msgstr "发送"
+
+#: app/routes/conversation.tsx
+msgid "发送失败，请重试。"
+msgstr "发送失败，请重试。"
+
 #: app/slots/forum-push/push-settings.tsx
 msgid "发送测试"
 msgstr "发送测试"
@@ -815,7 +852,9 @@ msgstr "发送重设链接"
 #: app/components/forum/post.tsx
 #: app/components/shell/mobile-stage-bar.tsx
 #: app/components/ui/overlay.tsx
+#: app/routes/conversation.tsx
 #: app/routes/home.tsx
+#: app/routes/messages.tsx
 #: app/routes/thread-new.tsx
 #: app/routes/thread.tsx
 #: app/routes/user.tsx
@@ -1043,6 +1082,10 @@ msgstr "密码至少需要 {min} 个字符"
 msgid "富文本"
 msgstr "富文本"
 
+#: app/lib/api-errors.ts
+msgid "对方不接收你的私信"
+msgstr "对方不接收你的私信"
+
 #: app/slots/forum-moderation/user-ban-tab.tsx
 msgid "封禁原因"
 msgstr "封禁原因"
@@ -1153,6 +1196,10 @@ msgstr "帖子"
 msgid "帖子举报"
 msgstr "帖子举报"
 
+#: app/routes/messages.tsx
+msgid "开始"
+msgstr "开始"
+
 #: app/components/composer/rich-editor.tsx
 msgid "引用"
 msgstr "引用"
@@ -1190,9 +1237,18 @@ msgstr "恶意灌水或偏离主题"
 msgid "成员"
 msgstr "成员"
 
+#: app/routes/messages.tsx
 #: app/routes/user.tsx
 msgid "我"
 msgstr "我"
+
+#: app/slots/forum-messages/messages.tsx
+msgid "我关注的人"
+msgstr "我关注的人"
+
+#: app/slots/forum-messages/messages.tsx
+msgid "所有人"
+msgstr "所有人"
 
 #: app/routes/thread.tsx
 msgid "所有回复会一并删除。"
@@ -1292,11 +1348,14 @@ msgstr "搜索结果"
 msgid "撤销"
 msgstr "撤销"
 
+#: app/routes/conversation.tsx
+#: app/routes/messages.tsx
 #: app/slots/forum-accounts/account-settings.tsx
 #: app/slots/forum-attachments/avatar.tsx
 #: app/slots/forum-attachments/shared.ts
 #: app/slots/forum-follows/follow.tsx
 #: app/slots/forum-mail/mail-settings.tsx
+#: app/slots/forum-messages/messages.tsx
 #: app/slots/forum-push/push-settings.tsx
 msgid "操作失败，请稍后再试。"
 msgstr "操作失败，请稍后再试。"
@@ -1400,6 +1459,10 @@ msgstr "更换"
 #: app/slots/forum-attachments/avatar.tsx
 msgid "更换头像"
 msgstr "更换头像"
+
+#: app/routes/conversation.tsx
+msgid "更早的消息"
+msgstr "更早的消息"
 
 #: app/slots/forum-follows/follow.tsx
 msgid "有人关注我时通知我"
@@ -1595,9 +1658,22 @@ msgstr "注销账号"
 msgid "浏览器已拒绝通知权限"
 msgstr "浏览器已拒绝通知权限"
 
+#: app/routes/conversation.tsx
+msgid "消息内容"
+msgstr "消息内容"
+
+#: app/routes/conversation.tsx
+msgid "添加"
+msgstr "添加"
+
 #: app/slots/forum-push/push-settings.tsx
 msgid "添加到主屏幕后可开启"
 msgstr "添加到主屏幕后可开启"
+
+#: app/components/messages/people-picker.tsx
+#: app/routes/conversation.tsx
+msgid "添加成员"
+msgstr "添加成员"
 
 #: app/lib/roles.ts
 msgid "游客"
@@ -1692,6 +1768,7 @@ msgstr "留空则按名称生成"
 #: app/components/shell/mobile-stage-bar.tsx
 #: app/components/shell/user-menu.tsx
 #: app/routes/login.tsx
+#: app/routes/messages.tsx
 #: app/routes/moderation.tsx
 #: app/routes/notifications.tsx
 #: app/routes/thread.tsx
@@ -1757,6 +1834,25 @@ msgstr "确定"
 msgid "社区"
 msgstr "社区"
 
+#: app/routes/forum-stage.tsx
+#: app/routes/messages.tsx
+#: app/slots/forum-messages/messages.tsx
+msgid "私信"
+msgstr "私信"
+
+#: app/slots/forum-messages/messages.tsx
+msgctxt "verb"
+msgid "私信"
+msgstr "私信"
+
+#: app/slots/forum-messages/messages.tsx
+msgid "私信（{unread} 条未读）"
+msgstr "私信（{unread} 条未读）"
+
+#: app/routes/messages.tsx
+msgid "私信功能未启用"
+msgstr "私信功能未启用"
+
 #: app/routes/thread.tsx
 msgid "移到版块"
 msgstr "移到版块"
@@ -1772,6 +1868,11 @@ msgstr "移动到其他版块"
 #: app/slots/forum-attachments/avatar.tsx
 msgid "移除"
 msgstr "移除"
+
+#. placeholder {0}: user.displayName
+#: app/components/messages/people-picker.tsx
+msgid "移除 {0}"
+msgstr "移除 {0}"
 
 #: app/components/composer/rich-editor.tsx
 msgid "移除链接"
@@ -1834,10 +1935,6 @@ msgid "编辑于 {editedAt}"
 msgstr "编辑于 {editedAt}"
 
 #: app/components/forum/post.tsx
-#~ msgid "编辑于 {replyEditedAt}"
-#~ msgstr "编辑于 {replyEditedAt}"
-
-#: app/components/forum/post.tsx
 msgid "编辑内容"
 msgstr "编辑内容"
 
@@ -1868,6 +1965,19 @@ msgstr "置顶"
 msgctxt "menu action"
 msgid "置顶"
 msgstr "置顶"
+
+#: app/lib/api-errors.ts
+msgid "群聊最多 {max} 人"
+msgstr "群聊最多 {max} 人"
+
+#: app/routes/conversation.tsx
+#: app/routes/messages.tsx
+msgid "群聊名称"
+msgstr "群聊名称"
+
+#: app/routes/messages.tsx
+msgid "群聊名称（可选）"
+msgstr "群聊名称（可选）"
 
 #: app/components/composer/rich-editor.tsx
 msgid "行内代码"
@@ -1904,6 +2014,7 @@ msgid "语言"
 msgstr "语言"
 
 #: app/lib/api-errors.ts
+#: app/routes/messages.tsx
 #: app/routes/moderation.tsx
 #: app/routes/notifications.tsx
 msgid "请先登录"
@@ -1936,6 +2047,10 @@ msgstr "请选择图片文件。"
 #: app/slots/forum-attachments/upload.tsx
 msgid "读取文件失败。"
 msgstr "读取文件失败。"
+
+#: app/slots/forum-messages/messages.tsx
+msgid "谁可以给我发私信"
+msgstr "谁可以给我发私信"
 
 #: app/components/palette/command-palette.tsx
 #: app/components/shell/user-menu.tsx
@@ -1982,6 +2097,10 @@ msgstr "转为主题帖需要一个标题"
 msgid "输入关键词开始搜索"
 msgstr "输入关键词开始搜索"
 
+#: app/components/messages/people-picker.tsx
+msgid "输入昵称或用户名"
+msgstr "输入昵称或用户名"
+
 #: app/routes/home.tsx
 msgid "近 {days} 天活跃"
 msgstr "近 {days} 天活跃"
@@ -2001,6 +2120,10 @@ msgstr "返回列表"
 #: app/routes/reset-password.tsx
 msgid "返回登录"
 msgstr "返回登录"
+
+#: app/routes/conversation.tsx
+msgid "返回私信列表"
+msgstr "返回私信列表"
 
 #: app/routes/search.tsx
 msgid "返回结果"
@@ -2027,6 +2150,10 @@ msgstr "还没有发布过内容"
 #: app/routes/home.tsx
 msgid "还没有版块"
 msgstr "还没有版块"
+
+#: app/routes/messages.tsx
+msgid "还没有私信"
+msgstr "还没有私信"
 
 #: app/routes/home.tsx
 msgid "还没有讨论"
@@ -2066,13 +2193,30 @@ msgstr "违法或不当内容"
 msgid "退出"
 msgstr "退出"
 
+#: app/routes/conversation.tsx
+msgctxt "leave a group"
+msgid "退出"
+msgstr "退出"
+
 #: app/components/shell/user-menu.tsx
 msgid "退出所有设备"
 msgstr "退出所有设备"
 
+#: app/routes/conversation.tsx
+msgid "退出群聊"
+msgstr "退出群聊"
+
+#: app/routes/conversation.tsx
+msgid "退出这个群聊？"
+msgstr "退出这个群聊？"
+
 #: app/components/palette/command-palette.tsx
 msgid "选择"
 msgstr "选择"
+
+#: app/routes/messages.tsx
+msgid "选择一个会话"
+msgstr "选择一个会话"
 
 #: app/routes/home.tsx
 msgid "选择版块"
@@ -2133,6 +2277,14 @@ msgstr "采纳为答案"
 #: app/components/composer/rich-editor.tsx
 msgid "重做"
 msgstr "重做"
+
+#: app/routes/conversation.tsx
+msgid "重命名"
+msgstr "重命名"
+
+#: app/routes/conversation.tsx
+msgid "重命名群聊"
+msgstr "重命名群聊"
 
 #: app/routes/reset-password.tsx
 msgid "重设密码"

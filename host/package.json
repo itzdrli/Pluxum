@@ -35,6 +35,7 @@
 		"@pluxum/mail": "workspace:*",
 		"@pluxum/markdown": "workspace:*",
 		"@pluxum/mentions": "workspace:*",
+		"@pluxum/messages": "workspace:*",
 		"@pluxum/moderation": "workspace:*",
 		"@pluxum/notifications": "workspace:*",
 		"@pluxum/og": "workspace:*",

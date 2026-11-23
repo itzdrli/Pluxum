@@ -10,7 +10,7 @@ A plugin-first forum on [Pluxel](https://github.com/PluxelJS/pluxel). The host s
 - **Threads and notes**: categories with topic threads, a short-note stream, replies inside a floor, pinning, locking and moving.
 - **Reading and writing**: Markdown or a rich-text editor, drafts that follow you across devices, edit history, full-text search (Chinese word segmentation), Atom feeds, a command palette, themes, and a layout that works on phones.
 - **Accounts**: email and password sign-up out of the box, or any OpenID Connect provider; roles (member, moderator, admin), avatars and attachments.
-- **Community**: reactions, follows, mentions, accepted answers, in-app, email and browser push notifications, reports and bans. Installable as an app.
+- **Community**: private messages and small group chats, reactions, follows, mentions, accepted answers, in-app, email and browser push notifications, reports and bans. Installable as an app.
 - **Your brand**: logo, icon, link preview image and default theme, set in Workbench.
 - **Two languages**: Chinese and English. Times follow the visitor's own time zone.
 
@@ -42,6 +42,7 @@ A plugin-first forum on [Pluxel](https://github.com/PluxelJS/pluxel). The host s
 | `mentions`      | `@name` mentions.                                                                 |
 | `reactions`     | Likes and 「有用」.                                                               |
 | `follows`       | Following people and categories, and the 「关注」 feed.                           |
+| `messages`      | Private messages and small group chats, live in the open conversation.            |
 | `solved`        | Accepted answers.                                                                 |
 | `drafts`        | Drafts kept on the server, so writing continues on another device.                |
 | `reads`         | Unread markers.                                                                   |

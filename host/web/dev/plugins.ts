@@ -11,6 +11,7 @@ import { ForumCorePlugin } from '@pluxum/core'
 import { ForumMailPlugin } from '@pluxum/mail'
 import { ForumMarkdownPlugin } from '@pluxum/markdown'
 import { ForumMentionsPlugin } from '@pluxum/mentions'
+import { ForumMessagesPlugin } from '@pluxum/messages'
 import { ForumModerationPlugin } from '@pluxum/moderation'
 import { ForumDraftsPlugin } from '@pluxum/drafts'
 import { ForumFollowsPlugin } from '@pluxum/follows'
@@ -52,6 +53,7 @@ const forumPlugins = [
 	ForumSolvedPlugin,
 	ForumDraftsPlugin,
 	ForumPushPlugin,
+	ForumMessagesPlugin,
 ] as const
 
 // vp exec pluxel dev run host/web/dev/plugins.ts                    → list plugin states

@@ -73,6 +73,7 @@ const EN_TITLES: Record<NoticeKey, (actor: string, title: string) => string> = {
 	'notice.mention.in_note': (actor) => `${actor} mentioned you in a note`,
 	'notice.follow': (actor) => `${actor} followed you`,
 	'notice.accepted': (actor) => `${actor} accepted your answer`,
+	'notice.message': (actor) => `${actor} sent you a message`,
 }
 
 export function mailNoticeTitle(notification: ForumNotification, locale: MailLocale): string {

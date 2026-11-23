@@ -49,6 +49,7 @@ const TEXT: Readonly<Record<ErrorKey, (i18n: I18n, params: Params) => string>> =
 			report: '举报记录',
 			notification: '通知',
 			file: '文件',
+			conversation: '会话',
 			other: '内容',
 		})}不存在`
 	},
@@ -115,6 +116,12 @@ const TEXT: Readonly<Record<ErrorKey, (i18n: I18n, params: Params) => string>> =
 	'thread.locked': (i18n) => t(i18n)`主题已锁定，不能回复`,
 	'post.opening_undeletable': (i18n) => t(i18n)`主楼不能单独删除，请删除整个主题`,
 	'follow.self': (i18n) => t(i18n)`不能关注自己`,
+	'messages.self': (i18n) => t(i18n)`不能给自己发私信`,
+	'messages.closed': (i18n) => t(i18n)`对方不接收你的私信`,
+	'messages.members_max': (i18n, params) => {
+		const max = count(params, 'max')
+		return t(i18n)`群聊最多 ${max} 人`
+	},
 	'solved.not_allowed': (i18n) => t(i18n)`只有楼主或版主可以采纳答案`,
 	'solved.note': (i18n) => t(i18n)`动态不能采纳答案`,
 	'solved.opening': (i18n) => t(i18n)`主楼不能被采纳为答案`,
@@ -137,6 +144,7 @@ const TEXT: Readonly<Record<ErrorKey, (i18n: I18n, params: Params) => string>> =
 			logins: '登录',
 			signups: '注册',
 			resets: '重设密码',
+			messages: '发私信',
 			other: '操作',
 		})}`
 		const wait = waitText(i18n, count(params, 'seconds'))

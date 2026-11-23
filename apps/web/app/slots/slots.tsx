@@ -20,6 +20,7 @@ import { AttachmentsFooter } from './forum-attachments/attachments'
 import { AvatarEditor } from './forum-attachments/avatar'
 import { MailSettings } from './forum-mail/mail-settings'
 import { PushSettings } from './forum-push/push-settings'
+import { MessageSettings, MessagesButton, MessageUserButton } from './forum-messages/messages'
 import { UploadButton } from './forum-attachments/upload'
 import { CategoryFollow, FollowSettings, UserFollow } from './forum-follows/follow'
 import { ReportAction } from './forum-moderation/report-button'
@@ -109,6 +110,11 @@ const EXTENSIONS: Readonly<Record<string, SlotComponents>> = {
 	},
 	'forum-mail': { 'user.profile.tabs': MailSettings },
 	'forum-push': { 'user.profile.tabs': PushSettings },
+	'forum-messages': {
+		'shell.actions': MessagesButton,
+		'user.header': MessageUserButton,
+		'user.profile.tabs': MessageSettings,
+	},
 	'forum-accounts': { 'user.profile.tabs': AccountSettings },
 }
 

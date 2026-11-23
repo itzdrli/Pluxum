@@ -3,6 +3,7 @@ import {
 	Bell,
 	Hash,
 	LayoutGrid,
+	MessageCircle,
 	NotebookPen,
 	PanelLeftClose,
 	PanelLeftOpen,
@@ -29,6 +30,7 @@ import { stageShouldRevalidate } from '../lib/revalidate'
 import type { loader as rootLoader } from '../root'
 import { siteOf } from '../lib/site'
 import { STREAM_LABEL } from '../lib/stream'
+import { MESSAGES_EXT_ID, useUnreadMessages } from '../lib/messages'
 
 /**
  * The stage frame around every list and detail route. It owns the category navigation: a column
@@ -253,6 +255,9 @@ function CategoryNavPanel({
 		meta.uiSlots.some(
 			(slot) => slot.slot === 'shell.actions' && slot.extId === 'forum-notifications',
 		)
+	const messagesOn =
+		meta?.viewer.user != null && meta.uiSlots.some((slot) => slot.extId === MESSAGES_EXT_ID)
+	const unreadMessages = useUnreadMessages(messagesOn)
 	return (
 		<>
 			<ul className="border-line-soft border-b pb-2">
@@ -280,6 +285,16 @@ function CategoryNavPanel({
 						label={t`通知`}
 						active={pathname === '/notifications'}
 						badge={root?.unreadNotifications}
+						collapsed={collapsed}
+					/>
+				)}
+				{messagesOn && (
+					<RailLink
+						to="/messages"
+						icon={MessageCircle}
+						label={t`私信`}
+						active={pathname.startsWith('/messages')}
+						badge={unreadMessages}
 						collapsed={collapsed}
 					/>
 				)}

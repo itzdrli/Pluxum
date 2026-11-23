@@ -641,6 +641,13 @@ export class ForumCorePlugin extends BasePlugin {
 		}
 	}
 
+	/** Whether `followerId` follows the person `targetId`; null while no follow graph is installed. */
+	async followsUser(followerId: string, targetId: string): Promise<boolean | null> {
+		if (this.followGraph.id() === null) return null
+		const followed = await this.followedBy(followerId)
+		return followed?.userIds.includes(targetId) ?? false
+	}
+
 	private followedBy(userId: string) {
 		return this.followGraph.following(userId, (error, graphId) =>
 			this.ctx.logger.error('follow graph failed; the following feed is empty', {

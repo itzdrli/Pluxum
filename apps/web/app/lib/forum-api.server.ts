@@ -27,6 +27,7 @@ import { t } from '@lingui/core/macro'
 import { data } from 'react-router'
 
 import type { feedQuery } from './home'
+import type { ConversationDetail, ConversationList } from './messages'
 import { apiErrorText } from './api-errors'
 import { localizeBody } from './notices'
 import { i18nFromRequest } from './i18n.server'
@@ -615,6 +616,10 @@ export const forumApi = {
 		return result
 	},
 	/** A write action of an extension plugin; the answer's shape is the extension's own. */
+	/** The signed-in member's conversations (Pluxum Messages). */
+	conversations: (request: Request) => call<ConversationList>(request, '/ext/forum-messages/list'),
+	conversation: (request: Request, id: string) =>
+		call<ConversationDetail>(request, `/ext/forum-messages/get?id=${encodeURIComponent(id)}`),
 	extAction: async (request: Request, extId: string, action: string, body: unknown) => {
 		const result = await call<unknown>(
 			request,

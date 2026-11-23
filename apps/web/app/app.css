@@ -545,6 +545,23 @@
 		white-space: pre-wrap;
 	}
 
+	/* Private messages: the list and the open conversation fill the window and scroll inside. */
+	.messages-frame {
+		height: calc(100dvh - 12rem);
+		min-height: 420px;
+	}
+	/* A phone with a conversation open shows it alone, without the page title. */
+	@media (max-width: 1023px) {
+		.messages-frame--open {
+			height: calc(100dvh - 6.5rem);
+		}
+	}
+	@media (min-width: 1024px) {
+		.messages-frame {
+			height: calc(100dvh - 7.5rem);
+		}
+	}
+
 	/* A version of a post's source in its edit history, with what changed from the one before. */
 	.post-diff {
 		font-size: var(--fs-ui);

@@ -25,6 +25,7 @@ import { ForumFooterPlugin } from '@pluxum/footer'
 import { ForumMailConfig, ForumMailPlugin } from '@pluxum/mail'
 import { ForumMarkdownPlugin } from '@pluxum/markdown'
 import { ForumMentionsPlugin } from '@pluxum/mentions'
+import { ForumMessagesPlugin } from '@pluxum/messages'
 import { ForumModerationPlugin } from '@pluxum/moderation'
 import { ForumNotificationsPlugin } from '@pluxum/notifications'
 import { ForumOgPlugin } from '@pluxum/og'
@@ -69,6 +70,8 @@ export const appPlugins = [
 	ForumDraftsPlugin,
 	// Browser push notifications; its key pair lives in its Vault.
 	ForumPushPlugin,
+	// Private messages and small group chats.
+	ForumMessagesPlugin,
 	// Social card images: Takumi draws them with the fonts FontsPlugin holds.
 	FontsPlugin,
 	TakumiPlugin,

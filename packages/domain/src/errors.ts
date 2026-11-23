@@ -12,6 +12,7 @@ export const ENTITY_NAMES = [
 	'report',
 	'notification',
 	'file',
+	'conversation',
 ] as const
 export type EntityName = (typeof ENTITY_NAMES)[number]
 
@@ -31,7 +32,15 @@ export const FIELD_NAMES = [
 ] as const
 export type FieldName = (typeof FIELD_NAMES)[number]
 
-export const RATE_BUCKETS = ['threads', 'replies', 'edits', 'logins', 'signups', 'resets'] as const
+export const RATE_BUCKETS = [
+	'threads',
+	'replies',
+	'edits',
+	'logins',
+	'signups',
+	'resets',
+	'messages',
+] as const
 export type RateBucket = (typeof RATE_BUCKETS)[number]
 
 /** Every error key and the parameters it takes (`undefined`: none). */
@@ -89,6 +98,10 @@ export type ErrorSpecs = {
 	'post.opening_undeletable': undefined
 	// Following, solved answers
 	'follow.self': undefined
+	// Messages
+	'messages.self': undefined
+	'messages.closed': undefined
+	'messages.members_max': { max: number }
 	'solved.not_allowed': undefined
 	'solved.note': undefined
 	'solved.opening': undefined
@@ -135,6 +148,7 @@ const ENTITY_TEXT: Readonly<Record<EntityName, string>> = {
 	report: '举报记录',
 	notification: '通知',
 	file: '文件',
+	conversation: '会话',
 }
 
 const FIELD_TEXT: Readonly<Record<FieldName, string>> = {
@@ -159,6 +173,7 @@ const BUCKET_TEXT: Readonly<Record<RateBucket, string>> = {
 	logins: '登录',
 	signups: '注册',
 	resets: '重设密码',
+	messages: '发私信',
 }
 
 /** "30 秒" / "5 分钟" / "2 小时", rounded up. */
@@ -221,6 +236,9 @@ export const ERROR_TEXT: Texts = {
 	'thread.locked': () => '主题已锁定，不能回复',
 	'post.opening_undeletable': () => '主楼不能单独删除，请删除整个主题',
 	'follow.self': () => '不能关注自己',
+	'messages.self': () => '不能给自己发私信',
+	'messages.closed': () => '对方不接收你的私信',
+	'messages.members_max': ({ max }) => `群聊最多 ${max} 人`,
 	'solved.not_allowed': () => '只有楼主或版主可以采纳答案',
 	'solved.note': () => '动态不能采纳答案',
 	'solved.opening': () => '主楼不能被采纳为答案',

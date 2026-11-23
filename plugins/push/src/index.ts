@@ -70,6 +70,7 @@ const EN_TITLES: {
 	'notice.mention.in_note': (p) => `${p.actor} mentioned you in a note`,
 	'notice.follow': (p) => `${p.actor} followed you`,
 	'notice.accepted': (p) => `${p.actor} accepted your answer`,
+	'notice.message': (p) => `${p.actor} sent you a message`,
 }
 
 function clip(text: string, max: number): string {

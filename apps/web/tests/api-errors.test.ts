@@ -47,6 +47,7 @@ describe('API error texts', () => {
 			'report',
 			'notification',
 			'file',
+			'conversation',
 		] as const) {
 			sameChinese('entity.not_found', { entity })
 		}
@@ -101,6 +102,9 @@ describe('API error texts', () => {
 		sameChinese('thread.locked')
 		sameChinese('post.opening_undeletable')
 		sameChinese('follow.self')
+		sameChinese('messages.self')
+		sameChinese('messages.closed')
+		sameChinese('messages.members_max', { max: 20 })
 		sameChinese('solved.not_allowed')
 		sameChinese('solved.note')
 		sameChinese('solved.opening')

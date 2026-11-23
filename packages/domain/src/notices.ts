@@ -16,6 +16,7 @@ export type NoticeSpecs = {
 	'notice.mention.in_note': { actor: string }
 	'notice.follow': { actor: string }
 	'notice.accepted': { actor: string }
+	'notice.message': { actor: string }
 }
 export type NoticeKey = keyof NoticeSpecs
 export type NoticeParams = ErrorParams
@@ -32,6 +33,7 @@ export const NOTICE_TEXT: Texts = {
 	'notice.mention.in_note': ({ actor }) => `${actor} 在动态中提到了你`,
 	'notice.follow': ({ actor }) => `${actor} 关注了你`,
 	'notice.accepted': ({ actor }) => `${actor} 采纳了你的回答`,
+	'notice.message': ({ actor }) => `${actor} 给你发了私信`,
 }
 
 /** A notification title: its key, parameters and Chinese text. */

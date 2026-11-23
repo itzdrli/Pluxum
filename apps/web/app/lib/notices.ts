@@ -49,6 +49,10 @@ const TEXT: Readonly<Record<NoticeKey, (i18n: I18n, params: Params) => string>> 
 		const actor = text(params, 'actor')
 		return t(i18n)`${actor} 采纳了你的回答`
 	},
+	'notice.message': (i18n, params) => {
+		const actor = text(params, 'actor')
+		return t(i18n)`${actor} 给你发了私信`
+	},
 }
 
 /** A notification title in the visitor's language, or the API's Chinese one. */

@@ -36,6 +36,7 @@ describe('notification titles', () => {
 		sameChinese('notice.mention.in_note', { actor: '小明' })
 		sameChinese('notice.follow', { actor: '小明' })
 		sameChinese('notice.accepted', { actor: '小明' })
+		sameChinese('notice.message', { actor: '小明' })
 		expect([...checked].toSorted()).toEqual(Object.keys(NOTICE_TEXT).toSorted())
 	})
 

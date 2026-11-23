@@ -17,6 +17,7 @@ export default [
 		route('u/:userId', 'routes/user.tsx', [
 			route('t/:id', 'routes/thread.tsx', { id: 'routes/user-thread' }),
 		]),
+		route('messages', 'routes/messages.tsx', [route(':id', 'routes/conversation.tsx')]),
 		route('notifications', 'routes/notifications.tsx'),
 		route('moderation', 'routes/moderation.tsx'),
 		route('login', 'routes/login.tsx'),
