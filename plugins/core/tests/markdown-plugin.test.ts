@@ -1,5 +1,5 @@
 import { ForumCorePlugin } from '@pluxum/core'
-import { ForumMarkdownPlugin, MARKDOWN_RENDERER_ID } from '@pluxum/markdown'
+import { ForumMarkdownPlugin, MARKDOWN_RENDERER_ID } from '@pluxum/core'
 import { database } from '@pluxel/services/database'
 import { pglite } from '@pluxel/services/database/pglite'
 import { createTestHost } from '@pluxel/test'

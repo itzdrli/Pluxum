@@ -20,10 +20,10 @@ export default defineConfig({
 				dependsOn: [
 					'@pluxum/domain#check-tests',
 					'@pluxum/core#check-tests',
-					'@pluxum/markdown#check-tests',
 					'@pluxum/auth#check-tests',
 					'@pluxum/api#check-tests',
 					'@pluxum/redis#check-tests',
+					'@pluxum/posts#check-tests',
 					'@pluxum/reactions#check-tests',
 					'@pluxum/drafts#check-tests',
 					'@pluxum/follows#check-tests',

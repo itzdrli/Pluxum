@@ -3429,3 +3429,7 @@ export class ForumCorePlugin extends BasePlugin {
 		return row
 	}
 }
+
+// Plugins shipped in this package beside the core, each still started and stopped on its own.
+export { ForumMarkdownPlugin, MARKDOWN_RENDERER_ID, renderMarkdown } from './plugins/markdown'
+export { CACHE_CONTRIBUTION_ID, ForumCacheConfig, ForumCachePlugin } from './plugins/cache'

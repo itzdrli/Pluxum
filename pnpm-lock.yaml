@@ -110,13 +110,13 @@ catalogs:
       specifier: ^4.3.4
       version: 4.3.5
     '@tanstack/react-hotkeys':
-      specifier: 0.27.2
-      version: 0.27.2
+      specifier: ^0.22.0
+      version: 0.22.0
     '@tanstack/react-pacer':
       specifier: 0.24.1
       version: 0.24.1
     '@tanstack/react-query':
-      specifier: 5.108.3
+      specifier: ^5.105.3
       version: 5.108.3
     '@tiptap/core':
       specifier: 3.32.2
@@ -321,7 +321,7 @@ importers:
         version: 8.5.1(react-router@8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2)
       '@tanstack/react-hotkeys':
         specifier: catalog:frontend
-        version: 0.27.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 0.22.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@tanstack/react-pacer':
         specifier: catalog:frontend
         version: 0.24.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -491,9 +491,6 @@ importers:
       '@pluxum/auth':
         specifier: workspace:*
         version: link:../plugins/auth
-      '@pluxum/cache':
-        specifier: workspace:*
-        version: link:../plugins/cache
       '@pluxum/core':
         specifier: workspace:*
         version: link:../plugins/core
@@ -509,12 +506,6 @@ importers:
       '@pluxum/mail':
         specifier: workspace:*
         version: link:../plugins/mail
-      '@pluxum/markdown':
-        specifier: workspace:*
-        version: link:../plugins/markdown
-      '@pluxum/mentions':
-        specifier: workspace:*
-        version: link:../plugins/mentions
       '@pluxum/messages':
         specifier: workspace:*
         version: link:../plugins/messages
@@ -527,9 +518,9 @@ importers:
       '@pluxum/og':
         specifier: workspace:*
         version: link:../plugins/og
-      '@pluxum/outline':
+      '@pluxum/posts':
         specifier: workspace:*
-        version: link:../plugins/outline
+        version: link:../plugins/posts
       '@pluxum/push':
         specifier: workspace:*
         version: link:../plugins/push
@@ -649,12 +640,9 @@ importers:
       '@pluxum/core':
         specifier: workspace:*
         version: link:../../plugins/core
-      '@pluxum/markdown':
+      '@pluxum/posts':
         specifier: workspace:*
-        version: link:../../plugins/markdown
-      '@pluxum/outline':
-        specifier: workspace:*
-        version: link:../../plugins/outline
+        version: link:../../plugins/posts
       '@pluxum/reactions':
         specifier: workspace:*
         version: link:../../plugins/reactions
@@ -921,7 +909,7 @@ importers:
         specifier: catalog:test
         version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
-  plugins/cache:
+  plugins/core:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
@@ -929,49 +917,6 @@ importers:
       '@pluxel/plugin-cache':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-cache-3bd15591b12e
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-cache-3bd15591b12e
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
-      valibot:
-        specifier: catalog:validation
-        version: 1.5.0(typescript@7.0.2)
-      valibot-form:
-        specifier: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
-        version: link:../../.pluxel/sources/6b76349dc399/valibot-form-d4e1d265acb7
-    devDependencies:
-      '@electric-sql/pglite':
-        specifier: catalog:prod
-        version: 0.5.16
-      '@pluxel/cli':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-      '@pluxel/services':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-      '@pluxel/test':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
-      '@pluxum/core':
-        specifier: workspace:*
-        version: link:../core
-      typescript:
-        specifier: catalog:tooling
-        version: 7.0.2
-      vite-plus:
-        specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
-      vitest:
-        specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
-
-  plugins/core:
-    dependencies:
-      '@pluxel/core':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -984,6 +929,9 @@ importers:
       drizzle-orm:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
+      marked:
+        specifier: catalog:backend
+        version: 17.0.6
       sanitize-html:
         specifier: catalog:backend
         version: 2.18.1
@@ -1245,95 +1193,6 @@ importers:
         specifier: catalog:test
         version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
-  plugins/markdown:
-    dependencies:
-      '@pluxel/core':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-      marked:
-        specifier: catalog:backend
-        version: 17.0.6
-    devDependencies:
-      '@electric-sql/pglite':
-        specifier: catalog:prod
-        version: 0.5.16
-      '@pluxel/cli':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-      '@pluxel/services':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-      '@pluxel/test':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
-      '@pluxum/core':
-        specifier: workspace:*
-        version: link:../core
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
-      typescript:
-        specifier: catalog:tooling
-        version: 7.0.2
-      vite-plus:
-        specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
-      vitest:
-        specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
-
-  plugins/mentions:
-    dependencies:
-      '@pluxel/core':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
-      '@pluxel/services':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-      '@pluxum/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
-      typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
-    devDependencies:
-      '@electric-sql/pglite':
-        specifier: catalog:prod
-        version: 0.5.16
-      '@pluxel/cli':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-      '@pluxel/test':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
-      '@pluxum/api':
-        specifier: workspace:*
-        version: link:../api
-      '@pluxum/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@pluxum/core':
-        specifier: workspace:*
-        version: link:../core
-      '@types/node':
-        specifier: catalog:tooling
-        version: 26.6.6
-      typescript:
-        specifier: catalog:tooling
-        version: 7.0.2
-      vite-plus:
-        specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
-      vitest:
-        specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
-
   plugins/messages:
     dependencies:
       '@pluxel/core':
@@ -1539,30 +1398,45 @@ importers:
         specifier: catalog:test
         version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
-  plugins/outline:
+  plugins/posts:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/services':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
       '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      typebox:
+        specifier: ^1.4.3
+        version: 1.4.3
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: catalog:prod
+        version: 0.5.16
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
       '@pluxel/host':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-      '@pluxel/services':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
+      '@pluxum/api':
+        specifier: workspace:*
+        version: link:../api
+      '@pluxum/auth':
+        specifier: workspace:*
+        version: link:../auth
       '@pluxum/core':
         specifier: workspace:*
         version: link:../core
+      '@types/node':
+        specifier: catalog:tooling
+        version: 26.6.6
       typescript:
         specifier: catalog:tooling
         version: 7.0.2
@@ -3322,8 +3196,8 @@ packages:
     resolution: {integrity: sha512-MiBx6Ybr65MFatCnk8IJzhGxd4hvsvEap4aT0gXOC274rV4hm0UPNHxznB5KGYtu84aXrIAsJEBElqzdPe+eeg==}
     engines: {node: '>=18'}
 
-  '@tanstack/hotkeys@0.33.1':
-    resolution: {integrity: sha512-8lTyzrwAKIQm/8Ml938RXMSDBy/6wsIlavczmjDec4hsXkSPys0SbQ59kYboC6cBOfR2T1jFBQ1P0J3A06szsA==}
+  '@tanstack/hotkeys@0.24.0':
+    resolution: {integrity: sha512-w8J7neUNPTDTwHh3WlpgFnER+B0au5WRr9lCFvmWJDq9S1KuaktdQpJYxs1IkL3arQLrgTcIi81BFkY05Zrv0Q==}
     engines: {node: '>=20'}
 
   '@tanstack/pacer@0.23.1':
@@ -3333,8 +3207,8 @@ packages:
   '@tanstack/query-core@5.108.3':
     resolution: {integrity: sha512-Lh8fyLDlHOdZXfUB+G1M5bKxfQ1Y0/mfydFP+pMjFKweAU4OUiC4MyIBTcW7Ck+Iwt6K3/pzvADrJi2Dc1lwuQ==}
 
-  '@tanstack/react-hotkeys@0.27.2':
-    resolution: {integrity: sha512-VpnIlDQ1t21G2scxjsvdxsg4hhj9R1gZMjJxEitVS6f4+PAz78fA5W/Q0iBythZH/gBSvqp0Aj2HLRyEvHcm/g==}
+  '@tanstack/react-hotkeys@0.22.0':
+    resolution: {integrity: sha512-r2Mq/QCKqwH0GwVE7JGYniV70rYd+5usqlj+zZWWJbEXY9x0wD1p9MjIKXrGX0TvkYPIRSh4o8DVOnYf8yxslA==}
     engines: {node: '>=20'}
     peerDependencies:
       react: '>=18.0.0'
@@ -6673,7 +6547,7 @@ snapshots:
 
   '@tanstack/devtools-event-client@0.5.1': {}
 
-  '@tanstack/hotkeys@0.33.1': {}
+  '@tanstack/hotkeys@0.24.0': {}
 
   '@tanstack/pacer@0.23.1':
     dependencies:
@@ -6682,9 +6556,9 @@ snapshots:
 
   '@tanstack/query-core@5.108.3': {}
 
-  '@tanstack/react-hotkeys@0.27.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@tanstack/react-hotkeys@0.22.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@tanstack/hotkeys': 0.33.1
+      '@tanstack/hotkeys': 0.24.0
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 

@@ -12,8 +12,7 @@
 	"devDependencies": {
 		"@pluxum/api": "workspace:*",
 		"@pluxum/core": "workspace:*",
-		"@pluxum/markdown": "workspace:*",
-		"@pluxum/outline": "workspace:*",
+		"@pluxum/posts": "workspace:*",
 		"@pluxum/reactions": "workspace:*",
 		"@pluxum/reads": "workspace:*",
 		"@pluxum/redis": "workspace:*",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { renderMarkdown } from '../src/render'
+import { renderMarkdown } from '../src/plugins/markdown-render'
 
 const html = (source: string) => renderMarkdown(source).trim()
 

@@ -1,7 +1,7 @@
 {
 	"name": "@pluxum/core",
 	"version": "0.0.0",
-	"description": "Pluxum forum core: users, roles, categories, threads, posts and the extension registries.",
+	"description": "Pluxum forum core: users, roles, categories, threads, posts, the extension registries, Markdown rendering and the cache.",
 	"license": "AGPL-3.0-only",
 	"repository": {
 		"type": "git",
@@ -28,6 +28,7 @@
 	"dependencies": {
 		"@pluxum/domain": "workspace:*",
 		"drizzle-orm": "catalog:backend",
+		"marked": "catalog:backend",
 		"sanitize-html": "catalog:backend",
 		"valibot": "catalog:validation",
 		"valibot-form": "catalog:validation"
@@ -39,6 +40,7 @@
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",
+		"@pluxel/plugin-cache": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/test": "catalog:pluxel",
 		"@pluxel/workbench": "catalog:pluxel",
@@ -57,6 +59,7 @@
 		"@mantine/core": "catalog:frontend-peer",
 		"@mantine/hooks": "catalog:frontend-peer",
 		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/plugin-cache": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/workbench": "catalog:pluxel",
 		"@tabler/icons-react": "catalog:frontend-peer",
@@ -68,7 +71,10 @@
 		"artifactRoot": "dist",
 		"nodeArtifacts": true,
 		"workbenchArtifacts": true,
-		"workbenchCapnweb": "0.12.0"
+		"workbenchCapnweb": "0.12.0",
+		"pluginPackages": {
+			"@pluxel/plugin-cache": "required"
+		}
 	},
 	"publishConfig": {
 		"exports": {

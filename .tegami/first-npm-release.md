@@ -3,18 +3,15 @@ packages:
   '@pluxum/api': minor
   '@pluxum/attachments': minor
   '@pluxum/auth': minor
-  '@pluxum/cache': minor
   '@pluxum/core': minor
   '@pluxum/domain': minor
   '@pluxum/follows': minor
   '@pluxum/footer': minor
   '@pluxum/mail': minor
-  '@pluxum/markdown': minor
-  '@pluxum/mentions': minor
   '@pluxum/moderation': minor
   '@pluxum/notifications': minor
   '@pluxum/og': minor
-  '@pluxum/outline': minor
+  '@pluxum/posts': minor
   '@pluxum/rates': minor
   '@pluxum/reactions': minor
   '@pluxum/reads': minor

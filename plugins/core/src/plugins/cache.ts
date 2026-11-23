@@ -1,4 +1,5 @@
-import { ForumCorePlugin, type ForumCacheContribution } from '@pluxum/core'
+import type { ForumCacheContribution } from '../cache'
+import { ForumCorePlugin } from '../index'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Cache, type CacheNamespace, type LocalCache } from '@pluxel/plugin-cache'
 import * as v from 'valibot'

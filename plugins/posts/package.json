@@ -1,12 +1,12 @@
 {
-	"name": "@pluxum/outline",
+	"name": "@pluxum/posts",
 	"version": "0.0.0",
-	"description": "Floor timeline beside Pluxum threads.",
+	"description": "Post features of Pluxum: @mentions and the floor timeline.",
 	"license": "AGPL-3.0-only",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/itzdrli/Pluxum.git",
-		"directory": "plugins/outline"
+		"directory": "plugins/posts"
 	},
 	"type": "module",
 	"files": [
@@ -26,28 +26,36 @@
 		"typecheck": "vp run check-types"
 	},
 	"dependencies": {
-		"@pluxum/domain": "workspace:*"
+		"@pluxum/domain": "workspace:*",
+		"typebox": "catalog:backend"
 	},
 	"devDependencies": {
+		"@electric-sql/pglite": "catalog:prod",
+		"@pluxum/api": "workspace:*",
+		"@pluxum/auth": "workspace:*",
 		"@pluxum/core": "workspace:*",
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/test": "catalog:pluxel",
+		"@types/node": "catalog:tooling",
 		"typescript": "catalog:tooling",
 		"vite-plus": "catalog:tooling",
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
+		"@pluxum/api": "workspace:^",
 		"@pluxum/core": "workspace:^",
-		"@pluxel/core": "catalog:pluxel"
+		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/services": "catalog:pluxel"
 	},
 	"pluxel": {
 		"artifactRoot": "dist",
 		"nodeArtifacts": true,
 		"workbenchArtifacts": true,
 		"pluginPackages": {
+			"@pluxum/api": "required",
 			"@pluxum/core": "required"
 		}
 	},

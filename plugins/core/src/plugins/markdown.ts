@@ -1,8 +1,8 @@
-import { ForumCorePlugin } from '@pluxum/core'
+import { ForumCorePlugin } from '../index'
 import { BasePlugin, Plugin } from '@pluxel/core'
-import { renderMarkdown } from './render'
+import { renderMarkdown } from './markdown-render'
 
-export { renderMarkdown } from './render'
+export { renderMarkdown } from './markdown-render'
 
 export const MARKDOWN_RENDERER_ID = 'forum-markdown.marked'
 
