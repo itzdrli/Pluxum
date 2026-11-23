@@ -13,6 +13,7 @@ import { ROLE_LABELS } from '../../lib/roles'
 import { LocaleSwitcher } from './locale-switcher'
 import { ThemeSwatches } from './theme-picker'
 import { loginHref } from '../../lib/login'
+import { KeyboardScope } from '../ui/keyboard-scope'
 
 /**
  * Login link, or the signed-in account with its menu. `variant="bar"` is the top bar's avatar
@@ -317,18 +318,20 @@ function GuestThemeButton({ placement }: { placement: Placement }) {
 					aria-label={t`主题与语言`}
 					className="flex flex-col gap-2.5 px-3 py-2.5 outline-none"
 				>
-					<div className="flex items-center justify-between gap-3">
-						<span className="text-ink-weak text-meta">
-							<Trans context="colour theme">主题</Trans>
-						</span>
-						<ThemeSwatches />
-					</div>
-					<div className="flex items-center justify-between gap-3">
-						<span className="text-ink-weak text-meta">
-							<Trans>语言</Trans>
-						</span>
-						<LocaleSwitcher />
-					</div>
+					<KeyboardScope>
+						<div className="flex items-center justify-between gap-3">
+							<span className="text-ink-weak text-meta">
+								<Trans context="colour theme">主题</Trans>
+							</span>
+							<ThemeSwatches />
+						</div>
+						<div className="flex items-center justify-between gap-3">
+							<span className="text-ink-weak text-meta">
+								<Trans>语言</Trans>
+							</span>
+							<LocaleSwitcher />
+						</div>
+					</KeyboardScope>
 				</Popover.Dialog>
 			</Popover.Content>
 		</Popover>

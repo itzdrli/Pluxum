@@ -195,6 +195,10 @@ msgstr "{seconds, plural, one {in # second} other {in # seconds}}"
 msgid "{seconds} 秒"
 msgstr "{seconds, plural, one {# second} other {# seconds}}"
 
+#: app/components/dock/composer-dock.tsx
+msgid "{sendKeys} 回复"
+msgstr "{sendKeys} to reply"
+
 #: app/components/shell/shell.tsx
 #: app/routes/forum-stage.tsx
 msgid "{siteName} 首页"
@@ -259,10 +263,6 @@ msgstr "30 days"
 msgid "7 天"
 msgstr "7 days"
 
-#: app/components/dock/composer-dock.tsx
-msgid "Ctrl+Enter 回复"
-msgstr "Ctrl+Enter to reply"
-
 #: app/components/composer/composer.tsx
 msgid "Markdown 源码"
 msgstr "Markdown source"
@@ -278,6 +278,10 @@ msgstr "A member"
 #: app/routes/thread-new.tsx
 msgid "一句话说清楚要讨论什么"
 msgstr "Say in one line what you want to discuss"
+
+#: app/lib/hotkeys.ts
+msgid "上一个主题"
+msgstr "Previous thread"
 
 #: app/components/ui/lightbox.tsx
 msgid "上一张"
@@ -298,6 +302,10 @@ msgstr "Upload failed. Please try again later."
 #: app/slots/forum-attachments/avatar.tsx
 msgid "上传头像"
 msgstr "Upload avatar"
+
+#: app/lib/hotkeys.ts
+msgid "下一个主题"
+msgstr "Next thread"
 
 #: app/components/ui/lightbox.tsx
 msgid "下一张"
@@ -355,6 +363,10 @@ msgstr "You can’t message yourself"
 #: app/components/forum/post-history.tsx
 msgid "与上一版的差异"
 msgstr "Changes from the previous version"
+
+#: app/lib/hotkeys.ts
+msgid "专注阅读"
+msgstr "Focus reading"
 
 #: app/components/shell/user-menu.tsx
 msgid "个人资料"
@@ -591,6 +603,7 @@ msgstr "Follow category"
 msgid "关闭"
 msgstr "Close"
 
+#: app/lib/hotkeys.ts
 #: app/routes/thread.tsx
 msgid "关闭主题"
 msgstr "Close thread"
@@ -724,6 +737,18 @@ msgstr "Delete this reply?"
 msgid "前往"
 msgstr "Go to"
 
+#: app/lib/hotkeys.ts
+msgid "前往概览"
+msgstr "Go to overview"
+
+#: app/lib/hotkeys.ts
+msgid "前往私信"
+msgstr "Go to messages"
+
+#: app/lib/hotkeys.ts
+msgid "前往通知"
+msgstr "Go to notifications"
+
 #: app/routes/user.tsx
 msgid "加入于"
 msgstr "Joined"
@@ -809,6 +834,10 @@ msgstr "Post"
 #: app/routes/home.tsx
 #: app/routes/thread-new.tsx
 msgid "发布主题"
+msgstr "New thread"
+
+#: app/lib/hotkeys.ts
+msgid "发布新主题"
 msgstr "New thread"
 
 #: app/components/palette/command-palette.tsx
@@ -908,12 +937,17 @@ msgid "命令"
 msgstr "Commands"
 
 #: app/components/palette/command-palette.tsx
+#: app/lib/hotkeys.ts
 msgid "命令面板"
 msgstr "Command palette"
 
 #: app/components/shell/mobile-stage-bar.tsx
 msgid "回到顶部"
 msgstr "Back to top"
+
+#: app/lib/hotkeys.ts
+msgid "回复"
+msgstr "Reply"
 
 #: app/components/forum/rows.tsx
 #: app/routes/search.tsx
@@ -1196,6 +1230,11 @@ msgstr "Dismissed"
 msgid "帖子"
 msgstr "Posts"
 
+#: app/lib/hotkeys.ts
+msgctxt "post"
+msgid "帖子"
+msgstr "Post"
+
 #: app/routes/moderation.tsx
 msgid "帖子举报"
 msgstr "Post report"
@@ -1232,6 +1271,12 @@ msgstr "Open"
 msgid "忘记密码"
 msgstr "Forgot password"
 
+#: app/components/palette/command-palette.tsx
+#: app/components/shell/shortcut-sheet.tsx
+#: app/lib/hotkeys.ts
+msgid "快捷键"
+msgstr "Keyboard shortcuts"
+
 #: app/slots/forum-moderation/report-button.tsx
 msgid "恶意灌水或偏离主题"
 msgstr "Flooding or off-topic"
@@ -1261,6 +1306,10 @@ msgstr "All replies will be deleted with it."
 #: app/components/palette/command-palette.tsx
 msgid "执行"
 msgstr "run"
+
+#: app/lib/hotkeys.ts
+msgid "折叠版块栏"
+msgstr "Collapse categories"
 
 #: app/components/hover/hover-cards.tsx
 msgid "指向第 {floor} 楼"
@@ -1304,6 +1353,7 @@ msgid "插入表格"
 msgstr "Insert table"
 
 #: app/components/shell/site-footer.tsx
+#: app/lib/hotkeys.ts
 #: app/routes/search.tsx
 msgid "搜索"
 msgstr "Search"
@@ -1550,6 +1600,7 @@ msgstr "View post"
 msgid "查看目标"
 msgstr "View target"
 
+#: app/lib/hotkeys.ts
 #: app/routes/notifications.tsx
 msgid "标为已读"
 msgstr "Mark as read"
@@ -1683,6 +1734,7 @@ msgstr "Add people"
 msgid "游客"
 msgstr "Guest"
 
+#: app/lib/hotkeys.ts
 #: app/slots/forum-reactions/reactions.tsx
 msgid "点赞"
 msgstr "Like"
@@ -2085,6 +2137,10 @@ msgstr "Jump to latest reply"
 msgid "跳到正文"
 msgstr "Skip to content"
 
+#: app/lib/hotkeys.ts
+msgid "跳转"
+msgstr "Go to"
+
 #: app/routes/thread.tsx
 msgid "转为主题帖"
 msgstr "Convert to thread"
@@ -2226,6 +2282,10 @@ msgstr "Pick a conversation"
 msgid "选择版块"
 msgstr "Choose category"
 
+#: app/lib/hotkeys.ts
+msgid "通用"
+msgstr "General"
+
 #: app/routes/forum-stage.tsx
 #: app/routes/notifications.tsx
 #: app/slots/forum-notifications/bell.tsx
@@ -2274,6 +2334,7 @@ msgstr "Email changed"
 msgid "邮箱或密码不对"
 msgstr "Wrong email or password"
 
+#: app/lib/hotkeys.ts
 #: app/slots/forum-solved/solved.tsx
 msgid "采纳为答案"
 msgstr "Accept as answer"
@@ -2314,6 +2375,10 @@ msgstr "Link preview"
 msgctxt "menu action"
 msgid "锁定"
 msgstr "Lock"
+
+#: app/lib/hotkeys.ts
+msgid "阅读"
+msgstr "Reading"
 
 #: app/slots/forum-attachments/attachments.tsx
 #: app/slots/forum-attachments/upload.tsx

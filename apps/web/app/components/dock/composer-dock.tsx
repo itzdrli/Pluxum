@@ -1,7 +1,8 @@
+import { useFormatForDisplay } from '@tanstack/react-hotkeys'
 import { Maximize2, Minimize2, Minus, PenSquare, X } from 'lucide-react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useFetcher, useRouteLoaderData } from 'react-router'
-import { Trans, useLingui } from '@lingui/react/macro'
+import { useLingui } from '@lingui/react/macro'
 
 import { droppedLink, toggledSize, type DockSize } from '../../lib/dock'
 import type { loader as rootLoader } from '../../root'
@@ -86,6 +87,8 @@ function Dock({
 	onClose: () => void
 }) {
 	const { t } = useLingui()
+	// ⌘ Enter on Apple platforms, Ctrl+Enter elsewhere.
+	const sendKeys = useFormatForDisplay()('Mod+Enter')
 	const root = useRouteLoaderData<typeof rootLoader>('root')
 	const limits = root?.meta?.limits
 	const fetcher = useFetcher<{ error?: string }>()
@@ -192,9 +195,7 @@ function Dock({
 					draftKey={`reply:${target.threadId}`}
 				/>
 				<div className="flex shrink-0 items-center justify-between gap-2">
-					<span className="text-ink-weak text-meta max-sm:hidden">
-						<Trans>Ctrl+Enter 回复</Trans>
-					</span>
+					<span className="text-ink-weak text-meta max-sm:hidden">{t`${sendKeys} 回复`}</span>
 					<Button tone="primary" type="submit" isPending={busy} className="ml-auto">
 						{t({ message: '回复', context: 'verb' })}
 					</Button>

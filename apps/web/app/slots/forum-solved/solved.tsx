@@ -1,10 +1,13 @@
 import type { PostDto, ThreadDto } from '@pluxum/domain'
 import { CircleCheck } from 'lucide-react'
-import { useEffect } from 'react'
+import { useHotkey } from '@tanstack/react-hotkeys'
+import { useCallback, useEffect } from 'react'
 import { Link, useFetcher, useRouteLoaderData } from 'react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 
 import { Tag } from '../../components/ui/display'
+import { appHotkeys } from '../../lib/hotkeys'
+import { useIsTargetPost } from '../../lib/target-post'
 import { useThreadContext } from '../../lib/thread-context'
 import type { loader as rootLoader } from '../../root'
 import type { ExtActionResult } from '../../routes/ext-action'
@@ -118,6 +121,20 @@ export function AcceptAction({ post, setMenuItems }: SlotProps['post.actions']) 
 		userId !== undefined &&
 		(userId === context.thread.author.id || context.can.moderate)
 	const busy = fetcher.state !== 'idle'
+	const toggle = useCallback(
+		() =>
+			void submit(
+				{ postId: post.id, on: !accepted },
+				{ method: 'post', action: `/ext/${EXT_ID}/accept`, encType: 'application/json' },
+			),
+		[submit, post.id, accepted],
+	)
+	// A accepts (or un-accepts) the floor under the pointer, as the menu item does.
+	const target = useIsTargetPost(post.number)
+	useHotkey(appHotkeys['post.accept'], toggle, {
+		enabled: available && target && !busy,
+		conflictBehavior: 'allow',
+	})
 	const error =
 		fetcher.state === 'idle' && fetcher.data?.ok === false ? fetcher.data.error : undefined
 
@@ -131,14 +148,10 @@ export function AcceptAction({ post, setMenuItems }: SlotProps['post.actions']) 
 				id: 'accept',
 				label: accepted ? t`取消采纳` : t`采纳为答案`,
 				disabled: busy,
-				onAction: () =>
-					void submit(
-						{ postId: post.id, on: !accepted },
-						{ method: 'post', action: `/ext/${EXT_ID}/accept`, encType: 'application/json' },
-					),
+				onAction: toggle,
 			},
 		])
-	}, [available, accepted, busy, post.id, submit, setMenuItems, t])
+	}, [available, accepted, busy, toggle, setMenuItems, t])
 
 	if (error === undefined) return null
 	return (

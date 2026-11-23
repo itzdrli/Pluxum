@@ -48,6 +48,9 @@ catalogs:
     '@react-router/serve': ^8.5.1
     '@tabler/icons-react': ^3.50.0
     '@tailwindcss/vite': ^4.3.4
+    # Beta: exact versions, upgraded on purpose.
+    '@tanstack/react-hotkeys': 0.27.2
+    '@tanstack/react-pacer': 0.24.1
     '@tiptap/core': 3.32.2
     '@tiptap/extension-heading': 3.32.2
     '@tiptap/extension-image': 3.32.2

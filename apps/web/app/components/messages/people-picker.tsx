@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { useDebouncedValue } from '@tanstack/react-pacer'
 import { useEffect, useState } from 'react'
 import { useLingui } from '@lingui/react/macro'
 
@@ -56,18 +57,17 @@ export function PeoplePicker({
 	const typedNow = query.trim().replace(/^@/, '')
 	const options = typedNow === '' ? [] : answered.typed === typedNow ? answered.found : []
 
+	// Asks once the typing pauses; answers for older text are dropped above.
+	const [settled] = useDebouncedValue(typedNow, { wait: 150 })
 	useEffect(() => {
-		if (typedNow === '') return undefined
+		if (settled === '') return undefined
 		const controller = new AbortController()
-		const timer = window.setTimeout(async () => {
-			const found = await suggest(typedNow, controller.signal)
-			if (!controller.signal.aborted) setAnswered({ typed: typedNow, found })
-		}, 150)
-		return () => {
-			controller.abort()
-			window.clearTimeout(timer)
-		}
-	}, [typedNow])
+		void (async () => {
+			const found = await suggest(settled, controller.signal)
+			if (!controller.signal.aborted) setAnswered({ typed: settled, found })
+		})()
+		return () => controller.abort()
+	}, [settled])
 
 	const hidden = new Set([...exclude, ...picked.map((user) => user.id)])
 	const shown = (options ?? []).filter((user) => !hidden.has(user.id))

@@ -1,20 +1,9 @@
+import { useFormatForDisplay } from '@tanstack/react-hotkeys'
 import { Search } from 'lucide-react'
-import { useSyncExternalStore } from 'react'
 import { useLingui } from '@lingui/react/macro'
 
 import { IconButton } from '../ui/button'
 import { usePalette } from './command-palette'
-
-const subscribeNothing = () => () => {}
-
-/** ⌘ on Apple platforms, Ctrl elsewhere; the server renders Ctrl and the browser corrects it. */
-function useModifierLabel(): string {
-	return useSyncExternalStore(
-		subscribeNothing,
-		() => (/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'),
-		() => 'Ctrl',
-	)
-}
 
 /**
  * The way into the command palette. In the top bar (phones, and pages without the rail): a
@@ -34,10 +23,11 @@ export function PaletteTrigger({
 	const { t } = useLingui()
 	const label = t`搜索或输入命令`
 	const { open } = usePalette()
-	const modifier = useModifierLabel()
+	// ⌘ K on Apple platforms, Ctrl+K elsewhere: the server knows which from the request.
+	const format = useFormatForDisplay()
 	const kbd = (
 		<kbd className="border-line pointer-events-none inline-flex h-5 shrink-0 items-center rounded-[2px] border px-1 font-mono text-micro">
-			{modifier} K
+			{format('Mod+K')}
 		</kbd>
 	)
 	if (variant === 'rail') {

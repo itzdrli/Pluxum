@@ -1,5 +1,6 @@
 import { parseFloorNumber, type PostDto, type ThreadDto } from '@pluxum/domain'
 import { Lock, MessageSquare, Reply, Trash2, X } from 'lucide-react'
+import { useHotkey } from '@tanstack/react-hotkeys'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import {
 	data,
@@ -48,6 +49,7 @@ import {
 import { pageCount } from '../lib/format'
 import { forumApi, orThrow, pageParam, textField } from '../lib/forum-api.server'
 import { useFocusReading } from '../lib/focus'
+import { appHotkeys } from '../lib/hotkeys'
 import { ThreadContext } from '../lib/thread-context'
 import { defineStage, listPathOf, pagePathOf } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
@@ -311,34 +313,12 @@ export default function Thread({ loaderData, actionData }: Route.ComponentProps)
 		).then(() => document.getElementById(`post-${target.number}`)?.scrollIntoView())
 	}, [location.hash, location.pathname, location.search, posts.items, replaceUrl])
 
-	useEffect(() => {
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key !== 'Escape' || event.defaultPrevented) return
-			if (confirmingDelete || renaming || moving) return
-			if (
-				document.querySelector(
-					'[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]',
-				) !== null
-			) {
-				return
-			}
-			const active = document.activeElement
-			if (
-				active instanceof HTMLElement &&
-				(active.tagName === 'INPUT' ||
-					active.tagName === 'TEXTAREA' ||
-					active.tagName === 'SELECT' ||
-					active.isContentEditable ||
-					active.getAttribute('contenteditable') === 'true' ||
-					active.closest('form') !== null)
-			) {
-				return
-			}
-			void navigate(closeHref)
-		}
-		window.addEventListener('keydown', onKeyDown)
-		return () => window.removeEventListener('keydown', onKeyDown)
-	}, [closeHref, confirmingDelete, moving, navigate, renaming])
+	// Esc closes the thread back to its list. An open dialog or menu takes Esc first, and a text
+	// field keeps it (it clears or leaves the field).
+	useHotkey(appHotkeys['thread.close'], () => void navigate(closeHref), {
+		enabled: !(confirmingDelete || renaming || moving),
+		ignoreInputs: true,
+	})
 
 	// 「N 条新回复」: what others posted since the newest post this page knows of. Pressing it goes
 	// to the first of them: on this page it reloads in place, else it opens the page that shows it.

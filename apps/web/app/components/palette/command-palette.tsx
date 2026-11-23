@@ -9,6 +9,7 @@ import {
 import {
 	CornerDownLeft,
 	FilePlus2,
+	Keyboard,
 	Hash,
 	LayoutGrid,
 	LogIn,
@@ -19,6 +20,8 @@ import {
 } from 'lucide-react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { Dialog, Modal, ModalOverlay } from 'react-aria-components'
+import { useAppHotkeys, useHotkey } from '@tanstack/react-hotkeys'
+import { useDebouncedValue } from '@tanstack/react-pacer'
 import { useRouteLoaderData } from 'react-router'
 import { useLingui } from '@lingui/react/macro'
 
@@ -28,6 +31,9 @@ import { THEMES } from '../../lib/theme'
 import { useStageNavigate } from '../stage/stage'
 import { chooseTheme } from '../shell/theme-picker'
 import { loginHref } from '../../lib/login'
+import { appHotkeys, type HotkeyId } from '../../lib/hotkeys'
+import { KeyboardScope } from '../ui/keyboard-scope'
+import { availableHotkeys, HotkeyKeys, openShortcutSheet } from '../shell/shortcut-sheet'
 
 /** What opens the palette from elsewhere in the page (the top bar's search field, shortcuts). */
 type PaletteControl = Readonly<{ open: (initial?: string) => void }>
@@ -45,6 +51,8 @@ type Item = Readonly<{
 	hint?: string
 	keywords?: readonly string[]
 	icon: LucideIcon
+	/** The shortcut that does the same, shown beside the entry. */
+	hotkey?: HotkeyId
 	run: () => void
 }>
 
@@ -60,16 +68,6 @@ function scrollNearest(element: HTMLElement | null) {
 
 const SEARCH_DEBOUNCE_MS = 180
 const SEARCH_HITS = 6
-
-function isTyping(target: EventTarget | null): boolean {
-	return (
-		target instanceof HTMLElement &&
-		(target.tagName === 'INPUT' ||
-			target.tagName === 'TEXTAREA' ||
-			target.tagName === 'SELECT' ||
-			target.isContentEditable)
-	)
-}
 
 /** Fetches JSON from the forum API; null when it fails, so the palette just shows less. */
 async function getJson<T>(path: string, signal: AbortSignal): Promise<T | null> {
@@ -96,25 +94,8 @@ export function PaletteProvider({ children }: { children: React.ReactNode }) {
 		setInitial(text)
 		setIsOpen(true)
 	}, [])
-	useEffect(() => {
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.defaultPrevented) return
-			if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-				event.preventDefault()
-				setIsOpen((current) => {
-					if (!current) setInitial('')
-					return !current
-				})
-				return
-			}
-			if (event.key === '/' && !event.metaKey && !event.ctrlKey && !isTyping(event.target)) {
-				event.preventDefault()
-				open()
-			}
-		}
-		window.addEventListener('keydown', onKeyDown)
-		return () => window.removeEventListener('keydown', onKeyDown)
-	}, [open])
+	useHotkey(appHotkeys['palette.open'], () => open())
+	useHotkey(appHotkeys['palette.slash'], () => open())
 	const control = useMemo<PaletteControl>(() => ({ open }), [open])
 	return (
 		<PaletteContext.Provider value={control}>
@@ -133,6 +114,8 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 	const [loaded, setLoaded] = useState<Loaded | null>(null)
 	const [hits, setHits] = useState<readonly SearchHitDto[]>([])
 	const parsed = parsePaletteQuery(query)
+	const effective = useAppHotkeys()
+	const shortcuts = new Set(availableHotkeys(meta))
 
 	// The categories and the plugins' commands, read when the palette opens.
 	useEffect(() => {
@@ -150,15 +133,18 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 		return () => controller.abort()
 	}, [])
 
-	// Threads: full-text search as the viewer types, when a search plugin runs.
+	// Threads: full-text search once the viewer pauses typing, when a search plugin runs.
 	const searchAvailable = meta?.search.available === true
 	const searchText = parsed.mode === 'all' ? parsed.text : ''
 	const searching = searchAvailable && searchText.length >= 2
+	const [settledText] = useDebouncedValue(searchText, { wait: SEARCH_DEBOUNCE_MS })
+	const fetchHits = searchAvailable && settledText.length >= 2
 	useEffect(() => {
+		if (!fetchHits) return undefined
 		const controller = new AbortController()
 		const search = async () => {
 			const page = await getJson<SearchPageDto>(
-				`/search?q=${encodeURIComponent(searchText)}&pageSize=${SEARCH_HITS * 2}`,
+				`/search?q=${encodeURIComponent(settledText)}&pageSize=${SEARCH_HITS * 2}`,
 				controller.signal,
 			)
 			if (controller.signal.aborted) return
@@ -169,12 +155,9 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 					.slice(0, SEARCH_HITS),
 			)
 		}
-		const timer = searching ? setTimeout(() => void search(), SEARCH_DEBOUNCE_MS) : undefined
-		return () => {
-			clearTimeout(timer)
-			controller.abort()
-		}
-	}, [searching, searchText])
+		void search()
+		return () => controller.abort()
+	}, [fetchHits, settledText])
 
 	const go = useCallback(
 		(href: string, external = false) => {
@@ -201,7 +184,20 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 				label: t`概览`,
 				keywords: ['首页', 'home'],
 				icon: LayoutGrid,
+				hotkey: 'go.home',
 				run: () => go('/'),
+			},
+			{
+				id: 'shortcuts',
+				section: goTitle,
+				label: t`快捷键`,
+				keywords: ['shortcuts', 'keyboard', 'hotkeys', '键盘'],
+				icon: Keyboard,
+				hotkey: 'help.open',
+				run: () => {
+					onClose()
+					openShortcutSheet()
+				},
 			},
 			...(loaded?.commands ?? []).map((command): Item => ({
 				id: command.id,
@@ -332,77 +328,92 @@ function CommandPalette({ initial, onClose }: { initial: string; onClose: () => 
 					aria-label={t`命令面板`}
 					className="border-line bg-panel shadow-overlay flex max-h-[70dvh] flex-col overflow-hidden rounded-[2px] border outline-none"
 				>
-					<div className="border-line-soft flex items-center gap-2.5 border-b px-3.5">
-						<Search aria-hidden size={16} className="text-ink-weak shrink-0" />
-						<input
-							autoFocus
-							role="combobox"
-							aria-expanded
-							aria-controls="palette-list"
-							aria-activedescendant={activeId === undefined ? undefined : `palette-${activeId}`}
-							aria-label={t`搜索主题、版块或输入命令`}
-							value={query}
-							onChange={(event) => {
-								setQuery(event.target.value)
-								setActive(0)
-							}}
-							onKeyDown={onKeyDown}
-							placeholder={t`搜索主题 · > 命令 · # 版块`}
-							className="text-ink-strong placeholder:text-ink-weak/60 h-12 min-w-0 flex-1 bg-transparent text-heading outline-none"
-						/>
-						<kbd className="border-line text-ink-weak hidden h-5 items-center rounded-[2px] border px-1.5 font-mono text-micro sm:inline-flex">
-							Esc
-						</kbd>
-					</div>
-					<div id="palette-list" role="listbox" className="min-h-0 flex-1 overflow-y-auto py-1.5">
-						{flat.length === 0 ? (
-							<p className="text-ink-weak px-4 py-8 text-center">
-								{loaded === null ? t`加载中…` : t`没有匹配的内容`}
-							</p>
-						) : (
-							sections.map((section) => (
-								<div key={section.title} role="group" aria-label={section.title}>
-									<p className="section-label px-4 pt-2 pb-1">{section.title}</p>
-									{section.items.map((item) => {
-										const isActive = item.id === activeId
-										return (
-											<div
-												key={item.id}
-												id={`palette-${item.id}`}
-												role="option"
-												aria-selected={isActive}
-												data-active={isActive}
-												ref={isActive ? scrollNearest : undefined}
-												onMouseMove={() => setActive(flat.indexOf(item))}
-												onClick={item.run}
-												className={`mx-1.5 flex cursor-pointer items-center gap-3 rounded-[2px] border-l-2 px-2.5 py-2 ${
-													isActive
-														? 'border-l-accent bg-selected text-ink-strong'
-														: 'text-ink border-l-transparent'
-												}`}
-											>
-												<item.icon aria-hidden size={14} className="text-ink-weak shrink-0" />
-												<span className="min-w-0 flex-1 truncate">{item.label}</span>
-												{item.hint !== undefined && (
-													<span className="text-ink-weak shrink-0 text-meta">{item.hint}</span>
-												)}
-											</div>
-										)
-									})}
-								</div>
-							))
-						)}
-					</div>
-					<div className="border-line-soft text-ink-weak flex items-center gap-4 border-t px-3.5 py-2 text-meta max-sm:hidden">
-						<span>↑↓ {t`选择`}</span>
-						<span>↵ {t`执行`}</span>
-						<span className="ml-auto">
-							<span className="text-ink">&gt;</span> {t`命令`}{' '}
-							<span className="text-ink ml-2">#</span> {t`版块`}
-						</span>
-					</div>
+					<KeyboardScope>
+						<ToggleClosed onClose={onClose} />
+						<div className="border-line-soft flex items-center gap-2.5 border-b px-3.5">
+							<Search aria-hidden size={16} className="text-ink-weak shrink-0" />
+							<input
+								autoFocus
+								role="combobox"
+								aria-expanded
+								aria-controls="palette-list"
+								aria-activedescendant={activeId === undefined ? undefined : `palette-${activeId}`}
+								aria-label={t`搜索主题、版块或输入命令`}
+								value={query}
+								onChange={(event) => {
+									setQuery(event.target.value)
+									setActive(0)
+								}}
+								onKeyDown={onKeyDown}
+								placeholder={t`搜索主题 · > 命令 · # 版块`}
+								className="text-ink-strong placeholder:text-ink-weak/60 h-12 min-w-0 flex-1 bg-transparent text-heading outline-none"
+							/>
+							<kbd className="border-line text-ink-weak hidden h-5 items-center rounded-[2px] border px-1.5 font-mono text-micro sm:inline-flex">
+								Esc
+							</kbd>
+						</div>
+						<div id="palette-list" role="listbox" className="min-h-0 flex-1 overflow-y-auto py-1.5">
+							{flat.length === 0 ? (
+								<p className="text-ink-weak px-4 py-8 text-center">
+									{loaded === null ? t`加载中…` : t`没有匹配的内容`}
+								</p>
+							) : (
+								sections.map((section) => (
+									<div key={section.title} role="group" aria-label={section.title}>
+										<p className="section-label px-4 pt-2 pb-1">{section.title}</p>
+										{section.items.map((item) => {
+											const isActive = item.id === activeId
+											return (
+												<div
+													key={item.id}
+													id={`palette-${item.id}`}
+													role="option"
+													aria-selected={isActive}
+													data-active={isActive}
+													ref={isActive ? scrollNearest : undefined}
+													onMouseMove={() => setActive(flat.indexOf(item))}
+													onClick={item.run}
+													className={`mx-1.5 flex cursor-pointer items-center gap-3 rounded-[2px] border-l-2 px-2.5 py-2 ${
+														isActive
+															? 'border-l-accent bg-selected text-ink-strong'
+															: 'text-ink border-l-transparent'
+													}`}
+												>
+													<item.icon aria-hidden size={14} className="text-ink-weak shrink-0" />
+													<span className="min-w-0 flex-1 truncate">{item.label}</span>
+													{item.hint !== undefined && (
+														<span className="text-ink-weak shrink-0 text-meta">{item.hint}</span>
+													)}
+													{item.hotkey !== undefined && shortcuts.has(item.hotkey) && (
+														<HotkeyKeys
+															hotkey={effective[item.hotkey].hotkey}
+															className="max-sm:hidden"
+														/>
+													)}
+												</div>
+											)
+										})}
+									</div>
+								))
+							)}
+						</div>
+						<div className="border-line-soft text-ink-weak flex items-center gap-4 border-t px-3.5 py-2 text-meta max-sm:hidden">
+							<span>↑↓ {t`选择`}</span>
+							<span>↵ {t`执行`}</span>
+							<span className="ml-auto">
+								<span className="text-ink">&gt;</span> {t`命令`}{' '}
+								<span className="text-ink ml-2">#</span> {t`版块`}
+							</span>
+						</div>
+					</KeyboardScope>
 				</Dialog>
 			</Modal>
 		</ModalOverlay>
 	)
+}
+
+/** Ctrl/⌘+K again closes the palette (the page's shortcut sleeps while the palette is open). */
+function ToggleClosed({ onClose }: { onClose: () => void }) {
+	useHotkey(appHotkeys['palette.open'], onClose)
+	return null
 }

@@ -1,6 +1,7 @@
 import type { ThreadDetailDto, UserDto, UserProfileDto } from '@pluxum/domain'
 import { MessageSquare } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useDebouncer } from '@tanstack/react-pacer'
+import { useEffect, useState } from 'react'
 import { Popover } from 'react-aria-components'
 import { useLingui } from '@lingui/react/macro'
 
@@ -99,11 +100,16 @@ export function HoverCards() {
 		null,
 	)
 	const [card, setCard] = useState<{ key: string; value: Card | null } | null>(null)
-	const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+	// Opening waits for the pointer to rest on a link, closing gives it time to reach the card;
+	// either replaces the other while it waits.
+	const schedule = useDebouncer(setOpen, {
+		wait: (debouncer) =>
+			debouncer.store.state.lastArgs?.[0] == null ? CLOSE_DELAY_MS : OPEN_DELAY_MS,
+	})
+	const { maybeExecute, cancel } = schedule
 
 	useEffect(() => {
 		if (!window.matchMedia('(hover: hover)').matches) return undefined
-		const clear = () => clearTimeout(timer.current)
 		const linkOf = (event: Event): HTMLAnchorElement | null => {
 			const element = event.target
 			if (!(element instanceof Element)) return null
@@ -115,22 +121,20 @@ export function HoverCards() {
 			if (anchor === null) return
 			const target = previewTarget(anchor.href, window.location.origin)
 			if (target === null) return
-			clear()
-			timer.current = setTimeout(() => setOpen({ anchor, target }), OPEN_DELAY_MS)
+			maybeExecute({ anchor, target })
 		}
 		const onOut = (event: MouseEvent) => {
 			if (linkOf(event) === null) return
-			clear()
-			timer.current = setTimeout(() => setOpen(null), CLOSE_DELAY_MS)
+			maybeExecute(null)
 		}
 		document.addEventListener('mouseover', onOver)
 		document.addEventListener('mouseout', onOut)
 		return () => {
-			clear()
+			cancel()
 			document.removeEventListener('mouseover', onOver)
 			document.removeEventListener('mouseout', onOut)
 		}
-	}, [])
+	}, [maybeExecute, cancel])
 
 	const key =
 		open === null
@@ -172,10 +176,8 @@ export function HoverCards() {
 				role="dialog"
 				aria-label={t`链接预览`}
 				className="flex flex-col gap-1.5 p-3"
-				onMouseEnter={() => clearTimeout(timer.current)}
-				onMouseLeave={() => {
-					timer.current = setTimeout(() => setOpen(null), CLOSE_DELAY_MS)
-				}}
+				onMouseEnter={cancel}
+				onMouseLeave={() => maybeExecute(null)}
 			>
 				{shown.kind === 'thread' ? (
 					<>

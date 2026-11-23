@@ -8,6 +8,7 @@ import { formatDateTime } from '../../lib/format'
 import { useTimeZone } from '../../lib/timezone'
 import { Button } from '../ui/button'
 import { Timestamp } from '../ui/display'
+import { KeyboardScope } from '../ui/keyboard-scope'
 
 function isHistory(value: unknown): value is PostHistoryDto {
 	return (
@@ -91,72 +92,74 @@ function PostHistoryDialog({ postId, onClose }: { postId: string; onClose: () =>
 			<Modal.Backdrop isKeyboardDismissDisabled={false}>
 				<Modal.Container size="lg">
 					<Modal.Dialog>
-						<Modal.Header>
-							<Modal.Heading className="text-ink-strong text-heading font-bold">
-								<Trans>编辑记录</Trans>
-							</Modal.Heading>
-						</Modal.Header>
-						<Modal.Body className="flex flex-col gap-3 sm:flex-row">
-							{loaded.state === 'loading' && (
-								<p className="text-ink-weak">
-									<Trans>加载中…</Trans>
-								</p>
-							)}
-							{loaded.state === 'failed' && (
-								<p className="text-danger">
-									<Trans>加载失败，请重试。</Trans>
-								</p>
-							)}
-							{shown !== undefined && (
-								<>
-									<ol className="flex shrink-0 gap-1 overflow-x-auto sm:w-40 sm:flex-col sm:overflow-visible">
-										{versions.toReversed().map((version) => {
-											const selected = version.number === shown.number
-											return (
-												<li key={version.number} className="shrink-0">
-													<button
-														type="button"
-														aria-current={selected ? 'true' : undefined}
-														onClick={() => setChosen(version.number)}
-														className={`flex w-full cursor-pointer flex-col items-start rounded-[2px] px-2 py-1.5 text-left text-meta ${
-															selected ? 'bg-selected text-ink-strong' : 'text-ink hover:bg-hover'
-														}`}
-													>
-														<span className="font-bold">{labelOf(version.number)}</span>
-														<span className="text-ink-weak truncate">
-															{version.editor.displayName} · <Timestamp iso={version.createdAt} />
-														</span>
-													</button>
-												</li>
-											)
-										})}
-									</ol>
-									<div
-										className="post-diff border-line-soft bg-page min-w-0 flex-1 overflow-auto rounded-[2px] border px-3 py-2 sm:max-h-[60vh]"
-										// What the diff shows: the first version as written, each later one against the one before.
-										aria-label={previous === undefined ? t`原文` : t`与上一版的差异`}
-									>
-										{parts.map((part, index) =>
-											part.kind === 'added' ? (
-												// oxlint-disable-next-line react/no-array-index-key -- parts have no identity but their order.
-												<ins key={index}>{part.text}</ins>
-											) : part.kind === 'removed' ? (
-												// oxlint-disable-next-line react/no-array-index-key -- see above.
-												<del key={index}>{part.text}</del>
-											) : (
-												// oxlint-disable-next-line react/no-array-index-key -- see above.
-												<span key={index}>{part.text}</span>
-											),
-										)}
-									</div>
-								</>
-							)}
-						</Modal.Body>
-						<Modal.Footer className="flex justify-end">
-							<Button tone="ghost" onPress={onClose}>
-								<Trans>关闭</Trans>
-							</Button>
-						</Modal.Footer>
+						<KeyboardScope>
+							<Modal.Header>
+								<Modal.Heading className="text-ink-strong text-heading font-bold">
+									<Trans>编辑记录</Trans>
+								</Modal.Heading>
+							</Modal.Header>
+							<Modal.Body className="flex flex-col gap-3 sm:flex-row">
+								{loaded.state === 'loading' && (
+									<p className="text-ink-weak">
+										<Trans>加载中…</Trans>
+									</p>
+								)}
+								{loaded.state === 'failed' && (
+									<p className="text-danger">
+										<Trans>加载失败，请重试。</Trans>
+									</p>
+								)}
+								{shown !== undefined && (
+									<>
+										<ol className="flex shrink-0 gap-1 overflow-x-auto sm:w-40 sm:flex-col sm:overflow-visible">
+											{versions.toReversed().map((version) => {
+												const selected = version.number === shown.number
+												return (
+													<li key={version.number} className="shrink-0">
+														<button
+															type="button"
+															aria-current={selected ? 'true' : undefined}
+															onClick={() => setChosen(version.number)}
+															className={`flex w-full cursor-pointer flex-col items-start rounded-[2px] px-2 py-1.5 text-left text-meta ${
+																selected ? 'bg-selected text-ink-strong' : 'text-ink hover:bg-hover'
+															}`}
+														>
+															<span className="font-bold">{labelOf(version.number)}</span>
+															<span className="text-ink-weak truncate">
+																{version.editor.displayName} · <Timestamp iso={version.createdAt} />
+															</span>
+														</button>
+													</li>
+												)
+											})}
+										</ol>
+										<div
+											className="post-diff border-line-soft bg-page min-w-0 flex-1 overflow-auto rounded-[2px] border px-3 py-2 sm:max-h-[60vh]"
+											// What the diff shows: the first version as written, each later one against the one before.
+											aria-label={previous === undefined ? t`原文` : t`与上一版的差异`}
+										>
+											{parts.map((part, index) =>
+												part.kind === 'added' ? (
+													// oxlint-disable-next-line react/no-array-index-key -- parts have no identity but their order.
+													<ins key={index}>{part.text}</ins>
+												) : part.kind === 'removed' ? (
+													// oxlint-disable-next-line react/no-array-index-key -- see above.
+													<del key={index}>{part.text}</del>
+												) : (
+													// oxlint-disable-next-line react/no-array-index-key -- see above.
+													<span key={index}>{part.text}</span>
+												),
+											)}
+										</div>
+									</>
+								)}
+							</Modal.Body>
+							<Modal.Footer className="flex justify-end">
+								<Button tone="ghost" onPress={onClose}>
+									<Trans>关闭</Trans>
+								</Button>
+							</Modal.Footer>
+						</KeyboardScope>
 					</Modal.Dialog>
 				</Modal.Container>
 			</Modal.Backdrop>

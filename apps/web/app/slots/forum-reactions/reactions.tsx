@@ -1,11 +1,14 @@
 import type { PostDto } from '@pluxum/domain'
 import { Lightbulb, ThumbsUp } from 'lucide-react'
+import { useHotkey } from '@tanstack/react-hotkeys'
 import { useFetcher, useRouteLoaderData } from 'react-router'
 import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 
 import { Button } from '../../components/ui/button'
+import { appHotkeys } from '../../lib/hotkeys'
+import { useIsTargetPost } from '../../lib/target-post'
 import { useThreadContext } from '../../lib/thread-context'
 import type { loader as rootLoader } from '../../root'
 import type { ExtActionResult } from '../../routes/ext-action'
@@ -59,6 +62,18 @@ function ReactionButton({ post, kind, saved }: { post: PostDto; kind: Kind; save
 	const error =
 		fetcher.state === 'idle' && fetcher.data?.ok === false ? fetcher.data.error : undefined
 	const labels = LABELS[kind]
+	const toggle = () =>
+		fetcher.submit(
+			{ postId: post.id, kind, on: !shown.reacted },
+			{ method: 'post', action: `/ext/${EXT_ID}/react`, encType: 'application/json' },
+		)
+	// L likes the floor under the pointer (or holding the focus). Every floor registers it; only
+	// the target's is on.
+	const target = useIsTargetPost(post.number)
+	useHotkey(appHotkeys['post.like'], toggle, {
+		enabled: kind === 'like' && target,
+		conflictBehavior: 'allow',
+	})
 	const Icon = kind === 'like' ? ThumbsUp : Lightbulb
 	// The like is a bare icon; 「有用」 says what it is, an icon alone would not.
 	const showText = kind === 'useful'
@@ -71,12 +86,7 @@ function ReactionButton({ post, kind, saved }: { post: PostDto; kind: Kind; save
 				aria-label={i18n._(shown.reacted ? labels.on : labels.off)}
 				{...{ title: i18n._(shown.reacted ? labels.on : labels.off) }}
 				className={`${shown.count > 0 || showText ? 'px-2' : 'button--icon-only'} ${shown.reacted ? 'text-accent' : 'text-ink-weak'}`}
-				onPress={() =>
-					fetcher.submit(
-						{ postId: post.id, kind, on: !shown.reacted },
-						{ method: 'post', action: `/ext/${EXT_ID}/react`, encType: 'application/json' },
-					)
-				}
+				onPress={toggle}
 			>
 				{/* Keyed by the state, so each reaction pops (only when pressed, not on load). */}
 				<Icon

@@ -14,6 +14,7 @@ import { BottomSheet } from '../../components/ui/bottom-sheet'
 import { Timestamp } from '../../components/ui/display'
 import { NARROW_QUERY, useMediaQuery } from '../../lib/media'
 import { resolveNotificationHref } from './href'
+import { KeyboardScope } from '../../components/ui/keyboard-scope'
 
 export function formatUnreadBadge(count: number): string | null {
 	if (!Number.isFinite(count) || count <= 0) return null
@@ -192,15 +193,17 @@ export function NotificationBell({ meta }: { meta: MetaDto | null }) {
 					aria-label={t`通知`}
 					className="flex max-h-[min(32rem,70dvh)] flex-col p-0 outline-none"
 				>
-					<div className="border-line flex h-11 shrink-0 items-center justify-between gap-2 border-b pr-1.5 pl-3">
-						<p className="text-ink-strong flex items-center gap-1.5 text-ui font-bold">
-							<Trans>通知</Trans>
-							{unreadNote}
-						</p>
-						{markAllButton}
-					</div>
-					{listBody}
-					{allLink}
+					<KeyboardScope>
+						<div className="border-line flex h-11 shrink-0 items-center justify-between gap-2 border-b pr-1.5 pl-3">
+							<p className="text-ink-strong flex items-center gap-1.5 text-ui font-bold">
+								<Trans>通知</Trans>
+								{unreadNote}
+							</p>
+							{markAllButton}
+						</div>
+						{listBody}
+						{allLink}
+					</KeyboardScope>
 				</Popover.Dialog>
 			</Popover.Content>
 		</Popover>

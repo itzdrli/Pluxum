@@ -6,6 +6,7 @@ import { Form } from 'react-router'
 import { Trans } from '@lingui/react/macro'
 
 import { Button, type ButtonSize } from './button'
+import { KeyboardScope } from './keyboard-scope'
 
 export type MenuItem = Readonly<{
 	id: string
@@ -97,32 +98,36 @@ export function ConfirmDialog({
 			<AlertDialog.Backdrop isKeyboardDismissDisabled={false}>
 				<AlertDialog.Container size="sm">
 					<AlertDialog.Dialog>
-						<AlertDialog.Header>
-							<AlertDialog.Heading className="text-ink-strong text-heading font-bold">
-								{title}
-							</AlertDialog.Heading>
-						</AlertDialog.Header>
-						{body !== undefined && <AlertDialog.Body className="text-ink">{body}</AlertDialog.Body>}
-						<AlertDialog.Footer>
-							<Form ref={form} method="post" className="flex justify-end gap-2">
-								{Object.entries(fields).map(([name, value]) => (
-									<input key={name} type="hidden" name={name} value={value} />
-								))}
-								<Button tone="ghost" onPress={() => onOpenChange(false)}>
-									<Trans>取消</Trans>
-								</Button>
-								{/* The submit event fires synchronously, so the dialog may close right after. */}
-								<Button
-									tone="danger"
-									onPress={() => {
-										form.current?.requestSubmit()
-										onOpenChange(false)
-									}}
-								>
-									{confirmLabel}
-								</Button>
-							</Form>
-						</AlertDialog.Footer>
+						<KeyboardScope>
+							<AlertDialog.Header>
+								<AlertDialog.Heading className="text-ink-strong text-heading font-bold">
+									{title}
+								</AlertDialog.Heading>
+							</AlertDialog.Header>
+							{body !== undefined && (
+								<AlertDialog.Body className="text-ink">{body}</AlertDialog.Body>
+							)}
+							<AlertDialog.Footer>
+								<Form ref={form} method="post" className="flex justify-end gap-2">
+									{Object.entries(fields).map(([name, value]) => (
+										<input key={name} type="hidden" name={name} value={value} />
+									))}
+									<Button tone="ghost" onPress={() => onOpenChange(false)}>
+										<Trans>取消</Trans>
+									</Button>
+									{/* The submit event fires synchronously, so the dialog may close right after. */}
+									<Button
+										tone="danger"
+										onPress={() => {
+											form.current?.requestSubmit()
+											onOpenChange(false)
+										}}
+									>
+										{confirmLabel}
+									</Button>
+								</Form>
+							</AlertDialog.Footer>
+						</KeyboardScope>
 					</AlertDialog.Dialog>
 				</AlertDialog.Container>
 			</AlertDialog.Backdrop>

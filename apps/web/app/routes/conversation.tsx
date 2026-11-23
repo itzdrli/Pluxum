@@ -28,6 +28,7 @@ import {
 	type MessageUser,
 } from '../lib/messages'
 import { useTimeZone } from '../lib/timezone'
+import { KeyboardScope } from '../components/ui/keyboard-scope'
 
 export async function loader({ request, params }: Route.LoaderArgs) {
 	return orThrow(await forumApi.conversation(request, params.id))
@@ -431,44 +432,46 @@ function TextDialog({
 			<Modal.Backdrop isKeyboardDismissDisabled={false}>
 				<Modal.Container size="sm">
 					<Modal.Dialog>
-						<Modal.Header>
-							<Modal.Heading className="text-ink-strong text-heading font-bold">
-								{title}
-							</Modal.Heading>
-						</Modal.Header>
-						{(initial !== undefined || error !== null) && (
-							<Modal.Body className="flex flex-col gap-3">
-								<FormError message={error ?? undefined} />
-								{initial !== undefined && (
-									<input
-										type="text"
-										value={text}
-										maxLength={40}
-										aria-label={t`群聊名称`}
-										onChange={(event) => setText(event.currentTarget.value)}
-										className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-control w-full rounded-[2px] border px-2.5 text-ui outline-none"
-									/>
-								)}
-							</Modal.Body>
-						)}
-						<Modal.Footer className="flex justify-end gap-2">
-							<Button tone="ghost" onPress={onClose}>
-								<Trans>取消</Trans>
-							</Button>
-							<Button
-								tone={danger ? 'danger' : 'primary'}
-								isPending={busy}
-								onPress={async () => {
-									setBusy(true)
-									const failure = await onConfirm(text)
-									setBusy(false)
-									if (failure === null) onClose()
-									else setError(failure)
-								}}
-							>
-								{confirm}
-							</Button>
-						</Modal.Footer>
+						<KeyboardScope>
+							<Modal.Header>
+								<Modal.Heading className="text-ink-strong text-heading font-bold">
+									{title}
+								</Modal.Heading>
+							</Modal.Header>
+							{(initial !== undefined || error !== null) && (
+								<Modal.Body className="flex flex-col gap-3">
+									<FormError message={error ?? undefined} />
+									{initial !== undefined && (
+										<input
+											type="text"
+											value={text}
+											maxLength={40}
+											aria-label={t`群聊名称`}
+											onChange={(event) => setText(event.currentTarget.value)}
+											className="border-line bg-page text-ink-strong hover:border-ink-weak focus:border-accent h-control w-full rounded-[2px] border px-2.5 text-ui outline-none"
+										/>
+									)}
+								</Modal.Body>
+							)}
+							<Modal.Footer className="flex justify-end gap-2">
+								<Button tone="ghost" onPress={onClose}>
+									<Trans>取消</Trans>
+								</Button>
+								<Button
+									tone={danger ? 'danger' : 'primary'}
+									isPending={busy}
+									onPress={async () => {
+										setBusy(true)
+										const failure = await onConfirm(text)
+										setBusy(false)
+										if (failure === null) onClose()
+										else setError(failure)
+									}}
+								>
+									{confirm}
+								</Button>
+							</Modal.Footer>
+						</KeyboardScope>
 					</Modal.Dialog>
 				</Modal.Container>
 			</Modal.Backdrop>
@@ -494,37 +497,39 @@ function AddMembersDialog({
 			<Modal.Backdrop isKeyboardDismissDisabled={false}>
 				<Modal.Container size="sm">
 					<Modal.Dialog>
-						<Modal.Header>
-							<Modal.Heading className="text-ink-strong text-heading font-bold">{t`添加成员`}</Modal.Heading>
-						</Modal.Header>
-						<Modal.Body className="flex flex-col gap-3">
-							<FormError message={error ?? undefined} />
-							<PeoplePicker
-								picked={picked}
-								onChange={setPicked}
-								exclude={conversation.members.map((member) => member.id)}
-								max={Math.max(0, 20 - conversation.members.length)}
-							/>
-						</Modal.Body>
-						<Modal.Footer className="flex justify-end gap-2">
-							<Button tone="ghost" onPress={onClose}>
-								<Trans>取消</Trans>
-							</Button>
-							<Button
-								tone="primary"
-								isPending={busy}
-								isDisabled={picked.length === 0}
-								onPress={async () => {
-									setBusy(true)
-									const failure = await onAdd(picked)
-									setBusy(false)
-									if (failure === null) onClose()
-									else setError(failure)
-								}}
-							>
-								<Trans>添加</Trans>
-							</Button>
-						</Modal.Footer>
+						<KeyboardScope>
+							<Modal.Header>
+								<Modal.Heading className="text-ink-strong text-heading font-bold">{t`添加成员`}</Modal.Heading>
+							</Modal.Header>
+							<Modal.Body className="flex flex-col gap-3">
+								<FormError message={error ?? undefined} />
+								<PeoplePicker
+									picked={picked}
+									onChange={setPicked}
+									exclude={conversation.members.map((member) => member.id)}
+									max={Math.max(0, 20 - conversation.members.length)}
+								/>
+							</Modal.Body>
+							<Modal.Footer className="flex justify-end gap-2">
+								<Button tone="ghost" onPress={onClose}>
+									<Trans>取消</Trans>
+								</Button>
+								<Button
+									tone="primary"
+									isPending={busy}
+									isDisabled={picked.length === 0}
+									onPress={async () => {
+										setBusy(true)
+										const failure = await onAdd(picked)
+										setBusy(false)
+										if (failure === null) onClose()
+										else setError(failure)
+									}}
+								>
+									<Trans>添加</Trans>
+								</Button>
+							</Modal.Footer>
+						</KeyboardScope>
 					</Modal.Dialog>
 				</Modal.Container>
 			</Modal.Backdrop>

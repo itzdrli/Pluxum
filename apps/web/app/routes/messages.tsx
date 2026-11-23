@@ -35,6 +35,7 @@ import {
 import { pageTitle } from '../lib/site'
 import { defineStage } from '../lib/stage'
 import type { loader as rootLoader } from '../root'
+import { KeyboardScope } from '../components/ui/keyboard-scope'
 
 export const handle = defineStage({ layer: 'page', nav: true, wide: true })
 
@@ -271,44 +272,46 @@ function StartDialog({ viewerId, onClose }: { viewerId: string; onClose: () => v
 			<Modal.Backdrop isKeyboardDismissDisabled={false}>
 				<Modal.Container size="sm">
 					<Modal.Dialog>
-						<Modal.Header>
-							<Modal.Heading className="text-ink-strong text-heading font-bold">
-								<Trans>发起聊天</Trans>
-							</Modal.Heading>
-						</Modal.Header>
-						<Modal.Body className="flex flex-col gap-3">
-							<FormError message={error} />
-							<PeoplePicker
-								picked={picked}
-								onChange={setPicked}
-								exclude={[viewerId]}
-								max={GROUP_MAX - 1}
-							/>
-							{group && (
-								<input
-									type="text"
-									value={title}
-									maxLength={40}
-									placeholder={t`群聊名称（可选）`}
-									aria-label={t`群聊名称`}
-									onChange={(event) => setTitle(event.currentTarget.value)}
-									className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control w-full rounded-[2px] border px-2.5 text-ui outline-none"
+						<KeyboardScope>
+							<Modal.Header>
+								<Modal.Heading className="text-ink-strong text-heading font-bold">
+									<Trans>发起聊天</Trans>
+								</Modal.Heading>
+							</Modal.Header>
+							<Modal.Body className="flex flex-col gap-3">
+								<FormError message={error} />
+								<PeoplePicker
+									picked={picked}
+									onChange={setPicked}
+									exclude={[viewerId]}
+									max={GROUP_MAX - 1}
 								/>
-							)}
-						</Modal.Body>
-						<Modal.Footer className="flex justify-end gap-2">
-							<Button tone="ghost" onPress={onClose}>
-								<Trans>取消</Trans>
-							</Button>
-							<Button
-								tone="primary"
-								isPending={busy}
-								isDisabled={picked.length === 0 || busy}
-								onPress={() => void start()}
-							>
-								{group ? <Trans>创建群聊</Trans> : <Trans>开始</Trans>}
-							</Button>
-						</Modal.Footer>
+								{group && (
+									<input
+										type="text"
+										value={title}
+										maxLength={40}
+										placeholder={t`群聊名称（可选）`}
+										aria-label={t`群聊名称`}
+										onChange={(event) => setTitle(event.currentTarget.value)}
+										className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent h-control w-full rounded-[2px] border px-2.5 text-ui outline-none"
+									/>
+								)}
+							</Modal.Body>
+							<Modal.Footer className="flex justify-end gap-2">
+								<Button tone="ghost" onPress={onClose}>
+									<Trans>取消</Trans>
+								</Button>
+								<Button
+									tone="primary"
+									isPending={busy}
+									isDisabled={picked.length === 0 || busy}
+									onPress={() => void start()}
+								>
+									{group ? <Trans>创建群聊</Trans> : <Trans>开始</Trans>}
+								</Button>
+							</Modal.Footer>
+						</KeyboardScope>
 					</Modal.Dialog>
 				</Modal.Container>
 			</Modal.Backdrop>

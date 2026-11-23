@@ -109,6 +109,12 @@ catalogs:
     '@tailwindcss/vite':
       specifier: ^4.3.4
       version: 4.3.5
+    '@tanstack/react-hotkeys':
+      specifier: 0.27.2
+      version: 0.27.2
+    '@tanstack/react-pacer':
+      specifier: 0.24.1
+      version: 0.24.1
     '@tiptap/core':
       specifier: 3.32.2
       version: 3.32.2
@@ -310,6 +316,12 @@ importers:
       '@react-router/serve':
         specifier: catalog:frontend
         version: 8.5.1(react-router@8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2)
+      '@tanstack/react-hotkeys':
+        specifier: catalog:frontend
+        version: 0.27.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@tanstack/react-pacer':
+        specifier: catalog:frontend
+        version: 0.24.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@tiptap/core':
         specifier: catalog:frontend
         version: 3.32.2(@tiptap/pm@3.32.2)
@@ -3299,6 +3311,45 @@ packages:
     resolution: {integrity: sha512-BCNiY0a1ZjdOHVqw7kyb7U72BwfMF3dfUuN+tQsLWky/J5JOI/r7abibglXfygrZhVO/3u3V+E25kkKTeMkXaQ==}
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
+
+  '@tanstack/devtools-event-client@0.5.1':
+    resolution: {integrity: sha512-MiBx6Ybr65MFatCnk8IJzhGxd4hvsvEap4aT0gXOC274rV4hm0UPNHxznB5KGYtu84aXrIAsJEBElqzdPe+eeg==}
+    engines: {node: '>=18'}
+
+  '@tanstack/hotkeys@0.33.1':
+    resolution: {integrity: sha512-8lTyzrwAKIQm/8Ml938RXMSDBy/6wsIlavczmjDec4hsXkSPys0SbQ59kYboC6cBOfR2T1jFBQ1P0J3A06szsA==}
+    engines: {node: '>=20'}
+
+  '@tanstack/pacer@0.23.1':
+    resolution: {integrity: sha512-ROZj19aPPGYebeRPhFZNRlqNaR2e4vkcLbgiXfbi5uJu8WiW/etsYmkcAcoSQRGOwGZbbioWRX7xssewDRVRhw==}
+    engines: {node: '>=20'}
+
+  '@tanstack/react-hotkeys@0.27.2':
+    resolution: {integrity: sha512-VpnIlDQ1t21G2scxjsvdxsg4hhj9R1gZMjJxEitVS6f4+PAz78fA5W/Q0iBythZH/gBSvqp0Aj2HLRyEvHcm/g==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@tanstack/react-pacer@0.24.1':
+    resolution: {integrity: sha512-VjztEJmrNtLVdRrRaIsqx/+uX5qLHLp57dk19gVC/wLEu8ykU9twq6SKzhHSsajDEpNMauo7+bsFWAgjd+7Uiw==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      react: '>=16.8'
+      react-dom: '>=16.8'
+
+  '@tanstack/react-store@0.11.4':
+    resolution: {integrity: sha512-JAQz7LcABVRbxZ6qCd4u/KqDaqBc1qmcOWz7XBTdav1Ib363HQdihCQF1A755nDhoi9VEd6UqZ5thWVKTwIIXw==}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  '@tanstack/store@0.11.3':
+    resolution: {integrity: sha512-/Mt3h2Qe67HmRMc5SJ+8jM2Fp7O4fBbwOlS0ujUvx34KgAvkvdLSHrJatv0PJG5fbvlDsACTawMMY4ptCpVI8w==}
 
   '@testing-library/dom@10.4.2':
     resolution: {integrity: sha512-yzr2S9HyAIdhz2/6qHgbs665Q7PKVcDF05vsOlHPxG1mo36gKVesdYVeDLnXgfjJ03CrKRk08knc6+E/9m8v2Q==}
@@ -6601,6 +6652,41 @@ snapshots:
       '@tailwindcss/oxide': 4.3.5
       tailwindcss: 4.3.5
       vite: '@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)'
+
+  '@tanstack/devtools-event-client@0.5.1': {}
+
+  '@tanstack/hotkeys@0.33.1': {}
+
+  '@tanstack/pacer@0.23.1':
+    dependencies:
+      '@tanstack/devtools-event-client': 0.5.1
+      '@tanstack/store': 0.11.3
+
+  '@tanstack/react-hotkeys@0.27.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+    dependencies:
+      '@tanstack/hotkeys': 0.33.1
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
+
+  '@tanstack/react-pacer@0.24.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+    dependencies:
+      '@tanstack/pacer': 0.23.1
+      '@tanstack/react-store': 0.11.4(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+
+  '@tanstack/react-store@0.11.4(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+    dependencies:
+      '@tanstack/store': 0.11.3
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
+      use-sync-external-store: 1.7.0(react@19.3.1)
+    optionalDependencies:
+      '@types/react': 19.3.0
+
+  '@tanstack/store@0.11.3': {}
 
   '@testing-library/dom@10.4.2':
     dependencies:

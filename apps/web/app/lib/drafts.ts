@@ -1,6 +1,7 @@
 // Drafts kept on the server by Pluxum Drafts: a box's text is saved as it is typed and comes back
 // when the same box opens again, on any device. Without the plugin (or signed out) every call is
 // a quiet no-op and boxes behave as before.
+import { useDebouncer } from '@tanstack/react-pacer'
 import { useEffect, useRef } from 'react'
 
 const BASE = '/api/forum/ext/forum-drafts'
@@ -82,7 +83,6 @@ export function useDraft({
 	// What the server holds for the key; null until it has been read.
 	const saved = useRef<string | null>(null)
 	const pending = useRef<string | null>(null)
-	const timer = useRef<number | undefined>(undefined)
 	const submitted = useRef(false)
 	const latestKey = useRef(key)
 	const latestPristine = useRef(pristine)
@@ -94,8 +94,7 @@ export function useDraft({
 	})
 
 	const flush = (keepalive = false) => {
-		window.clearTimeout(timer.current)
-		timer.current = undefined
+		saver.cancel()
 		const text = pending.current
 		const target = latestKey.current
 		pending.current = null
@@ -103,6 +102,8 @@ export function useDraft({
 		saved.current = text
 		void storeDraft(target, text, keepalive)
 	}
+	// Each pause in typing saves; it reads the latest text through the ref, so it takes no arguments.
+	const saver = useDebouncer(() => flush(), { wait: DRAFT_SAVE_DELAY_MS })
 
 	useEffect(() => {
 		if (key === undefined) return undefined
@@ -117,7 +118,7 @@ export function useDraft({
 		})()
 		const onSubmit = () => {
 			submitted.current = true
-			window.clearTimeout(timer.current)
+			saver.cancel()
 			pending.current = null
 		}
 		const onHide = () => flush(true)
@@ -140,12 +141,11 @@ export function useDraft({
 		if (submitted.current) submitted.current = false
 		if (value === saved.current) {
 			pending.current = null
-			window.clearTimeout(timer.current)
+			saver.cancel()
 			return
 		}
 		pending.current = value
-		window.clearTimeout(timer.current)
-		timer.current = window.setTimeout(() => flush(), DRAFT_SAVE_DELAY_MS)
+		saver.maybeExecute()
 		// oxlint-disable-next-line react-hooks/exhaustive-deps -- flush reads refs only.
 	}, [key, value])
 }

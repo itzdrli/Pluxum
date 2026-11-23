@@ -3,6 +3,7 @@ import { Dialog, Heading, Modal, ModalOverlay } from 'react-aria-components'
 import { useLingui } from '@lingui/react/macro'
 
 import { IconButton } from './button'
+import { KeyboardScope } from './keyboard-scope'
 
 /**
  * Accessible mobile bottom sheet built on React Aria's `ModalOverlay` and `Modal`.
@@ -34,7 +35,7 @@ export function BottomSheet({
 			<Modal className="bottom-sheet-modal w-full outline-none">
 				<Dialog className="border-line bg-panel shadow-overlay flex max-h-[85dvh] w-full flex-col rounded-t-[2px] border-t pb-[env(safe-area-inset-bottom)] outline-none">
 					{({ close }) => (
-						<>
+						<KeyboardScope>
 							<div aria-hidden className="bg-line mx-auto mt-2 h-1 w-9 shrink-0 rounded-[2px]" />
 							<div className="border-line flex shrink-0 items-center justify-between gap-2 border-b px-4 py-2.5">
 								<Heading
@@ -50,7 +51,7 @@ export function BottomSheet({
 							<div className={bodyClassName ?? 'min-h-0 flex-1 overflow-y-auto px-4 py-3'}>
 								{typeof children === 'function' ? children(close) : children}
 							</div>
-						</>
+						</KeyboardScope>
 					)}
 				</Dialog>
 			</Modal>

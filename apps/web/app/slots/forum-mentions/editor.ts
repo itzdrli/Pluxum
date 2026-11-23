@@ -1,6 +1,7 @@
 // `composer.editor` contribution of forum-mentions. Loaded only together with the rich editor.
 import { Extension, type Editor, type Range } from '@tiptap/core'
 import { PluginKey } from '@tiptap/pm/state'
+import { matchesKeyboardEvent } from '@tanstack/react-hotkeys'
 import { Suggestion, type SuggestionKeyDownProps, type SuggestionProps } from '@tiptap/suggestion'
 import type { I18n } from '@lingui/core'
 import { t } from '@lingui/core/macro'
@@ -127,13 +128,14 @@ function popup(i18n: I18n) {
 		onUpdate: update,
 		onKeyDown: ({ event }: SuggestionKeyDownProps) => {
 			if (items.length === 0) return false
-			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-				const step = event.key === 'ArrowDown' ? 1 : -1
+			const down = matchesKeyboardEvent(event, 'ArrowDown')
+			if (down || matchesKeyboardEvent(event, 'ArrowUp')) {
+				const step = down ? 1 : -1
 				active = (active + step + items.length) % items.length
 				draw(false)
 				return true
 			}
-			if (event.key === 'Enter' || event.key === 'Tab') {
+			if (matchesKeyboardEvent(event, 'Enter') || matchesKeyboardEvent(event, 'Tab')) {
 				const person = items[active]
 				if (person !== undefined) choose?.(person)
 				return true

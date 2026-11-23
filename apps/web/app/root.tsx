@@ -13,6 +13,7 @@ import '@fontsource/noto-sans-sc/700.css'
 import '@fontsource/jetbrains-mono/400.css'
 import '@fontsource/jetbrains-mono/700.css'
 import { I18nProvider } from '@lingui/react'
+import { HotkeysProvider } from '@tanstack/react-hotkeys'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Home, TriangleAlert } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
@@ -36,6 +37,7 @@ import { DockProvider } from './components/dock/composer-dock'
 import { HoverCards } from './components/hover/hover-cards'
 import { WindowSmoothScroll } from './components/stage/smooth-scroll'
 import { GlobalShortcuts } from './components/shell/shortcuts'
+import { ShortcutSheet } from './components/shell/shortcut-sheet'
 import { PaletteProvider } from './components/palette/command-palette'
 import { LightboxProvider } from './components/ui/lightbox'
 import { ButtonLink } from './components/ui/button'
@@ -48,6 +50,7 @@ import { DEFAULT_LOCALE, localeFromRequest } from './lib/locale'
 import { rememberTimeZone, timeZoneFromRequest } from './lib/timezone'
 import { railFromRequest } from './lib/rail'
 import { isDarkTheme, themeFromRequest, themePageColor } from './lib/theme'
+import { appHotkeys, platformFromRequest } from './lib/hotkeys'
 
 // Who is browsing, what the forum allows, and the visitor's theme. Child routes read it through
 // useRouteLoaderData('root').
@@ -77,6 +80,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 		theme: themeFromRequest(request, forumMeta?.site.defaultTheme),
 		rail: railFromRequest(request),
 		focusReading: focusFromRequest(request),
+		// Shortcut labels (⌘ K or Ctrl K) render the same on the server and after hydration.
+		platform: platformFromRequest(request),
 		// Social cards need an absolute image URL; behind the TLS proxy request.url says http://.
 		origin: process.env.FORUM_WEB_PUBLIC_ORIGIN || new URL(request.url).origin,
 	}
@@ -151,18 +156,26 @@ export default function App({ loaderData }: Route.ComponentProps) {
 		void navigator.serviceWorker?.register('/sw.js').catch(() => undefined)
 	}, [])
 	return (
-		<LightboxProvider>
-			<DockProvider>
-				<PaletteProvider>
-					<GlobalShortcuts />
-					<WindowSmoothScroll />
-					<HoverCards />
-					<Shell meta={loaderData.meta}>
-						<Outlet />
-					</Shell>
-				</PaletteProvider>
-			</DockProvider>
-		</LightboxProvider>
+		// A key a widget already handled (React Aria's menus and fields, the rich editor's keymap)
+		// is not a shortcut as well.
+		<HotkeysProvider
+			appHotkeys={appHotkeys}
+			defaultOptions={{ platform: loaderData.platform, hotkey: { ignoreDefaultPrevented: true } }}
+		>
+			<LightboxProvider>
+				<DockProvider>
+					<PaletteProvider>
+						<GlobalShortcuts />
+						<ShortcutSheet />
+						<WindowSmoothScroll />
+						<HoverCards />
+						<Shell meta={loaderData.meta}>
+							<Outlet />
+						</Shell>
+					</PaletteProvider>
+				</DockProvider>
+			</LightboxProvider>
+		</HotkeysProvider>
 	)
 }
 

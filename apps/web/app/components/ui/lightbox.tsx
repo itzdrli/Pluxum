@@ -1,9 +1,11 @@
 import { Modal } from '@heroui/react'
 import { ChevronLeft, ChevronRight, Download, X } from 'lucide-react'
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useHotkey } from '@tanstack/react-hotkeys'
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { useLingui } from '@lingui/react/macro'
 
 import { IconButton } from './button'
+import { KeyboardScope } from './keyboard-scope'
 
 export type LightboxImage = Readonly<{ src: string; alt: string }>
 
@@ -78,16 +80,6 @@ function Viewer({
 		},
 		[state, count, onChange],
 	)
-	// Arrow keys page through the images while the viewer is open.
-	useEffect(() => {
-		if (state === null) return undefined
-		const onKey = (event: KeyboardEvent) => {
-			if (event.key === 'ArrowLeft') step(-1)
-			if (event.key === 'ArrowRight') step(1)
-		}
-		window.addEventListener('keydown', onKey)
-		return () => window.removeEventListener('keydown', onKey)
-	}, [state, step])
 	// A horizontal swipe pages too (phones have no side buttons over the picture). The click that
 	// ends a swipe must not count as a click beside the picture, which closes the viewer.
 	const swipe = useRef<{ x: number; y: number } | null>(null)
@@ -97,105 +89,123 @@ function Viewer({
 			<Modal.Backdrop variant="blur" className="lightbox-backdrop">
 				<Modal.Container size="full" className="lightbox">
 					<Modal.Dialog aria-label={current?.alt || t`图片`} className="lightbox-dialog">
-						<div className="flex items-center gap-2 px-3 py-2">
-							<p className="min-w-0 flex-1 truncate text-ui text-white/85">
-								{current?.alt}
-								{count > 1 && state !== null && (
-									<span className="ml-2 text-white/60 tabular-nums">
-										{state.index + 1} / {count}
-									</span>
+						<KeyboardScope>
+							<PageKeys step={step} />
+							<div className="flex items-center gap-2 px-3 py-2">
+								<p className="min-w-0 flex-1 truncate text-ui text-white/85">
+									{current?.alt}
+									{count > 1 && state !== null && (
+										<span className="ml-2 text-white/60 tabular-nums">
+											{state.index + 1} / {count}
+										</span>
+									)}
+								</p>
+								{current !== undefined && (
+									<a
+										href={current.src}
+										download
+										className="button button--ghost button--icon-only button--sm lightbox-control"
+										aria-label={t`下载原图`}
+									>
+										<Download aria-hidden />
+									</a>
 								)}
-							</p>
-							{current !== undefined && (
-								<a
-									href={current.src}
-									download
-									className="button button--ghost button--icon-only button--sm lightbox-control"
-									aria-label={t`下载原图`}
+								<IconButton
+									label={t`关闭`}
+									size="sm"
+									className="lightbox-control"
+									onPress={() => onChange(null)}
 								>
-									<Download aria-hidden />
-								</a>
-							)}
-							<IconButton
-								label={t`关闭`}
-								size="sm"
-								className="lightbox-control"
-								onPress={() => onChange(null)}
-							>
-								<X aria-hidden />
-							</IconButton>
-						</div>
-						<div
-							className="relative flex min-h-0 flex-1 touch-pan-y items-center justify-center px-2 pb-4 sm:px-14"
-							onPointerDown={(event) => {
-								swipe.current = { x: event.clientX, y: event.clientY }
-								swiped.current = false
-							}}
-							onPointerUp={(event) => {
-								const start = swipe.current
-								swipe.current = null
-								if (start === null || count < 2) return
-								const dx = event.clientX - start.x
-								const dy = event.clientY - start.y
-								if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-									swiped.current = true
-									step(dx < 0 ? 1 : -1)
-								}
-							}}
-							// A click beside the picture closes, as on the backdrop.
-							onClick={(event) => {
-								if (swiped.current) {
+									<X aria-hidden />
+								</IconButton>
+							</div>
+							<div
+								className="relative flex min-h-0 flex-1 touch-pan-y items-center justify-center px-2 pb-4 sm:px-14"
+								onPointerDown={(event) => {
+									swipe.current = { x: event.clientX, y: event.clientY }
 									swiped.current = false
-									return
-								}
-								if (event.target === event.currentTarget) onChange(null)
-							}}
-						>
-							{current !== undefined && (
-								<img
-									key={current.src}
-									src={current.src}
-									alt={current.alt}
-									className="max-h-full max-w-full rounded-[2px] object-contain select-none"
-								/>
-							)}
-							{/* Wide screens: beside the picture, in the side margins it leaves free. */}
-							{count > 1 && (
-								<>
+								}}
+								onPointerUp={(event) => {
+									const start = swipe.current
+									swipe.current = null
+									if (start === null || count < 2) return
+									const dx = event.clientX - start.x
+									const dy = event.clientY - start.y
+									if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+										swiped.current = true
+										step(dx < 0 ? 1 : -1)
+									}
+								}}
+								// A click beside the picture closes, as on the backdrop.
+								onClick={(event) => {
+									if (swiped.current) {
+										swiped.current = false
+										return
+									}
+									if (event.target === event.currentTarget) onChange(null)
+								}}
+							>
+								{current !== undefined && (
+									<img
+										key={current.src}
+										src={current.src}
+										alt={current.alt}
+										className="max-h-full max-w-full rounded-[2px] object-contain select-none"
+									/>
+								)}
+								{/* Wide screens: beside the picture, in the side margins it leaves free. */}
+								{count > 1 && (
+									<>
+										<IconButton
+											label={t`上一张`}
+											className="lightbox-control lightbox-nav left-2 max-sm:hidden"
+											onPress={() => step(-1)}
+										>
+											<ChevronLeft aria-hidden />
+										</IconButton>
+										<IconButton
+											label={t`下一张`}
+											className="lightbox-control lightbox-nav right-2 max-sm:hidden"
+											onPress={() => step(1)}
+										>
+											<ChevronRight aria-hidden />
+										</IconButton>
+									</>
+								)}
+							</div>
+							{/* Phones: a picture fills the width, so the buttons go below it instead of over it. */}
+							{count > 1 && state !== null && (
+								<div className="flex items-center justify-center gap-6 px-3 pt-1 pb-[max(12px,env(safe-area-inset-bottom))] sm:hidden">
 									<IconButton
 										label={t`上一张`}
-										className="lightbox-control lightbox-nav left-2 max-sm:hidden"
+										className="lightbox-control"
 										onPress={() => step(-1)}
 									>
 										<ChevronLeft aria-hidden />
 									</IconButton>
+									<span className="min-w-12 text-center text-ui text-white/70 tabular-nums">
+										{state.index + 1} / {count}
+									</span>
 									<IconButton
 										label={t`下一张`}
-										className="lightbox-control lightbox-nav right-2 max-sm:hidden"
+										className="lightbox-control"
 										onPress={() => step(1)}
 									>
 										<ChevronRight aria-hidden />
 									</IconButton>
-								</>
+								</div>
 							)}
-						</div>
-						{/* Phones: a picture fills the width, so the buttons go below it instead of over it. */}
-						{count > 1 && state !== null && (
-							<div className="flex items-center justify-center gap-6 px-3 pt-1 pb-[max(12px,env(safe-area-inset-bottom))] sm:hidden">
-								<IconButton label={t`上一张`} className="lightbox-control" onPress={() => step(-1)}>
-									<ChevronLeft aria-hidden />
-								</IconButton>
-								<span className="min-w-12 text-center text-ui text-white/70 tabular-nums">
-									{state.index + 1} / {count}
-								</span>
-								<IconButton label={t`下一张`} className="lightbox-control" onPress={() => step(1)}>
-									<ChevronRight aria-hidden />
-								</IconButton>
-							</div>
-						)}
+						</KeyboardScope>
 					</Modal.Dialog>
 				</Modal.Container>
 			</Modal.Backdrop>
 		</Modal>
 	)
+}
+
+/** The arrow keys page through the images while the viewer is open. */
+function PageKeys({ step }: { step: (by: number) => void }) {
+	useHotkey('ArrowLeft', () => step(-1))
+	useHotkey('ArrowRight', () => step(1))
+	return null
 }

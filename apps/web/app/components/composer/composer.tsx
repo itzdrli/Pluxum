@@ -2,6 +2,7 @@ import type { PreviewDto } from '@pluxum/domain'
 import { Label, TextArea, TextField } from '@heroui/react'
 import { Code, Type } from 'lucide-react'
 import type { Extensions } from '@tiptap/core'
+import { useHotkey } from '@tanstack/react-hotkeys'
 import { useEffect, useRef, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 import { useLingui } from '@lingui/react/macro'
@@ -297,6 +298,9 @@ export function Composer({
 	function submit() {
 		root.current?.closest('form')?.requestSubmit()
 	}
+	// Ctrl/⌘+Enter sends from the Markdown box; the rich editor binds it in its own keymap, ahead
+	// of its hard break, and its handling marks the key as done, so this does not send twice.
+	useHotkey('Mod+Enter', submit, { target: root })
 
 	const showRich = mode === 'rich' && rich !== null && extra !== null && format === 'markdown'
 
@@ -417,12 +421,6 @@ export function Composer({
 						}}
 						onBlur={() => {
 							setFocusOnUpgrade(false)
-						}}
-						onKeyDown={(event) => {
-							if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-								event.preventDefault()
-								submit()
-							}
 						}}
 					/>
 				</TextField>

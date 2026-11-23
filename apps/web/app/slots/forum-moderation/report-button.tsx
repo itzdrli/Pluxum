@@ -9,6 +9,7 @@ import { FormError } from '../../components/ui/display'
 import type { SlotProps } from '../slots'
 import type { loader as rootLoader } from '../../root'
 import type { ExtActionResult } from '../../routes/ext-action'
+import { KeyboardScope } from '../../components/ui/keyboard-scope'
 
 const EXT_ID = 'forum-moderation'
 const REASON_MAX = 500
@@ -71,77 +72,79 @@ export function ReportAction({ post, setMenuItems }: SlotProps['post.actions']) 
 				<Modal.Backdrop isKeyboardDismissDisabled={false}>
 					<Modal.Container size="sm">
 						<Modal.Dialog>
-							<Modal.Header>
-								<Modal.Heading className="text-ink-strong text-heading font-bold">
-									<Trans>举报内容</Trans>
-								</Modal.Heading>
-							</Modal.Header>
-							<Modal.Body className="flex flex-col gap-3">
-								<FormError message={error} />
-								<div className="flex flex-wrap gap-1.5">
-									{PRESET_REASONS.map((descriptor) => {
-										const preset = i18n._(descriptor)
-										const selected = reason.trim() === preset
-										return (
-											<button
-												key={preset}
-												type="button"
-												onClick={() => setReason(preset)}
-												className={`rounded-[2px] border px-2 py-1 text-meta transition-colors ${
-													selected
-														? 'border-accent bg-selected text-ink-strong font-bold'
-														: 'border-line bg-control text-ink hover:border-ink-weak'
-												}`}
-											>
-												{preset}
-											</button>
-										)
-									})}
-								</div>
-								<label className="flex flex-col gap-1">
-									<span className="text-ink-weak text-meta">
-										<Trans>原因</Trans>
-									</span>
-									<textarea
-										value={reason}
-										onChange={(event) => setReason(event.currentTarget.value)}
-										maxLength={REASON_MAX}
-										rows={3}
-										required
-										className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border px-2.5 py-2 text-ui leading-relaxed outline-none"
-									/>
-								</label>
-							</Modal.Body>
-							<Modal.Footer className="flex justify-end gap-2">
-								<Button
-									tone="ghost"
-									onPress={() => {
-										setAcknowledgedData(fetcher.data)
-										setOpen(false)
-									}}
-								>
-									<Trans>取消</Trans>
-								</Button>
-								<Button
-									tone="danger"
-									isPending={submitting}
-									isDisabled={reason.trim().length === 0 || submitting}
-									onPress={() => {
-										const trimmed = reason.trim()
-										if (!trimmed) return
-										void fetcher.submit(
-											{ postId: post.id, reason: trimmed },
-											{
-												method: 'post',
-												action: `/ext/${EXT_ID}/report`,
-												encType: 'application/json',
-											},
-										)
-									}}
-								>
-									<Trans>提交举报</Trans>
-								</Button>
-							</Modal.Footer>
+							<KeyboardScope>
+								<Modal.Header>
+									<Modal.Heading className="text-ink-strong text-heading font-bold">
+										<Trans>举报内容</Trans>
+									</Modal.Heading>
+								</Modal.Header>
+								<Modal.Body className="flex flex-col gap-3">
+									<FormError message={error} />
+									<div className="flex flex-wrap gap-1.5">
+										{PRESET_REASONS.map((descriptor) => {
+											const preset = i18n._(descriptor)
+											const selected = reason.trim() === preset
+											return (
+												<button
+													key={preset}
+													type="button"
+													onClick={() => setReason(preset)}
+													className={`rounded-[2px] border px-2 py-1 text-meta transition-colors ${
+														selected
+															? 'border-accent bg-selected text-ink-strong font-bold'
+															: 'border-line bg-control text-ink hover:border-ink-weak'
+													}`}
+												>
+													{preset}
+												</button>
+											)
+										})}
+									</div>
+									<label className="flex flex-col gap-1">
+										<span className="text-ink-weak text-meta">
+											<Trans>原因</Trans>
+										</span>
+										<textarea
+											value={reason}
+											onChange={(event) => setReason(event.currentTarget.value)}
+											maxLength={REASON_MAX}
+											rows={3}
+											required
+											className="border-line bg-page text-ink-strong placeholder:text-ink-weak/60 hover:border-ink-weak focus:border-accent w-full rounded-[2px] border px-2.5 py-2 text-ui leading-relaxed outline-none"
+										/>
+									</label>
+								</Modal.Body>
+								<Modal.Footer className="flex justify-end gap-2">
+									<Button
+										tone="ghost"
+										onPress={() => {
+											setAcknowledgedData(fetcher.data)
+											setOpen(false)
+										}}
+									>
+										<Trans>取消</Trans>
+									</Button>
+									<Button
+										tone="danger"
+										isPending={submitting}
+										isDisabled={reason.trim().length === 0 || submitting}
+										onPress={() => {
+											const trimmed = reason.trim()
+											if (!trimmed) return
+											void fetcher.submit(
+												{ postId: post.id, reason: trimmed },
+												{
+													method: 'post',
+													action: `/ext/${EXT_ID}/report`,
+													encType: 'application/json',
+												},
+											)
+										}}
+									>
+										<Trans>提交举报</Trans>
+									</Button>
+								</Modal.Footer>
+							</KeyboardScope>
 						</Modal.Dialog>
 					</Modal.Container>
 				</Modal.Backdrop>
