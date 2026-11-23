@@ -478,6 +478,10 @@ msgstr "仅看主题"
 msgid "代码块"
 msgstr "代码块"
 
+#: app/routes/messages.tsx
+msgid "会话"
+msgstr "会话"
+
 #: app/routes/conversation.tsx
 msgid "会话操作"
 msgstr "会话操作"

@@ -10,7 +10,7 @@ import { MessageBody } from '../components/messages/message-body'
 import { PeoplePicker } from '../components/messages/people-picker'
 import { UserAvatar } from '../components/forum/user-avatar'
 import { Button } from '../components/ui/button'
-import { FormError, Panel } from '../components/ui/display'
+import { FormError } from '../components/ui/display'
 import { ActionMenu, type MenuItem } from '../components/ui/overlay'
 import { apiErrorTextOfBody } from '../lib/api-errors'
 import { formatDateTime } from '../lib/format'
@@ -114,7 +114,7 @@ export default function Conversation({ loaderData }: Route.ComponentProps) {
 	}
 
 	return (
-		<Panel className="flex h-full min-h-0 flex-col">
+		<div className="flex h-full min-h-0 flex-col">
 			<ConversationHead
 				conversation={conversation}
 				viewerId={viewerId}
@@ -163,7 +163,7 @@ export default function Conversation({ loaderData }: Route.ComponentProps) {
 					refresh()
 				}}
 			/>
-		</Panel>
+		</div>
 	)
 }
 

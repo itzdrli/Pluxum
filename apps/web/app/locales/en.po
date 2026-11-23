@@ -478,6 +478,10 @@ msgstr "Threads only"
 msgid "代码块"
 msgstr "Code block"
 
+#: app/routes/messages.tsx
+msgid "会话"
+msgstr "Conversations"
+
 #: app/routes/conversation.tsx
 msgid "会话操作"
 msgstr "Conversation actions"

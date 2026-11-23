@@ -138,15 +138,18 @@ export default function Messages({ loaderData }: Route.ComponentProps) {
 					}
 				/>
 			</div>
-			<div
-				className={`messages-frame grid gap-4 lg:grid-cols-[minmax(240px,320px)_1fr]${open === undefined ? '' : ' messages-frame--open'}`}
-			>
-				<Panel className={`min-h-0 overflow-y-auto ${open === undefined ? '' : 'max-lg:hidden'}`}>
-					{list.items.length === 0 ? (
-						<p className="text-ink-weak px-4 py-10 text-center">
-							<Trans>还没有私信</Trans>
-						</p>
-					) : (
+			{list.items.length === 0 && open === undefined ? (
+				<EmptyState icon={MessagesSquare} title={t`还没有私信`} />
+			) : (
+				// One panel: the list and the open conversation side by side (one at a time on phones).
+				// Keep a space before each `${}` here: Tailwind does not read a class glued to one.
+				<Panel
+					className={`messages-frame grid overflow-hidden lg:grid-cols-[18rem_minmax(0,1fr)] ${open === undefined ? '' : 'messages-frame--open'}`}
+				>
+					<nav
+						aria-label={t`会话`}
+						className={`border-line-soft min-h-0 overflow-y-auto lg:border-r ${open === undefined ? '' : 'max-lg:hidden'}`}
+					>
 						<ul className="divide-line-soft divide-y">
 							{list.items.map((conversation) => (
 								<ConversationRow
@@ -157,19 +160,19 @@ export default function Messages({ loaderData }: Route.ComponentProps) {
 								/>
 							))}
 						</ul>
-					)}
+					</nav>
+					<section className={`min-h-0 ${open === undefined ? 'max-lg:hidden' : ''}`}>
+						{open === undefined ? (
+							<p className="text-ink-weak flex h-full items-center justify-center gap-2 text-meta">
+								<MessagesSquare aria-hidden size={16} strokeWidth={1.75} />
+								<Trans>选择一个会话</Trans>
+							</p>
+						) : (
+							<Outlet context={outlet} />
+						)}
+					</section>
 				</Panel>
-				<section className={`min-h-0 ${open === undefined ? 'max-lg:hidden' : ''}`}>
-					{open === undefined ? (
-						<div className="border-line text-ink-weak flex h-full flex-col items-center justify-center gap-2 rounded-[2px] border border-dashed">
-							<MessagesSquare aria-hidden size={20} strokeWidth={1.75} />
-							<Trans>选择一个会话</Trans>
-						</div>
-					) : (
-						<Outlet context={outlet} />
-					)}
-				</section>
-			</div>
+			)}
 			{starting && <StartDialog viewerId={viewerId} onClose={() => setStarting(false)} />}
 		</>
 	)
