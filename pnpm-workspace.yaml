@@ -61,7 +61,7 @@ catalogs:
     '@types/react-dom': ^19.3.0
     '@vitejs/plugin-react': ^6.2.1
     isbot: ^5.2.2
-    lenis: 1.3.27
+    lenis: 1.3.28
     lucide-react: ^1.67.0
     # Published Workbench producers require this exact shared React version.
     react: 19.3.1
@@ -126,3 +126,6 @@ peerDependencyRules:
     # Volar dependency's TypeScript <7 range does not apply to this TS 7 workspace.
     '@volar/typescript>typescript': '7'
     '@volar/language-service>typescript': '7'
+
+minimumReleaseAgeExclude:
+  - lenis@1.3.28
