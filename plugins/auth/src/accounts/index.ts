@@ -8,10 +8,9 @@ import {
 	type ForumErrorCode,
 	type RateBucket,
 } from '@pluxum/domain'
-import { ForumAuth } from '@pluxum/auth'
+import { ForumAuth } from '../index'
 import { ForumCorePlugin } from '@pluxum/core'
-import type { ForumMailPlugin } from '@pluxum/mail'
-import { BasePlugin, definePluginRef, Plugin } from '@pluxel/core'
+import { BasePlugin, Plugin } from '@pluxel/core'
 import { Rates, type RateLimiter } from '@pluxel/plugin-rates'
 import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
 import { ElysiaApp } from '@pluxel/services/elysia'
@@ -41,8 +40,6 @@ export const RESET_PAGE_PATH = '/reset-password'
 const PASSWORD_MAX = 256
 const EMAIL_MAX = 254
 const EMAIL = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]+$/u
-
-const Mail = definePluginRef<ForumMailPlugin>()
 
 const RegisterBody = v.object({
 	email: v.string(),
@@ -115,7 +112,6 @@ export class ForumAccountsPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumAccountsConfig)
 	private database!: PluginDatabaseHandle<typeof AccountsDatabase>
 	private limiters = new Map<'logins' | 'signups' | 'resets', RateLimiter>()
-	private mail: ForumMailPlugin | undefined
 
 	constructor(
 		private readonly core: ForumCorePlugin,
@@ -130,12 +126,6 @@ export class ForumAccountsPlugin extends BasePlugin {
 		this.limiters = this.openLimiters(this.config.limits)
 		this.configs.onUpdate(this.config, ({ desired }) => {
 			this.limiters = this.openLimiters(v.parse(ForumAccountsConfig, desired).limits)
-		})
-		this.plugins.use(Mail, (mail) => {
-			this.mail = mail
-			return () => {
-				this.mail = undefined
-			}
 		})
 		this.ctx.effects.defer(this.auth.registerPasswordLogin())
 		this.ctx.effects.defer(
@@ -185,7 +175,7 @@ export class ForumAccountsPlugin extends BasePlugin {
 	options(): Readonly<{ registration: boolean; reset: boolean; passwordMin: number }> {
 		return {
 			registration: this.config.registration === 'open',
-			reset: this.mail?.canSend() === true && this.auth.publicOrigin() !== null,
+			reset: this.auth.mailer()?.canSend() === true && this.auth.publicOrigin() !== null,
 			passwordMin: this.config.passwordMin,
 		}
 	}
@@ -264,7 +254,7 @@ export class ForumAccountsPlugin extends BasePlugin {
 		this.sameOrigin(request)
 		const body = this.parse(ResetRequestBody, raw)
 		const email = this.email(body.email)
-		const mail = this.mail
+		const mail = this.auth.mailer()
 		const origin = this.auth.publicOrigin()
 		if (!mail?.canSend() || origin === null)
 			throw refuse('unavailable', errorDetail('account.reset_unavailable'))
@@ -491,7 +481,7 @@ export class ForumAccountsPlugin extends BasePlugin {
 
 	/** Tells the owner about a change to their account, when Pluxum Mail can send. */
 	private notice(to: string, subject: string, lines: readonly string[]): void {
-		const mail = this.mail
+		const mail = this.auth.mailer()
 		if (!mail?.canSend()) return
 		const site = this.core.site().name
 		const sent = mail.sendTransactional({
@@ -593,7 +583,7 @@ export class ForumAccountsPlugin extends BasePlugin {
 					status: {
 						registration: this.config.registration,
 						accounts: row?.total ?? 0,
-						mail: this.mail?.canSend() === true ? 'available' : 'off',
+						mail: this.auth.mailer()?.canSend() === true ? 'available' : 'off',
 						publicOrigin: this.auth.publicOrigin(),
 					},
 				}

@@ -187,7 +187,7 @@ export async function accountsCall<T>(
 		return { result: { ok: false, status: response.status, error }, setCookie: null }
 	}
 	return {
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the accounts plugin answers these shapes; see plugins/accounts.
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the accounts plugin answers these shapes; see plugins/auth/src/accounts.
 		result: { ok: true, value: parsed as T },
 		setCookie: response.headers.get('set-cookie'),
 	}

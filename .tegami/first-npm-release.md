@@ -12,7 +12,6 @@ packages:
   '@pluxum/notifications': minor
   '@pluxum/og': minor
   '@pluxum/posts': minor
-  '@pluxum/rates': minor
   '@pluxum/reactions': minor
   '@pluxum/reads': minor
   '@pluxum/redis': minor

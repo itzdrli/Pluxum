@@ -1,7 +1,7 @@
 {
 	"name": "@pluxum/moderation",
 	"version": "0.0.0",
-	"description": "Reports, moderation queue, audit log, word filter and bans for Pluxum.",
+	"description": "Reports, moderation queue, audit log, word filter, bans and write limits for Pluxum.",
 	"license": "AGPL-3.0-only",
 	"repository": {
 		"type": "git",
@@ -34,24 +34,26 @@
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "catalog:prod",
-		"@pluxum/api": "workspace:*",
-		"@pluxum/auth": "workspace:*",
-		"@pluxum/core": "workspace:*",
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",
+		"@pluxel/plugin-rates": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/test": "catalog:pluxel",
+		"@pluxum/api": "workspace:*",
+		"@pluxum/auth": "workspace:*",
+		"@pluxum/core": "workspace:*",
 		"typescript": "catalog:tooling",
 		"vite-plus": "catalog:tooling",
 		"vitest": "catalog:test"
 	},
 	"peerDependencies": {
+		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/plugin-rates": "catalog:pluxel",
+		"@pluxel/services": "catalog:pluxel",
 		"@pluxum/api": "workspace:^",
 		"@pluxum/auth": "workspace:^",
-		"@pluxum/core": "workspace:^",
-		"@pluxel/core": "catalog:pluxel",
-		"@pluxel/services": "catalog:pluxel"
+		"@pluxum/core": "workspace:^"
 	},
 	"pluxel": {
 		"artifactRoot": "dist",
@@ -60,7 +62,8 @@
 		"pluginPackages": {
 			"@pluxum/api": "required",
 			"@pluxum/auth": "required",
-			"@pluxum/core": "required"
+			"@pluxum/core": "required",
+			"@pluxel/plugin-rates": "required"
 		}
 	},
 	"publishConfig": {

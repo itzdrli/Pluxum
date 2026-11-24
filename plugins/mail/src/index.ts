@@ -104,6 +104,13 @@ export class ForumMailPlugin extends BasePlugin {
 				},
 			}),
 		)
+		// Account mail (reset links, change notices) for Pluxum Accounts, through Pluxum Auth.
+		this.ctx.effects.defer(
+			this.auth.registerMailer({
+				canSend: () => this.canSend(),
+				sendTransactional: (input) => this.sendTransactional(input),
+			}),
+		)
 		await this.reconnect(this.config)
 		this.configs.onUpdate(this.config, async ({ desired }) => {
 			await this.reconnect(v.parse(ForumMailConfig, desired))

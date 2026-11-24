@@ -982,3 +982,6 @@ export class ForumModerationPlugin extends BasePlugin {
 		})
 	}
 }
+
+// Write limits, shipped beside moderation; still started, stopped and configured on its own.
+export * from './rates'

@@ -8,7 +8,7 @@ import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
 import { ForumAccountsPlugin, normalizeEmail } from '../src'
-import { hashPassword, needsRehash, verifyPassword } from '../src/password'
+import { hashPassword, needsRehash, verifyPassword } from '../src/accounts/password'
 
 const ORIGIN = 'https://forum.test'
 
@@ -257,6 +257,27 @@ describe('forum accounts plugin', () => {
 			200,
 		)
 		// Without Pluxum Mail running, nobody can ask for a link by mail.
+		expect((await env.post('/reset-request', { email: 'a@b.co' })).body.error.key).toBe(
+			'account.reset_unavailable',
+		)
+	})
+
+	it('mails a reset link through the mailer registered with auth', async () => {
+		await using env = await boot()
+		await env.post('/register', { email: 'a@b.co', password: 'old password', displayName: 'A' })
+		const sent: Array<Readonly<{ to: string; subject: string; text: string }>> = []
+		const unregister = env.auth.registerMailer({
+			canSend: () => true,
+			sendTransactional: (input) => {
+				sent.push(input)
+				return true
+			},
+		})
+		expect((await env.post('/reset-request', { email: 'A@b.co' })).status).toBe(200)
+		expect(sent).toHaveLength(1)
+		expect(sent[0]?.to).toBe('A@b.co')
+		expect(sent[0]?.text).toContain(`${ORIGIN}/reset-password`)
+		unregister()
 		expect((await env.post('/reset-request', { email: 'a@b.co' })).body.error.key).toBe(
 			'account.reset_unavailable',
 		)

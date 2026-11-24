@@ -1,7 +1,7 @@
 {
 	"name": "@pluxum/auth",
 	"version": "0.0.0",
-	"description": "OpenID Connect login for Pluxum, with server-side sessions in Redis.",
+	"description": "Sign-in for Pluxum: OpenID Connect with server-side sessions in Redis, and email and password accounts.",
 	"license": "AGPL-3.0-only",
 	"repository": {
 		"type": "git",
@@ -27,6 +27,7 @@
 	},
 	"dependencies": {
 		"@pluxum/domain": "workspace:*",
+		"drizzle-orm": "catalog:backend",
 		"jose": "catalog:prod",
 		"valibot": "catalog:validation",
 		"valibot-form": "catalog:validation"
@@ -36,6 +37,7 @@
 		"@pluxel/cli": "catalog:pluxel",
 		"@pluxel/core": "catalog:pluxel",
 		"@pluxel/host": "catalog:pluxel",
+		"@pluxel/plugin-rates": "catalog:pluxel",
 		"@pluxel/plugin-redis": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/test": "catalog:pluxel",
@@ -49,6 +51,7 @@
 	},
 	"peerDependencies": {
 		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/plugin-rates": "catalog:pluxel",
 		"@pluxel/plugin-redis": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/workbench": "catalog:pluxel",
@@ -60,6 +63,7 @@
 		"workbenchArtifacts": true,
 		"pluginPackages": {
 			"@pluxum/core": "required",
+			"@pluxel/plugin-rates": "required",
 			"@pluxel/plugin-redis": "required"
 		}
 	},

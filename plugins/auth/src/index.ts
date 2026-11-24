@@ -79,8 +79,34 @@ export type Logout = Readonly<{
  * Forum identity: who a request acts as, and the login and logout flows that decide it.
  * forum-api owns the URLs and calls into this capability; nothing here mounts a route.
  */
+/** What sends account mail (reset links, change notices): Pluxum Mail, while it runs. */
+export type TransactionalMailer = Readonly<{
+	/** Whether a message would go out now (mail is configured and on). */
+	canSend: () => boolean
+	/** Queues a plain-text message; false when it could not be queued. */
+	sendTransactional: (input: Readonly<{ to: string; subject: string; text: string }>) => boolean
+}>
+
 export abstract class ForumAuth extends BasePlugin {
 	private readonly passwordLogins = new Set<symbol>()
+	private readonly mailers: TransactionalMailer[] = []
+
+	/**
+	 * Lends the sign-in plugins a way to send account mail. Pluxum Mail registers itself here, so
+	 * the accounts plugin does not depend on it; the latest registration is used.
+	 */
+	registerMailer(mailer: TransactionalMailer): () => void {
+		this.mailers.push(mailer)
+		return () => {
+			const index = this.mailers.indexOf(mailer)
+			if (index >= 0) this.mailers.splice(index, 1)
+		}
+	}
+
+	/** The mailer registered last, or undefined while none runs. */
+	mailer(): TransactionalMailer | undefined {
+		return this.mailers.at(-1)
+	}
 
 	/**
 	 * Says that a plugin (Pluxum Accounts) signs people in with email and password, so the web app
@@ -557,3 +583,6 @@ export class ForumAuthPlugin extends ForumAuth {
 		return record.value
 	}
 }
+
+// Email and password sign-in, shipped beside the core auth; still started and stopped on its own.
+export * from './accounts'
