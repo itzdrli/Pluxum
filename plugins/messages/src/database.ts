@@ -10,7 +10,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from 'drizzle-orm/pg-core'
-import { defineDatabase } from '@pluxel/services/database'
+import { defineDatabase } from '@pluxel/services/pg'
 
 /** A private conversation: two people (`direct`) or a small group with a name and an owner. */
 export const conversations = pgTable(

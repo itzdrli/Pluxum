@@ -1,5 +1,5 @@
 import { ForumCorePlugin } from '@pluxum/core'
-import { defineDevConsole } from '@pluxel/host-vite/console'
+import type { Script } from '@pluxel/agent-sdk/host'
 
 const categories = [
 	{ slug: 'announcements', name: '公告', description: '站点动态与版本更新。' },
@@ -17,8 +17,8 @@ const welcome = {
 // vp exec pluxel dev run host/web/dev/seed.ts → create the starter categories and a welcome thread
 // Safe to repeat: existing category slugs are kept as they are, and the welcome thread is written
 // only together with a newly created announcements category.
-export default defineDevConsole(async (dev) => {
-	const core = dev.plugins.require(ForumCorePlugin)
+export default (async (sdk) => {
+	const { instance: core } = await sdk.plugin(ForumCorePlugin.nodeAddress()).instance()
 	// A system account that owns the seeded content; nobody can log in as it.
 	const user = await core.ensureUser({ subject: 'system:seed', displayName: '论坛' })
 	if (user.isErr()) throw new Error(user.error.message)
@@ -55,4 +55,4 @@ export default defineDevConsole(async (dev) => {
 		}, Promise.resolve())
 	}
 	return { created: created.map((category) => category.slug), kept: [...existing], threadId }
-})
+}) satisfies Script

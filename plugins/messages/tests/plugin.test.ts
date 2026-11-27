@@ -2,8 +2,7 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAuth, type Authentication } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
@@ -59,7 +58,7 @@ class FakeAuth extends ForumAuth {
 
 const createHost = () =>
 	createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 
 type Host = Awaited<ReturnType<typeof createHost>>
@@ -113,13 +112,13 @@ class CollectingChannelPlugin extends BasePlugin {
 async function setUp(host: Host) {
 	delivered.length = 0
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
-		change.start(CollectingChannelPlugin)
-		change.start(ForumMessagesPlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
+		change.start(CollectingChannelPlugin.nodeAddress())
+		change.start(ForumMessagesPlugin.nodeAddress())
 	})
-	const core = host.require(ForumCorePlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
 	const make = async (name: string) =>
 		(await core.ensureUser({ subject: `test:${name}`, displayName: name })).unwrap()
 	const admin = await make('Admin')

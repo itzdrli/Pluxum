@@ -12,7 +12,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from 'drizzle-orm/pg-core'
-import { defineDatabase } from '@pluxel/services/database'
+import { defineDatabase } from '@pluxel/services/pg'
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 

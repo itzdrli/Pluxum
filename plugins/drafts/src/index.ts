@@ -3,7 +3,7 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult, type PostAfterWriteEvent } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
 import { and, desc, eq, inArray, notInArray } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import { drafts, DraftsDatabase } from './database'
@@ -76,7 +76,7 @@ export class ForumDraftsPlugin extends BasePlugin {
 	}
 
 	protected override async init(): Promise<void> {
-		this.database = await this.ctx.require(Database).use(DraftsDatabase)
+		this.database = await this.ctx.service(Pg).use(DraftsDatabase)
 		this.ctx.effects.defer(
 			this.core.registerUserRemoval({
 				id: `${DRAFTS_EXT_ID}.removal`,

@@ -9,8 +9,7 @@ import {
 	NOTIFICATIONS_POST_HOOK_ID,
 } from '@pluxum/notifications'
 import { BasePlugin, Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
@@ -19,7 +18,7 @@ const MISSING_ID = '00000000-0000-4000-8000-000000000000'
 
 const createHost = () =>
 	createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 
 type Host = Awaited<ReturnType<typeof createHost>>
@@ -125,12 +124,12 @@ function client(host: Host, userId?: string) {
 async function setUp(host: Host) {
 	bridgedNotifications.length = 0
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
-		change.start(ForumNotificationsPlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
+		change.start(ForumNotificationsPlugin.nodeAddress())
 	})
-	const core = host.require(ForumCorePlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
 	const adminUser = (
 		await core.ensureUser({ subject: 'test:admin', displayName: 'Admin' })
 	).unwrap()
@@ -158,7 +157,7 @@ describe('ForumNotificationsPlugin', () => {
 	it('delivers reply notifications to thread authors, skips self-replies, and fans out to bridge channels', async () => {
 		await using host = await createHost()
 		const { core, alice, bob, thread } = await setUp(host)
-		await host.start(MailBridgePlugin)
+		await host.start(MailBridgePlugin.nodeAddress())
 
 		// Alice replying to her own thread must NOT notify her.
 		;(
@@ -393,7 +392,7 @@ describe('ForumNotificationsPlugin', () => {
 		).unwrap()
 		expect((await asAlice.get(UNREAD_COUNT)).body).toEqual({ count: 1 })
 
-		await host.stop(ForumNotificationsPlugin)
+		await host.stop(ForumNotificationsPlugin.nodeAddress())
 		expect(await slots()).toEqual([])
 		expect(core.notificationChannelIds()).not.toContain(INBOX_CHANNEL_ID)
 		expect(core.postHookIds()).not.toContain(NOTIFICATIONS_POST_HOOK_ID)
@@ -401,17 +400,17 @@ describe('ForumNotificationsPlugin', () => {
 		expect((await asAlice.get(UNREAD_COUNT)).status).toBe(404)
 		expect((await asAlice.post(MARK_ALL_READ)).status).toBe(404)
 
-		await host.start(ForumNotificationsPlugin)
+		await host.start(ForumNotificationsPlugin.nodeAddress())
 		expect(await slots()).toEqual([{ slot: 'shell.actions', extId: NOTIFICATIONS_EXT_ID }])
 		expect((await asAlice.get(UNREAD_COUNT)).body).toEqual({ count: 1 })
 
 		// Re-registers cleanly across ForumApiPlugin and ForumCorePlugin restarts.
-		await host.restart(ForumApiPlugin)
-		expect(host.isRunning(ForumNotificationsPlugin)).toBe(true)
+		await host.restart(ForumApiPlugin.nodeAddress())
+		expect(host.isRunning(ForumNotificationsPlugin.nodeAddress())).toBe(true)
 		expect((await asAlice.get(UNREAD_COUNT)).status).toBe(200)
 
-		const restartedCore = await host.restart(ForumCorePlugin)
-		expect(host.isRunning(ForumNotificationsPlugin)).toBe(true)
+		const restartedCore = await host.restart(ForumCorePlugin.nodeAddress())
+		expect(host.isRunning(ForumNotificationsPlugin.nodeAddress())).toBe(true)
 		expect(restartedCore.notificationChannelIds()).toContain(INBOX_CHANNEL_ID)
 		expect(restartedCore.postHookIds()).toContain(NOTIFICATIONS_POST_HOOK_ID)
 		expect(restartedCore.uiSlots()).toEqual([

@@ -2,8 +2,7 @@ import { GUEST } from '@pluxum/domain'
 import { ForumCorePlugin } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { CachePlugin, MemoryCacheBackendPlugin } from '@pluxel/plugin-cache'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
 import { ForumCachePlugin } from '../src'
@@ -33,16 +32,16 @@ class CountingRendererPlugin extends BasePlugin {
 
 async function boot() {
 	const host = await createTestHost({
-		services: [database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [pglite({ dataDir: 'memory://' })],
 	})
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(CountingRendererPlugin)
-		change.start(MemoryCacheBackendPlugin)
-		change.start(CachePlugin)
-		change.start(ForumCachePlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(CountingRendererPlugin.nodeAddress())
+		change.start(MemoryCacheBackendPlugin.nodeAddress())
+		change.start(CachePlugin.nodeAddress())
+		change.start(ForumCachePlugin.nodeAddress())
 	})
-	const core = host.require(ForumCorePlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
 	const adminUser = (
 		await core.ensureUser({ subject: 'test:admin', displayName: 'Admin' })
 	).unwrap()
@@ -100,7 +99,7 @@ describe('forum cache plugin', () => {
 		expect((await core.listThreads(GUEST, 'missing')).isErr()).toBe(true)
 
 		// Without the plugin the core reads fresh, and keeps working.
-		await host.stop(ForumCachePlugin)
+		await host.stop(ForumCachePlugin.nodeAddress())
 		expect(core.cacheId()).toBeNull()
 		;(await post('第三个')).unwrap()
 		expect((await core.listRecentThreads(GUEST)).total).toBe(3)
@@ -112,7 +111,7 @@ describe('forum cache plugin', () => {
 			await core.createThread(admin, { categoryId: category.id, title: '设置', body: '正文' })
 		).unwrap()
 		expect((await core.listRecentThreads(GUEST)).total).toBe(1)
-		const saved = await host.config.patch(ForumCachePlugin, {
+		const saved = await host.config.patch(ForumCachePlugin.nodeAddress(), {
 			set: { listingTtlSeconds: 5, renderedEntries: 500 },
 		})
 		expect(saved).toMatchObject({ ok: true, application: 'applied' })

@@ -48,9 +48,10 @@ const SecretInput = v.object({
 	),
 })
 
-export const AuthWorkbench = workbench.define({
+export const AuthWorkbench = workbench.define(import.meta.url, {
 	login: workbench.content({
-		document: workbench.markdown(import.meta.url, './workbench.md', {
+		document: './workbench.md',
+		slots: {
 			status: workbench.data(AuthStatus),
 			probe: workbench.action({ label: '检查登录服务' }),
 			setSecret: workbench.action({ label: '设置客户端密钥', input: SecretInput }),
@@ -58,7 +59,7 @@ export const AuthWorkbench = workbench.define({
 				label: '删除客户端密钥',
 				confirm: '删除后论坛只用 PKCE 向 Zitadel 认证；如果应用是机密客户端，登录会失败。继续吗？',
 			}),
-		}),
-		placement: workbench.tab({ label: '登录', icon: workbench.icons.ShieldLock, order: 10 }),
+		},
+		placement: { kind: 'tab', label: '登录', icon: 'shield-lock', order: 10 },
 	}),
 })

@@ -12,7 +12,7 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
 import { and, asc, count, desc, eq, gt, inArray, lt, max, ne, sql } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import { conversations, members, messages, MessagesDatabase, messageSettings } from './database'
@@ -178,7 +178,7 @@ export class ForumMessagesPlugin extends BasePlugin {
 	}
 
 	protected override async init(): Promise<void> {
-		this.database = await this.ctx.require(Database).use(MessagesDatabase)
+		this.database = await this.ctx.service(Pg).use(MessagesDatabase)
 		this.ctx.effects.defer(() => this.hub.close())
 		this.ctx.effects.defer(
 			this.core.registerUserRemoval({

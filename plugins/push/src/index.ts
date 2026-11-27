@@ -4,8 +4,7 @@ import { ForumAuth } from '@pluxum/auth'
 import { ForumCorePlugin, type ForumResult } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
-import { Vault } from '@pluxel/services/vault'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
 import { and, desc, eq, notInArray } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import { PushDatabase, pushSubscriptions } from './database'
@@ -127,7 +126,7 @@ export class ForumPushPlugin extends BasePlugin {
 	}
 
 	protected override async init(): Promise<void> {
-		this.database = await this.ctx.require(Database).use(PushDatabase)
+		this.database = await this.ctx.service(Pg).use(PushDatabase)
 		await this.loadKeys()
 		this.ctx.effects.defer(
 			this.core.registerUserRemoval({
@@ -197,7 +196,7 @@ export class ForumPushPlugin extends BasePlugin {
 	private async loadKeys(): Promise<VapidKeys | null> {
 		if (this.keys !== null) return this.keys
 		try {
-			const kv = this.ctx.require(Vault).kv()
+			const kv = this.ctx.vault.kv()
 			const record = await kv.get<VapidKeys>(VAPID_KEYS_RECORD)
 			if (record.exists && isVapidKeys(record.value)) {
 				this.keys = record.value

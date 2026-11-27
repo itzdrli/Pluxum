@@ -10,10 +10,11 @@ import {
 } from '@pluxum/domain'
 import { ForumAuth } from '../index'
 import { ForumCorePlugin } from '@pluxum/core'
-import { BasePlugin, Plugin } from '@pluxel/core'
+import { BasePlugin, defineServiceRef, Plugin } from '@pluxel/core'
 import { Rates, type RateLimiter } from '@pluxel/plugin-rates'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
 import { ElysiaApp } from '@pluxel/services/elysia'
+import type { Workbench } from '@pluxel/workbench'
 import { and, count, eq, gt, lt } from 'drizzle-orm'
 import * as v from 'valibot'
 import { ForumAccountsConfig } from './config'
@@ -107,6 +108,8 @@ export function normalizeEmail(input: string): string | null {
  *
  * Attempts are rate limited per address (logins, resets) and per client (sign-ups).
  */
+const WorkbenchRef = defineServiceRef<Workbench>()
+
 @Plugin({ displayName: 'Pluxum Accounts', startTimeoutMs: 30_000 })
 export class ForumAccountsPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumAccountsConfig)
@@ -122,7 +125,7 @@ export class ForumAccountsPlugin extends BasePlugin {
 	}
 
 	protected override async init(): Promise<void> {
-		this.database = await this.ctx.require(Database).use(AccountsDatabase)
+		this.database = await this.ctx.service(Pg).use(AccountsDatabase)
 		this.limiters = this.openLimiters(this.config.limits)
 		this.configs.onUpdate(this.config, ({ desired }) => {
 			this.limiters = this.openLimiters(v.parse(ForumAccountsConfig, desired).limits)
@@ -148,8 +151,10 @@ export class ForumAccountsPlugin extends BasePlugin {
 					}),
 			}),
 		)
-		this.ctx.workbench?.publish(AccountsWorkbench, { accounts: () => this.workbenchContent() })
-		this.ctx.require(ElysiaApp).group(ACCOUNTS_PREFIX, (app) =>
+		this.ctx
+			.service(WorkbenchRef)
+			?.publish(AccountsWorkbench, { accounts: () => this.workbenchContent() })
+		this.ctx.service(ElysiaApp).group(ACCOUNTS_PREFIX, (app) =>
 			app
 				.get('/options', () =>
 					Response.json(this.options(), { headers: { 'cache-control': 'no-store' } }),

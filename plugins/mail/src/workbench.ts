@@ -66,9 +66,10 @@ const TestInput = v.object({
 })
 export type MailTestInput = v.InferOutput<typeof TestInput>
 
-export const MailWorkbench = workbench.define({
+export const MailWorkbench = workbench.define(import.meta.url, {
 	mail: workbench.content({
-		document: workbench.markdown(import.meta.url, './workbench.md', {
+		document: './workbench.md',
+		slots: {
 			status: workbench.data(MailStatus),
 			sendTest: workbench.action({ label: '发送测试邮件', input: TestInput }),
 			setPassword: workbench.action({ label: '设置 SMTP 密码', input: PasswordInput }),
@@ -76,7 +77,7 @@ export const MailWorkbench = workbench.define({
 				label: '删除 SMTP 密码',
 				confirm: '删除后需要登录的 SMTP 服务器将拒绝发信。继续吗？',
 			}),
-		}),
-		placement: workbench.tab({ label: '邮件', icon: workbench.icons.MessageChatbot, order: 10 }),
+		},
+		placement: { kind: 'tab', label: '邮件', icon: 'message-chatbot', order: 10 },
 	}),
 })

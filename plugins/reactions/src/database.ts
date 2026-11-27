@@ -1,7 +1,7 @@
 // Server-only: the reactions plugin's own managed database. Rows refer to the forum core's posts
 // and users by their stable IDs only; there are no foreign keys across plugins.
 import { pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { defineDatabase } from '@pluxel/services/database'
+import { defineDatabase } from '@pluxel/services/pg'
 
 export const reactions = pgTable(
 	'reactions',

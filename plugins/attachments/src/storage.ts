@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { Plugin, type Context } from '@pluxel/core'
-import { Vault } from '@pluxel/services/vault'
 import {
 	S3,
 	S3BucketNotFoundError,
@@ -303,7 +302,7 @@ export class ForumStoragePlugin extends S3 {
 				const ref = backend.credentials
 				const key =
 					ref.key ?? (config.id === 'default' ? 's3.credentials' : `s3.${config.id}.credentials`)
-				const vault = this.requireVault(config.id, key)
+				const vault = this.ctx.vault
 				const parseSnapshot = (snapshot: {
 					exists: boolean
 					value: unknown
@@ -350,14 +349,6 @@ export class ForumStoragePlugin extends S3 {
 		} catch (error) {
 			disposeWatch?.()
 			throw error
-		}
-	}
-
-	private requireVault(bucketId: string, key: string) {
-		try {
-			return this.ctx.require(Vault)
-		} catch (cause) {
-			throw new S3CredentialsError('unavailable', bucketId, key, cause)
 		}
 	}
 

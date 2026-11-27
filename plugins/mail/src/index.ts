@@ -3,10 +3,10 @@ import type { ForumNotification, Principal } from '@pluxum/domain'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAuth } from '@pluxum/auth'
 import { ForumCorePlugin, type ForumResult } from '@pluxum/core'
-import { BasePlugin, Plugin } from '@pluxel/core'
+import { BasePlugin, defineServiceRef, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
-import { Vault } from '@pluxel/services/vault'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
+import type { Workbench } from '@pluxel/workbench'
 import { count, eq } from 'drizzle-orm'
 import type { Transporter } from 'nodemailer'
 import { Type, type Static } from 'typebox'
@@ -70,6 +70,8 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
  * - `uiSlots` (`user.profile.tabs`): the on/off switch on one's own profile page;
  * - a Workbench "邮件" tab: status, a test mail and the SMTP password (kept in Vault).
  */
+const WorkbenchRef = defineServiceRef<Workbench>()
+
 @Plugin({ displayName: 'Pluxum Mail', startTimeoutMs: 30_000 })
 export class ForumMailPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumMailConfig)
@@ -93,7 +95,7 @@ export class ForumMailPlugin extends BasePlugin {
 	}
 
 	protected override async init(): Promise<void> {
-		this.database = await this.ctx.require(Database).use(MailDatabase)
+		this.database = await this.ctx.service(Pg).use(MailDatabase)
 		this.ctx.effects.defer(
 			this.core.registerUserRemoval({
 				id: `${MAIL_EXT_ID}.removal`,
@@ -153,7 +155,7 @@ export class ForumMailPlugin extends BasePlugin {
 				handle: ({ principal, input }) => this.setPreferences(principal, input),
 			}),
 		)
-		this.ctx.workbench?.publish(MailWorkbench, { mail: () => this.workbenchContent() })
+		this.ctx.service(WorkbenchRef)?.publish(MailWorkbench, { mail: () => this.workbenchContent() })
 	}
 
 	// ── Sending ─────────────────────────────────────────────────────────────────────────────
@@ -186,7 +188,7 @@ export class ForumMailPlugin extends BasePlugin {
 		this.transport?.close()
 		this.transport = undefined
 		if (!isSendable(config)) return
-		const record = await this.ctx.require(Vault).kv().get(SMTP_PASSWORD_KEY)
+		const record = await this.ctx.vault.kv().get(SMTP_PASSWORD_KEY)
 		const password = record.exists && typeof record.value === 'string' ? record.value : null
 		if (config.username !== '' && password === null) {
 			this.ctx.logger.warn('SMTP needs a login but no password is set; mail stays off')
@@ -347,7 +349,7 @@ export class ForumMailPlugin extends BasePlugin {
 					}
 				},
 				setPassword: async ({ password }: { password: string }) => {
-					const kv = this.ctx.require(Vault).kv()
+					const kv = this.ctx.vault.kv()
 					const current = await kv.get(SMTP_PASSWORD_KEY)
 					if (current.exists && !current.writable) {
 						return { ok: false, message: '密码由部署环境提供，不能在这里修改' }
@@ -357,7 +359,7 @@ export class ForumMailPlugin extends BasePlugin {
 					return { ok: true, message: 'SMTP 密码已保存' }
 				},
 				clearPassword: async () => {
-					const kv = this.ctx.require(Vault).kv()
+					const kv = this.ctx.vault.kv()
 					const current = await kv.get(SMTP_PASSWORD_KEY)
 					if (!current.exists) return { ok: true, message: '没有保存 SMTP 密码' }
 					if (!current.writable) {
@@ -373,7 +375,7 @@ export class ForumMailPlugin extends BasePlugin {
 
 	private async status(): Promise<MailStatus> {
 		const config = this.config
-		const record = await this.ctx.require(Vault).kv().get(SMTP_PASSWORD_KEY)
+		const record = await this.ctx.vault.kv().get(SMTP_PASSWORD_KEY)
 		const [optedOut] = await this.database.read((db) =>
 			db.select({ value: count() }).from(mailPreferences).where(eq(mailPreferences.enabled, false)),
 		)

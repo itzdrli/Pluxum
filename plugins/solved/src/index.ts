@@ -12,7 +12,7 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult, type PostAfterWriteEvent } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
 import { and, eq, inArray } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import { solutions, SolvedDatabase } from './database'
@@ -88,7 +88,7 @@ export class ForumSolvedPlugin extends BasePlugin {
 	}
 
 	protected override async init(): Promise<void> {
-		this.database = await this.ctx.require(Database).use(SolvedDatabase)
+		this.database = await this.ctx.service(Pg).use(SolvedDatabase)
 		this.ctx.effects.defer(
 			this.core.registerUserRemoval({
 				id: `${SOLVED_EXT_ID}.removal`,

@@ -1,11 +1,12 @@
 {
 	// Dev-console operations run inside the host Vite (see docs/pluxel/development/dev-console.md).
-	"extends": "../../../tsconfig.base.json",
+	// Match Vite's source-resolution conditions (no `.d.mts` paths overrides) so checkProjectScript
+	// checks the exact raw source files evaluated by Vite's `pluxel` ModuleRunner.
+	"extends": "../../tsconfig.json",
 	"compilerOptions": {
-		"types": ["node"],
-		"paths": {
-			"@pluxel/plugin-redis": ["../node_modules/@pluxel/plugin-redis/dist/index.d.mts"]
-		}
+		"lib": ["ES2024", "ESNext.Disposable", "DOM", "DOM.Iterable"],
+		"customConditions": ["@pluxel/hmr", "@pluxel/source"],
+		"paths": {}
 	},
 	"include": ["./**/*.ts"]
 }

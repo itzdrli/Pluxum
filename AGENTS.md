@@ -44,8 +44,9 @@
 
 <!-- pluxel:development -->
 
-For Pluxel development, use .agents/skills/pluxel-development/SKILL.md to select the declared development target, operate its console and read the relevant documentation.
-Before multi-file or continuous edits to a running application, follow the dev-console HMR batch workflow: pause, edit and check, apply, then verify. Keep failed updates paused; resume only if the prior mode was auto and verification succeeds.
+For Pluxel development, use [.agents/skills/pluxel-development/SKILL.md](.agents/skills/pluxel-development/SKILL.md).
+Use vp install for dependencies, vp run for project tasks and vp exec for project tools; follow the [workspace toolchain](docs/pluxel/development/workspace-toolchain.md#统一命令入口).
+Read [source inspection](docs/pluxel/development/inspection.md) for direct functions from @pluxel/agent-sdk/source and explicit workspace/application selection; [automation scripts](docs/pluxel/development/scripts.md) for the shared Script type from @pluxel/agent-sdk/host, sdk.ctx.service(Service), direct awaited control values, ScriptError failures and { instance } borrowing; [Agent SDK](docs/pluxel/development/agent-sdk.md) for direct Node calls from @pluxel/agent-sdk/client (discovery, execution, material sync and original receipts) and the terminal commands mounted by the single pluxel executable; [development console](docs/pluxel/development/dev-console.md) for target selection, online operations and HMR batches; [Plugin control](docs/pluxel/development/plugin-control.md) for generated control modules and addresses.
 Missing generated resources: Git users run their upstream CLI's source install; npm users install dependencies then run vp exec pluxel workspace setup.
 Keep upstream instructions in their source; maintain only project-specific constraints here.
 <!-- /pluxel:development -->

@@ -4,8 +4,7 @@ import { ForumAuth, type Authentication } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { ForumReactionsPlugin, REACTIONS_EXT_ID } from '@pluxum/reactions'
 import { Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
@@ -14,7 +13,7 @@ const MISSING_ID = '00000000-0000-4000-8000-000000000000'
 
 const createHost = () =>
 	createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 
 type Host = Awaited<ReturnType<typeof createHost>>
@@ -108,12 +107,12 @@ function client(host: Host, userId?: string) {
  */
 async function setUp(host: Host, usefulCategories: readonly string[] = ['general']) {
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
-		change.start(ForumReactionsPlugin, { initialConfig: { usefulCategories } })
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
+		change.start(ForumReactionsPlugin.nodeAddress(), { initialConfig: { usefulCategories } })
 	})
-	const core = host.require(ForumCorePlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
 	const adminUser = (
 		await core.ensureUser({ subject: 'test:admin', displayName: 'Admin' })
 	).unwrap()
@@ -303,13 +302,13 @@ describe('ForumReactionsPlugin', () => {
 		await asAlice.post(REACT, { postId: reply.id, on: true })
 		expect(await slots()).toEqual([{ slot: 'post.footer', extId: REACTIONS_EXT_ID }])
 
-		await host.stop(ForumReactionsPlugin)
+		await host.stop(ForumReactionsPlugin.nodeAddress())
 		expect(await slots()).toEqual([])
 		expect(core.entityExtensionIds('post')).toEqual([])
 		expect(await summaries(alice.id)).toEqual([undefined, undefined])
 		expect((await asAlice.post(REACT, { postId: reply.id, on: false })).status).toBe(404)
 
-		await host.start(ForumReactionsPlugin)
+		await host.start(ForumReactionsPlugin.nodeAddress())
 		expect(await slots()).toHaveLength(1)
 		expect(await summaries(alice.id)).toEqual([like(0, false), like(1, true)])
 	})
@@ -319,14 +318,14 @@ describe('ForumReactionsPlugin', () => {
 		const { alice, reply, summaries } = await setUp(host)
 		await client(host, alice.id).post(REACT, { postId: reply.id, on: true })
 
-		await host.restart(ForumApiPlugin)
-		expect(host.isRunning(ForumReactionsPlugin)).toBe(true)
+		await host.restart(ForumApiPlugin.nodeAddress())
+		expect(host.isRunning(ForumReactionsPlugin.nodeAddress())).toBe(true)
 		expect((await client(host, alice.id).post(REACT, { postId: reply.id, on: true })).status).toBe(
 			200,
 		)
 
-		const core = await host.restart(ForumCorePlugin)
-		expect(host.isRunning(ForumReactionsPlugin)).toBe(true)
+		const core = await host.restart(ForumCorePlugin.nodeAddress())
+		expect(host.isRunning(ForumReactionsPlugin.nodeAddress())).toBe(true)
 		expect(core.entityExtensionIds('post')).toEqual([REACTIONS_EXT_ID])
 		expect(core.uiSlots()).toEqual([{ slot: 'post.footer', extId: REACTIONS_EXT_ID }])
 		expect((await summaries(alice.id))[1]).toEqual(like(1, true))

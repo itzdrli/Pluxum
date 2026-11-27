@@ -82,14 +82,16 @@ export interface ForumAdminApi extends RpcTarget {
 	removeBrandDto(kind: BrandAssetKind): Promise<AdminResult>
 }
 
-export const ForumCoreWorkbench = workbench.define({
+export const ForumCoreWorkbench = workbench.define(import.meta.url, {
 	admin: workbench.view<ForumAdminApi>({
-		renderer: workbench.entry(import.meta.url, './ui/admin.tsx'),
-		placement: workbench.route('/forum', {
+		renderer: './ui/admin.tsx',
+		placement: {
+			kind: 'route',
+			path: '/forum',
 			title: '论坛管理',
-			icon: workbench.icons.Users,
+			icon: 'users',
 			navigation: { label: '论坛管理' },
 			order: 10,
-		}),
+		},
 	}),
 })

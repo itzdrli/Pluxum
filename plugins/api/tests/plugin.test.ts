@@ -16,8 +16,7 @@ import { ForumAuth, type Authentication, type Logout } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { Type } from 'typebox'
@@ -27,7 +26,7 @@ const MISSING_ID = '00000000-0000-4000-8000-000000000000'
 
 const createHost = () =>
 	createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 
 type Host = Awaited<ReturnType<typeof createHost>>
@@ -241,16 +240,16 @@ class SimpleSearchPlugin extends BasePlugin {
 
 async function start(host: Host) {
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
 	})
 }
 
 /** Starts the API and returns a client acting as a new account with the given elevated roles. */
 async function startAs(host: Host, roles: ('moderator' | 'admin')[]) {
 	await start(host)
-	const core = host.require(ForumCorePlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
 	const user = (await core.ensureUser({ subject: 'test:user', displayName: 'Dev' })).unwrap()
 	await Promise.all(roles.map((role) => core.grantRole(user.id, role)))
 	return client(host, { 'x-test-user': user.id })
@@ -522,7 +521,7 @@ describe('ForumApiPlugin', () => {
 		await using host = await createHost()
 		const api = await startAs(host, ['admin'])
 		const guest = client(host)
-		const core = host.require(ForumCorePlugin)
+		const core = host.require(ForumCorePlugin.nodeAddress())
 		const other = (await core.ensureUser({ subject: 'test:other', displayName: 'Other' })).unwrap()
 		const otherApi = client(host, { 'x-test-user': other.id })
 
@@ -610,7 +609,7 @@ describe('ForumApiPlugin', () => {
 		const api = client(host)
 		expect((await api.call('GET', '/ping')).status).toBe(200)
 
-		await host.stop(ForumApiPlugin)
+		await host.stop(ForumApiPlugin.nodeAddress())
 		const response = await host.http.fetch(new URL('/api/forum/ping', host.http.origin))
 		expect(response.status).toBe(404)
 	})
@@ -758,7 +757,7 @@ describe('ForumApiPlugin', () => {
 			body: error('unavailable', 'search.disabled'),
 		})
 
-		await host.start(SimpleSearchPlugin)
+		await host.start(SimpleSearchPlugin.nodeAddress())
 		expect((await api.ok<MetaDto>('GET', '/meta')).search).toEqual({ available: true })
 		expect(await api.call('GET', '/search?q=')).toEqual({
 			status: 422,
@@ -781,7 +780,7 @@ describe('ForumApiPlugin', () => {
 			],
 		})
 
-		await host.stop(SimpleSearchPlugin)
+		await host.stop(SimpleSearchPlugin.nodeAddress())
 		expect((await api.ok<MetaDto>('GET', '/meta')).search).toEqual({ available: false })
 		expect((await api.call('GET', '/search?q=乒乓')).status).toBe(503)
 	})
@@ -794,8 +793,8 @@ describe('ext ingress', () => {
 		const guest = client(host)
 		expect((await api.call('GET', '/ext/test-echo/whoami')).status).toBe(404)
 
-		await host.start(EchoExtPlugin)
-		expect(host.require(ForumApiPlugin).extActionKeys()).toEqual([
+		await host.start(EchoExtPlugin.nodeAddress())
+		expect(host.require(ForumApiPlugin.nodeAddress()).extActionKeys()).toEqual([
 			'test-echo/shout',
 			'test-echo/whoami',
 			'test-echo/broken',
@@ -848,26 +847,28 @@ describe('ext ingress', () => {
 		await using host = await createHost()
 		await start(host)
 		const guest = client(host)
-		await host.start(EchoExtPlugin)
+		await host.start(EchoExtPlugin.nodeAddress())
 
-		await host.stop(EchoExtPlugin)
-		expect(host.require(ForumApiPlugin).extActionKeys()).toEqual([])
+		await host.stop(EchoExtPlugin.nodeAddress())
+		expect(host.require(ForumApiPlugin.nodeAddress()).extActionKeys()).toEqual([])
 		expect(await guest.call('GET', '/ext/test-echo/whoami')).toEqual({
 			status: 404,
 			body: error('not_found', 'route.not_found'),
 		})
 
-		await host.start(EchoExtPlugin)
-		const before = host.require(ForumApiPlugin)
-		const restarted = await host.restart(ForumApiPlugin)
+		await host.start(EchoExtPlugin.nodeAddress())
+		const before = host.require(ForumApiPlugin.nodeAddress())
+		const restarted = await host.restart(ForumApiPlugin.nodeAddress())
 		expect(restarted).not.toBe(before)
-		expect(host.isRunning(EchoExtPlugin)).toBe(true)
+		expect(host.isRunning(EchoExtPlugin.nodeAddress())).toBe(true)
 		expect(restarted.extActionKeys()).toHaveLength(3)
 		expect((await guest.call('GET', '/ext/test-echo/whoami')).status).toBe(200)
 
 		// A second contributor cannot take a path that is in use; the first keeps serving it. (The
 		// host would start the refused plugin once the path is free, so this comes last.)
-		const failure = await host.commitExpectFail((change) => change.start(DuplicateExtPlugin))
+		const failure = await host.commitExpectFail((change) =>
+			change.start(DuplicateExtPlugin.nodeAddress()),
+		)
 		expect(failure.lifecycleReport.issues).toContainEqual(
 			expect.objectContaining({ kind: 'start-failed' }),
 		)

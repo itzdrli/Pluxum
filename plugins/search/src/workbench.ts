@@ -44,16 +44,17 @@ const SegmentInput = v.object({
 	),
 })
 
-export const SearchWorkbench = workbench.define({
+export const SearchWorkbench = workbench.define(import.meta.url, {
 	index: workbench.content({
-		document: workbench.markdown(import.meta.url, './workbench.md', {
+		document: './workbench.md',
+		slots: {
 			status: workbench.data(IndexStatus),
 			rebuild: workbench.action({
 				label: '重建索引',
 				confirm: '重新切分并写入全部帖子的索引。帖子很多时需要一段时间，期间搜索照常可用。继续吗？',
 			}),
 			segment: workbench.action({ label: '试分词', input: SegmentInput, form: 'embedded' }),
-		}),
-		placement: workbench.tab({ label: '索引', icon: workbench.icons.Search, order: 10 }),
+		},
+		placement: { kind: 'tab', label: '索引', icon: 'search', order: 10 },
 	}),
 })

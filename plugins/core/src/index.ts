@@ -70,13 +70,10 @@ import {
 	type UserDto,
 	type UserProfileDto,
 } from '@pluxum/domain'
-import { BasePlugin, Plugin } from '@pluxel/core'
+import { BasePlugin, defineServiceRef, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
-import {
-	Database,
-	type PluginDatabaseClient,
-	type PluginDatabaseHandle,
-} from '@pluxel/services/database'
+import { Pg, type PluginDatabaseClient, type PluginDatabaseHandle } from '@pluxel/services/pg'
+import type { Workbench } from '@pluxel/workbench'
 import {
 	and,
 	asc,
@@ -470,6 +467,8 @@ function toThreadDto(row: ThreadRow, by: UserDto, category: CategoryKind): Threa
  * ingress. Every operation takes the acting principal and enforces permissions itself.
  */
 // PGlite compiles its WASM module on first use, which can exceed the default start timeout.
+const WorkbenchRef = defineServiceRef<Workbench>()
+
 @Plugin({ displayName: 'Pluxum Core', startTimeoutMs: 30_000 })
 export class ForumCorePlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumCoreConfig)
@@ -500,7 +499,7 @@ export class ForumCorePlugin extends BasePlugin {
 	private readonly bus = new ActivityBus(ACTIVITY_WAITERS_MAX)
 
 	protected override async init(): Promise<void> {
-		this.database = await this.ctx.require(Database).use(ForumDatabase)
+		this.database = await this.ctx.service(Pg).use(ForumDatabase)
 		// Uploaded brand images need durable files; a host without them keeps the built-in brand.
 		try {
 			this.brand = await BrandAssetStore.open(await this.ctx.fs({ durable: true, writable: true }))
@@ -528,7 +527,9 @@ export class ForumCorePlugin extends BasePlugin {
 		// Site and footer settings are read per request; a saved change applies as is.
 		this.configs.onUpdate(this.config, () => {})
 		// Workbench "论坛管理": categories and account roles, acting as a forum admin.
-		this.ctx.workbench?.publish(ForumCoreWorkbench, { admin: () => new ForumAdminTarget(this) })
+		this.ctx
+			.service(WorkbenchRef)
+			?.publish(ForumCoreWorkbench, { admin: () => new ForumAdminTarget(this) })
 	}
 
 	// ── Permissions ─────────────────────────────────────────────────────────────────────────

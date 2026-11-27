@@ -3,9 +3,7 @@ import { ForumCorePlugin } from '@pluxum/core'
 import { ForumRedisPlugin } from '@pluxum/redis'
 import { Plugin } from '@pluxel/core'
 import { Redis, RedisNotRunningError, type RedisConnection } from '@pluxel/plugin-redis'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
-import { Vault, vault } from '@pluxel/services/vault'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { createTestHost } from '@pluxel/test'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { repairBase64Url } from '../src/base64-repair'
@@ -17,7 +15,7 @@ const COOKIE = '__Host-forum_session'
 
 const createHost = () =>
 	createTestHost({
-		services: [database({ backend: pglite({ dataDir: 'memory://' }) }), vault()],
+		services: [pglite({ dataDir: 'memory://' })],
 	})
 
 type Host = Awaited<ReturnType<typeof createHost>>
@@ -94,11 +92,11 @@ describe('ForumAuthPlugin without a session store', () => {
 	it('treats requests as guests and refuses to start a login when unconfigured', async () => {
 		await using host = await createHost()
 		await host.commit((change) => {
-			change.start(BrokenRedis)
-			change.start(ForumCorePlugin)
-			change.start(ForumAuthPlugin)
+			change.start(BrokenRedis.nodeAddress())
+			change.start(ForumCorePlugin.nodeAddress())
+			change.start(ForumAuthPlugin.nodeAddress())
 		})
-		const auth = host.require(ForumAuthPlugin)
+		const auth = host.require(ForumAuthPlugin.nodeAddress())
 
 		expect(auth.loginAvailable()).toBe(false)
 		expect(await auth.authenticate(new Request(`${ORIGIN}/`))).toEqual({ status: 'guest' })
@@ -113,11 +111,11 @@ describe('ForumAuthPlugin without a session store', () => {
 	it('reports a session it cannot check as unavailable, and guests as guests', async () => {
 		await using host = await createHost()
 		await host.commit((change) => {
-			change.start(BrokenRedis)
-			change.start(ForumCorePlugin)
-			change.start(ForumAuthPlugin, { initialConfig: configured() })
+			change.start(BrokenRedis.nodeAddress())
+			change.start(ForumCorePlugin.nodeAddress())
+			change.start(ForumAuthPlugin.nodeAddress(), { initialConfig: configured() })
 		})
-		const auth = host.require(ForumAuthPlugin)
+		const auth = host.require(ForumAuthPlugin.nodeAddress())
 
 		expect(await auth.authenticate(new Request(`${ORIGIN}/`))).toEqual({ status: 'guest' })
 		// A malformed cookie is not a session and never reaches Redis.
@@ -140,24 +138,24 @@ describe('ForumAuthPlugin without a session store', () => {
 		await using host = await createHost()
 		const hash = await sha256Hex('right-token')
 		await host.commit((change) => {
-			change.start(BrokenRedis)
-			change.start(ForumCorePlugin)
-			change.start(ForumAuthPlugin, { initialConfig: configured() })
+			change.start(BrokenRedis.nodeAddress())
+			change.start(ForumCorePlugin.nodeAddress())
+			change.start(ForumAuthPlugin.nodeAddress(), { initialConfig: configured() })
 		})
-		const off = host.require(ForumAuthPlugin)
+		const off = host.require(ForumAuthPlugin.nodeAddress())
 		expect(off.testLoginAvailable()).toBe(false)
 		const disabled = await off.testLogin('right-token', { name: 'ada' }, null)
 		expect(disabled.isErr() && disabled.error.code).toBe('unavailable')
 
 		await using onHost = await createHost()
 		await onHost.commit((change) => {
-			change.start(BrokenRedis)
-			change.start(ForumCorePlugin)
-			change.start(ForumAuthPlugin, {
+			change.start(BrokenRedis.nodeAddress())
+			change.start(ForumCorePlugin.nodeAddress())
+			change.start(ForumAuthPlugin.nodeAddress(), {
 				initialConfig: configured({ testLoginTokenSha256: hash }),
 			})
 		})
-		const on = onHost.require(ForumAuthPlugin)
+		const on = onHost.require(ForumAuthPlugin.nodeAddress())
 		expect(on.testLoginAvailable()).toBe(true)
 		const refused = await Promise.all(
 			[null, 'wrong-token', ''].map((token) => on.testLogin(token, { name: 'ada' }, null)),
@@ -177,9 +175,9 @@ describe('ForumAuthPlugin without a session store', () => {
 		try {
 			await using host = await createHost()
 			const failure = await host.commitExpectFail((change) => {
-				change.start(BrokenRedis)
-				change.start(ForumCorePlugin)
-				change.start(ForumAuthPlugin, {
+				change.start(BrokenRedis.nodeAddress())
+				change.start(ForumCorePlugin.nodeAddress())
+				change.start(ForumAuthPlugin.nodeAddress(), {
 					initialConfig: configured({ publicOrigin: 'http://forum.test' }),
 				})
 			})
@@ -199,19 +197,19 @@ async function start(host: Host, config: Record<string, unknown> = {}) {
 	const issuer = await createMockIssuer()
 	vi.stubGlobal('fetch', issuer.fetch)
 	await host.commit((change) => {
-		change.start(ForumRedisPlugin, {
+		change.start(ForumRedisPlugin.nodeAddress(), {
 			initialConfig: { connections: [{ id: 'session', url: liveUrl ?? '' }] },
 		})
-		change.start(ForumCorePlugin)
+		change.start(ForumCorePlugin.nodeAddress())
 		// Short-lived, so the sessions these tests leave in the shared dev Redis expire on their own.
-		change.start(ForumAuthPlugin, {
+		change.start(ForumAuthPlugin.nodeAddress(), {
 			initialConfig: configured({
 				session: { idleTtlSeconds: 300, absoluteTtlSeconds: 300 },
 				...config,
 			}),
 		})
 	})
-	const auth = host.require(ForumAuthPlugin)
+	const auth = host.require(ForumAuthPlugin.nodeAddress())
 	const login = async (user: MockUser, returnTo: string | null = '/') => {
 		const started = await auth.beginLogin(returnTo)
 		if (started.isErr()) throw new Error(started.error.message)
@@ -224,7 +222,7 @@ async function start(host: Host, config: Record<string, unknown> = {}) {
 		if (result.isErr()) throw new Error(result.error.message)
 		return sessionIdOf(result.value.setCookie)
 	}
-	return { auth, issuer, login, session, core: host.require(ForumCorePlugin) }
+	return { auth, issuer, login, session, core: host.require(ForumCorePlugin.nodeAddress()) }
 }
 
 // Subjects are unique per run so that repeated runs do not see each other's sessions.
@@ -391,7 +389,7 @@ describe.skipIf(!liveUrl)('ForumAuthPlugin with Redis sessions', () => {
 		const refused = await login({ sub: subject() })
 		expect(refused.result.isErr() && refused.result.error.code).toBe('rejected')
 
-		await auth.ctx.require(Vault).kv().set(CLIENT_SECRET_KEY, 's3cr3t/+ value')
+		await auth.ctx.vault.kv().set(CLIENT_SECRET_KEY, 's3cr3t/+ value')
 		expect((await login({ sub: subject() })).result.isOk()).toBe(true)
 	})
 

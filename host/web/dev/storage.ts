@@ -1,12 +1,10 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import { defineDevConsole } from '@pluxel/host-vite/console'
-import { Vault } from '@pluxel/services/vault'
+import type { Script } from '@pluxel/agent-sdk/host'
 import { ForumStoragePlugin } from '@pluxum/attachments'
 
 // Vault namespaces belong to their owner, so the credential record must be written through the
-// storage plugin's own Context; a record written by this console lands in the console's namespace
-// and the plugin never sees it. The plugin must be running (on any backend) to provision it.
+// storage plugin's own Context. The plugin must be running (on any backend) to provision it.
 //
 // vp exec pluxel dev run host/web/dev/storage.ts                         → config and record status
 // vp exec pluxel dev run host/web/dev/storage.ts --export setCredentials \
@@ -35,84 +33,74 @@ function required(input: unknown, name: string): string {
 	return value
 }
 
-export default defineDevConsole(async (dev) => {
-	const storage = dev.plugins.isRunning(ForumStoragePlugin)
-		? dev.plugins.require(ForumStoragePlugin)
-		: undefined
-	const record = storage
-		? await storage.ctx
-				.require(Vault)
+export default (async (sdk) => {
+	const node = sdk.plugin(ForumStoragePlugin.nodeAddress())
+	const status = await node.status()
+	const running = status?.lifecycleState === 'running'
+	const { instance } = running ? await node.instance() : { instance: undefined }
+	const record = running
+		? await (
+				await node.context()
+			).vault
 				.kv({ namespace: FORUM_STORAGE_VAULT_NAMESPACE })
 				.get(CREDENTIALS_KEY)
 		: undefined
 	return {
-		running: storage !== undefined,
-		buckets: storage?.bucketIds(),
-		config: await dev.config.get(ForumStoragePlugin),
+		running,
+		buckets: instance?.bucketIds(),
+		config: await node.config.get(),
 		credentialRecord: record ? { exists: record.exists, revision: record.revision } : 'unknown',
 	}
-})
+}) satisfies Script
 
-export const setCredentials = defineDevConsole(async (dev) => {
-	const accessKeyId = required(dev.input, 'accessKeyId')
-	const secretAccessKey = required(dev.input, 'secretAccessKey')
-	const vault = dev.plugins.require(ForumStoragePlugin).ctx.require(Vault)
+export const setCredentials = (async (sdk, run) => {
+	const accessKeyId = required(run.input, 'accessKeyId')
+	const secretAccessKey = required(run.input, 'secretAccessKey')
+	const { vault } = await sdk.plugin(ForumStoragePlugin.nodeAddress()).context()
 	await vault
 		.kv({ namespace: FORUM_STORAGE_VAULT_NAMESPACE })
 		.set(CREDENTIALS_KEY, { accessKeyId, secretAccessKey })
 	await vault.flush()
-	// Remove a copy an earlier version of this script left in the console's own namespace.
-	const consoleVault = dev.ctx.require(Vault)
-	const stray = consoleVault.kv({ namespace: FORUM_STORAGE_VAULT_NAMESPACE })
-	const removedConsoleCopy = (await stray.get(CREDENTIALS_KEY)).exists
-	if (removedConsoleCopy) {
-		await stray.delete(CREDENTIALS_KEY)
-		await consoleVault.flush()
-	}
-	return { ok: true, removedConsoleCopy }
-})
+	return { ok: true }
+}) satisfies Script
 
-async function switchTo(
-	dev: Parameters<Parameters<typeof defineDevConsole>[0]>[0],
-	buckets: unknown,
-) {
-	const saved = await dev.config.patch(ForumStoragePlugin, { set: { buckets } })
-	if (!saved.ok) return { saved }
-	const restart = await dev.plugins.restart(ForumStoragePlugin)
-	return { saved: saved.ok, restart, status: await dev.plugins.status(ForumStoragePlugin) }
+async function switchTo(sdk: Parameters<Script>[0], buckets: unknown) {
+	const node = sdk.plugin(ForumStoragePlugin.nodeAddress())
+	const saved = await node.config.patch({ set: { buckets } })
+	const restart = await node.restart()
+	return { saved, restart, status: await node.status() }
 }
 
-export const useRemote = defineDevConsole(async (dev) =>
-	switchTo(dev, [
+export const useRemote = (async (sdk, run) =>
+	switchTo(sdk, [
 		{
 			id: 'default',
 			backend: {
 				type: 'remote',
-				endpoint: field(dev.input, 'endpoint') ?? DEFAULT_ENDPOINT,
+				endpoint: field(run.input, 'endpoint') ?? DEFAULT_ENDPOINT,
 				region: 'us-east-1',
 				credentials: { type: 'vault', namespace: FORUM_STORAGE_VAULT_NAMESPACE },
 			},
 		},
-	]),
-)
+	])) satisfies Script
 
-export const useLocal = defineDevConsole(async (dev) =>
-	switchTo(dev, [
+export const useLocal = (async (sdk) =>
+	switchTo(sdk, [
 		{
 			id: 'default',
 			backend: { type: 'local', rootDir: LOCAL_ROOT, bucketName: LOCAL_BUCKET, syncWrites: true },
 		},
-	]),
-)
+	])) satisfies Script
 
 /** Copies every object of the local backend's directory into the active `default` bucket. */
-export const migrateLocal = defineDevConsole(async (dev) => {
+export const migrateLocal = (async (sdk) => {
 	const objectsDir = join(
 		resolve(process.cwd(), LOCAL_ROOT),
 		'forum-buckets',
 		Buffer.from(LOCAL_BUCKET, 'utf8').toString('hex'),
 	)
-	const client = dev.plugins.require(ForumStoragePlugin).bucket('default').client
+	const { instance } = await sdk.plugin(ForumStoragePlugin.nodeAddress()).instance()
+	const client = instance.bucket('default').client
 	const folders = await readdir(objectsDir).catch(() => [])
 	const metas = (
 		await Promise.all(
@@ -133,4 +121,4 @@ export const migrateLocal = defineDevConsole(async (dev) => {
 		}),
 	)
 	return { from: objectsDir, copied }
-})
+}) satisfies Script

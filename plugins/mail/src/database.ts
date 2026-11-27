@@ -1,7 +1,7 @@
 // Server-only: the mail plugin's own managed database. Rows refer to forum core users by their
 // stable IDs only; there are no foreign keys across plugins.
 import { boolean, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { defineDatabase } from '@pluxel/services/database'
+import { defineDatabase } from '@pluxel/services/pg'
 import type { MailLocale } from './templates'
 
 /**

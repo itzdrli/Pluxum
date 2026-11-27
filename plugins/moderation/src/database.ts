@@ -1,6 +1,6 @@
 // Server-only: the moderation plugin's own managed database. Rows refer to the forum core's
 // users, threads and posts by their stable IDs only; there are no foreign keys across plugins.
-import { defineDatabase } from '@pluxel/services/database'
+import { defineDatabase } from '@pluxel/services/pg'
 import { index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
 export const reports = pgTable(

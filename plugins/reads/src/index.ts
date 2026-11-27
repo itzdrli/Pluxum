@@ -4,7 +4,7 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import { readerBaselines, ReadsDatabase, threadReads } from './database'
@@ -42,7 +42,7 @@ export class ForumReadsPlugin extends BasePlugin {
 	}
 
 	protected override async init(): Promise<void> {
-		this.database = await this.ctx.require(Database).use(ReadsDatabase)
+		this.database = await this.ctx.service(Pg).use(ReadsDatabase)
 		this.ctx.effects.defer(
 			this.core.registerUserRemoval({
 				id: `${READS_EXT_ID}.removal`,

@@ -1,12 +1,3 @@
 {
-	"version": 2,
-	"evolution": "migrations",
-	"lineage": "main",
-	"migrations": [
-		{
-			"id": "0000_initial",
-			"file": "0000_initial.sql",
-			"checksum": "9fc4960bf0373d6ce590f654ceff98e37422e6418bf770e1ff821d999bd3efd0"
-		}
-	]
+	"lineage": "main"
 }

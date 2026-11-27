@@ -1,7 +1,7 @@
 // Server-only: the push plugin's own managed database. Rows refer to the forum core's users by
 // their stable IDs only; there are no foreign keys across plugins.
 import { index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { defineDatabase } from '@pluxel/services/database'
+import { defineDatabase } from '@pluxel/services/pg'
 
 /** One browser that asked for push notices: its push service address and encryption keys. */
 export const pushSubscriptions = pgTable(

@@ -9,72 +9,12 @@ import {
 	RedisRatesBackendPlugin,
 } from '@pluxel/plugin-redis'
 import { S3 } from '@pluxel/plugin-storage'
-import { VaultAdminPlugin } from '@pluxel/services/plugins'
-import { FontsConfig, FontsPlugin } from '@pluxel/plugin-fonts'
-import { TakumiPlugin } from '@pluxel/plugin-takumi'
+import { FontsConfig } from '@pluxel/plugin-fonts'
 import * as v from 'valibot'
-import { ForumApiPlugin } from '@pluxum/api'
-import { ForumAttachmentsPlugin, ForumStorageConfig, ForumStoragePlugin } from '@pluxum/attachments'
-import { ForumAccountsPlugin, ForumAuth, ForumAuthConfig, ForumAuthPlugin } from '@pluxum/auth'
-import { ForumCachePlugin, ForumCorePlugin, ForumMarkdownPlugin } from '@pluxum/core'
-import { ForumDraftsPlugin } from '@pluxum/drafts'
-import { ForumFollowsPlugin } from '@pluxum/follows'
-import { ForumFooterPlugin } from '@pluxum/footer'
-import { ForumMailConfig, ForumMailPlugin } from '@pluxum/mail'
-import { ForumMessagesPlugin } from '@pluxum/messages'
-import { ForumModerationPlugin, ForumRatesPlugin } from '@pluxum/moderation'
-import { ForumNotificationsPlugin } from '@pluxum/notifications'
-import { ForumOgPlugin } from '@pluxum/og'
-import { ForumMentionsPlugin, ForumOutlinePlugin } from '@pluxum/posts'
-import { ForumPushPlugin } from '@pluxum/push'
-import { ForumReactionsPlugin } from '@pluxum/reactions'
-import { ForumReadsPlugin } from '@pluxum/reads'
+import { ForumStorageConfig, ForumStoragePlugin } from '@pluxum/attachments'
+import { ForumAuth, ForumAuthConfig, ForumAuthPlugin } from '@pluxum/auth'
+import { ForumMailConfig } from '@pluxum/mail'
 import { ForumRedisConfig, ForumRedisPlugin } from '@pluxum/redis'
-import { ForumSearchPlugin } from '@pluxum/search'
-import { ForumSolvedPlugin } from '@pluxum/solved'
-
-export const appPlugins = [
-	ForumRedisPlugin,
-	// Official cache and rate capabilities, both backed by the forum's Redis connection.
-	RedisCacheBackendPlugin,
-	CachePlugin,
-	RedisRatesBackendPlugin,
-	RatesPlugin,
-	ForumStoragePlugin,
-	ForumCorePlugin,
-	ForumAuthPlugin,
-	// Email and password sign-in, so a fresh forum works without an identity provider.
-	ForumAccountsPlugin,
-	ForumApiPlugin,
-	ForumMarkdownPlugin,
-	ForumReactionsPlugin,
-	ForumReadsPlugin,
-	ForumOutlinePlugin,
-	ForumAttachmentsPlugin,
-	ForumNotificationsPlugin,
-	ForumSearchPlugin,
-	ForumModerationPlugin,
-	ForumFooterPlugin,
-	ForumCachePlugin,
-	ForumRatesPlugin,
-	ForumMailPlugin,
-	ForumMentionsPlugin,
-	ForumFollowsPlugin,
-	ForumSolvedPlugin,
-	// Drafts kept on the server, so writing continues on another device.
-	ForumDraftsPlugin,
-	// Browser push notifications; its key pair lives in its Vault.
-	ForumPushPlugin,
-	// Private messages and small group chats.
-	ForumMessagesPlugin,
-	// Social card images: Takumi draws them with the fonts FontsPlugin holds.
-	FontsPlugin,
-	TakumiPlugin,
-	ForumOgPlugin,
-	// Workbench's Vault page (status, unlock, recovery). Standalone images need Pluxel with the
-	// published-Services bundling fix, or this Plugin's Vault token does not match the host's.
-	VaultAdminPlugin,
-] as const
 
 /**
  * Which plugins start and which forum plugin provides each shared capability. Saved policy
@@ -82,19 +22,18 @@ export const appPlugins = [
  */
 export function appHostPolicy(): HostPolicyOptions {
 	return {
-		mode: { autoStart: 'saved-first', providerDefaults: 'saved-first' },
+		modes: { autoStart: 'saved-first', providerDefaults: 'saved-first' },
 		// The default 1.5 s is too short on a cold boot, while the Workbench builds: Redis misses
 		// it and every plugin that needs a session is blocked.
-		startTimeoutMs: 30_000,
-		autoStart: appPlugins,
+		execution: { startTimeoutMs: 30_000 },
 		providerDefaults: [
-			{ token: ForumAuth.definitionAddress(), provider: ForumAuthPlugin.nodeAddress() },
-			{ token: Redis.definitionAddress(), provider: ForumRedisPlugin.nodeAddress() },
-			{ token: S3.definitionAddress(), provider: ForumStoragePlugin.nodeAddress() },
-			{ token: Cache.definitionAddress(), provider: CachePlugin.nodeAddress() },
-			{ token: CacheBackend.definitionAddress(), provider: RedisCacheBackendPlugin.nodeAddress() },
-			{ token: Rates.definitionAddress(), provider: RatesPlugin.nodeAddress() },
-			{ token: RatesBackend.definitionAddress(), provider: RedisRatesBackendPlugin.nodeAddress() },
+			{ token: ForumAuth.address(), provider: ForumAuthPlugin.nodeAddress() },
+			{ token: Redis.address(), provider: ForumRedisPlugin.nodeAddress() },
+			{ token: S3.address(), provider: ForumStoragePlugin.nodeAddress() },
+			{ token: Cache.address(), provider: CachePlugin.nodeAddress() },
+			{ token: CacheBackend.address(), provider: RedisCacheBackendPlugin.nodeAddress() },
+			{ token: Rates.address(), provider: RatesPlugin.nodeAddress() },
+			{ token: RatesBackend.address(), provider: RedisRatesBackendPlugin.nodeAddress() },
 		],
 	}
 }
@@ -112,19 +51,9 @@ export type AppConfigEnv = Readonly<{
 	FONT_FILES?: string
 }>
 
-/** Declared config; a plugin's saved record (Workbench edits) replaces its declared one. */
-export function appConfig(env: AppConfigEnv): HostConfigOptions {
-	return {
-		mode: 'saved-first',
-		records: [
-			...redisConfigRecord(env.REDIS_CONNECTIONS),
-			...redisBackendConfigRecords(env.REDIS_CONNECTIONS),
-			...storageConfigRecord(env.S3_BUCKETS),
-			...authConfigRecord(env),
-			...mailConfigRecord(env),
-			...fontsConfigRecord(env.FONT_FILES),
-		],
-	}
+/** Saved Workbench records replace each plugin's declared config until reset. */
+export function appConfig(): HostConfigOptions {
+	return { mode: 'saved-first' }
 }
 
 function parseJsonEnv(name: string, raw: string): unknown {
@@ -140,16 +69,24 @@ function parseJsonEnv(name: string, raw: string): unknown {
  * Not an `envBinding`: the static `modules` deployment build cannot yet resolve package Plugin
  * catalogs for env bindings, so Workbench edits can still override this value (see FORUM_PLAN).
  */
-function redisConfigRecord(raw: string | undefined) {
-	if (raw === undefined) return []
-	return [
-		{
-			owner: ForumRedisPlugin.nodeAddress(),
-			config: v.parse(ForumRedisConfig, {
-				connections: parseJsonEnv('REDIS_CONNECTIONS', raw),
-			}),
-		},
-	]
+export function redisConfig(raw: string | undefined): Record<string, unknown> | undefined {
+	if (raw === undefined) return undefined
+	return v.parse(ForumRedisConfig, {
+		connections: parseJsonEnv('REDIS_CONNECTIONS', raw),
+	})
+}
+
+function redisConnectionIds(raw: string | undefined): string[] {
+	return raw === undefined
+		? ['default']
+		: v
+				.parse(ForumRedisConfig, { connections: parseJsonEnv('REDIS_CONNECTIONS', raw) })
+				.connections.map((connection) => connection.id)
+}
+
+function pickRedisConnectionId(raw: string | undefined, preferred: string): string {
+	const ids = redisConnectionIds(raw)
+	return ids.includes(preferred) ? preferred : (ids[0] ?? 'default')
 }
 
 /**
@@ -157,42 +94,25 @@ function redisConfigRecord(raw: string | undefined) {
  * REDIS_CONNECTIONS has them (separate logical databases, so clearing the cache never scans
  * sessions), else the first connection there is. Keys get a `pluxum:` prefix either way.
  */
-function redisBackendConfigRecords(raw: string | undefined) {
-	const ids =
-		raw === undefined
-			? ['default']
-			: v
-					.parse(ForumRedisConfig, { connections: parseJsonEnv('REDIS_CONNECTIONS', raw) })
-					.connections.map((connection) => connection.id)
-	const pick = (preferred: string) => (ids.includes(preferred) ? preferred : (ids[0] ?? 'default'))
-	return [
-		{
-			owner: RedisCacheBackendPlugin.nodeAddress(),
-			config: v.parse(RedisCacheBackendConfig, {
-				connectionId: pick('cache'),
-				keyPrefix: 'pluxum:cache:',
-			}),
-		},
-		{
-			owner: RedisRatesBackendPlugin.nodeAddress(),
-			config: v.parse(RedisRatesBackendConfig, {
-				connectionId: pick('rates'),
-				keyPrefix: 'pluxum:rates:',
-			}),
-		},
-	]
+export function redisCacheBackendConfig(raw: string | undefined): Record<string, unknown> {
+	return v.parse(RedisCacheBackendConfig, {
+		connectionId: pickRedisConnectionId(raw, 'cache'),
+		keyPrefix: 'pluxum:cache:',
+	})
 }
 
-function storageConfigRecord(raw: string | undefined) {
-	if (raw === undefined) return []
-	return [
-		{
-			owner: ForumStoragePlugin.nodeAddress(),
-			config: v.parse(ForumStorageConfig, {
-				buckets: parseJsonEnv('S3_BUCKETS', raw),
-			}),
-		},
-	]
+export function redisRatesBackendConfig(raw: string | undefined): Record<string, unknown> {
+	return v.parse(RedisRatesBackendConfig, {
+		connectionId: pickRedisConnectionId(raw, 'rates'),
+		keyPrefix: 'pluxum:rates:',
+	})
+}
+
+export function storageConfig(raw: string | undefined): Record<string, unknown> | undefined {
+	if (raw === undefined) return undefined
+	return v.parse(ForumStorageConfig, {
+		buckets: parseJsonEnv('S3_BUCKETS', raw),
+	})
 }
 
 const set = (value: string | undefined): string | undefined => (value === '' ? undefined : value)
@@ -207,7 +127,7 @@ const set = (value: string | undefined): string | undefined => (value === '' ? u
  * - FORUM_TEST_LOGIN_TOKEN_SHA256: hex SHA-256 of the test-login token; unset keeps test login off.
  * The client secret is never an environment value here; it lives in the plugin's Vault record.
  */
-function authConfigRecord(env: AppConfigEnv) {
+export function authConfig(env: AppConfigEnv): Record<string, unknown> | undefined {
 	const issuer = set(env.FORUM_OIDC_ISSUER)
 	const clientId = set(env.FORUM_OIDC_CLIENT_ID)
 	if ((issuer === undefined) !== (clientId === undefined)) {
@@ -225,31 +145,26 @@ function authConfigRecord(env: AppConfigEnv) {
 		adminSubjects.length === 0 &&
 		testLoginTokenSha256 === undefined
 	) {
-		return []
+		return undefined
 	}
-	return [
-		{
-			owner: ForumAuthPlugin.nodeAddress(),
-			// Config records hold plain data: an unset option is left out, not stored as undefined.
-			config: v.parse(ForumAuthConfig, {
-				...(publicOrigin === undefined ? {} : { publicOrigin }),
-				...(issuer === undefined
-					? {}
-					: {
-							oidc: {
-								issuer,
-								clientId,
-								providerLogout: env.FORUM_OIDC_PROVIDER_LOGOUT === 'true',
-								...(set(env.FORUM_OIDC_BUTTON_LABEL) === undefined
-									? {}
-									: { buttonLabel: set(env.FORUM_OIDC_BUTTON_LABEL) }),
-							},
-						}),
-				adminSubjects,
-				...(testLoginTokenSha256 === undefined ? {} : { testLoginTokenSha256 }),
-			}),
-		},
-	]
+	// Config records hold plain data: an unset option is left out, not stored as undefined.
+	return v.parse(ForumAuthConfig, {
+		...(publicOrigin === undefined ? {} : { publicOrigin }),
+		...(issuer === undefined
+			? {}
+			: {
+					oidc: {
+						issuer,
+						clientId,
+						providerLogout: env.FORUM_OIDC_PROVIDER_LOGOUT === 'true',
+						...(set(env.FORUM_OIDC_BUTTON_LABEL) === undefined
+							? {}
+							: { buttonLabel: set(env.FORUM_OIDC_BUTTON_LABEL) }),
+					},
+				}),
+		adminSubjects,
+		...(testLoginTokenSha256 === undefined ? {} : { testLoginTokenSha256 }),
+	})
 }
 
 /**
@@ -257,15 +172,10 @@ function authConfigRecord(env: AppConfigEnv) {
  * settings are entered in Workbench (mail stays off until then); the password lives in the
  * plugin's Vault record.
  */
-function mailConfigRecord(env: AppConfigEnv) {
+export function mailConfig(env: AppConfigEnv): Record<string, unknown> | undefined {
 	const siteUrl = set(env.FORUM_WEB_PUBLIC_ORIGIN)
-	if (siteUrl === undefined) return []
-	return [
-		{
-			owner: ForumMailPlugin.nodeAddress(),
-			config: v.parse(ForumMailConfig, { siteUrl: new URL(siteUrl).origin }),
-		},
-	]
+	if (siteUrl === undefined) return undefined
+	return v.parse(ForumMailConfig, { siteUrl: new URL(siteUrl).origin })
 }
 
 /**
@@ -273,12 +183,7 @@ function mailConfigRecord(env: AppConfigEnv) {
  * cards draw with; a CJK one is needed for Chinese. CJK fonts often pass the default 16 MiB file
  * limit (WenQuanYi Zen Hei is 16.8 MB), so the limit is raised for them and for uploads.
  */
-function fontsConfigRecord(raw: string | undefined) {
+export function fontsConfig(raw: string | undefined): Record<string, unknown> {
 	const files = set(raw) === undefined ? [] : parseJsonEnv('FONT_FILES', raw ?? '')
-	return [
-		{
-			owner: FontsPlugin.nodeAddress(),
-			config: v.parse(FontsConfig, { files, maxFontBytes: 64 * 1024 * 1024 }),
-		},
-	]
+	return v.parse(FontsConfig, { files, maxFontBytes: 64 * 1024 * 1024 })
 }

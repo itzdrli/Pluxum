@@ -5,7 +5,7 @@
 		"module": "ESNext",
 		"moduleResolution": "bundler",
 		"moduleDetection": "force",
-		"lib": ["ES2023", "DOM", "DOM.Iterable"],
+		"lib": ["ES2024", "ESNext.Disposable", "DOM", "DOM.Iterable"],
 		"strict": true,
 		"noEmit": true,
 		"skipLibCheck": true,
@@ -14,6 +14,18 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"customConditions": ["@pluxel/hmr"],
-		"experimentalDecorators": true
+		"experimentalDecorators": true,
+		"paths": {
+			// Framework plugins and services export raw source under `@pluxel/hmr` (authored for
+			// Pluxel's ES2024 / non-strictNullChecks tsconfig); type-check against their built
+			// declarations instead of re-checking upstream source with Pluxum's strict tsconfig.
+			"@pluxel/plugin-cache": ["./host/node_modules/@pluxel/plugin-cache/dist/index.d.mts"],
+			"@pluxel/plugin-fonts": ["./host/node_modules/@pluxel/plugin-fonts/dist/index.d.mts"],
+			"@pluxel/plugin-rates": ["./host/node_modules/@pluxel/plugin-rates/dist/index.d.mts"],
+			"@pluxel/plugin-redis": ["./host/node_modules/@pluxel/plugin-redis/dist/index.d.mts"],
+			"@pluxel/plugin-storage": ["./host/node_modules/@pluxel/plugin-storage/dist/index.d.mts"],
+			"@pluxel/plugin-takumi": ["./host/node_modules/@pluxel/plugin-takumi/dist/index.d.mts"],
+			"@pluxel/services/plugins": ["./host/node_modules/@pluxel/services/dist/plugins.d.mts"]
+		}
 	}
 }

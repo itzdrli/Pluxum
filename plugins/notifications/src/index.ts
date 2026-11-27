@@ -21,7 +21,7 @@ import {
 } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
 import { and, count, desc, eq, isNull } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import * as v from 'valibot'
@@ -161,7 +161,7 @@ export class ForumNotificationsPlugin extends BasePlugin {
 	}
 
 	protected override async init(): Promise<void> {
-		this.database = await this.ctx.require(Database).use(NotificationsDatabase)
+		this.database = await this.ctx.service(Pg).use(NotificationsDatabase)
 		// A removed account's inbox goes; what it did to others now reads as Ghost's.
 		this.ctx.effects.defer(
 			this.core.registerUserRemoval({

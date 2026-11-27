@@ -7,8 +7,7 @@ import {
 	type SearchProviderQuery,
 } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
 
@@ -17,8 +16,7 @@ const MISSING_ID = '00000000-0000-4000-8000-000000000000'
 /** Lets the clock move on, so what follows is strictly later than what came before. */
 const tick = () => new Promise((resolve) => setTimeout(resolve, 5))
 
-const createHost = () =>
-	createTestHost({ services: [database({ backend: pglite({ dataDir: 'memory://' }) })] })
+const createHost = () => createTestHost({ services: [pglite({ dataDir: 'memory://' })] })
 
 /** The failure code of an operation, or undefined when it succeeded. */
 async function codeOf(pending: Promise<ForumResult<unknown>>) {
@@ -241,7 +239,7 @@ class UnknownSlotPlugin extends BasePlugin {
 describe('ForumCorePlugin', () => {
 	it('creates accounts once per subject and resolves their roles', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 
 		const first = (await core.ensureUser({ subject: 'idp|1', displayName: ' Ada  L ' })).unwrap()
 		const again = (await core.ensureUser({ subject: 'idp|1', displayName: 'Renamed' })).unwrap()
@@ -270,7 +268,7 @@ describe('ForumCorePlugin', () => {
 
 	it('lists accounts for admin tooling, newest first, with roles and a name filter', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const ada = (await core.ensureUser({ subject: 'idp|a', displayName: 'Ada' })).unwrap()
 		const bob = (await core.ensureUser({ subject: 'idp|b', displayName: 'Bob 100%' })).unwrap()
 		;(await core.grantRole(ada.id, 'admin')).unwrap()
@@ -291,7 +289,7 @@ describe('ForumCorePlugin', () => {
 
 	it('removes an account, handing what it wrote to Ghost', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, bob, category } = await seed(core)
 		const thread = (
 			await core.createThread(alice, { categoryId: category.id, title: 'Hi', body: 'Opening' })
@@ -349,7 +347,7 @@ describe('ForumCorePlugin', () => {
 
 	it('reads user profiles and lets members or admins update display names', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, bob, category } = await seed(core)
 
 		const thread = (
@@ -404,7 +402,7 @@ describe('ForumCorePlugin', () => {
 
 	it('runs a thread from creation through replies with consistent counters', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, bob, category } = await seed(core)
 
 		const thread = (
@@ -464,7 +462,7 @@ describe('ForumCorePlugin', () => {
 
 	it('orders threads by pin, then latest activity, and pages them', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, category } = await seed(core)
 		const open = async (title: string) =>
 			(await core.createThread(alice, { categoryId: category.id, title, body: 'x' })).unwrap()
@@ -486,7 +484,7 @@ describe('ForumCorePlugin', () => {
 
 	it('lists recent active threads across visible categories with category summary and paging', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, bob, category: general } = await seed(core)
 		const secret = (
 			await core.createCategory(admin, { name: 'Secret', description: 'Staff only' })
@@ -587,7 +585,7 @@ describe('ForumCorePlugin', () => {
 
 	it("counts what is new in a list since an instant, leaving out the viewer's own posts", async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, bob, category: general } = await seed(core)
 		const staff = (
 			await core.createCategory(admin, { name: 'Staff', access: { view: 'moderator' } })
@@ -641,7 +639,7 @@ describe('ForumCorePlugin', () => {
 
 	it('counts new replies in a thread since an instant and names the first new floor', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, bob, category } = await seed(core)
 		const thread = (
 			await core.createThread(alice, { categoryId: category.id, title: 'Talk', body: 'a' })
@@ -671,7 +669,7 @@ describe('ForumCorePlugin', () => {
 
 	it('long-polls: answers when someone else writes, waits out own posts, and times out', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, bob, category } = await seed(core)
 		const old = (
 			await core.createThread(alice, { categoryId: category.id, title: 'Old', body: 'a' })
@@ -734,7 +732,7 @@ describe('ForumCorePlugin', () => {
 
 	it('summarises members and recent posting for the community panel', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, bob, category } = await seed(core)
 		const thread = (
 			await core.createThread(alice, { categoryId: category.id, title: 'Hello', body: 'a' })
@@ -764,7 +762,7 @@ describe('ForumCorePlugin', () => {
 
 	it('rejects writes from guests and from members without the right', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, bob, category } = await seed(core)
 		const thread = (
 			await core.createThread(alice, { categoryId: category.id, title: 'Rules', body: 'Be kind' })
@@ -798,7 +796,7 @@ describe('ForumCorePlugin', () => {
 
 	it('validates input and reports missing or conflicting entities', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, category } = await seed(core)
 
 		expect(await codeOf(core.createCategory(admin, { name: 'General' }))).toBe('conflict')
@@ -834,7 +832,7 @@ describe('ForumCorePlugin', () => {
 
 	it('edits posts with history and hides deleted posts and threads', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, bob, category } = await seed(core)
 		const thread = (
 			await core.createThread(alice, { categoryId: category.id, title: 'Draft', body: 'v1' })
@@ -903,13 +901,13 @@ describe('ForumCorePlugin', () => {
 
 	it('keeps data across a restart of the plugin', async () => {
 		await using host = await createHost()
-		let core = await host.start(ForumCorePlugin)
+		let core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, category } = await seed(core)
 		const thread = (
 			await core.createThread(alice, { categoryId: category.id, title: 'Durable', body: 'yes' })
 		).unwrap()
 
-		core = await host.restart(ForumCorePlugin)
+		core = await host.restart(ForumCorePlugin.nodeAddress())
 		const detail = (await core.getThread(GUEST, thread.id)).unwrap()
 		expect(detail.thread.title).toBe('Durable')
 		expect(detail.posts.items[0].author.displayName).toBe('Alice')
@@ -925,7 +923,7 @@ async function streamOf(core: ForumCorePlugin) {
 describe('notes, moves, replies inside floors and hot (M6.1)', () => {
 	it('posts notes to the stream without a title and shows them as cards in listings', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, category } = await seed(core)
 		const stream = await streamOf(core)
 		expect(await core.streamFor(alice)).toMatchObject({ canPost: true })
@@ -982,7 +980,7 @@ describe('notes, moves, replies inside floors and hot (M6.1)', () => {
 
 	it("shows a note's newest visible reply in the overview feed", async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, bob, category } = await seed(core)
 		const stream = await streamOf(core)
 		const quiet = (
@@ -1017,7 +1015,7 @@ describe('notes, moves, replies inside floors and hot (M6.1)', () => {
 
 	it('moves threads between boards and turns a note into a topic', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, bob, category } = await seed(core)
 		const stream = await streamOf(core)
 		const other = (await core.createCategory(admin, { name: 'Other' })).unwrap()
@@ -1074,7 +1072,7 @@ describe('notes, moves, replies inside floors and hot (M6.1)', () => {
 
 	it('nests replies one level inside floors and locates any floor on its page', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, bob, category } = await seed(core)
 		const events: PostAfterWriteEvent[] = []
 		const listen = core.registerPostHook({
@@ -1161,7 +1159,7 @@ describe('notes, moves, replies inside floors and hot (M6.1)', () => {
 
 	it('ranks hot threads by replies and engagement decaying with age', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, bob, category } = await seed(core)
 		const open = async (title: string) =>
 			(await core.createThread(alice, { categoryId: category.id, title, body: 'x' })).unwrap()
@@ -1181,7 +1179,7 @@ describe('notes, moves, replies inside floors and hot (M6.1)', () => {
 describe('follow graph slot (M6.2)', () => {
 	it('builds the following feed from the graph, within what the reader may see', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { admin, alice, bob, category } = await seed(core)
 		const hidden = (await core.createCategory(admin, { name: 'Staff' })).unwrap()
 		const titles = async (principal: Principal) =>
@@ -1225,7 +1223,7 @@ describe('follow graph slot (M6.2)', () => {
 
 	it('serves an empty feed when the graph fails or answers nonsense', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, category } = await seed(core)
 		await core.createThread(alice, { categoryId: category.id, title: 'Mine', body: 'x' })
 		expect(() =>
@@ -1256,7 +1254,7 @@ describe('follow graph slot (M6.2)', () => {
 describe('permission policy registry', () => {
 	it('applies a contributed policy only while its contributor runs', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, category } = await seed(core)
 		const thread = (
 			await core.createThread(alice, { categoryId: category.id, title: 'Open', body: 'x' })
@@ -1265,36 +1263,38 @@ describe('permission policy registry', () => {
 
 		expect((await reply()).isOk()).toBe(true)
 
-		await host.start(FreezeRepliesPlugin)
+		await host.start(FreezeRepliesPlugin.nodeAddress())
 		expect(core.permissionPolicyIds()).toEqual(['forum-core.roles', 'test.freeze-replies'])
 		expect(await codeOf(reply())).toBe('forbidden')
 		expect((await core.getThread(alice, thread.id)).unwrap().can.reply).toBe(false)
 
-		await host.stop(FreezeRepliesPlugin)
+		await host.stop(FreezeRepliesPlugin.nodeAddress())
 		expect(core.permissionPolicyIds()).toEqual(['forum-core.roles'])
 		expect((await reply()).isOk()).toBe(true)
 	})
 
 	it('re-registers contributions after the core restarts', async () => {
 		await using host = await createHost()
-		await host.start([ForumCorePlugin, FreezeRepliesPlugin])
-		const before = host.require(ForumCorePlugin)
+		await host.start([ForumCorePlugin.nodeAddress(), FreezeRepliesPlugin.nodeAddress()])
+		const before = host.require(ForumCorePlugin.nodeAddress())
 
-		const core = await host.restart(ForumCorePlugin)
+		const core = await host.restart(ForumCorePlugin.nodeAddress())
 		expect(core).not.toBe(before)
-		expect(host.isRunning(FreezeRepliesPlugin)).toBe(true)
+		expect(host.isRunning(FreezeRepliesPlugin.nodeAddress())).toBe(true)
 		expect(core.permissionPolicyIds()).toEqual(['forum-core.roles', 'test.freeze-replies'])
 	})
 
 	it('fails a contributor that reuses a registered ID without disturbing the core', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 
-		const failure = await host.commitExpectFail((change) => change.start(DuplicatePolicyPlugin))
+		const failure = await host.commitExpectFail((change) =>
+			change.start(DuplicatePolicyPlugin.nodeAddress()),
+		)
 		expect(failure.lifecycleReport.issues).toContainEqual(
 			expect.objectContaining({ kind: 'start-failed' }),
 		)
-		expect(host.isRunning(ForumCorePlugin)).toBe(true)
+		expect(host.isRunning(ForumCorePlugin.nodeAddress())).toBe(true)
 		expect(core.permissionPolicyIds()).toEqual(['forum-core.roles'])
 		expect(core.can(GUEST, 'thread.view')).toBe(true)
 	})
@@ -1313,7 +1313,7 @@ async function openingPost(core: ForumCorePlugin, body: string) {
 describe('content renderer', () => {
 	it('shows posts as escaped plain text without a renderer', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const read = await openingPost(core, `<b>1 & 2</b>\n"it's"`)
 
 		expect(core.contentRendererId()).toBeNull()
@@ -1326,10 +1326,10 @@ describe('content renderer', () => {
 
 	it('uses a contributed renderer only while its contributor runs', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const read = await openingPost(core, 'hello')
 
-		await host.start(ShoutPlugin)
+		await host.start(ShoutPlugin.nodeAddress())
 		expect(core.contentRendererId()).toBe('test.shout')
 		expect(await read()).toMatchObject({
 			body: 'hello',
@@ -1337,40 +1337,44 @@ describe('content renderer', () => {
 			bodyHtml: '<p>HELLO</p>',
 		})
 
-		await host.stop(ShoutPlugin)
+		await host.stop(ShoutPlugin.nodeAddress())
 		expect(core.contentRendererId()).toBeNull()
 		expect(await read()).toMatchObject({ bodyFormat: 'plain', bodyHtml: 'hello' })
 	})
 
 	it('re-installs the renderer after the core restarts', async () => {
 		await using host = await createHost()
-		const before = (await host.start([ForumCorePlugin, ShoutPlugin]))[0]
+		const before = (await host.start([ForumCorePlugin.nodeAddress(), ShoutPlugin.nodeAddress()]))[0]
 		const read = await openingPost(before, 'hello')
 
-		const core = await host.restart(ForumCorePlugin)
+		const core = await host.restart(ForumCorePlugin.nodeAddress())
 		expect(core).not.toBe(before)
-		expect(host.isRunning(ShoutPlugin)).toBe(true)
+		expect(host.isRunning(ShoutPlugin.nodeAddress())).toBe(true)
 		expect((await read(core)).bodyHtml).toBe('<p>HELLO</p>')
 	})
 
 	it('refuses a second renderer and accepts it once the first has stopped', async () => {
 		await using host = await createHost()
-		const core = (await host.start([ForumCorePlugin, ShoutPlugin]))[0]
+		const core = (await host.start([ForumCorePlugin.nodeAddress(), ShoutPlugin.nodeAddress()]))[0]
 
-		const failure = await host.commitExpectFail((change) => change.start(SecondRendererPlugin))
+		const failure = await host.commitExpectFail((change) =>
+			change.start(SecondRendererPlugin.nodeAddress()),
+		)
 		expect(failure.lifecycleReport.issues).toContainEqual(
 			expect.objectContaining({ kind: 'start-failed' }),
 		)
 		expect(core.contentRendererId()).toBe('test.shout')
 
-		await host.stop(ShoutPlugin)
-		await host.start(SecondRendererPlugin)
+		await host.stop(ShoutPlugin.nodeAddress())
+		await host.start(SecondRendererPlugin.nodeAddress())
 		expect(core.contentRendererId()).toBe('test.second')
 	})
 
 	it('falls back to plain text when the renderer throws', async () => {
 		await using host = await createHost()
-		const core = (await host.start([ForumCorePlugin, BrokenRendererPlugin]))[0]
+		const core = (
+			await host.start([ForumCorePlugin.nodeAddress(), BrokenRendererPlugin.nodeAddress()])
+		)[0]
 		const read = await openingPost(core, 'a < b')
 
 		expect(await read()).toMatchObject({ bodyFormat: 'plain', bodyHtml: 'a &lt; b' })
@@ -1378,7 +1382,7 @@ describe('content renderer', () => {
 
 	it('filters renderer output down to the allowlist', async () => {
 		await using host = await createHost()
-		const core = (await host.start([ForumCorePlugin, RawHtmlPlugin]))[0]
+		const core = (await host.start([ForumCorePlugin.nodeAddress(), RawHtmlPlugin.nodeAddress()]))[0]
 		const source = [
 			'<h1>t</h1><h2 id="x" onclick="evil()">ok</h2>',
 			'<script>alert(1)</script><style>p{}</style><img src=x onerror=alert(1)>',
@@ -1415,7 +1419,7 @@ describe('content renderer', () => {
 
 	it('renders nothing for a deleted post', async () => {
 		await using host = await createHost()
-		const core = (await host.start([ForumCorePlugin, ShoutPlugin]))[0]
+		const core = (await host.start([ForumCorePlugin.nodeAddress(), ShoutPlugin.nodeAddress()]))[0]
 		const { alice, admin, category } = await seed(core)
 		const thread = (
 			await core.createThread(alice, { categoryId: category.id, title: 'T', body: 'x' })
@@ -1432,7 +1436,7 @@ describe('content renderer', () => {
 describe('entity extensions and UI slots', () => {
 	it('attaches extension data in one batch per page, only while the contributor runs', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, bob, category } = await seed(core)
 		const thread = (
 			await core.createThread(alice, { categoryId: category.id, title: 'Ext', body: 'one' })
@@ -1444,7 +1448,7 @@ describe('entity extensions and UI slots', () => {
 		expect(core.uiSlots()).toEqual([])
 
 		badgeBatches.length = 0
-		await host.start(BadgePlugin)
+		await host.start(BadgePlugin.nodeAddress())
 		expect(core.entityExtensionIds('post')).toEqual(['test.badge'])
 		expect(core.entityExtensionIds('thread')).toEqual([])
 		expect(core.uiSlots()).toEqual([
@@ -1462,7 +1466,7 @@ describe('entity extensions and UI slots', () => {
 		const third = (await core.createPost(alice, { threadId: thread.id, body: 'three' })).unwrap()
 		expect(third.ext).toEqual({ 'test.badge': { seenBy: alice.userId } })
 
-		await host.stop(BadgePlugin)
+		await host.stop(BadgePlugin.nodeAddress())
 		expect(core.entityExtensionIds('post')).toEqual([])
 		expect(core.uiSlots()).toEqual([])
 		expect((await read()).posts.items.map((post) => post.ext)).toEqual([{}, {}, {}])
@@ -1470,21 +1474,25 @@ describe('entity extensions and UI slots', () => {
 
 	it('re-registers extensions and slots after the core restarts', async () => {
 		await using host = await createHost()
-		const before = (await host.start([ForumCorePlugin, BadgePlugin]))[0]
+		const before = (await host.start([ForumCorePlugin.nodeAddress(), BadgePlugin.nodeAddress()]))[0]
 
-		const core = await host.restart(ForumCorePlugin)
+		const core = await host.restart(ForumCorePlugin.nodeAddress())
 		expect(core).not.toBe(before)
-		expect(host.isRunning(BadgePlugin)).toBe(true)
+		expect(host.isRunning(BadgePlugin.nodeAddress())).toBe(true)
 		expect(core.entityExtensionIds('post')).toEqual(['test.badge'])
 		expect(core.uiSlots()).toHaveLength(2)
 	})
 
 	it('fails a contributor with a taken ID or an unknown slot without disturbing the rest', async () => {
 		await using host = await createHost()
-		const core = (await host.start([ForumCorePlugin, BadgePlugin]))[0]
+		const core = (await host.start([ForumCorePlugin.nodeAddress(), BadgePlugin.nodeAddress()]))[0]
 
-		const duplicate = await host.commitExpectFail((change) => change.start(DuplicateBadgePlugin))
-		const unknownSlot = await host.commitExpectFail((change) => change.start(UnknownSlotPlugin))
+		const duplicate = await host.commitExpectFail((change) =>
+			change.start(DuplicateBadgePlugin.nodeAddress()),
+		)
+		const unknownSlot = await host.commitExpectFail((change) =>
+			change.start(UnknownSlotPlugin.nodeAddress()),
+		)
 		for (const failure of [duplicate, unknownSlot]) {
 			expect(failure.lifecycleReport.issues).toContainEqual(
 				expect.objectContaining({ kind: 'start-failed' }),
@@ -1496,7 +1504,13 @@ describe('entity extensions and UI slots', () => {
 
 	it('serves pages without an extension that throws or does not answer', async () => {
 		await using host = await createHost()
-		const core = (await host.start([ForumCorePlugin, BadgePlugin, FaultyExtensionsPlugin]))[0]
+		const core = (
+			await host.start([
+				ForumCorePlugin.nodeAddress(),
+				BadgePlugin.nodeAddress(),
+				FaultyExtensionsPlugin.nodeAddress(),
+			])
+		)[0]
 		const { alice, category } = await seed(core)
 		// Creating the thread already waits out the extension that never answers.
 		const thread = (
@@ -1511,7 +1525,7 @@ describe('entity extensions and UI slots', () => {
 
 	it('locates only posts the principal can see', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, bob, category } = await seed(core)
 		const thread = (
 			await core.createThread(alice, { categoryId: category.id, title: 'Where', body: 'x' })
@@ -1543,7 +1557,7 @@ describe('entity extensions and UI slots', () => {
 
 	it('previews a body with the installed renderer', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 
 		expect(core.contentFormat()).toBe('plain')
 		expect(core.previewBody('a < b').unwrap()).toEqual({
@@ -1552,7 +1566,7 @@ describe('entity extensions and UI slots', () => {
 		})
 		expect(core.previewBody('   ').isErr()).toBe(true)
 
-		await host.start(ShoutPlugin)
+		await host.start(ShoutPlugin.nodeAddress())
 		expect(core.contentFormat()).toBe('markdown')
 		expect(core.previewBody('hi').unwrap()).toEqual({
 			bodyHtml: '<p>HI</p>',
@@ -1642,11 +1656,11 @@ class BrokenHookPlugin extends BasePlugin {
 describe('post hooks registry', () => {
 	it('runs beforeWrite validation and emits afterWrite events while the contributor runs', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, bob, category } = await seed(core)
 
 		afterWriteLog.length = 0
-		await host.start(WordFilterHookPlugin)
+		await host.start(WordFilterHookPlugin.nodeAddress())
 		expect(core.postHookIds()).toEqual(['test.word-filter'])
 
 		// Rejected writes abort the transaction and emit no afterWrite event.
@@ -1748,7 +1762,7 @@ describe('post hooks registry', () => {
 			authorId: alice.userId,
 		})
 
-		await host.stop(WordFilterHookPlugin)
+		await host.stop(WordFilterHookPlugin.nodeAddress())
 		expect(core.postHookIds()).toEqual([])
 		expect(
 			(
@@ -1764,7 +1778,13 @@ describe('post hooks registry', () => {
 
 	it('isolates broken hooks, rejects bad registrations and survives core restarts', async () => {
 		await using host = await createHost()
-		const before = (await host.start([ForumCorePlugin, WordFilterHookPlugin, BrokenHookPlugin]))[0]
+		const before = (
+			await host.start([
+				ForumCorePlugin.nodeAddress(),
+				WordFilterHookPlugin.nodeAddress(),
+				BrokenHookPlugin.nodeAddress(),
+			])
+		)[0]
 		const { alice, category } = await seed(before)
 
 		// BrokenHookPlugin throws in both beforeWrite and afterWrite, yet normal writes succeed.
@@ -1772,12 +1792,16 @@ describe('post hooks registry', () => {
 			(await before.createThread(alice, { categoryId: category.id, title: 'T', body: 'B' })).isOk(),
 		).toBe(true)
 
-		const core = await host.restart(ForumCorePlugin)
+		const core = await host.restart(ForumCorePlugin.nodeAddress())
 		expect(core).not.toBe(before)
 		expect(core.postHookIds().toSorted()).toEqual(['test.broken-hook', 'test.word-filter'])
 
-		const duplicate = await host.commitExpectFail((change) => change.start(DuplicateHookPlugin))
-		const empty = await host.commitExpectFail((change) => change.start(EmptyHookPlugin))
+		const duplicate = await host.commitExpectFail((change) =>
+			change.start(DuplicateHookPlugin.nodeAddress()),
+		)
+		const empty = await host.commitExpectFail((change) =>
+			change.start(EmptyHookPlugin.nodeAddress()),
+		)
 		for (const failure of [duplicate, empty]) {
 			expect(failure.lifecycleReport.issues).toContainEqual(
 				expect.objectContaining({ kind: 'start-failed' }),
@@ -1852,7 +1876,7 @@ class DuplicateChannelPlugin extends BasePlugin {
 describe('notification channels registry', () => {
 	it('delivers notifications across running channels and isolates channel failures', async () => {
 		await using host = await createHost()
-		let core = await host.start(ForumCorePlugin)
+		let core = await host.start(ForumCorePlugin.nodeAddress())
 		const sample: ForumNotification = {
 			id: '00000000-0000-4000-8000-000000000099',
 			recipientId: '00000000-0000-4000-8000-000000000001',
@@ -1866,7 +1890,7 @@ describe('notification channels registry', () => {
 		mailDeliveries.length = 0
 		expect(await core.deliverNotification(sample)).toEqual([])
 
-		await host.start([InboxChannelPlugin, MailAndBrokenChannelPlugin])
+		await host.start([InboxChannelPlugin.nodeAddress(), MailAndBrokenChannelPlugin.nodeAddress()])
 		expect(core.notificationChannelIds()).toEqual([
 			'test.inbox',
 			'test.broken-channel',
@@ -1876,20 +1900,22 @@ describe('notification channels registry', () => {
 		expect(inboxDeliveries).toEqual([sample])
 		expect(mailDeliveries).toEqual([sample])
 
-		core = await host.restart(ForumCorePlugin)
+		core = await host.restart(ForumCorePlugin.nodeAddress())
 		expect(core.notificationChannelIds().toSorted()).toEqual([
 			'test.broken-channel',
 			'test.inbox',
 			'test.mail',
 		])
 
-		await host.stop(MailAndBrokenChannelPlugin)
+		await host.stop(MailAndBrokenChannelPlugin.nodeAddress())
 		expect(core.notificationChannelIds()).toEqual(['test.inbox'])
 		expect(await core.deliverNotification(sample)).toEqual(['test.inbox'])
 		expect(inboxDeliveries).toHaveLength(2)
 		expect(mailDeliveries).toHaveLength(1)
 
-		const failure = await host.commitExpectFail((change) => change.start(DuplicateChannelPlugin))
+		const failure = await host.commitExpectFail((change) =>
+			change.start(DuplicateChannelPlugin.nodeAddress()),
+		)
 		expect(failure.lifecycleReport.issues).toContainEqual(
 			expect.objectContaining({ kind: 'start-failed' }),
 		)
@@ -1972,7 +1998,7 @@ class BrokenSearchPlugin extends BasePlugin {
 describe('search providers registry and indexable post scan', () => {
 	it('scans visible posts in batches and serves search only while a provider runs', async () => {
 		await using host = await createHost()
-		let core = await host.start(ForumCorePlugin)
+		let core = await host.start(ForumCorePlugin.nodeAddress())
 		const { alice, bob, category } = await seed(core)
 
 		const thread = (
@@ -2008,7 +2034,7 @@ describe('search providers registry and indexable post scan', () => {
 		expect(await codeOf(core.search(GUEST, { query: '乒乓' }))).toBe('unavailable')
 
 		searchQueries.length = 0
-		await host.start(FakeSearchPlugin)
+		await host.start(FakeSearchPlugin.nodeAddress())
 		expect(core.searchAvailable()).toBe(true)
 		expect(core.searchProviderId()).toBe('test.search')
 
@@ -2045,23 +2071,25 @@ describe('search providers registry and indexable post scan', () => {
 			author: { id: alice.userId, displayName: 'Alice' },
 		})
 
-		core = await host.restart(ForumCorePlugin)
+		core = await host.restart(ForumCorePlugin.nodeAddress())
 		expect(core.searchProviderId()).toBe('test.search')
 
 		// Refuses a second search provider while the first is installed, then accepts it once free.
-		const duplicate = await host.commitExpectFail((change) => change.start(SecondSearchPlugin))
+		const duplicate = await host.commitExpectFail((change) =>
+			change.start(SecondSearchPlugin.nodeAddress()),
+		)
 		expect(duplicate.lifecycleReport.issues).toContainEqual(
 			expect.objectContaining({ kind: 'start-failed' }),
 		)
 		expect(core.searchProviderId()).toBe('test.search')
 
-		await host.stop(FakeSearchPlugin)
-		await host.start(SecondSearchPlugin)
+		await host.stop(FakeSearchPlugin.nodeAddress())
+		await host.start(SecondSearchPlugin.nodeAddress())
 		expect(core.searchProviderId()).toBe('test.second-search')
 
-		await host.stop(SecondSearchPlugin)
+		await host.stop(SecondSearchPlugin.nodeAddress())
 		expect(core.searchAvailable()).toBe(false)
-		await host.start(BrokenSearchPlugin)
+		await host.start(BrokenSearchPlugin.nodeAddress())
 		expect(await codeOf(core.search(GUEST, { query: '乒乓' }))).toBe('unavailable')
 	})
 })
@@ -2069,8 +2097,8 @@ describe('search providers registry and indexable post scan', () => {
 describe('category access', () => {
 	it('lets a category say who sees it, starts threads and replies in it', async () => {
 		await using host = await createHost()
-		let core = await host.start(ForumCorePlugin)
-		await host.start(InboxChannelPlugin)
+		let core = await host.start(ForumCorePlugin.nodeAddress())
+		await host.start(InboxChannelPlugin.nodeAddress())
 		const { admin, alice, bob, category } = await seed(core)
 		expect(category.access).toEqual({ view: 'guest', post: 'member', reply: 'member' })
 
@@ -2136,7 +2164,7 @@ describe('category access', () => {
 		])
 
 		// The thresholds are read again on a cold start.
-		core = await host.restart(ForumCorePlugin)
+		core = await host.restart(ForumCorePlugin.nodeAddress())
 		expect(await codeOf(core.getThread(alice, notice.id))).toBe('not_found')
 		expect((await core.getThread(admin, notice.id)).unwrap().thread.title).toBe('Notice')
 	})

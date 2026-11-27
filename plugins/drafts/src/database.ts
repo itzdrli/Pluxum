@@ -1,7 +1,7 @@
 // Server-only: the drafts plugin's own managed database. Rows refer to the forum core's users by
 // their stable IDs only; there are no foreign keys across plugins.
 import { index, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { defineDatabase } from '@pluxel/services/database'
+import { defineDatabase } from '@pluxel/services/pg'
 
 /** One unsent text per member and writing place (`reply:<threadId>`, `thread:<categoryId>`, …). */
 export const drafts = pgTable(

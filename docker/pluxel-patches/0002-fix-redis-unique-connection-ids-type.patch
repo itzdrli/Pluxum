@@ -1,0 +1,32 @@
+diff --git a/plugins/redis/src/client.ts b/plugins/redis/src/client.ts
+index c255c1446..a2d5fa0a2 100644
+--- a/plugins/redis/src/client.ts
++++ b/plugins/redis/src/client.ts
+@@ -67,7 +67,7 @@ const RedisConnections = v.pipe(
+ 	v.array(RedisConnectionConfig),
+ 	v.minLength(1, 'At least one Redis connection is required'),
+ 	v.maxLength(MAX_CONNECTIONS, `At most ${MAX_CONNECTIONS} Redis connections are allowed`),
+-	v.check(hasUniqueConnectionIds, 'Redis connection IDs must be unique'),
++	v.check((connections) => hasUniqueConnectionIds(connections), 'Redis connection IDs must be unique'),
+ )
+ 
+ export const RedisConfig = v.object({
+@@ -446,17 +446,7 @@ class RedisConnectionHandle implements RedisConnection {
+ 	}
+ }
+ 
+-function hasUniqueConnectionIds(
+-	connections: {
+-		id: string
+-		url?: string
+-		database?: number
+-		connectTimeoutMs?: number
+-		commandQueueMaxLength?: number
+-		disableOfflineQueue?: boolean
+-		pingIntervalMs?: number
+-	}[],
+-): boolean {
++function hasUniqueConnectionIds(connections: readonly { readonly id: string }[]): boolean {
+ 	return new Set(connections.map((connection) => connection.id)).size === connections.length
+ }
+ 

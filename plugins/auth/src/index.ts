@@ -7,10 +7,10 @@ import {
 	type ErrorParams,
 } from '@pluxum/domain'
 import { ForumCorePlugin } from '@pluxum/core'
-import { BasePlugin, Plugin } from '@pluxel/core'
+import { BasePlugin, defineServiceRef, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
 import { Redis } from '@pluxel/plugin-redis'
-import { Vault } from '@pluxel/services/vault'
+import type { Workbench } from '@pluxel/workbench'
 import * as v from 'valibot'
 import { repairBase64Url } from './base64-repair'
 import { ForumAuthConfig } from './config'
@@ -212,6 +212,8 @@ function displayNameOf(name: string): string {
  * Zitadel-compatible OpenID Connect login (authorization code + PKCE) with server-side sessions in
  * Redis. The browser only ever holds an opaque session ID in an HttpOnly cookie.
  */
+const WorkbenchRef = defineServiceRef<Workbench>()
+
 @Plugin(ForumAuth, { displayName: 'Pluxum Auth' })
 export class ForumAuthPlugin extends ForumAuth {
 	private readonly config = this.configs.use(ForumAuthConfig)
@@ -245,7 +247,7 @@ export class ForumAuthPlugin extends ForumAuth {
 				JSON.stringify(settings(applied.oidc)) !== JSON.stringify(settings(desired.oidc))
 			this.oidc = this.prepare(desired, oidcChanged ? undefined : this.oidc)
 		})
-		this.ctx.workbench?.publish(AuthWorkbench, { login: () => this.loginContent() })
+		this.ctx.service(WorkbenchRef)?.publish(AuthWorkbench, { login: () => this.loginContent() })
 	}
 
 	/** The Workbench "登录" tab: what login runs on, a provider check and the client secret. */
@@ -269,7 +271,7 @@ export class ForumAuthPlugin extends ForumAuth {
 					}
 				},
 				setSecret: async ({ secret }: { secret: string }) => {
-					const kv = this.ctx.require(Vault).kv()
+					const kv = this.ctx.vault.kv()
 					const current = await kv.get(CLIENT_SECRET_KEY)
 					if (current.exists && !current.writable) {
 						return { ok: false, message: '密钥由部署环境提供，不能在这里修改' }
@@ -278,7 +280,7 @@ export class ForumAuthPlugin extends ForumAuth {
 					return { ok: true, message: '客户端密钥已保存，下次登录起使用' }
 				},
 				clearSecret: async () => {
-					const kv = this.ctx.require(Vault).kv()
+					const kv = this.ctx.vault.kv()
 					const current = await kv.get(CLIENT_SECRET_KEY)
 					if (!current.exists) return { ok: true, message: '没有保存客户端密钥' }
 					if (!current.writable) {
@@ -293,7 +295,7 @@ export class ForumAuthPlugin extends ForumAuth {
 
 	private async loginStatus(): Promise<AuthStatus> {
 		const { oidc, publicOrigin, adminSubjects, testLoginTokenSha256 } = this.config
-		const secret = await this.ctx.require(Vault).kv().get(CLIENT_SECRET_KEY)
+		const secret = await this.ctx.vault.kv().get(CLIENT_SECRET_KEY)
 		return {
 			login: this.oidc ? 'available' : 'unconfigured',
 			publicOrigin: publicOrigin ?? null,
@@ -575,7 +577,7 @@ export class ForumAuthPlugin extends ForumAuth {
 	}
 
 	private async clientSecret(): Promise<string | undefined> {
-		const record = await this.ctx.require(Vault).kv().get(CLIENT_SECRET_KEY)
+		const record = await this.ctx.vault.kv().get(CLIENT_SECRET_KEY)
 		if (!record.exists) return undefined
 		if (typeof record.value !== 'string' || record.value === '') {
 			throw new Error(`Vault record "${CLIENT_SECRET_KEY}" must be a non-empty string`)

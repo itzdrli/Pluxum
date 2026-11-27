@@ -1,4 +1,4 @@
-import { BasePlugin, Plugin } from '@pluxel/core'
+import { BasePlugin, parsePluginNodeAddress, Plugin } from '@pluxel/core'
 import { defineRedisScript, Redis } from '@pluxel/plugin-redis'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
@@ -32,18 +32,18 @@ describe('ForumRedisPlugin', () => {
 	it('fails to start, and blocks its consumers, when a connection is unreachable', async () => {
 		await using host = await createTestHost()
 		const failure = await host.commitExpectFail((change) => {
-			change.start(ForumRedisPlugin, {
+			change.start(ForumRedisPlugin.nodeAddress(), {
 				initialConfig: { connections: [connection('redis://127.0.0.1:1')] },
 			})
-			change.start(RedisConsumer)
+			change.start(RedisConsumer.nodeAddress())
 		})
 		expect(failure.lifecycleReport.issues).toContainEqual(
 			expect.objectContaining({
-				plugin: ForumRedisPlugin.nodeAddress(),
+				plugin: parsePluginNodeAddress(ForumRedisPlugin.nodeAddress()),
 				kind: 'start-failed',
 			}),
 		)
-		expect(host.isRunning(RedisConsumer)).toBe(false)
+		expect(host.isRunning(RedisConsumer.nodeAddress())).toBe(false)
 	})
 
 	// Live check against the dev valkey (compose.dev.yaml); set FORUM_TEST_REDIS_URL to enable.
@@ -51,12 +51,12 @@ describe('ForumRedisPlugin', () => {
 	it.skipIf(!liveUrl)('serves owner-bound connections and revokes them on stop', async () => {
 		await using host = await createTestHost()
 		await host.commit((change) => {
-			change.start(ForumRedisPlugin, {
+			change.start(ForumRedisPlugin.nodeAddress(), {
 				initialConfig: { connections: [connection(liveUrl!)] },
 			})
-			change.start(RedisConsumer)
+			change.start(RedisConsumer.nodeAddress())
 		})
-		const { redis } = host.require(RedisConsumer)
+		const { redis } = host.require(RedisConsumer.nodeAddress())
 		expect(redis.connectionIds()).toEqual(['session'])
 
 		const session = redis.connection('session')
@@ -69,9 +69,9 @@ describe('ForumRedisPlugin', () => {
 			await session.client.del(key)
 		}
 
-		await host.stop(ForumRedisPlugin)
+		await host.stop(ForumRedisPlugin.nodeAddress())
 		// Core's generation gate revokes the captured handle before the provider's own owner check.
 		expect(() => session.client).toThrow('Plugin owner stopped')
-		expect(host.isRunning(RedisConsumer)).toBe(false)
+		expect(host.isRunning(RedisConsumer.nodeAddress())).toBe(false)
 	})
 })

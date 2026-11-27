@@ -15,8 +15,7 @@ import {
 	MODERATION_POST_HOOK_ID,
 } from '@pluxum/moderation'
 import { Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
@@ -25,7 +24,7 @@ const MISSING_ID = '00000000-0000-4000-8000-000000000000'
 
 const createHost = () =>
 	createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 
 type Host = Awaited<ReturnType<typeof createHost>>
@@ -121,16 +120,16 @@ function client(host: Host, userId?: string) {
 
 async function setUp(host: Host, blockedWords: string[] = []) {
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
 		change.start(
-			ForumModerationPlugin,
+			ForumModerationPlugin.nodeAddress(),
 			blockedWords.length > 0 ? { initialConfig: { blockedWords } } : undefined,
 		)
 	})
-	const core = host.require(ForumCorePlugin)
-	const auth = host.require(FakeAuth)
+	const core = host.require(ForumCorePlugin.nodeAddress())
+	const auth = host.require(FakeAuth.nodeAddress())
 	const adminUser = (
 		await core.ensureUser({ subject: 'test:admin', displayName: 'Admin' })
 	).unwrap()
@@ -409,7 +408,7 @@ describe('ForumModerationPlugin', () => {
 
 		// Stopping withdraws slots, policy, hooks and ext actions; restarting preloads active bans
 		await host.commit((change) => {
-			change.stop(ForumModerationPlugin)
+			change.stop(ForumModerationPlugin.nodeAddress())
 		})
 		const stoppedMeta: MetaDto = (await client(host).get('/meta')).body
 		expect(stoppedMeta.uiSlots.some((slot) => slot.extId === MODERATION_EXT_ID)).toBe(false)
@@ -418,7 +417,7 @@ describe('ForumModerationPlugin', () => {
 		expect((await client(host, modUser.id).get(`/ext/${MODERATION_EXT_ID}/queue`)).status).toBe(404)
 
 		await host.commit((change) => {
-			change.start(ForumModerationPlugin)
+			change.start(ForumModerationPlugin.nodeAddress())
 		})
 		const restartedMeta: MetaDto = (await client(host).get('/meta')).body
 		expect(restartedMeta.uiSlots).toEqual(

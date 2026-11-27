@@ -1,7 +1,7 @@
 // Server-only: the accounts plugin's own managed database. Rows refer to Pluxum Core's users by
 // their stable IDs only; there are no foreign keys across plugins.
 import { index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { defineDatabase } from '@pluxel/services/database'
+import { defineDatabase } from '@pluxel/services/pg'
 
 /**
  * One email-and-password login per forum user. `id` names the account in the user's subject

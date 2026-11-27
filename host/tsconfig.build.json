@@ -4,10 +4,14 @@
 	// - no `@pluxel/hmr` condition: some framework entries (e.g. @pluxel/services/plugins) would
 	//   resolve to source while the rest of the package resolves to dist, bundling a second copy
 	//   of capability tokens such as Vault. The bundle uses every framework package's dist.
+	// - ES2024 libs: standalone bundling analyzes bundled upstream Pluxel source authored for
+	//   Pluxel's ES2024 tsconfig (strict checking stays active in both files).
 	"extends": "../tsconfig.base.json",
 	"compilerOptions": {
+		"lib": ["ES2024", "ESNext.Disposable", "DOM", "DOM.Iterable"],
 		"types": ["node"],
-		"customConditions": []
+		"customConditions": [],
+		"paths": {}
 	},
 	"include": ["src/**/*.ts"]
 }

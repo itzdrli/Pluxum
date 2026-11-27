@@ -3,8 +3,7 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAuth, type Authentication } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
@@ -80,7 +79,7 @@ class CollectingChannelPlugin extends BasePlugin {
 
 const createHost = () =>
 	createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 
 type Host = Awaited<ReturnType<typeof createHost>>
@@ -117,13 +116,13 @@ const EXT = `/ext/${FOLLOWS_EXT_ID}`
 async function setUp(host: Host) {
 	delivered.length = 0
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
-		change.start(CollectingChannelPlugin)
-		change.start(ForumFollowsPlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
+		change.start(CollectingChannelPlugin.nodeAddress())
+		change.start(ForumFollowsPlugin.nodeAddress())
 	})
-	const core = host.require(ForumCorePlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
 	const adminUser = (
 		await core.ensureUser({ subject: 'test:admin', displayName: 'Admin' })
 	).unwrap()
@@ -196,7 +195,7 @@ describe('ForumFollowsPlugin', () => {
 		await client(host, alice.id).post(`${EXT}/follow`, { kind: 'user', id: bob.id, on: true })
 		expect(await following(alice.id)).toEqual({ available: true, any: true })
 
-		await host.stop(ForumFollowsPlugin)
+		await host.stop(ForumFollowsPlugin.nodeAddress())
 		expect(await following(alice.id)).toEqual({ available: false, any: false })
 	})
 
@@ -294,13 +293,13 @@ describe('ForumFollowsPlugin', () => {
 		await client(host, alice.id).post(`${EXT}/follow`, { kind: 'user', id: bob.id, on: true })
 		expect(core.followGraphId()).toBe(FOLLOW_GRAPH_ID)
 
-		await host.stop(ForumFollowsPlugin)
+		await host.stop(ForumFollowsPlugin.nodeAddress())
 		expect(core.followGraphId()).toBeNull()
 		expect(core.entityExtensionIds('user')).toEqual([])
 		expect(core.uiSlots()).toEqual([])
 		expect(await feed(alice.id)).toEqual([])
 
-		await host.start(ForumFollowsPlugin)
+		await host.start(ForumFollowsPlugin.nodeAddress())
 		expect(await feed(alice.id)).toEqual(['Alice in General', 'Bob in Off', 'note'])
 	})
 
@@ -308,8 +307,8 @@ describe('ForumFollowsPlugin', () => {
 		await using host = await createHost()
 		const { alice, bob } = await setUp(host)
 		await client(host, alice.id).post(`${EXT}/follow`, { kind: 'user', id: bob.id, on: true })
-		const core = await host.restart(ForumCorePlugin)
-		expect(host.isRunning(ForumFollowsPlugin)).toBe(true)
+		const core = await host.restart(ForumCorePlugin.nodeAddress())
+		expect(host.isRunning(ForumFollowsPlugin.nodeAddress())).toBe(true)
 		expect(core.followGraphId()).toBe(FOLLOW_GRAPH_ID)
 		expect(core.uiSlots().map((entry) => entry.slot)).toEqual([
 			'category.header',

@@ -10,6 +10,7 @@
 		"react-dom": "catalog:frontend"
 	},
 	"devDependencies": {
+		"@pluxel/agent-sdk": "catalog:pluxel",
 		"@pluxum/api": "workspace:*",
 		"@pluxum/core": "workspace:*",
 		"@pluxum/posts": "workspace:*",

@@ -1,7 +1,7 @@
 // Server-only: the solved plugin's own managed database. Rows refer to the forum core's threads,
 // posts and users by their stable IDs only; there are no foreign keys across plugins.
 import { index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { defineDatabase } from '@pluxel/services/database'
+import { defineDatabase } from '@pluxel/services/pg'
 
 /**
  * The accepted answer of a thread: at most one per thread. The answer's floor, author and opening

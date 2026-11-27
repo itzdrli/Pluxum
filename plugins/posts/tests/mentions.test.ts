@@ -3,8 +3,7 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAuth, type Authentication } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
@@ -76,16 +75,16 @@ class CollectingChannelPlugin extends BasePlugin {
 
 async function boot() {
 	const host = await createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
-		change.start(CollectingChannelPlugin)
-		change.start(ForumMentionsPlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
+		change.start(CollectingChannelPlugin.nodeAddress())
+		change.start(ForumMentionsPlugin.nodeAddress())
 	})
-	const core = host.require(ForumCorePlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
 	const signUp = async (name: string): Promise<Principal & { handle: string }> => {
 		const user = (
 			await core.ensureUser({
@@ -140,12 +139,12 @@ describe('forum mentions plugin', () => {
 		expect(delivered[0]?.path).toBe(`/t/${thread.ref}/2`)
 
 		// Suggestions match handle or name.
-		const mentions = host.require(ForumMentionsPlugin)
+		const mentions = host.require(ForumMentionsPlugin.nodeAddress())
 		expect((await mentions.suggest('car')).items.map((item) => item.handle)).toEqual([carol.handle])
 
 		// Stopped: no more notices.
 		delivered.length = 0
-		await host.stop(ForumMentionsPlugin)
+		await host.stop(ForumMentionsPlugin.nodeAddress())
 		;(
 			await core.createPost(alice, { threadId: thread.id, body: `[@Carol](/u/${carol.handle})` })
 		).unwrap()

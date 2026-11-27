@@ -24,7 +24,7 @@ import {
 } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
 import { and, count, desc, eq, isNull } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import * as v from 'valibot'
@@ -239,7 +239,7 @@ export class ForumModerationPlugin extends BasePlugin {
 	}
 
 	protected override async init(): Promise<void> {
-		this.database = await this.ctx.require(Database).use(ModerationDatabase)
+		this.database = await this.ctx.service(Pg).use(ModerationDatabase)
 		// A removed account's ban goes with it; reports and the log keep their record, as Ghost's.
 		this.ctx.effects.defer(
 			this.core.registerUserRemoval({

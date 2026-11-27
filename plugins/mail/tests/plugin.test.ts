@@ -3,10 +3,8 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAuth, type Authentication } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
-import { Vault, vault } from '@pluxel/services/vault'
 import { createTestHost } from '@pluxel/test'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
@@ -103,23 +101,23 @@ async function boot(options: { password?: string } = {}) {
 	servers.push(smtp)
 	const host = await createTestHost({
 		workbench: true,
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) }), vault()],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 	hosts.push(host)
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
-		change.start(ForumMailPlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
+		change.start(ForumMailPlugin.nodeAddress())
 	})
-	const core = host.require(ForumCorePlugin)
-	const mail = host.require(ForumMailPlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
+	const mail = host.require(ForumMailPlugin.nodeAddress())
 	const signUp = async (name: string): Promise<Principal> => {
 		const user = (await core.ensureUser({ subject: `test:${name}`, displayName: name })).unwrap()
 		return core.principalOf(user.id)
 	}
 	const configure = (set: Record<string, unknown> = {}) =>
-		host.config.patch(ForumMailPlugin, {
+		host.config.patch(ForumMailPlugin.nodeAddress(), {
 			set: {
 				enabled: true,
 				host: '127.0.0.1',
@@ -213,7 +211,7 @@ describe('forum mail plugin', () => {
 			}),
 		).toMatchObject({ ok: true, application: 'applied' })
 		expect(
-			await host.config.patch(ForumMailPlugin, {
+			await host.config.patch(ForumMailPlugin.nodeAddress(), {
 				set: { templatesEn: { notificationSubject: '{unknown}' } },
 			}),
 		).toMatchObject({ ok: false })
@@ -261,7 +259,7 @@ describe('forum mail plugin', () => {
 			}),
 		).toMatchObject({ ok: true, application: 'applied' })
 		using opened = await host.workbench.open({
-			target: ForumMailPlugin,
+			target: ForumMailPlugin.nodeAddress(),
 			entry: MailWorkbench.mail,
 			principal: { provider: 'local', subject: 'local' },
 		})
@@ -292,7 +290,10 @@ describe('forum mail plugin', () => {
 		// A login without a password: mail stays off.
 		expect((await mail.address(bob)).unwrap().available).toBe(false)
 
-		await host.require(ForumMailPlugin).ctx.require(Vault).kv().set(SMTP_PASSWORD_KEY, 'hunter2')
+		await host
+			.require(ForumMailPlugin.nodeAddress())
+			.ctx.vault.kv()
+			.set(SMTP_PASSWORD_KEY, 'hunter2')
 		await configure({ username: 'forum', fromName: 'Pluxum' })
 		expect((await mail.address(bob)).unwrap().available).toBe(true)
 		await core.deliverNotification(notice(bob.userId ?? '', '登录发信'))

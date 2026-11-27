@@ -5,7 +5,7 @@ import { ForumCorePlugin, type ForumResult, type PostAfterWriteEvent } from '@pl
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
 import { S3 } from '@pluxel/plugin-storage'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
 import { and, asc, eq, inArray } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import * as v from 'valibot'
@@ -276,7 +276,7 @@ export class ForumAttachmentsPlugin extends BasePlugin {
 	protected override async init(): Promise<void> {
 		// Fail fast if the configured bucket is not present in the active S3 catalog.
 		this.s3.bucket(this.config.bucketId)
-		this.database = await this.ctx.require(Database).use(AttachmentsDatabase)
+		this.database = await this.ctx.service(Pg).use(AttachmentsDatabase)
 		// A removed account's avatar goes; its uploads stay in the posts, as Ghost's.
 		this.ctx.effects.defer(
 			this.core.registerUserRemoval({

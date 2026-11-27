@@ -11,15 +11,14 @@ import {
 	stripMarkup,
 } from '@pluxum/search'
 import { Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
 
 const createHost = () =>
 	createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 
 type Host = Awaited<ReturnType<typeof createHost>>
@@ -96,15 +95,15 @@ function client(host: Host, userId?: string) {
 
 async function setUp(host: Host, customWords: string[] = []) {
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
 		change.start(
-			ForumSearchPlugin,
+			ForumSearchPlugin.nodeAddress(),
 			customWords.length > 0 ? { initialConfig: { customWords } } : undefined,
 		)
 	})
-	const core = host.require(ForumCorePlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
 	const adminUser = (
 		await core.ensureUser({ subject: 'test:admin', displayName: 'Admin' })
 	).unwrap()
@@ -428,11 +427,11 @@ describe('ForumSearchPlugin', () => {
 		await using host = await createHost()
 		// Start the forum WITHOUT ForumSearchPlugin first
 		await host.commit((change) => {
-			change.start(ForumCorePlugin)
-			change.start(FakeAuth)
-			change.start(ForumApiPlugin)
+			change.start(ForumCorePlugin.nodeAddress())
+			change.start(FakeAuth.nodeAddress())
+			change.start(ForumApiPlugin.nodeAddress())
 		})
-		const core = host.require(ForumCorePlugin)
+		const core = host.require(ForumCorePlugin.nodeAddress())
 		const adminUser = (
 			await core.ensureUser({ subject: 'test:admin', displayName: 'Admin' })
 		).unwrap()
@@ -474,7 +473,7 @@ describe('ForumSearchPlugin', () => {
 		;(await core.deletePost(alice, deletedBeforeStart.id)).unwrap()
 
 		// Enable ForumSearchPlugin mid-flight -> backfills existing visible posts
-		await host.start(ForumSearchPlugin)
+		await host.start(ForumSearchPlugin.nodeAddress())
 		const metaRunning: MetaDto = (await client(host).get('/meta')).body
 		expect(metaRunning.search.available).toBe(true)
 		expect(core.searchProviderId()).toBe(SEARCH_PROVIDER_ID)
@@ -485,7 +484,7 @@ describe('ForumSearchPlugin', () => {
 		expect((await core.search(alice, { query: '拜占庭容错' })).unwrap().total).toBe(0)
 
 		// Stop ForumSearchPlugin -> withdraws provider and hooks cleanly
-		await host.stop(ForumSearchPlugin)
+		await host.stop(ForumSearchPlugin.nodeAddress())
 		expect(core.searchAvailable()).toBe(false)
 		expect(core.postHookIds()).not.toContain(SEARCH_POST_HOOK_ID)
 		expect((await client(host).get('/meta')).body.search.available).toBe(false)
@@ -499,13 +498,13 @@ describe('ForumSearchPlugin', () => {
 		})
 
 		// Restart ForumSearchPlugin -> reconciles both offline deletion and offline creation
-		await host.start(ForumSearchPlugin)
+		await host.start(ForumSearchPlugin.nodeAddress())
 		expect((await core.search(alice, { query: 'Raft' })).unwrap().total).toBe(0)
 		expect((await core.search(alice, { query: '向量时钟' })).unwrap().total).toBe(1)
 
 		// Restart ForumCorePlugin -> dependent ForumSearchPlugin re-registers automatically
-		const restartedCore = await host.restart(ForumCorePlugin)
-		expect(host.isRunning(ForumSearchPlugin)).toBe(true)
+		const restartedCore = await host.restart(ForumCorePlugin.nodeAddress())
+		expect(host.isRunning(ForumSearchPlugin.nodeAddress())).toBe(true)
 		expect(restartedCore.searchProviderId()).toBe(SEARCH_PROVIDER_ID)
 		expect((await restartedCore.search(alice, { query: '向量时钟' })).unwrap().total).toBe(1)
 	})

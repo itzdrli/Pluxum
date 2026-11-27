@@ -1,7 +1,7 @@
 // Server-only: the attachments plugin's own managed database. Rows refer to the forum core's
 // users and posts by their stable IDs only; there are no foreign keys across plugins.
 import { index, integer, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { defineDatabase } from '@pluxel/services/database'
+import { defineDatabase } from '@pluxel/services/pg'
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 

@@ -1,12 +1,10 @@
 import { ForumCorePlugin } from '@pluxum/core'
 import { ForumMarkdownPlugin, MARKDOWN_RENDERER_ID } from '@pluxum/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
 
-const createHost = () =>
-	createTestHost({ services: [database({ backend: pglite({ dataDir: 'memory://' }) })] })
+const createHost = () => createTestHost({ services: [pglite({ dataDir: 'memory://' })] })
 
 /** A thread whose opening post has the given source; returns a reader of that post. */
 async function openingPost(core: ForumCorePlugin, body: string) {
@@ -24,7 +22,7 @@ async function openingPost(core: ForumCorePlugin, body: string) {
 describe('ForumMarkdownPlugin', () => {
 	it('renders posts as Markdown only while it runs', async () => {
 		await using host = await createHost()
-		const core = await host.start(ForumCorePlugin)
+		const core = await host.start(ForumCorePlugin.nodeAddress())
 		const read = await openingPost(core, '**你好** <i>x</i>')
 
 		expect(await read()).toMatchObject({
@@ -32,7 +30,7 @@ describe('ForumMarkdownPlugin', () => {
 			bodyHtml: '**你好** &lt;i&gt;x&lt;/i&gt;',
 		})
 
-		await host.start(ForumMarkdownPlugin)
+		await host.start(ForumMarkdownPlugin.nodeAddress())
 		expect(core.contentRendererId()).toBe(MARKDOWN_RENDERER_ID)
 		expect(await read()).toMatchObject({
 			body: '**你好** <i>x</i>',
@@ -40,26 +38,30 @@ describe('ForumMarkdownPlugin', () => {
 			bodyHtml: '<p><strong>你好</strong> &lt;i&gt;x&lt;/i&gt;</p>\n',
 		})
 
-		await host.stop(ForumMarkdownPlugin)
+		await host.stop(ForumMarkdownPlugin.nodeAddress())
 		expect(core.contentRendererId()).toBeNull()
 		expect((await read()).bodyFormat).toBe('plain')
 	})
 
 	it('registers again after the core restarts', async () => {
 		await using host = await createHost()
-		const before = (await host.start([ForumCorePlugin, ForumMarkdownPlugin]))[0]
+		const before = (
+			await host.start([ForumCorePlugin.nodeAddress(), ForumMarkdownPlugin.nodeAddress()])
+		)[0]
 		const read = await openingPost(before, '## 标题')
 
-		const core = await host.restart(ForumCorePlugin)
+		const core = await host.restart(ForumCorePlugin.nodeAddress())
 		expect(core).not.toBe(before)
-		expect(host.isRunning(ForumMarkdownPlugin)).toBe(true)
+		expect(host.isRunning(ForumMarkdownPlugin.nodeAddress())).toBe(true)
 		expect(core.contentRendererId()).toBe(MARKDOWN_RENDERER_ID)
 		expect((await read(core)).bodyHtml).toBe('<h2>标题</h2>\n')
 	})
 
 	it('has its links filtered by the core', async () => {
 		await using host = await createHost()
-		const core = (await host.start([ForumCorePlugin, ForumMarkdownPlugin]))[0]
+		const core = (
+			await host.start([ForumCorePlugin.nodeAddress(), ForumMarkdownPlugin.nodeAddress()])
+		)[0]
 		const read = await openingPost(
 			core,
 			'[坏](javascript:alert(1)) [外](https://example.com/?a=1&b=2) [内](/c/general)',

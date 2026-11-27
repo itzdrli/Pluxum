@@ -3,8 +3,7 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAuth, type Authentication } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
@@ -80,7 +79,7 @@ class CollectingChannelPlugin extends BasePlugin {
 
 const createHost = () =>
 	createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 
 type Host = Awaited<ReturnType<typeof createHost>>
@@ -114,13 +113,13 @@ const ACCEPT = `/ext/${SOLVED_EXT_ID}/accept`
 async function setUp(host: Host) {
 	delivered.length = 0
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
-		change.start(CollectingChannelPlugin)
-		change.start(ForumSolvedPlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
+		change.start(CollectingChannelPlugin.nodeAddress())
+		change.start(ForumSolvedPlugin.nodeAddress())
 	})
-	const core = host.require(ForumCorePlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
 	const adminUser = (
 		await core.ensureUser({ subject: 'test:admin', displayName: 'Admin' })
 	).unwrap()
@@ -302,7 +301,7 @@ describe('ForumSolvedPlugin', () => {
 		}
 		expect(await slots()).toEqual(['post.footer', 'post.actions', 'post.after', 'thread.badges'])
 
-		await host.stop(ForumSolvedPlugin)
+		await host.stop(ForumSolvedPlugin.nodeAddress())
 		expect(await slots()).toEqual([])
 		expect(core.entityExtensionIds('thread')).toEqual([])
 		expect(core.postHookIds()).toEqual([])
@@ -311,7 +310,7 @@ describe('ForumSolvedPlugin', () => {
 			(await client(host, alice.id).post(ACCEPT, { postId: bobAnswer.id, on: false })).status,
 		).toBe(404)
 
-		await host.start(ForumSolvedPlugin)
+		await host.start(ForumSolvedPlugin.nodeAddress())
 		expect((await page()).accepted).toEqual([2])
 	})
 })

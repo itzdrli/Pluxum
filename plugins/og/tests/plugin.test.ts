@@ -6,8 +6,7 @@ import { ForumCorePlugin } from '@pluxum/core'
 import { Plugin } from '@pluxel/core'
 import { FontsPlugin } from '@pluxel/plugin-fonts'
 import { TakumiPlugin } from '@pluxel/plugin-takumi'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { nodeModules } from '@pluxel/services/node'
 import { workers } from '@pluxel/services/workers'
@@ -92,18 +91,18 @@ describe('forum og plugin', () => {
 				elysia(),
 				nodeModules(),
 				workers({ maxThreads: 1 }),
-				database({ backend: pglite({ dataDir: 'memory://' }) }),
+				pglite({ dataDir: 'memory://' }),
 			],
 		})
 		await host.commit((change) => {
-			change.start(ForumCorePlugin)
-			change.start(FakeAuth)
-			change.start(ForumApiPlugin)
-			change.start(FontsPlugin, { initialConfig: { files: FONT ? [FONT] : [] } })
-			change.start(TakumiPlugin)
-			change.start(ForumOgPlugin)
+			change.start(ForumCorePlugin.nodeAddress())
+			change.start(FakeAuth.nodeAddress())
+			change.start(ForumApiPlugin.nodeAddress())
+			change.start(FontsPlugin.nodeAddress(), { initialConfig: { files: FONT ? [FONT] : [] } })
+			change.start(TakumiPlugin.nodeAddress())
+			change.start(ForumOgPlugin.nodeAddress())
 		})
-		const core = host.require(ForumCorePlugin)
+		const core = host.require(ForumCorePlugin.nodeAddress())
 		const adminUser = (
 			await core.ensureUser({ subject: 'test:admin', displayName: 'Admin' })
 		).unwrap()
@@ -144,7 +143,7 @@ describe('forum og plugin', () => {
 		expect((await fetchPath(`/api/forum/ext/${OG_EXT_ID}/files/${thread.ref}`)).status).toBe(404)
 
 		// Stopped, the card and the slot are gone.
-		await host.commit((change) => change.stop(ForumOgPlugin))
+		await host.commit((change) => change.stop(ForumOgPlugin.nodeAddress()))
 		expect((await fetchPath(threadCardPath(thread.ref))).status).toBe(404)
 		const after: MetaDto = await (await fetchPath('/api/forum/meta')).json()
 		expect(after.uiSlots.some((slot) => slot.extId === OG_EXT_ID)).toBe(false)

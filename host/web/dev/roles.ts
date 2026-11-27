@@ -1,5 +1,5 @@
 import { ForumCorePlugin } from '@pluxum/core'
-import { defineDevConsole } from '@pluxel/host-vite/console'
+import type { Script } from '@pluxel/agent-sdk/host'
 
 // vp exec pluxel dev run host/web/dev/roles.ts --input '{"userId":"<id>"}'
 //   → show the account and its roles
@@ -13,17 +13,17 @@ function field(input: unknown, name: string): string {
 	return value
 }
 
-export default defineDevConsole(async (dev) => {
-	const core = dev.plugins.require(ForumCorePlugin)
-	const user = await core.getUser(field(dev.input, 'userId'))
+export default (async (sdk, run) => {
+	const { instance: core } = await sdk.plugin(ForumCorePlugin.nodeAddress()).instance()
+	const user = await core.getUser(field(run.input, 'userId'))
 	if (user.isErr()) throw new Error(user.error.message)
 	return { user: user.value, roles: (await core.principalOf(user.value.id)).roles }
-})
+}) satisfies Script
 
-export const grant = defineDevConsole(async (dev) => {
-	const core = dev.plugins.require(ForumCorePlugin)
-	const userId = field(dev.input, 'userId')
-	const role = field(dev.input, 'role')
+export const grant = (async (sdk, run) => {
+	const { instance: core } = await sdk.plugin(ForumCorePlugin.nodeAddress()).instance()
+	const userId = field(run.input, 'userId')
+	const role = field(run.input, 'role')
 	if (role !== 'admin' && role !== 'moderator') throw new Error('role must be admin or moderator')
 	const granted = await core.grantRole(userId, role)
 	if (granted.isErr()) throw new Error(granted.error.message)
@@ -31,4 +31,4 @@ export const grant = defineDevConsole(async (dev) => {
 		user: (await core.getUser(userId)).unwrapOr(null),
 		roles: (await core.principalOf(userId)).roles,
 	}
-})
+}) satisfies Script

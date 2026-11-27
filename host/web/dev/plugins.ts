@@ -1,11 +1,11 @@
-import { defineDevConsole } from '@pluxel/host-vite/console'
+import type { Script } from '@pluxel/agent-sdk/host'
 import { CachePlugin } from '@pluxel/plugin-cache'
 import { RatesPlugin } from '@pluxel/plugin-rates'
 import { RedisCacheBackendPlugin, RedisRatesBackendPlugin } from '@pluxel/plugin-redis'
 import { ForumRedisPlugin } from '@pluxum/redis'
 import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAttachmentsPlugin, ForumStoragePlugin } from '@pluxum/attachments'
-import { ForumAuthPlugin } from '@pluxum/auth'
+import { ForumAccountsPlugin, ForumAuthPlugin } from '@pluxum/auth'
 import { ForumCachePlugin, ForumCorePlugin, ForumMarkdownPlugin } from '@pluxum/core'
 import { ForumMailPlugin } from '@pluxum/mail'
 import { ForumMessagesPlugin } from '@pluxum/messages'
@@ -31,6 +31,7 @@ const forumPlugins = [
 	ForumStoragePlugin,
 	ForumCorePlugin,
 	ForumAuthPlugin,
+	ForumAccountsPlugin,
 	ForumApiPlugin,
 	ForumMarkdownPlugin,
 	ForumReactionsPlugin,
@@ -54,16 +55,18 @@ const forumPlugins = [
 
 // vp exec pluxel dev run host/web/dev/plugins.ts                    → list plugin states
 // vp exec pluxel dev run host/web/dev/plugins.ts --export start     → start forum plugins now
-// Cold-boot auto start and provider routing are declared in host/src/runtime-state.ts.
-export default defineDevConsole(async (dev) =>
-	(await dev.plugins.list()).map((plugin) => ({
-		plugin: plugin.rootExportName,
-		lifecycle: plugin.lifecycleState,
-		autoStart: plugin.autoStart,
-		issues: plugin.issues,
-	})),
-)
+// Cold-boot auto start and provider routing are declared in host/src/app.ts & runtime-state.ts.
+export default (async (sdk) => {
+	const page = await sdk.plugins.list({ limit: 100 })
+	return page.nodes.map((node) => ({
+		plugin: node.address.definition.exportName,
+		lifecycle: node.lifecycleState,
+		autoStart: node.autoStart,
+		issues: node.issues,
+	}))
+}) satisfies Script
 
-export const start = defineDevConsole(async (dev) =>
-	Promise.all(forumPlugins.map((plugin) => dev.plugins.start(plugin))),
-)
+export const start = (async (sdk) =>
+	Promise.all(
+		forumPlugins.map((PluginClass) => sdk.plugin(PluginClass.nodeAddress()).start()),
+	)) satisfies Script

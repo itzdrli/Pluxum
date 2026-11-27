@@ -1,32 +1,3 @@
 {
-	"version": 2,
-	"evolution": "migrations",
-	"lineage": "main",
-	"migrations": [
-		{
-			"id": "0000_initial",
-			"file": "0000_initial.sql",
-			"checksum": "8b92fbf4e8163533b1c0e164182707cb2e14e0be167bb8f720859bc80258577e"
-		},
-		{
-			"id": "0001_readable_routes",
-			"file": "0001_readable_routes.sql",
-			"checksum": "ed00f8b9c356e7daabec3b44616b18fb68f093118d4e573d0c6fd4af3b9c0e58"
-		},
-		{
-			"id": "0002_contact_email",
-			"file": "0002_contact_email.sql",
-			"checksum": "9fb44245b4e2c1beb6ca10cff6108d083b9210af671d76d018255aa301dc9b69"
-		},
-		{
-			"id": "0003_social",
-			"file": "0003_social.sql",
-			"checksum": "f4321667e5cc3453442027cd4ca9b72b630c835919363ed2550ff131114586a0"
-		},
-		{
-			"id": "0004_category_access",
-			"file": "0004_category_access.sql",
-			"checksum": "e5ac460cf3f6101e1e56ec49441b7b7cc22d0c7f202561dc5e6ff4c3de47b150"
-		}
-	]
+	"lineage": "main"
 }

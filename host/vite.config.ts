@@ -60,6 +60,6 @@ export default defineConfig(() => {
 		optimizeDeps: {
 			entries: [webEntry],
 		},
-		plugins: lazyPlugins(() => [react(), vitePreset({ entry, devConsole: true })]),
+		plugins: lazyPlugins(() => [react(), vitePreset({ entry, scripts: true })]),
 	}
 })

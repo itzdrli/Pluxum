@@ -212,7 +212,7 @@ export class ForumApiPlugin extends BasePlugin {
 
 	protected override init(): void {
 		this.ctx
-			.require(ElysiaApp)
+			.service(ElysiaApp)
 			.onError(({ error }) => {
 				if (error instanceof ApiFailure) return errorResponse(error.status, error.failure)
 				const { code, status } = elysiaErrorFacts(error)

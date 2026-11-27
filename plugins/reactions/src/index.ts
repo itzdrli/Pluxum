@@ -4,7 +4,7 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumCorePlugin, type ForumResult } from '@pluxum/core'
 import { BasePlugin, Plugin } from '@pluxel/core'
 import { Result } from '@pluxel/core/better-result'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
 import { and, count, eq, inArray, sql } from 'drizzle-orm'
 import { Type, type Static } from 'typebox'
 import * as v from 'valibot'
@@ -114,7 +114,7 @@ export class ForumReactionsPlugin extends BasePlugin {
 	}
 
 	protected override async init(): Promise<void> {
-		this.database = await this.ctx.require(Database).use(ReactionsDatabase)
+		this.database = await this.ctx.service(Pg).use(ReactionsDatabase)
 		// Reactions stay counted, as Ghost's. One Ghost already gave on the same post is dropped.
 		this.ctx.effects.defer(
 			this.core.registerUserRemoval({

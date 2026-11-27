@@ -13,11 +13,11 @@ catalogs:
       specifier: ^0.34.52
       version: 0.34.52
     elysia:
-      specifier: 2.0.0-rc.0
-      version: 2.0.0-rc.0
+      specifier: 2.0.0-rc.5
+      version: 2.0.0-rc.5
     exact-mirror:
-      specifier: ^1.2.6
-      version: 1.2.6
+      specifier: ^1.2.8
+      version: 1.2.8
     marked:
       specifier: 17.0.6
       version: 17.0.6
@@ -28,8 +28,8 @@ catalogs:
       specifier: ^8.23.1
       version: 8.23.1
     redis:
-      specifier: ^6.3.1
-      version: 6.3.1
+      specifier: ^6.4.0
+      version: 6.4.0
     s3mini:
       specifier: ^1.0.3
       version: 1.0.3
@@ -183,21 +183,21 @@ catalogs:
       version: 4.3.5
   prod:
     '@electric-sql/pglite':
-      specifier: ^0.5.15
-      version: 0.5.16
+      specifier: ^0.6.0
+      version: 0.6.0
     capnweb:
-      specifier: 0.12.0
-      version: 0.12.0
+      specifier: 0.13.1
+      version: 0.13.1
     jose:
-      specifier: ^6.2.15
-      version: 6.2.17
+      specifier: ^6.2.18
+      version: 6.2.18
   test:
     happy-dom:
       specifier: 21.0.4
       version: 21.0.4
     vitest:
-      specifier: 5.1.0
-      version: 5.1.0
+      specifier: 5.0.5
+      version: 5.0.5
   tooling:
     '@babel/core':
       specifier: ^7.29.0
@@ -230,7 +230,8 @@ catalogs:
 
 overrides:
   vite@*: npm:@voidzero-dev/vite-plus-core@1.4.0
-  typebox: ^1.4.3
+  typebox: 1.4.4
+  '@pluxel/agent-sdk': link:.pluxel/sources/6b76349dc399/pluxel+agent-sdk-ba1e49a581de
   '@pluxel/async': link:.pluxel/sources/6b76349dc399/pluxel+async-8e6e1acc536c
   '@pluxel/cli': link:.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
   '@pluxel/commands': link:.pluxel/sources/6b76349dc399/pluxel+commands-cab504b891c5
@@ -270,10 +271,10 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   apps/web:
     dependencies:
@@ -433,16 +434,16 @@ importers:
         version: '@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)'
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   host:
     dependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@node-rs/jieba':
         specifier: catalog:backend
         version: 2.0.4
@@ -541,13 +542,13 @@ importers:
         version: 0.34.52
       capnweb:
         specifier: catalog:prod
-        version: 0.12.0
+        version: 0.13.1
       elysia:
         specifier: catalog:backend
-        version: 2.0.0-rc.0(exact-mirror@1.2.6(typebox@1.4.3))(openapi-types@12.1.3)(typebox@1.4.3)(typescript@7.0.2)
+        version: 2.0.0-rc.5(exact-mirror@1.2.8(typebox@1.4.4))(openapi-types@12.1.3)(typebox@1.4.4)(typescript@7.0.2)
       exact-mirror:
         specifier: catalog:backend
-        version: 1.2.6(typebox@1.4.3)
+        version: 1.2.8(typebox@1.4.4)
       pg:
         specifier: catalog:backend
         version: 8.23.1
@@ -558,8 +559,8 @@ importers:
         specifier: catalog:frontend
         version: 19.3.1(react@19.3.1)
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
@@ -605,7 +606,7 @@ importers:
         version: '@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)'
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   host/web:
     dependencies:
@@ -616,6 +617,9 @@ importers:
         specifier: catalog:frontend
         version: 19.3.1(react@19.3.1)
     devDependencies:
+      '@pluxel/agent-sdk':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+agent-sdk-ba1e49a581de
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+agent-sdk-ba1e49a581de
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
@@ -663,7 +667,7 @@ importers:
         version: '@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)'
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   packages/domain:
     devDependencies:
@@ -672,16 +676,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/api:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -690,20 +697,17 @@ importers:
         version: link:../../packages/domain
       elysia:
         specifier: catalog:backend
-        version: 2.0.0-rc.0(exact-mirror@1.2.6(typebox@1.4.3))(openapi-types@12.1.3)(typebox@1.4.3)(typescript@7.0.2)
+        version: 2.0.0-rc.5(exact-mirror@1.2.8(typebox@1.4.4))(openapi-types@12.1.3)(typebox@1.4.4)(typescript@7.0.2)
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -718,16 +722,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/attachments:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/plugin-storage':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-storage-5689af5b2082
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-storage-5689af5b2082
@@ -744,8 +751,8 @@ importers:
         specifier: catalog:backend
         version: 1.0.3
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
@@ -755,13 +762,10 @@ importers:
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -779,16 +783,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/auth:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/plugin-rates':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
@@ -809,7 +816,7 @@ importers:
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
       jose:
         specifier: catalog:prod
-        version: 6.2.17
+        version: 6.2.18
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
@@ -819,13 +826,10 @@ importers:
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -843,16 +847,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/core:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/plugin-cache':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-cache-3bd15591b12e
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-cache-3bd15591b12e
@@ -883,7 +890,7 @@ importers:
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@mantine/core':
         specifier: catalog:frontend
         version: 9.7.4(@mantine/hooks@9.7.4(react@19.3.1))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -893,9 +900,6 @@ importers:
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -913,7 +917,7 @@ importers:
         version: 2.16.2
       capnweb:
         specifier: catalog:prod
-        version: 0.12.0
+        version: 0.13.1
       react:
         specifier: catalog:frontend
         version: 19.3.1
@@ -925,16 +929,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/drafts:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -945,18 +952,15 @@ importers:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -974,16 +978,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/follows:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -994,18 +1001,15 @@ importers:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1023,16 +1027,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/footer:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxum/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -1046,9 +1053,6 @@ importers:
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -1063,16 +1067,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/mail:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -1089,8 +1096,8 @@ importers:
         specifier: catalog:backend
         version: 10.3.1
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
@@ -1100,13 +1107,10 @@ importers:
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1127,16 +1131,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/messages:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -1147,18 +1154,15 @@ importers:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1176,16 +1180,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/moderation:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/plugin-rates':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-rates-459170433de9
@@ -1199,8 +1206,8 @@ importers:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
@@ -1210,13 +1217,10 @@ importers:
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1234,16 +1238,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/notifications:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -1254,8 +1261,8 @@ importers:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
@@ -1265,13 +1272,10 @@ importers:
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1289,16 +1293,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/og:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/plugin-fonts':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-fonts-0ca726e1368f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-fonts-0ca726e1368f
@@ -1312,9 +1319,6 @@ importers:
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -1335,16 +1339,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/posts:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -1352,18 +1359,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/domain
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1384,16 +1388,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/push:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -1404,18 +1411,15 @@ importers:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1433,16 +1437,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/reactions:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -1453,8 +1460,8 @@ importers:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
@@ -1464,13 +1471,10 @@ importers:
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1488,16 +1492,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/reads:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -1508,18 +1515,15 @@ importers:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1537,22 +1541,25 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/redis:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/plugin-redis':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+plugin-redis-6faf67f9b337
       redis:
         specifier: catalog:backend
-        version: 6.3.1
+        version: 6.4.0
       valibot:
         specifier: catalog:validation
         version: 1.5.0(typescript@7.0.2)
@@ -1563,9 +1570,6 @@ importers:
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1574,10 +1578,10 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/search:
     dependencies:
@@ -1587,6 +1591,9 @@ importers:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -1605,13 +1612,10 @@ importers:
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1635,16 +1639,19 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   plugins/solved:
     dependencies:
       '@pluxel/core':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+core-36d5274894d9
+      '@pluxel/host':
+        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
+        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/services':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+services-b68c1e4f313f
@@ -1655,18 +1662,15 @@ importers:
         specifier: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
         version: link:../../.pluxel/sources/6b76349dc399/drizzle-orm-b87dec4ee8d3
       typebox:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
     devDependencies:
       '@electric-sql/pglite':
         specifier: catalog:prod
-        version: 0.5.16
+        version: 0.6.0
       '@pluxel/cli':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+cli-19d933e4f28c
-      '@pluxel/host':
-        specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
-        version: link:../../.pluxel/sources/6b76349dc399/pluxel+host-4b1974a19ccb
       '@pluxel/test':
         specifier: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
         version: link:../../.pluxel/sources/6b76349dc399/pluxel+test-8a545c96d23f
@@ -1684,10 +1688,10 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: catalog:tooling
-        version: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       vitest:
         specifier: catalog:test
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
 packages:
 
@@ -1805,8 +1809,8 @@ packages:
     peerDependencies:
       '@dicebear/core': ^9.0.0
 
-  '@electric-sql/pglite@0.5.16':
-    resolution: {integrity: sha512-Nj8KcIsJL748W408U2N8q4+9IlONdpRIU8MJypIAAINMJ5nqKyqpX7Mgg/5XKkXiAib3AoZGR6hnJFlrlLBrcg==}
+  '@electric-sql/pglite@0.6.0':
+    resolution: {integrity: sha512-g3tAPFjRLEdN1g5FvawTl4ETo9LtmVwBRUJYnH6Erl6mhlKFRGB2mYhPABffIuXMYxki64mX0Al8U4UFUhuYDQ==}
 
   '@emnapi/core@2.0.0-beta.2':
     resolution: {integrity: sha512-MzCVoWtcg4Pm2B3je5mMvYMvj3MmBKw+fU7vbsJc9/iT8ip6/eYIHo/Dsm/mr+wsHB6SEyJDuxB09Yy6r/8+4A==}
@@ -2795,14 +2799,14 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
 
-  '@redis/bloom@6.3.1':
-    resolution: {integrity: sha512-dpF9j2yJDoPzSCaZn0MSB3xzmnXQVJeTSAWJcQVcgbmluwhpFeemmII0cF1t+WYfoVS+shEFq79+MmUItgzJLg==}
+  '@redis/bloom@6.4.0':
+    resolution: {integrity: sha512-haBv1OKeJoKxoAxwKEHPDKdoZaLIuWAKNr4VFRF2C3Rjjn7Ese5fijEW6295rMBIyddZfuIOcvH1aZ/yKzy8vQ==}
     engines: {node: '>= 20.0.0'}
     peerDependencies:
-      '@redis/client': ^6.3.1
+      '@redis/client': ^6.4.0
 
-  '@redis/client@6.3.1':
-    resolution: {integrity: sha512-masbfVKULdoAofwddepZxRhWa4w6zvBHn6TRn90TRPrRkVIlGCur3pFqwWaCbMxtYI9twepkz63e/T/tEH8GjA==}
+  '@redis/client@6.4.0':
+    resolution: {integrity: sha512-XEFSX0W1BUVFwtWC41vk5P/U5CqvacBWypFbmYHdF1gJeIYWWmEzsM2R5mPb+65SdODFQk7xuuMPFP6s1t9nhw==}
     engines: {node: '>= 20.0.0'}
     peerDependencies:
       '@node-rs/xxhash': ^1.1.0
@@ -2813,23 +2817,23 @@ packages:
       '@opentelemetry/api':
         optional: true
 
-  '@redis/json@6.3.1':
-    resolution: {integrity: sha512-fMz4kUwJzEftcU9EMaqsjZcUwzpTQLOYRqhQsAD6uKvZWeamblK13ZhgO5SzVSZVk31jmwLeTRpU5GAl5egfUw==}
+  '@redis/json@6.4.0':
+    resolution: {integrity: sha512-Dtxn3c2u5H5r3MA6kMrFI6iSOo4BIwibwkep94BMBD5ba1Eik1UYIwInX9lZ10RdUT4+BD7ZS9lAoORBvXUEYg==}
     engines: {node: '>= 20.0.0'}
     peerDependencies:
-      '@redis/client': ^6.3.1
+      '@redis/client': ^6.4.0
 
-  '@redis/search@6.3.1':
-    resolution: {integrity: sha512-T67pvPUpW82VrZLvihO8O2DFMC7eY2oMAzMzapCbiPZn7mdWqHMEIlohYim12gIawT5kn6qT/Cvmm4WulKB+kQ==}
+  '@redis/search@6.4.0':
+    resolution: {integrity: sha512-B4L2OD5BMwbOYewQ9KGJfukLUkRQz1gc91TEOxz76KLeJsLbHB0XXa7sKMNoB3JURPWvhuY0PE04fHQVYZPZKg==}
     engines: {node: '>= 20.0.0'}
     peerDependencies:
-      '@redis/client': ^6.3.1
+      '@redis/client': ^6.4.0
 
-  '@redis/time-series@6.3.1':
-    resolution: {integrity: sha512-MNDgrm+i63M/1a+XA+HcDsScwt4uBh/fGGJ84swTQZTFK5K5wMmxdlTRa4ZgmNJzjxMaszW/ipPScMUGV3aAMg==}
+  '@redis/time-series@6.4.0':
+    resolution: {integrity: sha512-5QpeIlX/r0h0//JfJ8h4/Il9i0SGHhnOkdcocOhFDp0pb8VgVCEkxeCkUx8IR3g3rlq+uiPIf4NCueveHS9Vbw==}
     engines: {node: '>= 20.0.0'}
     peerDependencies:
-      '@redis/client': ^6.3.1
+      '@redis/client': ^6.4.0
 
   '@remix-run/node-fetch-server@0.14.2':
     resolution: {integrity: sha512-1cpM/f5i1ka/9CUMBwZXZp7Bn92x8VQjzg+F4eEe88DlVdNHkAKrf/vvbZoYgdkfy2bWHtGC6LQGLmojEqOF4Q==}
@@ -3533,14 +3537,6 @@ packages:
       msw:
         optional: true
 
-  '@vitest/mocker@5.1.0':
-    resolution: {integrity: sha512-5umB9/jlWcqVS6fsrFmv5Gdnpu6wAUio/lEOwAmvB7v+lFo/IW2B9FhAD0p19GCULTgMzLCdUmuCDCnAzWgppQ==}
-    peerDependencies:
-      msw: ^2.4.9 || ^3.0.0
-    peerDependenciesMeta:
-      msw:
-        optional: true
-
   '@vitest/pretty-format@5.0.5':
     resolution: {integrity: sha512-24sSdIlMA9DVPXnYiB9siwU0bTd887Y9jX3+vabztCSsvHwo7ipvJ/a2L3Rljw8+2rK1f5fCj3h5U9I/Jsqgbw==}
 
@@ -3549,9 +3545,6 @@ packages:
 
   '@vitest/spy@5.0.5':
     resolution: {integrity: sha512-lwJRExuH417257Q5wv9QYugN9IMJkoxcrKrYxGPQkBzl7wlNpTUxD/5yNX4ESKVUIShKPgkGchYPFMWOOk0wzw==}
-
-  '@vitest/spy@5.1.0':
-    resolution: {integrity: sha512-2DPO5OMHWKrBngC+fCmTQqemNF0gidRhp3lxbBmRhW+M1XJrfgPpqNqWVevXtn2f2ufD5ZaR1B6B641aAlcX5A==}
 
   '@vitest/ui@5.0.5':
     resolution: {integrity: sha512-dCoGUOdgmCaSB2g+WQ/spPCBkytAWdNUkFSXY4z+eYp2d8JEOY8v0uDRaJTG9qf/kTlTVZ4CuYMYMz/f1HS/qQ==}
@@ -3879,8 +3872,8 @@ packages:
   caniuse-lite@1.0.30001820:
     resolution: {integrity: sha512-gfWD6MxqVCqAOwmODfZf7DchWvlrA+SRdNX7ceLfg3xRqe5ssjjpF7EgslC/0tiLiNTajdaNN/q8c/5u/7Gz8w==}
 
-  capnweb@0.12.0:
-    resolution: {integrity: sha512-jgZ/LMtMVTi+RVlooIslH78Gg23XbDTdvcLghWx3oz17D6u5GuJARt+uhZk/wcTo+f81eeabfnow4d3zLBj+JQ==}
+  capnweb@0.13.1:
+    resolution: {integrity: sha512-JEE/MYKv41blYv5MGGzKiT3DT4qz00AQ+NsmPSdVFVSKuy2/ggUI4aDGJO+jEvAXNXuZURoxo7hCfx+VKbM32g==}
 
   chai@6.3.0:
     resolution: {integrity: sha512-XWAtwJ6OHO+tj0EKCs0Y2UamnyOxseZWltU4x2U2wh8g4AigdjwvtUjvLP2tqkA/avxHEtzxNaqGq/YGNwckKg==}
@@ -4053,14 +4046,14 @@ packages:
   electron-to-chromium@1.5.472:
     resolution: {integrity: sha512-s4+nfT29b0FKpVKoaIxl2pWsoNcn7A/nMPSrxayw4T3BsmPeV2lF9Y06BsAQeMGhCTQ4nYJ5XST7jkqe4ZEqFw==}
 
-  elysia@2.0.0-rc.0:
-    resolution: {integrity: sha512-7ks9V+dJcBE2i1CL9+cj2TbiTFdCSNiHfQbfp06g+8om5f72z+hWDnabG6+6bDloZDuvIWwXx8fAJmO3R6UnfA==}
+  elysia@2.0.0-rc.5:
+    resolution: {integrity: sha512-SabLSGjO53YZtEO687pa3Qi1XulFiM0h9SHBOQy6HUMY8WiGJO7m0ymNobjA/4LzTzm1+aQlzQytBLrjfBQb3w==}
     engines: {node: '>=22.18'}
     peerDependencies:
       '@types/bun': '>= 1.3.0'
-      exact-mirror: '>= 1.2.6'
+      exact-mirror: '>= 1.2.7'
       openapi-types: '>= 12.0.0'
-      typebox: ^1.4.3
+      typebox: 1.4.4
       typescript: '>= 5.7.0'
     peerDependenciesMeta:
       '@types/bun':
@@ -4128,10 +4121,10 @@ packages:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
 
-  exact-mirror@1.2.6:
-    resolution: {integrity: sha512-EGx81nhFP1GE94coJsz94FLzdxWrnkNCJdfdX44rbd7pVcAotWzDlBJUC7yy1Ae7d7dYKpoTtZ1jCAIz2IVtfA==}
+  exact-mirror@1.2.8:
+    resolution: {integrity: sha512-4bEKVLTggcLb7nZHwVBUryDqsToSZvQsJ/mzxYtb4fl4agzMyLELyQgG8oFIyy+oYLQbSOIQtiS0GllAC3z11g==}
     peerDependencies:
-      typebox: ^1.4.3
+      typebox: 1.4.4
     peerDependenciesMeta:
       typebox:
         optional: true
@@ -4310,8 +4303,8 @@ packages:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
 
-  jose@6.2.17:
-    resolution: {integrity: sha512-wOuK9V1yujQFH5S0ZWmLcDZN7+IKh9bUCC2ZPCf2HDlol3WWHy+PPyNjEI75FXRLMp3vDKQcupP59xhVU95hcg==}
+  jose@6.2.18:
+    resolution: {integrity: sha512-doV4thUwgkrycJH4yLeqwTGIIZphHl+pk7CPReuMIhYhncmgzdko85MaCG4YQFTxqMFr1/oEH32tZuKKovcDEg==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -4471,8 +4464,8 @@ packages:
     resolution: {integrity: sha512-yz3xRaG20c6/BOzvYoDaGtPmGscs7YivItZEEqe6GbwNfHuxu9YNmvnEkMzKldAGY4/80pRcQRZSEnhquk9XuQ==}
     engines: {node: '>= 0.8'}
 
-  memoirist@1.2.3:
-    resolution: {integrity: sha512-6wkntadi3vDUBX6y5UDuLsLr+hsojMkaapsZyGGzP6rZoYD6K/pAbrp1cZki24jMewoca3KofRYO0T6EEeHNVg==}
+  memoirist@1.2.4:
+    resolution: {integrity: sha512-4ZQz65pzZQl1fQEy0EPplIo+rzn0c1vzrqhrdnswr2IKYoPje58p2hZCCeiDD3iB0Bh6OVIaScirDIw8S5qHaQ==}
 
   merge-descriptors@2.0.0:
     resolution: {integrity: sha512-Snk314V5ayFLhp3fkUREub6WtjBfPdCPY1Ln8/8munuLuiYhsABgBVWsozAG+MWMbVEvcdcpbi9R7ww22l9Q3g==}
@@ -4877,8 +4870,8 @@ packages:
     resolution: {integrity: sha512-Kko+Y5XQ6fM+Ce3dq3m9YGxnacYZYl9cA1wZjaF3Vbry2L3i1qVg8+CAgNPsXRArPMUMCaOR7oa9Nqntc43JKA==}
     engines: {node: '>= 20.19.0'}
 
-  redis@6.3.1:
-    resolution: {integrity: sha512-mV96ZKxQ4CGn3SyEGaY0Lb9YA443mdVey3c+mdr0NAUaBxiOZGoYCWX8PoM55kictSOmxlJRtZJxIsmZm3jL+w==}
+  redis@6.4.0:
+    resolution: {integrity: sha512-8Xk9zRovBNDzIO3xRi036QFgijIZKeIPjQJ5VhgxV8nxkxDP5GlE5se71G1I4TnUTojbCtmfKzXpioxlDhHJvg==}
     engines: {node: '>= 20.0.0'}
 
   restore-cursor@5.1.0:
@@ -5099,8 +5092,8 @@ packages:
     resolution: {integrity: sha512-faYHw0anBbc/kWF3zFTEnxSFOAGUX9GFbOBthvDdLsIlEoWOFOtS0zgCiQYwIskL9iGXZL3kAXD8OoZ4GmMATA==}
     engines: {node: '>= 18'}
 
-  typebox@1.4.3:
-    resolution: {integrity: sha512-u3nyf7ZciAv1GOijVpI0TDt9At5wmEi7lSHSlRrnjuThv1DcB7fgGBqqrz+fGZ54jAfTpOOX0JXwxSIg3pnxQA==}
+  typebox@1.4.4:
+    resolution: {integrity: sha512-ctPyL8BZibv6HYU6cE3ldDtfCTh7nXM7WPuL3KQVyRRhMnZEzU3o2yLVywxEEFmKEx+8EdeqG1/uTNzazRbxLA==}
 
   typescript@7.0.2:
     resolution: {integrity: sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==}
@@ -5187,47 +5180,6 @@ packages:
       '@vitest/coverage-istanbul': 5.0.5
       '@vitest/coverage-v8': 5.0.5
       '@vitest/ui': 5.0.5
-      happy-dom: '*'
-      jsdom: '*'
-      vite: ^6.4.0 || ^7.0.0 || ^8.0.0
-    peerDependenciesMeta:
-      '@edge-runtime/vm':
-        optional: true
-      '@opentelemetry/api':
-        optional: true
-      '@types/node':
-        optional: true
-      '@vitest/browser-playwright':
-        optional: true
-      '@vitest/browser-preview':
-        optional: true
-      '@vitest/browser-webdriverio':
-        optional: true
-      '@vitest/coverage-istanbul':
-        optional: true
-      '@vitest/coverage-v8':
-        optional: true
-      '@vitest/ui':
-        optional: true
-      happy-dom:
-        optional: true
-      jsdom:
-        optional: true
-
-  vitest@5.1.0:
-    resolution: {integrity: sha512-MzmNFnrwa8v8lF1bLxw3UJ4EREwVOVb75VqJZmUDRjJ6EluK/x9th7qTbaeDk41WxE1GxWqmTXcdsfobfH5sOA==}
-    engines: {node: ^22.12.0 || ^24.0.0 || >=26.0.0}
-    hasBin: true
-    peerDependencies:
-      '@edge-runtime/vm': '*'
-      '@opentelemetry/api': ^1.9.0
-      '@types/node': ^22.0.0 || >=24.0.0
-      '@vitest/browser-playwright': 5.1.0
-      '@vitest/browser-preview': 5.1.0
-      '@vitest/browser-webdriverio': ^5.0.0-beta.5 || >=5.0.0
-      '@vitest/coverage-istanbul': 5.1.0
-      '@vitest/coverage-v8': 5.1.0
-      '@vitest/ui': 5.1.0
       happy-dom: '*'
       jsdom: '*'
       vite: ^6.4.0 || ^7.0.0 || ^8.0.0
@@ -5485,7 +5437,7 @@ snapshots:
     dependencies:
       '@dicebear/core': 9.4.3
 
-  '@electric-sql/pglite@0.5.16': {}
+  '@electric-sql/pglite@0.6.0': {}
 
   '@emnapi/core@2.0.0-beta.2':
     dependencies:
@@ -6249,23 +6201,23 @@ snapshots:
     dependencies:
       react: 19.3.1
 
-  '@redis/bloom@6.3.1(@redis/client@6.3.1)':
+  '@redis/bloom@6.4.0(@redis/client@6.4.0)':
     dependencies:
-      '@redis/client': 6.3.1
+      '@redis/client': 6.4.0
 
-  '@redis/client@6.3.1': {}
+  '@redis/client@6.4.0': {}
 
-  '@redis/json@6.3.1(@redis/client@6.3.1)':
+  '@redis/json@6.4.0(@redis/client@6.4.0)':
     dependencies:
-      '@redis/client': 6.3.1
+      '@redis/client': 6.4.0
 
-  '@redis/search@6.3.1(@redis/client@6.3.1)':
+  '@redis/search@6.4.0(@redis/client@6.4.0)':
     dependencies:
-      '@redis/client': 6.3.1
+      '@redis/client': 6.4.0
 
-  '@redis/time-series@6.3.1(@redis/client@6.3.1)':
+  '@redis/time-series@6.4.0(@redis/client@6.4.0)':
     dependencies:
-      '@redis/client': 6.3.1
+      '@redis/client': 6.4.0
 
   '@remix-run/node-fetch-server@0.14.2': {}
 
@@ -6822,7 +6774,7 @@ snapshots:
       '@testing-library/dom': 10.4.2
       '@testing-library/user-event': 14.6.8(@testing-library/dom@10.4.2)
       '@vitest/browser': 5.0.5(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vitest@5.0.5)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
-      vitest: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+      vitest: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
     transitivePeerDependencies:
       - '@arethetypeswrong/core'
       - '@types/node'
@@ -6859,7 +6811,7 @@ snapshots:
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.2.0
-      vitest: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+      vitest: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
       ws: 8.22.1
     transitivePeerDependencies:
       - '@arethetypeswrong/core'
@@ -6917,36 +6869,6 @@ snapshots:
       - vue-tsc
       - yaml
 
-  '@vitest/mocker@5.1.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)':
-    dependencies:
-      '@jridgewell/trace-mapping': 0.3.31
-      '@vitest/spy': 5.1.0
-      estree-walker: 3.0.3
-      magic-string: 1.4.5
-      vite: '@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)'
-    transitivePeerDependencies:
-      - '@arethetypeswrong/core'
-      - '@types/node'
-      - '@typescript/native-preview'
-      - '@vitejs/devtools'
-      - '@volar/typescript'
-      - '@vue/language-core'
-      - esbuild
-      - jiti
-      - less
-      - publint
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - terser
-      - tsx
-      - typescript
-      - unplugin-unused
-      - unrun
-      - vue-tsc
-      - yaml
-
   '@vitest/pretty-format@5.0.5':
     dependencies:
       tinyrainbow: 3.2.0
@@ -6960,8 +6882,6 @@ snapshots:
 
   '@vitest/spy@5.0.5': {}
 
-  '@vitest/spy@5.1.0': {}
-
   '@vitest/ui@5.0.5(vitest@5.0.5)':
     dependencies:
       '@vitest/utils': 5.0.5
@@ -6970,7 +6890,7 @@ snapshots:
       pathe: 2.0.3
       sirv: 3.0.2
       tinyrainbow: 3.2.0
-      vitest: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+      vitest: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   '@vitest/utils@5.0.5':
     dependencies:
@@ -7219,7 +7139,7 @@ snapshots:
 
   caniuse-lite@1.0.30001820: {}
 
-  capnweb@0.12.0: {}
+  capnweb@0.13.1: {}
 
   chai@6.3.0: {}
 
@@ -7359,13 +7279,13 @@ snapshots:
 
   electron-to-chromium@1.5.472: {}
 
-  elysia@2.0.0-rc.0(exact-mirror@1.2.6(typebox@1.4.3))(openapi-types@12.1.3)(typebox@1.4.3)(typescript@7.0.2):
+  elysia@2.0.0-rc.5(exact-mirror@1.2.8(typebox@1.4.4))(openapi-types@12.1.3)(typebox@1.4.4)(typescript@7.0.2):
     dependencies:
       deuri: 3.0.1
-      exact-mirror: 1.2.6(typebox@1.4.3)
-      memoirist: 1.2.3
+      exact-mirror: 1.2.8(typebox@1.4.4)
+      memoirist: 1.2.4
       openapi-types: 12.1.3
-      typebox: 1.4.3
+      typebox: 1.4.4
     optionalDependencies:
       typescript: 7.0.2
 
@@ -7437,9 +7357,9 @@ snapshots:
 
   etag@1.8.1: {}
 
-  exact-mirror@1.2.6(typebox@1.4.3):
+  exact-mirror@1.2.8(typebox@1.4.4):
     optionalDependencies:
-      typebox: 1.4.3
+      typebox: 1.4.4
 
   exit-hook@5.1.0: {}
 
@@ -7628,7 +7548,7 @@ snapshots:
 
   jiti@2.7.0: {}
 
-  jose@6.2.17: {}
+  jose@6.2.18: {}
 
   js-tokens@4.0.0: {}
 
@@ -7732,7 +7652,7 @@ snapshots:
 
   media-typer@1.1.1: {}
 
-  memoirist@1.2.3: {}
+  memoirist@1.2.4: {}
 
   merge-descriptors@2.0.0: {}
 
@@ -7819,7 +7739,7 @@ snapshots:
 
   orderedmap@2.1.1: {}
 
-  oxfmt@0.74.0(vite-plus@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)):
+  oxfmt@0.74.0(vite-plus@1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)):
     dependencies:
       tinypool: 2.2.0
     optionalDependencies:
@@ -7842,7 +7762,7 @@ snapshots:
       '@oxfmt/binding-win32-arm64-msvc': 0.74.0
       '@oxfmt/binding-win32-ia32-msvc': 0.74.0
       '@oxfmt/binding-win32-x64-msvc': 0.74.0
-      vite-plus: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+      vite-plus: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   oxlint-tsgolint@7.0.2004:
     optionalDependencies:
@@ -7853,7 +7773,7 @@ snapshots:
       '@oxlint-tsgolint/win32-arm64': 7.0.2004
       '@oxlint-tsgolint/win32-x64': 7.0.2004
 
-  oxlint@1.89.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)):
+  oxlint@1.89.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)):
     optionalDependencies:
       '@oxlint/binding-android-arm-eabi': 1.89.0
       '@oxlint/binding-android-arm64': 1.89.0
@@ -7875,7 +7795,7 @@ snapshots:
       '@oxlint/binding-win32-ia32-msvc': 1.89.0
       '@oxlint/binding-win32-x64-msvc': 1.89.0
       oxlint-tsgolint: 7.0.2004
-      vite-plus: 1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+      vite-plus: 1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
 
   p-map@7.1.1: {}
 
@@ -8177,13 +8097,13 @@ snapshots:
 
   readdirp@5.1.1: {}
 
-  redis@6.3.1:
+  redis@6.4.0:
     dependencies:
-      '@redis/bloom': 6.3.1(@redis/client@6.3.1)
-      '@redis/client': 6.3.1
-      '@redis/json': 6.3.1(@redis/client@6.3.1)
-      '@redis/search': 6.3.1(@redis/client@6.3.1)
-      '@redis/time-series': 6.3.1(@redis/client@6.3.1)
+      '@redis/bloom': 6.4.0(@redis/client@6.4.0)
+      '@redis/client': 6.4.0
+      '@redis/json': 6.4.0(@redis/client@6.4.0)
+      '@redis/search': 6.4.0(@redis/client@6.4.0)
+      '@redis/time-series': 6.4.0(@redis/client@6.4.0)
     transitivePeerDependencies:
       - '@node-rs/xxhash'
       - '@opentelemetry/api'
@@ -8424,7 +8344,7 @@ snapshots:
       media-typer: 1.1.1
       mime-types: 3.0.2
 
-  typebox@1.4.3: {}
+  typebox@1.4.4: {}
 
   typescript@7.0.2:
     optionalDependencies:
@@ -8484,7 +8404,7 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite-plus@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1):
+  vite-plus@1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1):
     dependencies:
       '@oxc-project/runtime': 0.155.0
       '@oxc-project/types': 0.155.0
@@ -8496,11 +8416,11 @@ snapshots:
       '@vitest/snapshot': 5.0.5
       '@vitest/spy': 5.0.5
       '@vitest/utils': 5.0.5
-      oxfmt: 0.74.0(vite-plus@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))
-      oxlint: 1.89.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))
+      oxfmt: 0.74.0(vite-plus@1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))
+      oxlint: 1.89.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.4.0(@types/node@26.6.6)(@vitest/ui@5.0.5)(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))
       oxlint-tsgolint: 7.0.2004
       vite: '@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)'
-      vitest: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+      vitest: 5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
     optionalDependencies:
       '@voidzero-dev/vite-plus-darwin-arm64': 1.4.0
       '@voidzero-dev/vite-plus-darwin-x64': 1.4.0
@@ -8545,7 +8465,7 @@ snapshots:
       - vue-tsc
       - yaml
 
-  vitest@5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1):
+  vitest@5.0.5(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/mocker': 5.0.5(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
@@ -8564,49 +8484,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 26.6.6
       '@vitest/browser-preview': 5.0.5(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vitest@5.0.5)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
-      happy-dom: 21.0.4
-    transitivePeerDependencies:
-      - '@arethetypeswrong/core'
-      - '@typescript/native-preview'
-      - '@vitejs/devtools'
-      - '@volar/typescript'
-      - '@vue/language-core'
-      - esbuild
-      - jiti
-      - less
-      - msw
-      - publint
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - terser
-      - tsx
-      - typescript
-      - unplugin-unused
-      - unrun
-      - vue-tsc
-      - yaml
-
-  vitest@5.1.0(@types/node@26.6.6)(@vitest/browser-preview@5.0.5)(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1))(@vue/language-core@3.3.14)(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1):
-    dependencies:
-      '@types/chai': 5.2.3
-      '@vitest/mocker': 5.1.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
-      chai: 6.3.0
-      es-module-lexer: 2.3.2
-      expect-type: 1.4.0
-      magic-string: 1.4.5
-      obug: 3.0.0
-      picomatch: 4.0.7
-      std-env: 4.3.0
-      tinybench: 6.2.2
-      tinyexec: 1.3.1
-      tinyglobby: 0.2.17
-      vite: '@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)'
-      why-is-node-running: 3.2.1
-    optionalDependencies:
-      '@types/node': 26.6.6
-      '@vitest/browser-preview': 5.0.5(@types/node@26.6.6)(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@7.0.2)(vitest@5.0.5)(vue-tsc@3.3.14(typescript@7.0.2))(yaml@2.9.1)
+      '@vitest/ui': 5.0.5(vitest@5.0.5)
       happy-dom: 21.0.4
     transitivePeerDependencies:
       - '@arethetypeswrong/core'

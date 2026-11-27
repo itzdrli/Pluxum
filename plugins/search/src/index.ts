@@ -6,8 +6,9 @@ import {
 	type SearchProviderQuery,
 	type SearchProviderResult,
 } from '@pluxum/core'
-import { BasePlugin, Plugin } from '@pluxel/core'
-import { Database, type PluginDatabaseHandle } from '@pluxel/services/database'
+import { BasePlugin, defineServiceRef, Plugin } from '@pluxel/core'
+import { Pg, type PluginDatabaseHandle } from '@pluxel/services/pg'
+import type { Workbench } from '@pluxel/workbench'
 import { and, count, desc, eq, gt, inArray, lte, notInArray, sql, type SQL } from 'drizzle-orm'
 import * as v from 'valibot'
 import * as f from 'valibot-form'
@@ -96,6 +97,8 @@ function vectorExpression(titleTokens: string, bodyTokens: string): SQL {
  * Stopping this plugin withdraws both the `postHooks` listener and the `searchProviders` backend:
  * `/api/forum/meta` reports `search.available: false` and `/api/forum/search` answers 503.
  */
+const WorkbenchRef = defineServiceRef<Workbench>()
+
 @Plugin({ displayName: 'Pluxum Search', startTimeoutMs: 60_000 })
 export class ForumSearchPlugin extends BasePlugin {
 	private readonly config = this.configs.use(ForumSearchConfig)
@@ -111,7 +114,7 @@ export class ForumSearchPlugin extends BasePlugin {
 
 	protected override async init(signal: AbortSignal): Promise<void> {
 		this.tokenizer = createSearchTokenizer(this.config.customWords)
-		this.database = await this.ctx.require(Database).use(SearchDatabase)
+		this.database = await this.ctx.service(Pg).use(SearchDatabase)
 		this.ctx.effects.defer(
 			this.core.registerUserRemoval({
 				id: 'forum-search.removal',
@@ -162,7 +165,7 @@ export class ForumSearchPlugin extends BasePlugin {
 		})
 
 		// A rebuild started from Workbench runs to the end even if the tab closes; stopping the plugin aborts it.
-		this.ctx.workbench?.publish(SearchWorkbench, {
+		this.ctx.service(WorkbenchRef)?.publish(SearchWorkbench, {
 			index: () => this.indexContent(stopController.signal),
 		})
 

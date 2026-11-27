@@ -1,7 +1,7 @@
 // Server-only: the notifications plugin's own managed database. Rows refer to the forum core's
 // users, threads and posts by their stable IDs only; there are no foreign keys across plugins.
 import { index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { defineDatabase } from '@pluxel/services/database'
+import { defineDatabase } from '@pluxel/services/pg'
 
 export const notifications = pgTable(
 	'notifications',

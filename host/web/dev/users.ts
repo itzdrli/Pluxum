@@ -1,6 +1,6 @@
 import { ForumAuthPlugin } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
-import { defineDevConsole } from '@pluxel/host-vite/console'
+import type { Script } from '@pluxel/agent-sdk/host'
 
 // vp exec pluxel dev run host/web/dev/users.ts --input '{"query":"test-"}'
 //   → accounts whose handle or name matches, with what they posted
@@ -13,10 +13,10 @@ function field(input: unknown, name: string): string {
 	return value
 }
 
-export default defineDevConsole(async (dev) => {
-	const core = dev.plugins.require(ForumCorePlugin)
+export default (async (sdk, run) => {
+	const { instance: core } = await sdk.plugin(ForumCorePlugin.nodeAddress()).instance()
 	const guest = await core.principalOf(null)
-	const list = await core.listUsers({ query: field(dev.input, 'query'), pageSize: 50 })
+	const list = await core.listUsers({ query: field(run.input, 'query'), pageSize: 50 })
 	return Promise.all(
 		list.items.map(async (user) => {
 			const profile = (await core.getUserProfile(guest, user.id)).unwrapOr(null)
@@ -31,12 +31,12 @@ export default defineDevConsole(async (dev) => {
 			}
 		}),
 	)
-})
+}) satisfies Script
 
-export const remove = defineDevConsole(async (dev) => {
-	const core = dev.plugins.require(ForumCorePlugin)
-	const auth = dev.plugins.require(ForumAuthPlugin)
-	const user = await core.getUser(field(dev.input, 'user'))
+export const remove = (async (sdk, run) => {
+	const { instance: core } = await sdk.plugin(ForumCorePlugin.nodeAddress()).instance()
+	const { instance: auth } = await sdk.plugin(ForumAuthPlugin.nodeAddress()).instance()
+	const user = await core.getUser(field(run.input, 'user'))
 	if (user.isErr()) throw new Error(user.error.message)
 	const removed = await core.removeUser(user.value.id)
 	if (removed.isErr()) throw new Error(removed.error.message)
@@ -56,4 +56,4 @@ export const remove = defineDevConsole(async (dev) => {
 						posts: ghost.postCount,
 					},
 	}
-})
+}) satisfies Script

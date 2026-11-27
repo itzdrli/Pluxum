@@ -32,12 +32,13 @@ const ResetLinkInput = v.object({
 })
 export type ResetLinkInput = v.InferOutput<typeof ResetLinkInput>
 
-export const AccountsWorkbench = workbench.define({
+export const AccountsWorkbench = workbench.define(import.meta.url, {
 	accounts: workbench.content({
-		document: workbench.markdown(import.meta.url, './workbench.md', {
+		document: './workbench.md',
+		slots: {
 			status: workbench.data(AccountsStatus),
 			resetLink: workbench.action({ label: '生成重设链接', input: ResetLinkInput }),
-		}),
-		placement: workbench.tab({ label: '账号', icon: workbench.icons.Users, order: 10 }),
+		},
+		placement: { kind: 'tab', label: '账号', icon: 'users', order: 10 },
 	}),
 })

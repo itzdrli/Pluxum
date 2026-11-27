@@ -1,13 +1,7 @@
 {
 	"extends": "../tsconfig.base.json",
 	"compilerOptions": {
-		"types": ["node"],
-		"paths": {
-			// Private framework plugins export raw source under `@pluxel/hmr`; type-check against
-			// their built declarations instead of re-checking framework source with this tsconfig.
-			"@pluxel/plugin-redis": ["./node_modules/@pluxel/plugin-redis/dist/index.d.mts"],
-			"@pluxel/plugin-storage": ["./node_modules/@pluxel/plugin-storage/dist/index.d.mts"]
-		}
+		"types": ["node"]
 	},
 	"include": ["src/**/*.ts", "tsdown.config.ts", "vite.config.ts", "vite.runtime.config.ts"]
 }

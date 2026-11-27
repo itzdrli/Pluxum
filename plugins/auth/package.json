@@ -18,7 +18,12 @@
 			"@pluxel/hmr": "./src/index.ts",
 			"default": "./dist/index.mjs"
 		},
-		"./package.json": "./package.json"
+		"./package.json": "./package.json",
+		"./control": {
+			"types": "./dist/control/index.d.mts",
+			"import": "./dist/control/index.mjs",
+			"default": "./dist/control/index.mjs"
+		}
 	},
 	"scripts": {
 		"build": "vp run compile",
@@ -51,11 +56,17 @@
 	},
 	"peerDependencies": {
 		"@pluxel/core": "catalog:pluxel",
+		"@pluxel/host": "catalog:pluxel",
 		"@pluxel/plugin-rates": "catalog:pluxel",
 		"@pluxel/plugin-redis": "catalog:pluxel",
 		"@pluxel/services": "catalog:pluxel",
 		"@pluxel/workbench": "catalog:pluxel",
 		"@pluxum/core": "workspace:^"
+	},
+	"peerDependenciesMeta": {
+		"@pluxel/host": {
+			"optional": true
+		}
 	},
 	"pluxel": {
 		"artifactRoot": "dist",
@@ -65,12 +76,18 @@
 			"@pluxum/core": "required",
 			"@pluxel/plugin-rates": "required",
 			"@pluxel/plugin-redis": "required"
-		}
+		},
+		"control": "./dist/control/manifest.json"
 	},
 	"publishConfig": {
 		"exports": {
 			".": "./dist/index.mjs",
-			"./package.json": "./package.json"
+			"./package.json": "./package.json",
+			"./control": {
+				"types": "./dist/control/index.d.mts",
+				"import": "./dist/control/index.mjs",
+				"default": "./dist/control/index.mjs"
+			}
 		},
 		"access": "public"
 	}

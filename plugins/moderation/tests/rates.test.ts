@@ -1,8 +1,7 @@
 import type { Principal } from '@pluxum/domain'
 import { ForumCorePlugin } from '@pluxum/core'
 import { MemoryRatesBackendPlugin, RatesPlugin } from '@pluxel/plugin-rates'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
 import { ForumRatesPlugin, waitText } from '../src'
@@ -14,15 +13,15 @@ async function signUp(core: ForumCorePlugin, name: string): Promise<Principal> {
 
 async function boot(initialConfig: Record<string, unknown>) {
 	const host = await createTestHost({
-		services: [database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [pglite({ dataDir: 'memory://' })],
 	})
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(MemoryRatesBackendPlugin)
-		change.start(RatesPlugin)
-		change.start(ForumRatesPlugin, { initialConfig })
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(MemoryRatesBackendPlugin.nodeAddress())
+		change.start(RatesPlugin.nodeAddress())
+		change.start(ForumRatesPlugin.nodeAddress(), { initialConfig })
 	})
-	const core = host.require(ForumCorePlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
 	const adminUser = (
 		await core.ensureUser({ subject: 'test:admin', displayName: 'Admin' })
 	).unwrap()
@@ -56,7 +55,7 @@ describe('forum rates plugin', () => {
 		expect(reply.isErr() && reply.error.code).toBe('rate_limited')
 
 		// Stopping the plugin lifts every limit.
-		await host.stop(ForumRatesPlugin)
+		await host.stop(ForumRatesPlugin.nodeAddress())
 		expect((await thread(alice, '第四个主题')).isOk()).toBe(true)
 	})
 
@@ -68,8 +67,10 @@ describe('forum rates plugin', () => {
 			),
 		)
 		expect(staff.every((result) => result.isOk())).toBe(true)
-		await host.config.patch(ForumRatesPlugin, { set: { exemptStaff: false } })
-		await host.config.patch(ForumRatesPlugin, { set: { threads: { limit: 1, minutes: 5 } } })
+		await host.config.patch(ForumRatesPlugin.nodeAddress(), { set: { exemptStaff: false } })
+		await host.config.patch(ForumRatesPlugin.nodeAddress(), {
+			set: { threads: { limit: 1, minutes: 5 } },
+		})
 		expect(
 			(
 				await core.createThread(admin, { categoryId: category.id, title: '受限一', body: '正文' })
@@ -83,7 +84,9 @@ describe('forum rates plugin', () => {
 		expect(refused.isErr() && refused.error.code).toBe('rate_limited')
 
 		// A limit of 0 switches that kind off.
-		await host.config.patch(ForumRatesPlugin, { set: { threads: { limit: 0, minutes: 5 } } })
+		await host.config.patch(ForumRatesPlugin.nodeAddress(), {
+			set: { threads: { limit: 0, minutes: 5 } },
+		})
 		expect(
 			(
 				await core.createThread(admin, { categoryId: category.id, title: '不限', body: '正文' })

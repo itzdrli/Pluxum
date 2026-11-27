@@ -12,17 +12,17 @@ catalogs:
   backend:
     '@node-rs/jieba': ^2.0.4
     '@sinclair/typebox': ^0.34.52
-    exact-mirror: ^1.2.6
-    elysia: 2.0.0-rc.0
+    exact-mirror: ^1.2.8
+    elysia: 2.0.0-rc.5
     drizzle-orm: ^0.45.4
     marked: 17.0.6
     nodemailer: 10.3.1
     pg: ^8.23.1
-    redis: ^6.3.1
+    redis: ^6.4.0
     s3mini: ^1.0.3
     sanitize-html: 2.18.1
-    typebox: ^1.4.3
-    tinybase: 10.0.1
+    typebox: 1.4.4
+    tinybase: 10.1.0
   frontend:
     '@dicebear/core': 9.4.3
     '@dicebear/thumbs': 9.4.2
@@ -76,10 +76,11 @@ catalogs:
     tailwindcss: ^4.3.4
   # Published compatibility of plugin peers, apart from the versions installed.
   frontend-peer:
-    '@mantine/core': 9.7.3
-    '@mantine/hooks': 9.7.3
-    '@tabler/icons-react': ^3.49.0
+    '@mantine/core': 9.7.4
+    '@mantine/hooks': 9.7.4
+    '@tabler/icons-react': ^3.50.0
   pluxel:
+    '@pluxel/agent-sdk': ^1.1.0
     '@pluxel/cli': ^1.1.0
     '@pluxel/core': ^1.1.0
     '@pluxel/commands': ^1.1.0
@@ -100,7 +101,7 @@ catalogs:
     valibot-form: ^1.1.0
   test:
     happy-dom: 21.0.4
-    vitest: 5.1.0
+    vitest: 5.0.5
   tooling:
     '@babel/core': ^7.29.0
     '@rolldown/plugin-babel': ^0.3.1
@@ -111,16 +112,16 @@ catalogs:
     typescript: ^7.0.2
     vite: npm:@voidzero-dev/vite-plus-core@1.4.0
   prod:
-    '@electric-sql/pglite': ^0.5.15
-    jose: ^6.2.15
-    capnweb: 0.12.0
+    '@electric-sql/pglite': ^0.6.0
+    jose: ^6.2.18
+    capnweb: 0.13.1
 overrides:
   'vite@*': npm:@voidzero-dev/vite-plus-core@1.4.0
   typebox: catalog:backend
 
 # Verified registry signature and publisher match the previous Elysia 2 beta.
 trustPolicyExclude:
-  - elysia@2.0.0-rc.0
+  - elysia@2.0.0-rc.5
 
 # Vite+ Core uses its own version while bundling the compatible Vite engine.
 peerDependencyRules:

@@ -2,8 +2,7 @@ import { ForumAuth, type Authentication, type Logout } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { Plugin } from '@pluxel/core'
 import { MemoryRatesBackendPlugin, RatesPlugin } from '@pluxel/plugin-rates'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
@@ -65,14 +64,14 @@ class FakeAuth extends ForumAuth {
 
 async function boot(initialConfig: Record<string, unknown> = {}) {
 	const host = await createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) })],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(MemoryRatesBackendPlugin)
-		change.start(RatesPlugin)
-		change.start(ForumAccountsPlugin, { initialConfig })
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(MemoryRatesBackendPlugin.nodeAddress())
+		change.start(RatesPlugin.nodeAddress())
+		change.start(ForumAccountsPlugin.nodeAddress(), { initialConfig })
 	})
 	const send = async (
 		path: string,
@@ -112,9 +111,9 @@ async function boot(initialConfig: Record<string, unknown> = {}) {
 		host,
 		as,
 		[Symbol.asyncDispose]: () => host[Symbol.asyncDispose](),
-		core: host.require(ForumCorePlugin),
-		auth: host.require(FakeAuth),
-		accounts: host.require(ForumAccountsPlugin),
+		core: host.require(ForumCorePlugin.nodeAddress()),
+		auth: host.require(FakeAuth.nodeAddress()),
+		accounts: host.require(ForumAccountsPlugin.nodeAddress()),
 		post,
 		send,
 	}
@@ -206,7 +205,9 @@ describe('forum accounts plugin', () => {
 	it('closes registration while letting existing accounts sign in', async () => {
 		await using env = await boot()
 		await env.post('/register', { email: 'a@b.co', password: 'password one', displayName: 'A' })
-		await env.host.config.patch(ForumAccountsPlugin, { set: { registration: 'closed' } })
+		await env.host.config.patch(ForumAccountsPlugin.nodeAddress(), {
+			set: { registration: 'closed' },
+		})
 		expect(env.accounts.options().registration).toBe(false)
 		const closed = await env.post('/register', {
 			email: 'c@d.co',
@@ -353,7 +354,7 @@ describe('forum accounts plugin', () => {
 
 	it('withdraws password login when it stops', async () => {
 		await using env = await boot()
-		await env.host.stop(ForumAccountsPlugin)
+		await env.host.stop(ForumAccountsPlugin.nodeAddress())
 		expect(env.auth.passwordLoginAvailable()).toBe(false)
 		expect((await env.post('/login', { email: 'a@b.co', password: 'x' })).status).toBe(404)
 	})

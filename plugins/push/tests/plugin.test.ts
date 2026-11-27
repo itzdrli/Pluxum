@@ -2,13 +2,11 @@ import { ForumApiPlugin } from '@pluxum/api'
 import { ForumAuth, type Authentication } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
 import { createTestHost } from '@pluxel/test'
 import { describe, expect, it } from 'vitest'
 import { createDecipheriv, createECDH, createHmac } from 'node:crypto'
-import { vault } from '@pluxel/services/vault'
 import { ForumPushPlugin, PUSH_EXT_ID, pushMessage } from '../src'
 
 /** Stand-in identity provider: the `x-test-user` header names the account a request acts as. */
@@ -60,7 +58,7 @@ class FakeAuth extends ForumAuth {
 
 const createHost = () =>
 	createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) }), vault()],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 
 type Host = Awaited<ReturnType<typeof createHost>>
@@ -134,13 +132,13 @@ type Sent = Readonly<{ url: string; headers: Headers; body: Buffer }>
 
 async function setUp(host: Host) {
 	await host.commit((change) => {
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
-		change.start(ForumPushPlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
+		change.start(ForumPushPlugin.nodeAddress())
 	})
-	const core = host.require(ForumCorePlugin)
-	const push = host.require(ForumPushPlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
+	const push = host.require(ForumPushPlugin.nodeAddress())
 	const sent: Sent[] = []
 	let status = 201
 	push.useTransport((url, init) => {

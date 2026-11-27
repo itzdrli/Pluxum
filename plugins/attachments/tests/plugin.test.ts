@@ -13,10 +13,8 @@ import {
 import { ForumAuth, type Authentication } from '@pluxum/auth'
 import { ForumCorePlugin } from '@pluxum/core'
 import { Plugin } from '@pluxel/core'
-import { database } from '@pluxel/services/database'
-import { pglite } from '@pluxel/services/database/pglite'
+import { pglite } from '@pluxel/services/pg/pglite'
 import { elysia } from '@pluxel/services/elysia'
-import { Vault, vault } from '@pluxel/services/vault'
 import { createTestHost } from '@pluxel/test'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
@@ -41,7 +39,7 @@ afterEach(async () => {
 
 const createHost = () =>
 	createTestHost({
-		services: [elysia(), database({ backend: pglite({ dataDir: 'memory://' }) }), vault()],
+		services: [elysia(), pglite({ dataDir: 'memory://' })],
 	})
 
 type Host = Awaited<ReturnType<typeof createHost>>
@@ -140,7 +138,7 @@ function client(host: Host, userId?: string) {
 
 async function setUp(host: Host) {
 	await host.commit((change) => {
-		change.start(ForumStoragePlugin, {
+		change.start(ForumStoragePlugin.nodeAddress(), {
 			initialConfig: {
 				buckets: [
 					{
@@ -155,12 +153,12 @@ async function setUp(host: Host) {
 				],
 			},
 		})
-		change.start(ForumCorePlugin)
-		change.start(FakeAuth)
-		change.start(ForumApiPlugin)
-		change.start(ForumAttachmentsPlugin)
+		change.start(ForumCorePlugin.nodeAddress())
+		change.start(FakeAuth.nodeAddress())
+		change.start(ForumApiPlugin.nodeAddress())
+		change.start(ForumAttachmentsPlugin.nodeAddress())
 	})
-	const core = host.require(ForumCorePlugin)
+	const core = host.require(ForumCorePlugin.nodeAddress())
 	const adminUser = (
 		await core.ensureUser({ subject: 'test:admin', displayName: 'Admin' })
 	).unwrap()
@@ -379,7 +377,7 @@ describe('ForumAttachmentsPlugin', () => {
 			{ slot: 'composer.toolbar', extId: ATTACHMENTS_EXT_ID },
 		])
 
-		await host.stop(ForumAttachmentsPlugin)
+		await host.stop(ForumAttachmentsPlugin.nodeAddress())
 		const metaStopped: MetaDto = (await asAlice.get('/meta')).body
 		expect(metaStopped.uiSlots).toEqual([])
 		expect(metaStopped.viewer.user?.ext).toBeUndefined()
@@ -399,7 +397,7 @@ describe('ForumAttachmentsPlugin', () => {
 		expect(whileStopped.posts.items[0].author.ext).toBeUndefined()
 
 		// Starting it again brings everything back
-		await host.start(ForumAttachmentsPlugin)
+		await host.start(ForumAttachmentsPlugin.nodeAddress())
 		expect((await asAlice.rawGet(avatar.avatarUrl!)).status).toBe(200)
 		const restored: ThreadDetailDto = (await asAlice.get(`/threads/${thread.id}`)).body
 		expect(restored.posts.items[0].ext[ATTACHMENTS_EXT_ID]).toEqual({ items: [uploaded] })
@@ -415,17 +413,16 @@ describe('ForumAttachmentsPlugin', () => {
 		'stores and reads objects against live rustfs S3 with Vault credentials',
 		async () => {
 			await using host = await createHost()
-			const core = await host.start(ForumCorePlugin)
+			const core = await host.start(ForumCorePlugin.nodeAddress())
 			// Vault namespaces belong to their owner: the record must be written by the storage
 			// plugin itself, while it still runs on a backend that needs no credentials.
-			await host.start(ForumStoragePlugin, { initialConfig: {} })
+			await host.start(ForumStoragePlugin.nodeAddress(), { initialConfig: {} })
 			await host
-				.require(ForumStoragePlugin)
-				.ctx.require(Vault)
-				.kv({ namespace: 'forum-storage' })
+				.require(ForumStoragePlugin.nodeAddress())
+				.ctx.vault.kv({ namespace: 'forum-storage' })
 				.set('s3.credentials', { accessKeyId: liveAccessKey!, secretAccessKey: liveSecretKey! })
-			await host.stop(ForumStoragePlugin)
-			await host.config.patch(ForumStoragePlugin, {
+			await host.stop(ForumStoragePlugin.nodeAddress())
+			await host.config.patch(ForumStoragePlugin.nodeAddress(), {
 				set: {
 					buckets: [
 						{
@@ -444,10 +441,10 @@ describe('ForumAttachmentsPlugin', () => {
 				},
 			})
 			await host.commit((change) => {
-				change.start(ForumStoragePlugin)
-				change.start(FakeAuth)
-				change.start(ForumApiPlugin)
-				change.start(ForumAttachmentsPlugin)
+				change.start(ForumStoragePlugin.nodeAddress())
+				change.start(FakeAuth.nodeAddress())
+				change.start(ForumApiPlugin.nodeAddress())
+				change.start(ForumAttachmentsPlugin.nodeAddress())
 			})
 			const alice = (
 				await core.ensureUser({ subject: 'test:alice', displayName: 'Alice' })
